@@ -1,0 +1,87 @@
+:rootdir: .
+:icons: font
+:imagesdir: {rootdir}/images
+
+ifdef::env-github,env-browser[:badges:]
+ifdef::env-github,env-browser[:outfilesuffix: .adoc]
+
+ifndef::badges[]
+= Emerald-rs
+endif::[]
+
+ifdef::badges[]
+= Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/ethereumproject/emerald-rs"] image:https://img.shields.io/codecov/c/github/ethereumproject/emerald-rs/master.svg?style=flat-square[Codecov, link=https://codecov.io/gh/ethereumproject/emerald-rs] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/dulanov/ethertrust/blob/master/LICENSE.txt"]
+endif::[]
+
+Ethereum classic bootstrap library written in Rust.
+
+Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of plain C library.
+
+As a reference dApp implementation take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
+
+Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
+
+== Features
+
+=== General
+
+* [ ] Accounts (In Progress)
+* [ ] Address books
+* [ ] Sign transactions
+* [ ] Connect to external nodes (In Progress)
+* [ ] C interface (ABI)
+
+=== Transport
+
+* [ ] IPC
+* [ ] HTTP (In Progress)
+* [ ] WebSockets
+
+== Roadmap
+
+=== MVP (Mar'17, In Progress)
+
+Basic version with minimal features for developers just to build and run on local machine.
+
+=== Internal Beta (Apr'17)
+
+Internal version with general features for testing and for early DApp adopters.
+
+=== Public Beta (May'17)
+
+First public release.
+
+== Examples
+
+TBD, just as a first design prototype:
+
+----
+extern crate ethertrust;
+
+use ethertrust::Client
+use ethertrust::transport::Http;
+
+fn main() {
+  let etc = Client::new(Http::new("http://localhost:8545").unwrap());
+
+  println!("Accounts: {:?}", etc.eth().accounts().unwrap());
+}
+----
+
+For more see link:./examples[examples folder].
+
+== Install
+
+----
+cargo install emerald-cli
+----
+
+== Build
+
+----
+cargo build
+----
+
+== License
+
+Apache 2.0
