@@ -13,7 +13,7 @@ ifdef::badges[]
 = Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/dulanov/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/dulanov/emerald-rs"] image:https://img.shields.io/codecov/c/github/ethereumproject/emerald-rs/master.svg?style=flat-square[Codecov, link=https://codecov.io/gh/ethereumproject/emerald-rs] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/dulanov/ethertrust/blob/master/LICENSE.txt"]
 endif::[]
 
-Ethereum classic bootstrap library written in Rust.
+Ethereum classic intermediate connector written in Rust.
 
 Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of plain C library.
 
@@ -27,8 +27,7 @@ Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
 * [ ] Accounts (In Progress)
 * [ ] Address books
-* [ ] Sign transactions
-* [ ] Connect to external nodes (In Progress)
+* [ ] Transactions signing
 * [ ] C interface (ABI)
 
 === Transport
@@ -51,9 +50,43 @@ Internal version with general features for testing and for early DApp adopters.
 
 First public release.
 
-== Examples
+=== Prerequisites
 
-TBD, just as a first design prototype:
+We recommend to use parity as ethereum classic node:
+
+----
+$ cargo install parity
+----
+
+How to run parity locally in development mode (v1.5+) on port '8545' (by default):
+
+----
+$ parity --chain dev --no-discovery --no-ui --no-ipc --no-dapps --rpccorsdomain "*" --jsonrpc-apis "web3,eth,net,personal,parity,parity_set,traces,rpc,parity_accounts"
+----
+
+== Installation
+
+----
+$ cargo install emerald-cli
+----
+
+=== Usage
+
+How to run emerald connector (on port '1920' by default) on top of ethereum classic node:
+
+----
+$ emerald-cli
+----
+
+Or you can customize connector's and ethereum classic node's endpoint settings:
+
+----
+usage emerald-cli [--node <HOST>:<PORT>] [<HOST>:<PORT>]
+----
+
+=== Examples
+
+TBD, just a first design prototype:
 
 ----
 extern crate ethertrust;
@@ -69,18 +102,6 @@ fn main() {
 ----
 
 For more see link:./examples[examples folder].
-
-== Install
-
-----
-cargo install emerald-cli
-----
-
-== Build
-
-----
-cargo build
-----
 
 == License
 

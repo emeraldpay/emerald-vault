@@ -15,7 +15,18 @@ license = "Apache-2.0"
 travis-ci = { repository = "ethereumproject/emerald-rs" }
 appveyor = { repository = "ethereumproject/emerald-rs" }
 
+[[bin]]
+name = "emerald-cli"
+path = "src/main.rs"
+
 [dependencies]
+env_logger = "0.4"
+futures = "0.1"
+jsonrpc-core = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
+jsonrpc-minihttp-server = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
+jsonrpc-ipc-server = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
+jsonrpc-macros = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
+lazy_static = "0.2"
 log = "0.3"
 serde = "0.9"
 serde_json = "0.9"
@@ -25,8 +36,8 @@ reqwest = { version = "0.4", optional = true }
 clippy = {version = "*", optional = true}
 
 [dev-dependencies]
-env_logger = "0.4"
 
 [features]
 default = ["http"]
 http = ["reqwest"]
+dev = ["clippy"]
