@@ -10,10 +10,10 @@ ifndef::badges[]
 endif::[]
 
 ifdef::badges[]
-= Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/dulanov/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/dulanov/emerald-rs"] image:https://img.shields.io/codecov/c/github/ethereumproject/emerald-rs/master.svg?style=flat-square[Codecov, link=https://codecov.io/gh/ethereumproject/emerald-rs] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/dulanov/ethertrust/blob/master/LICENSE.txt"]
+= Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/dulanov/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/dulanov/emerald-rs"] image:https://img.shields.io/codecov/c/github/ethereumproject/emerald-rs/master.svg?style=flat-square[Codecov, link=https://codecov.io/gh/ethereumproject/emerald-rs] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/ethereumproject/emerald-rs/blob/master/LICENSE.txt"]
 endif::[]
 
-Ethereum classic intermediate connector written in Rust.
+Ethereum classic web3 like connector written in Rust.
 
 Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of plain C library.
 
@@ -89,10 +89,10 @@ usage emerald-cli [--node <HOST>:<PORT>] [<HOST>:<PORT>]
 TBD, just a first design prototype:
 
 ----
-extern crate ethertrust;
+extern crate emerald;
 
-use ethertrust::Client
-use ethertrust::transport::Http;
+use emerald::Client
+use emerald::transport::Http;
 
 fn main() {
   let etc = Client::new(Http::new("http://localhost:8545").unwrap());

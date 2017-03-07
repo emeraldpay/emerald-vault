@@ -2,11 +2,11 @@
 name = "emerald-rs"
 version = "0.0.1"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>"]
-description = "Ethereum classic bootstrap library written in Rust"
+description = "Ethereum classic web3 like connector written in Rust"
 homepage = "http://etcdevteam.com"
 repository = "https://github.com/ethereumproject/emerald-rs"
 documentation = "https://docs.rs/emerald-rs"
-keywords = ["rust", "bootstrap", "ethereum-classsic", "blockchain", "crypto-wallet"]
+keywords = ["rust", "bootstrap", "ethereum-classsic", "blockchain", "crypto-wallet", "web3"]
 categories = ["ethereum-classic"]
 readme = "README.adoc"
 license = "Apache-2.0"
@@ -24,8 +24,6 @@ env_logger = "0.4"
 futures = "0.1"
 jsonrpc-core = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
 jsonrpc-minihttp-server = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
-jsonrpc-ipc-server = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
-jsonrpc-macros = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
 lazy_static = "0.2"
 log = "0.3"
 serde = "0.9"
