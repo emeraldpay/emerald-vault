@@ -33,8 +33,6 @@ use log::LogLevel;
 
 use serde::ser::{Serialize, Serializer};
 
-static NODE_URL: &'static str = "http://127.0.0.1:8546";
-
 enum Method<'a> {
     ClientVersion,
     EthSyncing,
@@ -52,25 +50,27 @@ impl<'a> Serialize for Method<'a> {
             Method::EthSyncing => serializer.serialize_some(&method("eth_syncing")),
             Method::EthBlockNumber => serializer.serialize_some(&method("eth_blockNumber")),
             Method::EthAccounts => serializer.serialize_some(&method("eth_accounts")),
-            Method::EthGetBalance(params) => {
-                let p = match *params {
-                    Params::Array(ref vec) => Params::Array(vec.clone()),
-                    Params::Map(ref map) => Params::Map(map.clone()),
-                    Params::None => Params::None,
-                };
-
-                serializer.serialize_some(&method_params("eth_getBalance", p))
+            Method::EthGetBalance(data) => {
+                serializer.serialize_some(&method_params("eth_getBalance", data))
             }
         }
     }
 }
 
 #[derive(Serialize, Debug)]
-struct JsonData {
+struct JsonData<'a> {
     jsonrpc: &'static str,
     method: &'static str,
-    params: Params,
+    params: &'a Params,
     id: usize,
+}
+
+const NODE_URL: &'static str = "http://127.0.0.1:8546";
+
+const NONE: &'static Params = &Params::None;
+
+lazy_static! {
+    static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
 }
 
 fn main() {
@@ -84,11 +84,11 @@ fn main() {
 fn start(addr: &SocketAddr) {
     let mut io = IoHandler::default();
 
-    io.add_async_method("web3_clientVersion", |p| web3_client_version(p));
-    io.add_async_method("eth_syncing", |p| eth_syncing(p));
-    io.add_async_method("eth_blockNumber", |p| eth_block_number(p));
-    io.add_async_method("eth_accounts", |p| eth_accounts(p));
-    io.add_async_method("eth_getBalance", |p| eth_get_balance(p));
+    io.add_async_method("web3_clientVersion", |_| request(Method::ClientVersion));
+    io.add_async_method("eth_syncing", |_| request(Method::EthSyncing));
+    io.add_async_method("eth_blockNumber", |_| request(Method::EthBlockNumber));
+    io.add_async_method("eth_accounts", |_| request(Method::EthAccounts));
+    io.add_async_method("eth_getBalance", |p| request(Method::EthGetBalance(&p)));
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
@@ -103,80 +103,24 @@ fn start(addr: &SocketAddr) {
     server.wait().unwrap();
 }
 
-fn web3_client_version(_: Params) -> BoxFuture<Value, Error> {
+fn request<'a>(method: Method<'a>) -> BoxFuture<Value, Error> {
     let client = reqwest::Client::new().unwrap();
 
     let mut res = client.post(NODE_URL)
-        .json(&Method::ClientVersion)
+        .json(&method)
         .send()
         .unwrap();
 
     let json: Value = res.json().unwrap();
 
     futures::finished(json["result"].clone()).boxed()
-}
-
-fn eth_syncing(_: Params) -> BoxFuture<Value, Error> {
-    let client = reqwest::Client::new().unwrap();
-
-    let mut res = client.post(NODE_URL)
-        .json(&Method::EthSyncing)
-        .send()
-        .unwrap();
-
-    let json: Value = res.json().unwrap();
-
-    futures::finished(json["result"].clone()).boxed()
-}
-
-fn eth_block_number(_: Params) -> BoxFuture<Value, Error> {
-    let client = reqwest::Client::new().unwrap();
-
-    let mut res = client.post(NODE_URL)
-        .json(&Method::EthBlockNumber)
-        .send()
-        .unwrap();
-
-    let json: Value = res.json().unwrap();
-
-    futures::finished(json["result"].clone()).boxed()
-}
-
-fn eth_accounts(_: Params) -> BoxFuture<Value, Error> {
-    let client = reqwest::Client::new().unwrap();
-
-    let mut res = client.post(NODE_URL)
-        .json(&Method::EthAccounts)
-        .send()
-        .unwrap();
-
-    let json: Value = res.json().unwrap();
-
-    futures::finished(json["result"].clone()).boxed()
-}
-
-fn eth_get_balance(params: Params) -> BoxFuture<Value, Error> {
-    let client = reqwest::Client::new().unwrap();
-
-    let mut res = client.post(NODE_URL)
-        .json(&Method::EthGetBalance(&params))
-        .send()
-        .unwrap();
-
-    let json: Value = res.json().unwrap();
-
-    futures::finished(json["result"].clone()).boxed()
-}
-
-lazy_static! {
-    static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
 }
 
 fn method(method: &'static str) -> JsonData {
-    method_params(method, Params::None)
+    method_params(method, NONE)
 }
 
-fn method_params(method: &'static str, params: Params) -> JsonData {
+fn method_params<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
     let id = REQ_ID.fetch_add(1, Ordering::SeqCst);
 
     JsonData {
