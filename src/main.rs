@@ -1,4 +1,4 @@
-//! Ethereum classic connector written in Rust.
+//! Ethereum classic web3 like connector written in Rust.
 
 #![warn(missing_docs)]
 
@@ -168,20 +168,22 @@ fn eth_get_balance(params: Params) -> BoxFuture<Value, Error> {
     futures::finished(json["result"].clone()).boxed()
 }
 
-fn method(method: &'static str) -> JsonData {
-    method_params(method, Params::None)
-}
-
 lazy_static! {
     static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
 }
 
+fn method(method: &'static str) -> JsonData {
+    method_params(method, Params::None)
+}
+
 fn method_params(method: &'static str, params: Params) -> JsonData {
+    let id = REQ_ID.fetch_add(1, Ordering::SeqCst);
+
     JsonData {
         jsonrpc: "2.0",
         method: method,
         params: params,
-        id: REQ_ID.fetch_add(1, Ordering::SeqCst),
+        id: id,
     }
 }
 
@@ -191,7 +193,9 @@ mod tests {
     use super::method;
 
     #[test]
-    fn method_test() {
-        assert_eq!(method("xxx").id, 1);
+    fn should_increase_request_ids() {
+        assert_eq!(method("").id, 1);
+        assert_eq!(method("").id, 2);
+        assert_eq!(method("").id, 3);
     }
 }
