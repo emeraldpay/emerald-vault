@@ -86,11 +86,11 @@ fn main() {
 fn start(addr: &SocketAddr) {
     let mut io = IoHandler::default();
 
-    io.add_async_method("web3_clientVersion", |_| request(Method::ClientVersion));
-    io.add_async_method("eth_syncing", |_| request(Method::EthSyncing));
-    io.add_async_method("eth_blockNumber", |_| request(Method::EthBlockNumber));
-    io.add_async_method("eth_accounts", |_| request(Method::EthAccounts));
-    io.add_async_method("eth_getBalance", |p| request(Method::EthGetBalance(&p)));
+    io.add_async_method("web3_clientVersion", |_| request(&Method::ClientVersion));
+    io.add_async_method("eth_syncing", |_| request(&Method::EthSyncing));
+    io.add_async_method("eth_blockNumber", |_| request(&Method::EthBlockNumber));
+    io.add_async_method("eth_accounts", |_| request(&Method::EthAccounts));
+    io.add_async_method("eth_getBalance", |p| request(&Method::EthGetBalance(&p)));
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
@@ -105,11 +105,11 @@ fn start(addr: &SocketAddr) {
     server.wait().expect("Unable to start server");
 }
 
-fn request<'a>(method: Method<'a>) -> BoxFuture<Value, Error> {
+fn request(method: &Method) -> BoxFuture<Value, Error> {
     let client = reqwest::Client::new().expect("Error during create a client");
 
     let mut res = client.post(NODE_URL)
-        .json(&method)
+        .json(method)
         .send()
         .expect("Unable to get response object");
 
