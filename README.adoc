@@ -72,8 +72,14 @@ $ parity --chain dev --no-discovery --no-ui --no-ipc --no-dapps --rpccorsdomain 
 
 == Installation
 
+Ensure you have these dependencies installed:
+
 ----
-$ cargo install emerald-cli
+openssl gcc pkgconfig
+----
+
+----
+$ cargo install --git https://github.com/ethereumproject/emerald-rs emerald-rs
 ----
 
 === Usage
