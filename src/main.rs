@@ -1,9 +1,11 @@
 //! Ethereum classic web3 like connector written in Rust.
 
-#![warn(missing_docs)]
-
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
+
+#![deny(clippy, clippy_pedantic)]
+#![allow(missing_docs_in_private_items, unknown_lints)]
+#![warn(zero_ptr)]
 
 #[macro_use]
 extern crate log;
@@ -65,9 +67,9 @@ struct JsonData<'a> {
     id: usize,
 }
 
-const NODE_URL: &'static str = "http://127.0.0.1:8546";
+static NODE_URL: &'static str = "http://127.0.0.1:8546";
 
-const NONE: &'static Params = &Params::None;
+static NONE: Params = Params::None;
 
 lazy_static! {
     static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
@@ -76,19 +78,19 @@ lazy_static! {
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
 
-    env_logger::init().unwrap();
+    env_logger::init().expect("Unable to initialize logger");
 
-    start(&"127.0.0.1:8545".parse::<SocketAddr>().unwrap());
+    start(&"127.0.0.1:8545".parse::<SocketAddr>().expect("Unable to parse address"));
 }
 
 fn start(addr: &SocketAddr) {
     let mut io = IoHandler::default();
 
-    io.add_async_method("web3_clientVersion", |_| request(Method::ClientVersion));
-    io.add_async_method("eth_syncing", |_| request(Method::EthSyncing));
-    io.add_async_method("eth_blockNumber", |_| request(Method::EthBlockNumber));
-    io.add_async_method("eth_accounts", |_| request(Method::EthAccounts));
-    io.add_async_method("eth_getBalance", |p| request(Method::EthGetBalance(&p)));
+    io.add_async_method("web3_clientVersion", |_| request(&Method::ClientVersion));
+    io.add_async_method("eth_syncing", |_| request(&Method::EthSyncing));
+    io.add_async_method("eth_blockNumber", |_| request(&Method::EthBlockNumber));
+    io.add_async_method("eth_accounts", |_| request(&Method::EthAccounts));
+    io.add_async_method("eth_getBalance", |p| request(&Method::EthGetBalance(&p)));
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
@@ -100,24 +102,24 @@ fn start(addr: &SocketAddr) {
         info!("Connector is started on {}", server.address());
     }
 
-    server.wait().unwrap();
+    server.wait().expect("Unable to start server");
 }
 
-fn request<'a>(method: Method<'a>) -> BoxFuture<Value, Error> {
-    let client = reqwest::Client::new().unwrap();
+fn request(method: &Method) -> BoxFuture<Value, Error> {
+    let client = reqwest::Client::new().expect("Error during create a client");
 
     let mut res = client.post(NODE_URL)
-        .json(&method)
+        .json(method)
         .send()
-        .unwrap();
+        .expect("Unable to get response object");
 
-    let json: Value = res.json().unwrap();
+    let json: Value = res.json().expect("Unable to convert a response to JSON");
 
     futures::finished(json["result"].clone()).boxed()
 }
 
 fn method(method: &'static str) -> JsonData {
-    method_params(method, NONE)
+    method_params(method, &NONE)
 }
 
 fn method_params<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
