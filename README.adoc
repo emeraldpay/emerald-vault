@@ -52,6 +52,12 @@ First public release.
 
 === Prerequisites
 
+Ensure you have these dependencies installed:
+
+----
+openssl gcc pkgconfig libudev
+----
+
 We recommend to use parity as ethereum classic node:
 
 ----
