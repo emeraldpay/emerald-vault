@@ -1,10 +1,11 @@
 //! Ethereum classic web3 like connector written in Rust.
 
-#![deny(warnings)]
-#![warn(missing_docs)]
-
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
+
+#![deny(clippy, clippy_pedantic)]
+#![allow(missing_docs_in_private_items, unknown_lints)]
+#![warn(zero_ptr)]
 
 #[macro_use]
 extern crate log;
@@ -77,9 +78,9 @@ lazy_static! {
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
 
-    env_logger::init().unwrap();
+    env_logger::init().expect("Unable to initialize logger");
 
-    start(&"127.0.0.1:8545".parse::<SocketAddr>().unwrap());
+    start(&"127.0.0.1:8545".parse::<SocketAddr>().expect("Unable to parse address"));
 }
 
 fn start(addr: &SocketAddr) {
@@ -101,18 +102,18 @@ fn start(addr: &SocketAddr) {
         info!("Connector is started on {}", server.address());
     }
 
-    server.wait().unwrap();
+    server.wait().expect("Unable to start server");
 }
 
 fn request<'a>(method: Method<'a>) -> BoxFuture<Value, Error> {
-    let client = reqwest::Client::new().unwrap();
+    let client = reqwest::Client::new().expect("Error during create a client");
 
     let mut res = client.post(NODE_URL)
         .json(&method)
         .send()
-        .unwrap();
+        .expect("Unable to get response object");
 
-    let json: Value = res.json().unwrap();
+    let json: Value = res.json().expect("Unable to convert a response to JSON");
 
     futures::finished(json["result"].clone()).boxed()
 }
