@@ -55,7 +55,7 @@ First public release.
 We recommend to use parity as ethereum classic node:
 
 ----
-$ cargo install parity
+$ cargo install --git https://github.com/ethcore/parity.git --branch beta --force parity
 ----
 
 How to run parity locally in development mode (v1.5+) on port '8545' (by default):
@@ -67,7 +67,7 @@ $ parity --chain dev --no-discovery --no-ui --no-ipc --no-dapps --rpccorsdomain 
 == Installation
 
 ----
-$ cargo install emerald-cli
+$ cargo install emerald-cli -f
 ----
 
 === Usage

@@ -65,9 +65,9 @@ struct JsonData<'a> {
     id: usize,
 }
 
-const NODE_URL: &'static str = "http://127.0.0.1:8546";
+const NODE_URL: &str = "http://127.0.0.1:8546";
 
-const NONE: &'static Params = &Params::None;
+static NONE: Params = Params::None;
 
 lazy_static! {
     static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
@@ -117,7 +117,7 @@ fn request<'a>(method: Method<'a>) -> BoxFuture<Value, Error> {
 }
 
 fn method(method: &'static str) -> JsonData {
-    method_params(method, NONE)
+    method_params(method, &NONE as &'static Params)
 }
 
 fn method_params<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
