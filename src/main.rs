@@ -65,7 +65,7 @@ struct JsonData<'a> {
     id: usize,
 }
 
-const NODE_URL: &str = "http://127.0.0.1:8546";
+static NODE_URL: &'static str = "http://127.0.0.1:8546";
 
 static NONE: Params = Params::None;
 
@@ -117,7 +117,7 @@ fn request<'a>(method: Method<'a>) -> BoxFuture<Value, Error> {
 }
 
 fn method(method: &'static str) -> JsonData {
-    method_params(method, &NONE as &'static Params)
+    method_params(method, &NONE)
 }
 
 fn method_params<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
