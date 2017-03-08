@@ -1,5 +1,6 @@
 //! Ethereum classic web3 like connector written in Rust.
 
+#![deny(warnings)]
 #![warn(missing_docs)]
 
 #![cfg_attr(feature = "dev", feature(plugin))]
