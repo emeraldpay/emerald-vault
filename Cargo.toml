@@ -1,5 +1,5 @@
 [package]
-name = "emerald-rs"
+name = "emerald"
 version = "0.0.1"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>"]
 description = "Ethereum classic web3 like connector written in Rust"
@@ -15,27 +15,36 @@ license = "Apache-2.0"
 travis-ci = { repository = "ethereumproject/emerald-rs" }
 appveyor = { repository = "ethereumproject/emerald-rs" }
 
+[lib]
+name = "emerald"
+path = "src/lib.rs"
+
 [[bin]]
 name = "emerald-cli"
 path = "src/main.rs"
 
 [dependencies]
-env_logger = "0.4"
 futures = "0.1"
 jsonrpc-core = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
 jsonrpc-minihttp-server = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
 lazy_static = "0.2"
 log = "0.3"
+regex = "0.2"
 serde = "0.9"
 serde_json = "0.9"
 serde_derive = "0.9"
 # optional dependencies
+docopt = { version = "0.6", optional = true }
+env_logger = { version = "0.4", optional = true }
 reqwest = { version = "0.4", optional = true }
-clippy = {version = "0.0.*", optional = true}
+clippy = {version = "0.0", optional = true}
 
 [dev-dependencies]
+quickcheck = "0.4"
+quickcheck_macros = "0.4"
 
 [features]
-default = ["http"]
+default = ["cli", "http"]
+cli = ["docopt", "env_logger"]
 http = ["reqwest"]
 dev = ["clippy"]
