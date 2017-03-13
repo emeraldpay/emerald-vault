@@ -1,3 +1,6 @@
+// https://github.com/Manishearth/rust-clippy/issues/1580
+#![allow(zero_ptr)]
+
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 

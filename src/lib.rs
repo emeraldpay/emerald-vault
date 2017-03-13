@@ -5,7 +5,6 @@
 
 #![deny(clippy, clippy_pedantic)]
 #![allow(missing_docs_in_private_items, unknown_lints)]
-#![warn(zero_ptr)]
 
 #[macro_use]
 extern crate log;
@@ -13,15 +12,14 @@ extern crate log;
 #[macro_use]
 extern crate lazy_static;
 
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-
-extern crate reqwest;
+extern crate serde;
 
 extern crate futures;
 extern crate jsonrpc_core;
 extern crate jsonrpc_minihttp_server;
+extern crate reqwest;
 
 use std::net::SocketAddr;
 
