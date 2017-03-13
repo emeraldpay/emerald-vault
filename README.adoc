@@ -61,7 +61,7 @@ openssl gcc pkgconfig libudev
 We recommend to use parity as ethereum classic node:
 
 ----
-$ cargo install --git https://github.com/ethcore/parity.git --branch beta --force parity
+$ cargo install --git https://github.com/ethcore/parity.git --branch stable --force parity
 ----
 
 How to run parity locally in development mode (v1.5+) on port '8545' (by default):
