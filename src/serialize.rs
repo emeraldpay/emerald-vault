@@ -19,14 +19,14 @@ impl<'a> Serialize for ::method::Method<'a> {
         where S: Serializer
     {
         match *self {
-            ::method::Method::ClientVersion => {
+            ::method::Method::ClientVersion(_) => {
                 serializer.serialize_some(&method("web3_clientVersion"))
             }
-            ::method::Method::EthSyncing => serializer.serialize_some(&method("eth_syncing")),
-            ::method::Method::EthBlockNumber => {
+            ::method::Method::EthSyncing(_) => serializer.serialize_some(&method("eth_syncing")),
+            ::method::Method::EthBlockNumber(_) => {
                 serializer.serialize_some(&method("eth_blockNumber"))
             }
-            ::method::Method::EthAccounts => serializer.serialize_some(&method("eth_accounts")),
+            ::method::Method::EthAccounts(_) => serializer.serialize_some(&method("eth_accounts")),
             ::method::Method::EthGetBalance(data) => {
                 serializer.serialize_some(&method_params("eth_getBalance", data))
             }

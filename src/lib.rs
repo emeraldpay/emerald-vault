@@ -22,7 +22,6 @@ extern crate jsonrpc_minihttp_server;
 extern crate reqwest;
 
 use std::net::SocketAddr;
-use std::ops::Add;
 use std::sync::Arc;
 
 use jsonrpc_core::IoHandler;
@@ -37,31 +36,27 @@ mod serialize;
 pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
     let mut io = IoHandler::default();
 
-    let url = Arc::new(request::Wrapper {
-                           url: request::StringWrapper {
-                               str: "http://".to_string().add(&client_addr.to_string()),
-                           },
-                       });
+    let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));
 
     let web3_client_version = url.clone();
 
     io.add_async_method("web3_clientVersion",
-                        move |_| web3_client_version.request(&method::Method::ClientVersion));
+                        move |p| web3_client_version.request(&method::Method::ClientVersion(&p)));
 
     let eth_syncing = url.clone();
 
     io.add_async_method("eth_syncing",
-                        move |_| eth_syncing.request(&method::Method::EthSyncing));
+                        move |p| eth_syncing.request(&method::Method::EthSyncing(&p)));
 
     let eth_block_number = url.clone();
 
     io.add_async_method("eth_blockNumber",
-                        move |_| eth_block_number.request(&method::Method::EthBlockNumber));
+                        move |p| eth_block_number.request(&method::Method::EthBlockNumber(&p)));
 
     let eth_accounts = url.clone();
 
     io.add_async_method("eth_accounts",
-                        move |_| eth_accounts.request(&method::Method::EthAccounts));
+                        move |p| eth_accounts.request(&method::Method::EthAccounts(&p)));
 
     let eth_get_balance = url.clone();
 
