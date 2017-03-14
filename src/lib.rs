@@ -22,9 +22,11 @@ extern crate jsonrpc_minihttp_server;
 extern crate reqwest;
 
 use std::net::SocketAddr;
+use std::ops::Add;
+use std::sync::Arc;
 
-use jsonrpc_core::*;
-use jsonrpc_minihttp_server::*;
+use jsonrpc_core::IoHandler;
+use jsonrpc_minihttp_server::{cors, DomainsValidation, ServerBuilder};
 
 use log::LogLevel;
 
@@ -32,19 +34,39 @@ mod method;
 mod request;
 mod serialize;
 
-pub fn start(addr: &SocketAddr) {
+pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
     let mut io = IoHandler::default();
 
+    let url = Arc::new(request::Wrapper {
+                           url: request::StringWrapper {
+                               str: "http://".to_string().add(&client_addr.to_string()),
+                           },
+                       });
+
+    let web3_client_version = url.clone();
+
     io.add_async_method("web3_clientVersion",
-                        |_| request::request(&method::Method::ClientVersion));
+                        move |_| web3_client_version.request(&method::Method::ClientVersion));
+
+    let eth_syncing = url.clone();
+
     io.add_async_method("eth_syncing",
-                        |_| request::request(&method::Method::EthSyncing));
+                        move |_| eth_syncing.request(&method::Method::EthSyncing));
+
+    let eth_block_number = url.clone();
+
     io.add_async_method("eth_blockNumber",
-                        |_| request::request(&method::Method::EthBlockNumber));
+                        move |_| eth_block_number.request(&method::Method::EthBlockNumber));
+
+    let eth_accounts = url.clone();
+
     io.add_async_method("eth_accounts",
-                        |_| request::request(&method::Method::EthAccounts));
+                        move |_| eth_accounts.request(&method::Method::EthAccounts));
+
+    let eth_get_balance = url.clone();
+
     io.add_async_method("eth_getBalance",
-                        |p| request::request(&method::Method::EthGetBalance(&p)));
+                        move |p| eth_get_balance.request(&method::Method::EthGetBalance(&p)));
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
