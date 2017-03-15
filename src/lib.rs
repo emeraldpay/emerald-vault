@@ -21,13 +21,13 @@ extern crate jsonrpc_core;
 extern crate jsonrpc_minihttp_server;
 extern crate reqwest;
 
-use std::net::SocketAddr;
-use std::sync::Arc;
 
 use jsonrpc_core::IoHandler;
 use jsonrpc_minihttp_server::{cors, DomainsValidation, ServerBuilder};
 
 use log::LogLevel;
+use std::net::SocketAddr;
+use std::sync::Arc;
 
 mod method;
 mod request;

@@ -11,11 +11,11 @@ extern crate rustc_serialize;
 
 extern crate emerald;
 
+
+use docopt::Docopt;
 use std::env;
 use std::net::SocketAddr;
 use std::process::*;
-
-use docopt::Docopt;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
@@ -44,8 +44,7 @@ fn main() {
 
     let addr = args.flag_address.parse::<SocketAddr>().expect("Unable to parse address");
 
-    let client_addr =
-        args.flag_client_address.parse::<SocketAddr>().expect("Unable to parse client address");
+    let client_addr = args.flag_client_address.parse::<SocketAddr>().expect("Unable to parse client address");
 
     emerald::start(&addr, &client_addr);
 }
