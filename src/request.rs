@@ -1,19 +1,21 @@
+use hyper::Url;
+use hyper::client::IntoUrl;
 use jsonrpc_core::{Value, Error};
 use jsonrpc_core::futures::{BoxFuture, Future};
 
 pub struct AsyncWrapper {
-    pub url: String,
+    pub url: Url,
 }
 
 impl AsyncWrapper {
-    pub fn new(s: &str) -> AsyncWrapper {
-        AsyncWrapper { url: s.to_string() }
+    pub fn new<U: IntoUrl>(url: U) -> AsyncWrapper {
+        AsyncWrapper { url: url.into_url().expect("Unexpected url encoding") }
     }
 
     pub fn request(&self, method: &::method::Method) -> BoxFuture<Value, Error> {
         let client = ::reqwest::Client::new().expect("Error during create a client");
 
-        let mut res = client.post(&self.url)
+        let mut res = client.post(self.url.clone())
             .json(method)
             .send()
             .expect("Unable to get response object");
