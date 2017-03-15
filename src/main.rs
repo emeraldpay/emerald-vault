@@ -5,20 +5,46 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
-#![deny(clippy, clippy_pedantic)]
-#![allow(missing_docs_in_private_items, unknown_lints)]
-
+extern crate docopt;
 extern crate env_logger;
+extern crate rustc_serialize;
 
 extern crate emerald;
 
+
+use docopt::Docopt;
 use std::env;
 use std::net::SocketAddr;
+use std::process::*;
+
+const USAGE: &'static str = include_str!("../usage.txt");
+
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
+#[derive(Debug, RustcDecodable)]
+struct Args {
+    flag_version: bool,
+    flag_verbose: bool,
+    flag_quiet: bool,
+    flag_address: String,
+    flag_client_address: String,
+}
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
 
     env_logger::init().expect("Unable to initialize logger");
 
-    emerald::start(&"127.0.0.1:8545".parse::<SocketAddr>().expect("Unable to parse address"));
+    let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
+
+    if args.flag_version {
+        println!("v{}", VERSION);
+        exit(0);
+    }
+
+    let addr = args.flag_address.parse::<SocketAddr>().expect("Unable to parse address");
+
+    let client_addr = args.flag_client_address.parse::<SocketAddr>().expect("Unable to parse client address");
+
+    emerald::start(&addr, &client_addr);
 }

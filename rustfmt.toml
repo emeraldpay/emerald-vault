@@ -1,1 +1,8 @@
-# max_width = 120
+ideal_width = 80
+max_width = 120
+newline_style = "Unix"
+normalise_comments = false
+format_strings = false
+reorder_imports = true
+report_todo = "Never"
+report_fixme = "Never"

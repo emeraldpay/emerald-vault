@@ -1,17 +1,27 @@
+use hyper::Url;
+use hyper::client::IntoUrl;
 use jsonrpc_core::{Value, Error};
 use jsonrpc_core::futures::{BoxFuture, Future};
 
-static NODE_URL: &'static str = "http://127.0.0.1:8546";
+pub struct AsyncWrapper {
+    pub url: Url,
+}
 
-pub fn request(method: &::method::Method) -> BoxFuture<Value, Error> {
-    let client = ::reqwest::Client::new().expect("Error during create a client");
+impl AsyncWrapper {
+    pub fn new<U: IntoUrl>(url: U) -> AsyncWrapper {
+        AsyncWrapper { url: url.into_url().expect("Unexpected url encoding") }
+    }
 
-    let mut res = client.post(NODE_URL)
-        .json(method)
-        .send()
-        .expect("Unable to get response object");
+    pub fn request(&self, method: &::method::Method) -> BoxFuture<Value, Error> {
+        let client = ::reqwest::Client::new().expect("Error during create a client");
 
-    let json: Value = res.json().expect("Unable to convert a response to JSON");
+        let mut res = client.post(self.url.clone())
+            .json(method)
+            .send()
+            .expect("Unable to get response object");
 
-    ::futures::finished(json["result"].clone()).boxed()
+        let json: Value = res.json().expect("Unable to convert a response to JSON");
+
+        ::futures::finished(json["result"].clone()).boxed()
+    }
 }

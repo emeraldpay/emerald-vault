@@ -67,7 +67,7 @@ $ cargo install --git https://github.com/ethcore/parity.git --branch stable --fo
 How to run parity locally in development mode (v1.5+) on port '8545' (by default):
 
 ----
-$ parity --chain dev --no-discovery --no-ui --no-ipc --no-dapps --rpccorsdomain "*" --jsonrpc-apis "web3,eth,net,personal,parity,parity_set,traces,rpc,parity_accounts" --jsonrpc-port "8546"
+$ parity --chain dev --no-discovery --no-ui --no-ipc --no-dapps --rpccorsdomain "*" --jsonrpc-apis "web3,eth,net,personal,parity,parity_set,traces,rpc,parity_accounts"
 ----
 
 == Installation
@@ -90,11 +90,7 @@ How to run emerald connector (on port '1920' by default) on top of ethereum clas
 $ RUST_LOG=emerald,rpc cargo run
 ----
 
-Or you can customize connector's and ethereum classic node's endpoint settings:
-
-----
-usage emerald-cli [--node <HOST>:<PORT>] [<HOST>:<PORT>]
-----
+For more details look at link:./usage.txt[usage].
 
 === Examples
 

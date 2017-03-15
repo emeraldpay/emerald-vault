@@ -19,32 +19,50 @@ extern crate serde;
 extern crate futures;
 extern crate jsonrpc_core;
 extern crate jsonrpc_minihttp_server;
+extern crate hyper;
 extern crate reqwest;
 
-use std::net::SocketAddr;
 
-use jsonrpc_core::*;
-use jsonrpc_minihttp_server::*;
+use jsonrpc_core::IoHandler;
+use jsonrpc_minihttp_server::{cors, DomainsValidation, ServerBuilder};
 
 use log::LogLevel;
+use std::net::SocketAddr;
+use std::sync::Arc;
 
 mod method;
 mod request;
 mod serialize;
 
-pub fn start(addr: &SocketAddr) {
+pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
     let mut io = IoHandler::default();
 
+    let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));
+
+    let web3_client_version = url.clone();
+
     io.add_async_method("web3_clientVersion",
-                        |_| request::request(&method::Method::ClientVersion));
+                        move |p| web3_client_version.request(&method::Method::ClientVersion(&p)));
+
+    let eth_syncing = url.clone();
+
     io.add_async_method("eth_syncing",
-                        |_| request::request(&method::Method::EthSyncing));
+                        move |p| eth_syncing.request(&method::Method::EthSyncing(&p)));
+
+    let eth_block_number = url.clone();
+
     io.add_async_method("eth_blockNumber",
-                        |_| request::request(&method::Method::EthBlockNumber));
+                        move |p| eth_block_number.request(&method::Method::EthBlockNumber(&p)));
+
+    let eth_accounts = url.clone();
+
     io.add_async_method("eth_accounts",
-                        |_| request::request(&method::Method::EthAccounts));
+                        move |p| eth_accounts.request(&method::Method::EthAccounts(&p)));
+
+    let eth_get_balance = url.clone();
+
     io.add_async_method("eth_getBalance",
-                        |p| request::request(&method::Method::EthGetBalance(&p)));
+                        move |p| eth_get_balance.request(&method::Method::EthGetBalance(&p)));
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
