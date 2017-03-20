@@ -44,7 +44,8 @@ fn main() {
 
     let addr = args.flag_address.parse::<SocketAddr>().expect("Unable to parse address");
 
-    let client_addr = args.flag_client_address.parse::<SocketAddr>().expect("Unable to parse client address");
+    let client_addr =
+        args.flag_client_address.parse::<SocketAddr>().expect("Unable to parse client address");
 
     emerald::start(&addr, &client_addr);
 }

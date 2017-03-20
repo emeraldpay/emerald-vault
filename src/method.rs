@@ -1,9 +1,11 @@
 use jsonrpc_core::Params;
 
-pub enum Method<'a> {
-    ClientVersion(&'a Params),
-    EthSyncing(&'a Params),
-    EthBlockNumber(&'a Params),
-    EthAccounts(&'a Params),
-    EthGetBalance(&'a Params),
+pub enum Method {
+    ClientVersion,
+    EthSyncing,
+    EthBlockNumber,
+    EthAccounts,
+    EthGetBalance,
 }
+
+pub struct MethodParams<'a>(pub Method, pub &'a Params);

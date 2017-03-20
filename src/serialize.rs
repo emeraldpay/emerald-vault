@@ -14,16 +14,22 @@ lazy_static! {
     static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
 }
 
-impl<'a> Serialize for ::method::Method<'a> {
+impl<'a> Serialize for ::method::MethodParams<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        match *self {
-            ::method::Method::ClientVersion(_) => serializer.serialize_some(&method("web3_clientVersion")),
-            ::method::Method::EthSyncing(_) => serializer.serialize_some(&method("eth_syncing")),
-            ::method::Method::EthBlockNumber(_) => serializer.serialize_some(&method("eth_blockNumber")),
-            ::method::Method::EthAccounts(_) => serializer.serialize_some(&method("eth_accounts")),
-            ::method::Method::EthGetBalance(data) => serializer.serialize_some(&method_params("eth_getBalance", data)),
+        match self.0 {
+            ::method::Method::ClientVersion => {
+                serializer.serialize_some(&method("web3_clientVersion"))
+            }
+            ::method::Method::EthSyncing => serializer.serialize_some(&method("eth_syncing")),
+            ::method::Method::EthBlockNumber => {
+                serializer.serialize_some(&method("eth_blockNumber"))
+            }
+            ::method::Method::EthAccounts => serializer.serialize_some(&method("eth_accounts")),
+            ::method::Method::EthGetBalance => {
+                serializer.serialize_some(&method_params("eth_getBalance", self.1))
+            }
         }
     }
 }

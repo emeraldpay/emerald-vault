@@ -41,28 +41,33 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
 
     let web3_client_version = url.clone();
 
-    io.add_async_method("web3_clientVersion",
-                        move |p| web3_client_version.request(&method::Method::ClientVersion(&p)));
+    io.add_async_method("web3_clientVersion", move |p| {
+        web3_client_version.request(&method::MethodParams(method::Method::ClientVersion, &p))
+    });
 
     let eth_syncing = url.clone();
 
-    io.add_async_method("eth_syncing",
-                        move |p| eth_syncing.request(&method::Method::EthSyncing(&p)));
+    io.add_async_method("eth_syncing", move |p| {
+        eth_syncing.request(&method::MethodParams(method::Method::EthSyncing, &p))
+    });
 
     let eth_block_number = url.clone();
 
-    io.add_async_method("eth_blockNumber",
-                        move |p| eth_block_number.request(&method::Method::EthBlockNumber(&p)));
+    io.add_async_method("eth_blockNumber", move |p| {
+        eth_block_number.request(&method::MethodParams(method::Method::EthBlockNumber, &p))
+    });
 
     let eth_accounts = url.clone();
 
-    io.add_async_method("eth_accounts",
-                        move |p| eth_accounts.request(&method::Method::EthAccounts(&p)));
+    io.add_async_method("eth_accounts", move |p| {
+        eth_accounts.request(&method::MethodParams(method::Method::EthAccounts, &p))
+    });
 
     let eth_get_balance = url.clone();
 
-    io.add_async_method("eth_getBalance",
-                        move |p| eth_get_balance.request(&method::Method::EthGetBalance(&p)));
+    io.add_async_method("eth_getBalance", move |p| {
+        eth_get_balance.request(&method::MethodParams(method::Method::EthGetBalance, &p))
+    });
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
