@@ -22,17 +22,25 @@ extern crate jsonrpc_minihttp_server;
 extern crate hyper;
 extern crate reqwest;
 
-
-use jsonrpc_core::IoHandler;
+use jsonrpc_core::{IoHandler, Params};
 use jsonrpc_minihttp_server::{cors, DomainsValidation, ServerBuilder};
 
 use log::LogLevel;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-mod method;
 mod request;
 mod serialize;
+
+pub enum Method {
+    ClientVersion,
+    EthSyncing,
+    EthBlockNumber,
+    EthAccounts,
+    EthGetBalance,
+}
+
+pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
 pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
     let mut io = IoHandler::default();
@@ -42,32 +50,29 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
     let web3_client_version = url.clone();
 
     io.add_async_method("web3_clientVersion", move |p| {
-        web3_client_version.request(&method::MethodParams(method::Method::ClientVersion, &p))
+        web3_client_version.request(&MethodParams(Method::ClientVersion, &p))
     });
 
     let eth_syncing = url.clone();
 
-    io.add_async_method("eth_syncing", move |p| {
-        eth_syncing.request(&method::MethodParams(method::Method::EthSyncing, &p))
-    });
+    io.add_async_method("eth_syncing",
+                        move |p| eth_syncing.request(&MethodParams(Method::EthSyncing, &p)));
 
     let eth_block_number = url.clone();
 
     io.add_async_method("eth_blockNumber", move |p| {
-        eth_block_number.request(&method::MethodParams(method::Method::EthBlockNumber, &p))
+        eth_block_number.request(&MethodParams(Method::EthBlockNumber, &p))
     });
 
     let eth_accounts = url.clone();
 
-    io.add_async_method("eth_accounts", move |p| {
-        eth_accounts.request(&method::MethodParams(method::Method::EthAccounts, &p))
-    });
+    io.add_async_method("eth_accounts",
+                        move |p| eth_accounts.request(&MethodParams(Method::EthAccounts, &p)));
 
     let eth_get_balance = url.clone();
 
-    io.add_async_method("eth_getBalance", move |p| {
-        eth_get_balance.request(&method::MethodParams(method::Method::EthGetBalance, &p))
-    });
+    io.add_async_method("eth_getBalance",
+                        move |p| eth_get_balance.request(&MethodParams(Method::EthGetBalance, &p)));
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,

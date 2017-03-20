@@ -12,7 +12,7 @@ impl AsyncWrapper {
         AsyncWrapper { url: url.into_url().expect("Unexpected url encoding") }
     }
 
-    pub fn request(&self, params: &::method::MethodParams) -> BoxFuture<Value, Error> {
+    pub fn request(&self, params: &::MethodParams) -> BoxFuture<Value, Error> {
         let client = ::reqwest::Client::new().expect("Error during create a client");
 
         let mut res = client.post(self.url.clone())
