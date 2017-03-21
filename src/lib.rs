@@ -20,6 +20,7 @@ extern crate futures;
 extern crate jsonrpc_core;
 extern crate jsonrpc_minihttp_server;
 extern crate hyper;
+extern crate regex;
 extern crate reqwest;
 
 mod keystore;
