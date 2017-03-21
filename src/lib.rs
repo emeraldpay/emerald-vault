@@ -3,8 +3,7 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
-#![deny(clippy, clippy_pedantic)]
-#![allow(missing_docs_in_private_items, unknown_lints)]
+#![deny(missing_docs)]
 
 #[macro_use]
 extern crate log;
@@ -36,16 +35,28 @@ use log::LogLevel;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+/// RPC methods
 pub enum Method {
+    /// [web3_clientVersion](https://github.com/ethereum/wiki/wiki/JSON-RPC#web3_clientversion)
     ClientVersion,
+
+    /// [eth_syncing](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_syncing)
     EthSyncing,
+
+    /// [eth_blockNumber](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_blocknumber)
     EthBlockNumber,
+
+    /// [eth_accounts](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_accounts)
     EthAccounts,
+
+    /// [eth_getBalance](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getbalance)
     EthGetBalance,
 }
 
+/// PRC method's parameters
 pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
+/// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
     let mut io = IoHandler::default();
 
