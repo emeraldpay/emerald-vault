@@ -9,11 +9,11 @@ os:
   - osx
 before_script:
   - |
-    (travis_wait cargo install rustfmt || true) &&
-    cargo fmt -- --version
+    (travis_wait cargo install rustfmt || true)
 script:
   - |
     export RUST_BACKTRACE=1 &&
+    cargo fmt -- --version &&
     cargo fmt -- --verbose --write-mode=diff &&
     (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose) &&
     (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --verbose --features "dev") &&
