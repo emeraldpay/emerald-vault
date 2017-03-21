@@ -14,8 +14,9 @@ script:
   - |
     export PATH="$PATH":~/.cargo/bin &&
     export RUST_BACKTRACE=1 &&
+    echo "\$ rustfmt --version" &&
     cargo fmt -- --version &&
-    cargo fmt -- --verbose --write-mode=diff &&
+    cargo fmt -- --verbose --config-help --write-mode=diff &&
     (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose) &&
     (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --verbose --features "dev") &&
     cargo test --verbose &&
