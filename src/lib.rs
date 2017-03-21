@@ -22,15 +22,18 @@ extern crate jsonrpc_minihttp_server;
 extern crate hyper;
 extern crate reqwest;
 
+mod keystore;
+mod request;
+mod serialize;
+
+
 use jsonrpc_core::{IoHandler, Params};
 use jsonrpc_minihttp_server::{cors, DomainsValidation, ServerBuilder};
+pub use keystore::address_exists;
 
 use log::LogLevel;
 use std::net::SocketAddr;
 use std::sync::Arc;
-
-mod request;
-mod serialize;
 
 pub enum Method {
     ClientVersion,
@@ -78,11 +81,11 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
                                                 cors::AccessControlAllowOrigin::Null]))
         .start_http(addr)
-        .expect("Unable to start RPC server");
+        .expect("Expect to build HTTP RPC server");
 
     if log_enabled!(LogLevel::Info) {
         info!("Connector is started on {}", server.address());
     }
 
-    server.wait().expect("Unable to start server");
+    server.wait().expect("Expect to start HTTP RPC server");
 }

@@ -1,7 +1,6 @@
 // https://github.com/Manishearth/rust-clippy/issues/1580
 #![allow(zero_ptr)]
 
-
 use jsonrpc_core::Params;
 
 use serde::ser::{Serialize, Serializer};
