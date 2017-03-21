@@ -9,18 +9,18 @@ pub struct AsyncWrapper {
 
 impl AsyncWrapper {
     pub fn new<U: IntoUrl>(url: U) -> AsyncWrapper {
-        AsyncWrapper { url: url.into_url().expect("Unexpected url encoding") }
+        AsyncWrapper { url: url.into_url().expect("Expect to encode request url") }
     }
 
-    pub fn request(&self, method: &::method::Method) -> BoxFuture<Value, Error> {
-        let client = ::reqwest::Client::new().expect("Error during create a client");
+    pub fn request(&self, params: &::MethodParams) -> BoxFuture<Value, Error> {
+        let client = ::reqwest::Client::new().expect("Expect to create a request client");
 
         let mut res = client.post(self.url.clone())
-            .json(method)
+            .json(params)
             .send()
-            .expect("Unable to get response object");
+            .expect("Expect to receive response");
 
-        let json: Value = res.json().expect("Unable to convert a response to JSON");
+        let json: Value = res.json().expect("Expect to deserialize a response as JSON");
 
         ::futures::finished(json["result"].clone()).boxed()
     }

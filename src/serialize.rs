@@ -1,7 +1,6 @@
 // https://github.com/Manishearth/rust-clippy/issues/1580
 #![allow(zero_ptr)]
 
-
 use jsonrpc_core::Params;
 
 use serde::ser::{Serialize, Serializer};
@@ -14,16 +13,18 @@ lazy_static! {
     static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
 }
 
-impl<'a> Serialize for ::method::Method<'a> {
+impl<'a> Serialize for ::MethodParams<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
-        match *self {
-            ::method::Method::ClientVersion(_) => serializer.serialize_some(&method("web3_clientVersion")),
-            ::method::Method::EthSyncing(_) => serializer.serialize_some(&method("eth_syncing")),
-            ::method::Method::EthBlockNumber(_) => serializer.serialize_some(&method("eth_blockNumber")),
-            ::method::Method::EthAccounts(_) => serializer.serialize_some(&method("eth_accounts")),
-            ::method::Method::EthGetBalance(data) => serializer.serialize_some(&method_params("eth_getBalance", data)),
+        match self.0 {
+            ::Method::ClientVersion => serializer.serialize_some(&method("web3_clientVersion")),
+            ::Method::EthSyncing => serializer.serialize_some(&method("eth_syncing")),
+            ::Method::EthBlockNumber => serializer.serialize_some(&method("eth_blockNumber")),
+            ::Method::EthAccounts => serializer.serialize_some(&method("eth_accounts")),
+            ::Method::EthGetBalance => {
+                serializer.serialize_some(&method_params("eth_getBalance", self.1))
+            }
         }
     }
 }

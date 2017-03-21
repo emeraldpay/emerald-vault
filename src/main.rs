@@ -11,7 +11,6 @@ extern crate rustc_serialize;
 
 extern crate emerald;
 
-
 use docopt::Docopt;
 use std::env;
 use std::net::SocketAddr;
@@ -19,7 +18,7 @@ use std::process::*;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
@@ -33,18 +32,19 @@ struct Args {
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
 
-    env_logger::init().expect("Unable to initialize logger");
+    env_logger::init().expect("Expect to initialize logger");
 
     let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
 
     if args.flag_version {
-        println!("v{}", VERSION);
+        println!("v{}", VERSION.unwrap_or("unknown"));
         exit(0);
     }
 
-    let addr = args.flag_address.parse::<SocketAddr>().expect("Unable to parse address");
+    let addr = args.flag_address.parse::<SocketAddr>().expect("Expect to parse address");
 
-    let client_addr = args.flag_client_address.parse::<SocketAddr>().expect("Unable to parse client address");
+    let client_addr =
+        args.flag_client_address.parse::<SocketAddr>().expect("Expect to parse client address");
 
     emerald::start(&addr, &client_addr);
 }
