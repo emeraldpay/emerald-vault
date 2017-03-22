@@ -27,13 +27,13 @@ Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
 * [ ] Accounts (In Progress)
 * [ ] Address books
-* [ ] Transactions signing
+* [ ] Transactions signing (In Progress)
 * [ ] C interface (ABI)
 
 === Transport
 
 * [ ] IPC
-* [ ] HTTP (In Progress)
+* [x] HTTP
 * [ ] WebSockets
 
 == Roadmap

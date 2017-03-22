@@ -3,6 +3,8 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
+#![feature(try_from)]
+
 #![deny(missing_docs)]
 
 #[macro_use]
@@ -21,6 +23,7 @@ extern crate jsonrpc_minihttp_server;
 extern crate hyper;
 extern crate regex;
 extern crate reqwest;
+extern crate rustc_serialize;
 
 mod keystore;
 mod request;
@@ -28,8 +31,8 @@ mod serialize;
 
 
 use jsonrpc_core::{IoHandler, Params};
-use jsonrpc_minihttp_server::{cors, DomainsValidation, ServerBuilder};
-pub use keystore::address_exists;
+use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
+pub use keystore::{Address, address_exists};
 
 use log::LogLevel;
 use std::net::SocketAddr;
