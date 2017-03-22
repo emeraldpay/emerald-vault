@@ -11,17 +11,15 @@ before_script:
   - |
     (travis_wait cargo install rustfmt || true)
 script:
-  - cargo build --verbose
-  - cargo test --verbose
-  - cargo doc --no-deps
-script:
   - |
     export PATH="$PATH":~/.cargo/bin &&
     export RUST_BACKTRACE=1 &&
-    cargo fmt -- --write-mode=diff &&
-    (test "$TRAVIS_RUST_VERSION" == nightly || cargo build) &&
-    (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --features "clippy") &&
-    cargo test &&
+    echo "\$ rustfmt --version" &&
+    cargo fmt -- --version &&
+    cargo fmt -- --verbose --write-mode=diff &&
+    (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose) &&
+    (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --verbose --features "dev") &&
+    cargo test --verbose &&
     cargo doc --no-deps
 matrix:
   allow_failures:

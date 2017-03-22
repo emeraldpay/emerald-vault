@@ -1,4 +1,6 @@
+*.bk
 *.iml
+*.swp
 .idea
 .vscode
 target

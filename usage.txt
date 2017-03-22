@@ -1,0 +1,14 @@
+Emerald wallet command line interface.
+
+Usage:
+    emerald-cli [options]
+    emerald-cli (-h | --help)
+    emerald-cli (-V | --version)
+
+Options:
+    -h, --help                  Show this message.
+    -V, --version               Show current version.
+    -v, --verbose ...           Use verbose output (-vv very verbose output)
+    -q, --quiet                 No output printed to stdout
+    --address ADDR              Emerald wallet host [default: 127.0.0.1:1290]
+    --client-address ADDR       Ethereum client host [default: 127.0.0.1:8545]
