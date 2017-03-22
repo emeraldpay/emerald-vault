@@ -47,7 +47,24 @@ impl FromStr for Address {
     type Err = FromHexError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = &s.to_owned()[2..]; /* cut '0x' prefix */
+        if !s.starts_with("0x") {
+            if !s.starts_with('0') {
+                return Err(FromHexError::InvalidHexCharacter(s.chars()
+                                                                 .nth(0)
+                                                                 .expect("Expect first invalid \
+                                                                          eddress encoding char"),
+                                                             1));
+            } else {
+                return Err(FromHexError::InvalidHexCharacter(s.chars()
+                                                                 .nth(1)
+                                                                 .expect("Expect second \
+                                                                          invalid address \
+                                                                          encoding char"),
+                                                             1));
+            }
+        }
+
+        let (_, s) = s.split_at(2);
 
         if s.len() != ADDRESS_BYTES * 2 {
             return Err(FromHexError::InvalidHexLength);
@@ -139,6 +156,11 @@ mod tests {
     #[test]
     fn should_catch_wrong_address_encoding() {
         assert!("0x___c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
+    }
+
+    #[test]
+    fn should_catch_wrong_address_prefix() {
+        assert!("__0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
     }
 
     #[test]
