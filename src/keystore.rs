@@ -3,20 +3,20 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
 
-/// if we have specified address in out keystore return true, and false otherwise
+/// if we have specified address in out keystore return `true`, `false` otherwise
 pub fn address_exists<P: AsRef<Path>>(path: P, addr: &str) -> bool {
     let addr = &addr.to_owned()[2..]; /* cut '0x' prefix */
 
-    let entries = fs::read_dir(path).expect("Expect to read a directory content");
+    let entries = fs::read_dir(path).expect("Expect to read a keystore directory content");
 
     for entry in entries {
-        let path = entry.expect("Expect to extract filesystem entry").path();
+        let path = entry.expect("Expect keystore directory entry").path();
 
         if path.is_dir() {
             continue;
         }
 
-        let mut file = File::open(path).expect("Expect to open a file");
+        let mut file = File::open(path).expect("Expect to open a keystore file");
         let mut text = String::new();
 
         if file.read_to_string(&mut text).is_err() {

@@ -29,8 +29,6 @@ jsonrpc-core = { git = "https://github.com/ethcore/jsonrpc.git", branch="master"
 jsonrpc-minihttp-server = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
 lazy_static = "0.2"
 log = "0.3"
-num-bigint = "0.1"
-rand = "0.3"
 regex = "0.2"
 serde = "0.9"
 serde_json = "0.9"
