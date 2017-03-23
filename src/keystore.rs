@@ -85,9 +85,7 @@ impl error::Error for AddressParseError {
 }
 
 /// if we have specified address in out keystore return `true`, `false` otherwise
-pub fn address_exists<P: AsRef<Path>>(path: P, addr: &str) -> bool {
-    let addr = &addr.to_owned()[2..]; /* cut '0x' prefix */
-
+pub fn address_exists<P: AsRef<Path>>(path: P, addr: &Address) -> bool {
     let entries = fs::read_dir(path).expect("Expect to read a keystore directory content");
 
     for entry in entries {
@@ -105,7 +103,7 @@ pub fn address_exists<P: AsRef<Path>>(path: P, addr: &str) -> bool {
         }
 
         match extract_address(&text) {
-            Some(a) if a == addr => return true,
+            Some(a) if a == *addr => return true,
             _ => continue,
         }
     }
@@ -113,12 +111,14 @@ pub fn address_exists<P: AsRef<Path>>(path: P, addr: &str) -> bool {
     false
 }
 
-fn extract_address(text: &str) -> Option<&str> {
+fn extract_address(text: &str) -> Option<Address> {
     lazy_static! {
         static ref ADDR_RE: Regex = Regex::new(r#"address.+([a-fA-F0-9]{40})"#).unwrap();
     }
 
-    ADDR_RE.captures(text).and_then(|gr| gr.get(1)).map(|m| m.as_str())
+    ADDR_RE.captures(text)
+        .and_then(|gr| gr.get(1))
+        .map(|m| format!("0x{}", m.as_str()).parse().unwrap())
 }
 
 #[cfg(test)]
@@ -180,15 +180,15 @@ mod tests {
     #[test]
     fn should_extract_address() {
         assert_eq!(extract_address(r#"address: '008aeeda4d805471df9b2a5b0f38a0c3bcba786b',"#),
-                   Some("008aeeda4d805471df9b2a5b0f38a0c3bcba786b"));
+                   Some("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b".parse::<Address>().unwrap()));
         assert_eq!(extract_address(r#"  "address": "0047201aed0b69875b24b614dda0270bcd9f11cc","#),
-                   Some("0047201aed0b69875b24b614dda0270bcd9f11cc"));
+                   Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc".parse::<Address>().unwrap()));
         assert_eq!(extract_address(r#"  },
                                       "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
                                       "name": "",
                                       "meta": "{}"
                                     }"#),
-                   Some("3f4e0668c20e100d7c2a27d4b177ac65b2875d26"));
+                   Some("0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26".parse::<Address>().unwrap()));
     }
 
     #[test]
