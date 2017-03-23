@@ -6,7 +6,8 @@ use std::io::Read;
 use std::path::Path;
 use std::str::FromStr;
 
-const ADDRESS_BYTES: usize = 20;
+/// Fixed bytes number to represent `Address`
+pub const ADDRESS_BYTES: usize = 20;
 
 /// Account address (20 bytes)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -24,12 +25,35 @@ pub enum AddressParseError {
 }
 
 impl Address {
-    /// Create a new Address from 20 bytes
+    /// Create a new `Address` from given 20 bytes.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - An fixed byte array with `ADDRESS_BYTES` length
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let addr = emerald::Address::new([0; emerald::ADDRESS_BYTES]);
+    /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
+    /// ```
     pub fn new(data: [u8; ADDRESS_BYTES]) -> Self {
         Address(data)
     }
 
-    fn try_from(vec: Vec<u8>) -> Result<Self, AddressParseError> {
+    /// Try to convert a byte vector to `Address`.
+    ///
+    /// # Arguments
+    ///
+    /// * `vec` - A byte vector with `ADDRESS_BYTES` length
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let addr = emerald::Address::try_from(vec![0; emerald::ADDRESS_BYTES]).unwrap();
+    /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
+    /// ```
+    pub fn try_from(vec: Vec<u8>) -> Result<Self, AddressParseError> {
         if vec.len() != ADDRESS_BYTES {
             return Err(AddressParseError::InvalidGivenLength(vec.len()));
         }
@@ -52,7 +76,13 @@ impl FromStr for Address {
 
         let (_, s) = s.split_at(2);
 
-        s.from_hex().map_err(AddressParseError::UnexpectedEncoding).and_then(Address::try_from)
+        s.from_hex().map_err(AddressParseError::from).and_then(Address::try_from)
+    }
+}
+
+impl From<FromHexError> for AddressParseError {
+    fn from(err: FromHexError) -> Self {
+        AddressParseError::UnexpectedEncoding(err)
     }
 }
 
@@ -71,7 +101,7 @@ impl fmt::Display for AddressParseError {
             AddressParseError::UnexpectedPrefix(ref str) => {
                 write!(f, "Unexpected address hexadecimal prefix: {}", str)
             }
-            AddressParseError::UnexpectedEncoding(err) => {
+            AddressParseError::UnexpectedEncoding(ref err) => {
                 write!(f, "Unexpected address hexadecimal encoding: {}", err)
             }
         }
@@ -81,6 +111,13 @@ impl fmt::Display for AddressParseError {
 impl error::Error for AddressParseError {
     fn description(&self) -> &str {
         "Address parsing error"
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            AddressParseError::UnexpectedEncoding(ref err) => Some(err),
+            _ => None,
+        }
     }
 }
 
@@ -123,20 +160,19 @@ fn extract_address(text: &str) -> Option<Address> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Address, extract_address};
+    use super::{ADDRESS_BYTES, Address, extract_address};
 
     #[test]
     fn should_display_empty_address() {
-        assert_eq!(format!("{}", Address::new([0; 20])),
+        assert_eq!(Address::new([0; ADDRESS_BYTES]).to_string(),
                    "0x0000000000000000000000000000000000000000");
     }
 
     #[test]
     fn should_display_real_address() {
-        assert_eq!(format!("{}",
-                           Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97,
-                                         0x65, 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb,
-                                         0x56, 0xf4])),
+        assert_eq!(Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
+                                 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4])
+                       .to_string(),
                    "0x0e7c045110b8dbf29765047380898919c5cb56f4");
     }
 

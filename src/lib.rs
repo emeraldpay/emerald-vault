@@ -30,7 +30,7 @@ mod serialize;
 
 use jsonrpc_core::{IoHandler, Params};
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
-pub use keystore::{Address, address_exists};
+pub use keystore::{ADDRESS_BYTES, Address, address_exists};
 
 use log::LogLevel;
 use std::net::SocketAddr;
