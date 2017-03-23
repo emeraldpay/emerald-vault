@@ -46,5 +46,8 @@ fn main() {
     let client_addr =
         args.flag_client_address.parse::<SocketAddr>().expect("Expect to parse client address");
 
+    println!("Starting Emerald Connector - v{}", VERSION.unwrap_or("unknown"));
+    println!("Listen for connection on http://{}", addr);
+
     emerald::start(&addr, &client_addr);
 }
