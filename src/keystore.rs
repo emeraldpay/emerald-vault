@@ -13,11 +13,15 @@ const ADDRESS_BYTES: usize = 20;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Address([u8; ADDRESS_BYTES]);
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 /// `Address` struct parse errors
 pub enum AddressParseError {
     /// An invalid given length, not `ADDRESS_BYTES`.
     InvalidGivenLength(usize),
+    /// An unexpected string prefix (should be '0x')
+    UnexpectedHexPrefix(String),
+    /// An unexpected hexadecimal decoding error
+    UnexpectedHexError(FromHexError),
 }
 
 impl Address {
@@ -44,33 +48,18 @@ impl TryFrom<Vec<u8>> for Address {
 }
 
 impl FromStr for Address {
-    type Err = FromHexError;
+    type Err = AddressParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with("0x") {
-            if !s.starts_with('0') {
-                return Err(FromHexError::InvalidHexCharacter(s.chars()
-                                                                 .nth(0)
-                                                                 .expect("Expect first invalid \
-                                                                          eddress encoding char"),
-                                                             1));
-            } else {
-                return Err(FromHexError::InvalidHexCharacter(s.chars()
-                                                                 .nth(1)
-                                                                 .expect("Expect second \
-                                                                          invalid address \
-                                                                          encoding char"),
-                                                             1));
-            }
+            return Err(AddressParseError::UnexpectedHexPrefix(s.to_owned()));
         }
 
         let (_, s) = s.split_at(2);
 
-        if s.len() != ADDRESS_BYTES * 2 {
-            return Err(FromHexError::InvalidHexLength);
-        }
-
-        s.from_hex().map(|v| Address::try_from(v).unwrap())
+        s.from_hex()
+            .map_err(|e| AddressParseError::UnexpectedHexError(e))
+            .and_then(Address::try_from)
     }
 }
 
@@ -85,6 +74,12 @@ impl fmt::Display for AddressParseError {
         match *self {
             AddressParseError::InvalidGivenLength(len) => {
                 write!(f, "Address invalid given length: {}", len)
+            }
+            AddressParseError::UnexpectedHexPrefix(ref str) => {
+                write!(f, "Unexpected address hexadecimal prefix: {}", str)
+            }
+            AddressParseError::UnexpectedHexError(err) => {
+                write!(f, "Hexadecimal string decoding error: {}", err)
             }
         }
     }
@@ -159,11 +154,6 @@ mod tests {
     }
 
     #[test]
-    fn should_catch_wrong_address_prefix() {
-        assert!("__0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
-    }
-
-    #[test]
     fn should_catch_wrong_address_insufficient_length() {
         assert!("0x0e7c045110b8dbf297650473808989".parse::<Address>().is_err());
     }
@@ -171,6 +161,21 @@ mod tests {
     #[test]
     fn should_catch_wrong_address_excess_length() {
         assert!("0x0e7c045110b8dbf29765047380898919c5cb56f400000000".parse::<Address>().is_err());
+    }
+
+    #[test]
+    fn should_catch_wrong_address_prefix() {
+        assert!("__0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
+    }
+
+    #[test]
+    fn should_catch_missing_address_prefix() {
+        assert!("_".parse::<Address>().is_err());
+    }
+
+    #[test]
+    fn should_catch_empty_address_string() {
+        assert!("".parse::<Address>().is_err());
     }
 
     #[test]
