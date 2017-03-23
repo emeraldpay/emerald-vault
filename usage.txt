@@ -9,6 +9,6 @@ Options:
     -h, --help                  Show this message.
     -V, --version               Show current version.
     -v, --verbose ...           Use verbose output (-vv very verbose output)
-    -q, --quiet                 No output printed to stdout
-    --address ADDR              Emerald wallet host [default: 127.0.0.1:1920]
-    --client-address ADDR       Ethereum client host [default: 127.0.0.1:8545]
+    -q, --quiet                 No output printed to stdout.
+    --address ADDR              Emerald wallet listen address. [default: 127.0.0.1:1920]
+    --client-address ADDR       Ethereum client connect to address. [default: 127.0.0.1:8545]
