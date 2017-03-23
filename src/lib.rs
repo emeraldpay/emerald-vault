@@ -3,8 +3,6 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
-#![feature(try_from)]
-
 #![deny(missing_docs)]
 
 #[macro_use]

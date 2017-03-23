@@ -1,7 +1,6 @@
 use regex::Regex;
 use rustc_serialize::hex::{FromHex, FromHexError, ToHex};
-use std::convert::TryFrom;
-use std::fmt;
+use std::{error, fmt};
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
@@ -18,23 +17,19 @@ pub struct Address([u8; ADDRESS_BYTES]);
 pub enum AddressParseError {
     /// An invalid given length, not `ADDRESS_BYTES`.
     InvalidGivenLength(usize),
-    /// An unexpected string prefix (should be '0x')
-    UnexpectedHexPrefix(String),
-    /// An unexpected hexadecimal decoding error
-    UnexpectedHexError(FromHexError),
+    /// An unexpected hexadecimal prefix (should be '0x')
+    UnexpectedPrefix(String),
+    /// An unexpected hexadecimal encoding error
+    UnexpectedEncoding(FromHexError),
 }
 
 impl Address {
     /// Create a new Address from 20 bytes
-    pub fn new(data: [u8; ADDRESS_BYTES]) -> Address {
+    pub fn new(data: [u8; ADDRESS_BYTES]) -> Self {
         Address(data)
     }
-}
 
-impl TryFrom<Vec<u8>> for Address {
-    type Error = AddressParseError;
-
-    fn try_from(vec: Vec<u8>) -> Result<Self, Self::Error> {
+    fn try_from(vec: Vec<u8>) -> Result<Self, AddressParseError> {
         if vec.len() != ADDRESS_BYTES {
             return Err(AddressParseError::InvalidGivenLength(vec.len()));
         }
@@ -52,14 +47,12 @@ impl FromStr for Address {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with("0x") {
-            return Err(AddressParseError::UnexpectedHexPrefix(s.to_owned()));
+            return Err(AddressParseError::UnexpectedPrefix(s.to_owned()));
         }
 
         let (_, s) = s.split_at(2);
 
-        s.from_hex()
-            .map_err(|e| AddressParseError::UnexpectedHexError(e))
-            .and_then(Address::try_from)
+        s.from_hex().map_err(AddressParseError::UnexpectedEncoding).and_then(Address::try_from)
     }
 }
 
@@ -75,13 +68,19 @@ impl fmt::Display for AddressParseError {
             AddressParseError::InvalidGivenLength(len) => {
                 write!(f, "Address invalid given length: {}", len)
             }
-            AddressParseError::UnexpectedHexPrefix(ref str) => {
+            AddressParseError::UnexpectedPrefix(ref str) => {
                 write!(f, "Unexpected address hexadecimal prefix: {}", str)
             }
-            AddressParseError::UnexpectedHexError(err) => {
-                write!(f, "Hexadecimal string decoding error: {}", err)
+            AddressParseError::UnexpectedEncoding(err) => {
+                write!(f, "Unexpected address hexadecimal encoding: {}", err)
             }
         }
+    }
+}
+
+impl error::Error for AddressParseError {
+    fn description(&self) -> &str {
+        "Address parsing error"
     }
 }
 
@@ -165,7 +164,7 @@ mod tests {
 
     #[test]
     fn should_catch_wrong_address_prefix() {
-        assert!("__0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
+        assert!("0_0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
     }
 
     #[test]
