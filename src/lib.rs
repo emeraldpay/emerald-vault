@@ -14,6 +14,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
+extern crate serde_json;
 
 extern crate futures;
 extern crate jsonrpc_core;
@@ -26,9 +27,13 @@ extern crate rustc_serialize;
 mod keystore;
 mod request;
 mod serialize;
+/// Contracts stuff
+pub mod contracts;
 
-
+use self::serde_json::Value;
+use contracts::Contracts;
 use jsonrpc_core::{IoHandler, Params};
+use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 pub use keystore::{ADDRESS_BYTES, Address, address_exists};
 
@@ -90,6 +95,10 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
     io.add_async_method("eth_getBalance", move |p| {
         eth_get_balance.request(&MethodParams(Method::EthGetBalance, &p))
     });
+
+    let contracts_service = Contracts::new("./tests/contracts".to_string());
+    io.add_async_method("emerald_contracts",
+                        move |_| futures::finished(Value::Array(contracts_service.list())).boxed());
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
