@@ -7,9 +7,9 @@
 
 #[macro_use]
 extern crate log;
+extern crate env_logger;
 
 extern crate docopt;
-extern crate env_logger;
 extern crate rustc_serialize;
 
 extern crate emerald;
@@ -38,11 +38,14 @@ fn main() {
     env::set_var("RUST_BACKTRACE", "1");
 
     let mut log_builder = LogBuilder::new();
+
     log_builder.filter(None, LogLevelFilter::Info);
+
     if env::var("RUST_LOG").is_ok() {
         log_builder.parse(&env::var("RUST_LOG").unwrap());
     }
-    log_builder.init().unwrap();
+
+    log_builder.init().expect("Expect to initialize logger");
 
     let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
 
