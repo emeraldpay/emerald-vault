@@ -23,14 +23,16 @@ extern crate regex;
 extern crate reqwest;
 extern crate rustc_serialize;
 
+mod address;
 mod keystore;
 mod request;
 mod serialize;
 
 
+pub use address::{ADDRESS_BYTES, Address};
 use jsonrpc_core::{IoHandler, Params};
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
-pub use keystore::{ADDRESS_BYTES, Address, address_exists};
+pub use keystore::address_exists;
 
 use log::LogLevel;
 use std::net::SocketAddr;

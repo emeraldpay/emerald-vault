@@ -10,10 +10,12 @@ fn should_find_available_addresses() {
                                     &"0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b"
                                         .parse::<emerald::Address>()
                                         .unwrap()));
+
     assert!(emerald::address_exists(&keystore_path(),
                                     &"0x0047201aed0b69875b24b614dda0270bcd9f11cc"
                                         .parse::<emerald::Address>()
                                         .unwrap()));
+
     assert!(emerald::address_exists(&keystore_path(),
                                     &"0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
                                         .parse::<emerald::Address>()
