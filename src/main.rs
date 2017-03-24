@@ -15,11 +15,11 @@ extern crate rustc_serialize;
 extern crate emerald;
 
 use docopt::Docopt;
+use env_logger::LogBuilder;
+use log::{LogLevel, LogLevelFilter};
 use std::env;
 use std::net::SocketAddr;
 use std::process::*;
-use log::{LogLevel, LogLevelFilter};
-use env_logger::LogBuilder;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
@@ -57,7 +57,8 @@ fn main() {
         args.flag_client_address.parse::<SocketAddr>().expect("Expect to parse client address");
 
     if log_enabled!(LogLevel::Info) {
-        info!("Starting Emerald Connector - v{}", VERSION.unwrap_or("unknown"));
+        info!("Starting Emerald Connector - v{}",
+              VERSION.unwrap_or("unknown"));
     }
 
     emerald::start(&addr, &client_addr);
