@@ -2,6 +2,7 @@
 ideal_width = 80
 max_width = 100
 newline_style = "Unix"
+format_strings = true
 reorder_imports = true
 reorder_imported_names = true
 report_todo = "Never"

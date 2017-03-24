@@ -56,10 +56,10 @@ mod tests {
                    Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc".parse::<Address>().unwrap()));
 
         assert_eq!(try_extract_address(r#"  },
-                                      "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
-                                      "name": "",
-                                      "meta": "{}"
-                                    }"#),
+                                         "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
+                                         "name": "",
+                                         "meta": "{}"
+                                       }"#),
                    Some("0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26".parse::<Address>().unwrap()));
     }
 
