@@ -98,7 +98,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
         .expect("Expect to build HTTP RPC server");
 
     if log_enabled!(LogLevel::Info) {
-        info!("Connector is started on {}", server.address());
+        info!("Connector started on http://{}", server.address());
     }
 
     server.wait().expect("Expect to start HTTP RPC server");
