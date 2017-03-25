@@ -1,4 +1,6 @@
-use rustc_serialize::hex::{FromHex, FromHexError, ToHex};
+//! Account address (20 bytes)
+
+use rustc_serialize::hex::{self, FromHex, ToHex};
 use std::{error, fmt};
 use std::str::FromStr;
 
@@ -6,18 +8,18 @@ use std::str::FromStr;
 pub const ADDRESS_BYTES: usize = 20;
 
 /// Account address (20 bytes)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Address([u8; ADDRESS_BYTES]);
 
-#[derive(Debug, Clone)]
-/// `Address` struct parse errors
-pub enum AddressParseError {
+#[derive(Debug)]
+/// `Address` struct parser errors
+pub enum AddressParserError {
     /// An invalid given length, not `ADDRESS_BYTES`.
     InvalidLength(usize),
     /// An unexpected hexadecimal prefix (should be '0x')
     UnexpectedPrefix(String),
     /// An unexpected hexadecimal encoding error
-    UnexpectedEncoding(FromHexError),
+    UnexpectedEncoding(hex::FromHexError),
 }
 
 impl Address {
@@ -30,8 +32,8 @@ impl Address {
     /// # Example
     ///
     /// ```
-    /// let addr = emerald::Address::new([0; emerald::ADDRESS_BYTES]);
-    /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
+    /// assert_eq!(emerald::Address::default().to_string(),
+    ///            "0x0000000000000000000000000000000000000000");
     /// ```
     pub fn new(data: [u8; ADDRESS_BYTES]) -> Self {
         Address(data)
@@ -49,36 +51,36 @@ impl Address {
     /// let addr = emerald::Address::try_from(vec![0; emerald::ADDRESS_BYTES]).unwrap();
     /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
     /// ```
-    pub fn try_from(vec: Vec<u8>) -> Result<Self, AddressParseError> {
+    pub fn try_from(vec: Vec<u8>) -> Result<Self, AddressParserError> {
         if vec.len() != ADDRESS_BYTES {
-            return Err(AddressParseError::InvalidLength(vec.len()));
+            return Err(AddressParserError::InvalidLength(vec.len()));
         }
 
-        let mut addr = [0; ADDRESS_BYTES];
+        let mut bytes = [0; ADDRESS_BYTES];
 
-        addr.clone_from_slice(vec.as_slice());
+        bytes.clone_from_slice(vec.as_slice());
 
-        Ok(Address(addr))
+        Ok(Address(bytes))
     }
 }
 
 impl FromStr for Address {
-    type Err = AddressParseError;
+    type Err = AddressParserError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with("0x") {
-            return Err(AddressParseError::UnexpectedPrefix(s.to_owned()));
+            return Err(AddressParserError::UnexpectedPrefix(s.to_owned()));
         }
 
         let (_, s) = s.split_at(2);
 
-        s.from_hex().map_err(AddressParseError::from).and_then(Address::try_from)
+        s.from_hex().map_err(AddressParserError::from).and_then(Address::try_from)
     }
 }
 
-impl From<FromHexError> for AddressParseError {
-    fn from(err: FromHexError) -> Self {
-        AddressParseError::UnexpectedEncoding(err)
+impl From<hex::FromHexError> for AddressParserError {
+    fn from(err: hex::FromHexError) -> Self {
+        AddressParserError::UnexpectedEncoding(err)
     }
 }
 
@@ -88,30 +90,30 @@ impl fmt::Display for Address {
     }
 }
 
-impl fmt::Display for AddressParseError {
+impl fmt::Display for AddressParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            AddressParseError::InvalidLength(len) => {
+            AddressParserError::InvalidLength(len) => {
                 write!(f, "Address invalid given length: {}", len)
             }
-            AddressParseError::UnexpectedPrefix(ref str) => {
+            AddressParserError::UnexpectedPrefix(ref str) => {
                 write!(f, "Unexpected address hexadecimal prefix: {}", str)
             }
-            AddressParseError::UnexpectedEncoding(ref err) => {
+            AddressParserError::UnexpectedEncoding(ref err) => {
                 write!(f, "Unexpected address hexadecimal encoding: {}", err)
             }
         }
     }
 }
 
-impl error::Error for AddressParseError {
+impl error::Error for AddressParserError {
     fn description(&self) -> &str {
         "Address parsing error"
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match *self {
-            AddressParseError::UnexpectedEncoding(ref err) => Some(err),
+            AddressParserError::UnexpectedEncoding(ref err) => Some(err),
             _ => None,
         }
     }

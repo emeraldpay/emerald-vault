@@ -1,3 +1,5 @@
+//! Send HTTP RPC requests
+
 use hyper::Url;
 use hyper::client::IntoUrl;
 use jsonrpc_core::{Error, Value};

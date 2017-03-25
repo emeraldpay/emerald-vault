@@ -1,8 +1,39 @@
-use address::Address;
+//! Keystore files (UTC / JSON) encrypted with a passphrase
+
+use address::{ADDRESS_BYTES, Address};
 use regex::Regex;
+use rustc_serialize::json;
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
+use std::str::FromStr;
+
+/// A keystore file corresponds UTC / JSON format (Web3 Secret Storage)
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeyFile {
+    pub address: Address,
+}
+
+#[derive(Debug)]
+/// `KeyFile` struct parser errors
+pub enum KeyFileParserError {
+    /// An unexpected hexadecimal encoding error
+    _UnexpectedEncoding(json::DecoderError),
+}
+
+impl KeyFile {
+    fn new(addr: &Address) -> Self {
+        KeyFile { address: *addr }
+    }
+}
+
+impl FromStr for KeyFile {
+    type Err = KeyFileParserError;
+
+    fn from_str(_s: &str) -> Result<Self, Self::Err> {
+        Ok(KeyFile::new(&Address::new([0; ADDRESS_BYTES])))
+    }
+}
 
 /// If we have specified address in out keystore return `true`, `false` otherwise
 pub fn address_exists<P: AsRef<Path>>(path: P, addr: &Address) -> bool {
