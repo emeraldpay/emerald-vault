@@ -1,7 +1,13 @@
 extern crate emerald;
 
-use emerald::contracts::Contracts;
+extern crate serde;
+extern crate serde_json;
+extern crate tempdir;
+
+use self::serde_json::Value;
+use emerald::contracts::{ContractError, Contracts};
 use std::path::PathBuf;
+use tempdir::TempDir;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 
@@ -10,6 +16,35 @@ fn should_see_all_contracts() {
     let c = Contracts::new(contracts_path());
     let act = c.list();
     assert_eq!(act.len(), 1)
+}
+
+#[test]
+fn should_add_contract() {
+    let tmp_dir = TempDir::new("test-contracts").expect("create temp dir");
+    let c = Contracts::new(tmp_dir.into_path()
+                               .to_str()
+                               .unwrap()
+                               .to_string());
+    let act = c.list();
+    assert_eq!(act.len(), 0);
+
+    let json = serde_json::from_str::<Value>(
+        "{\"version\": \"1.0\", \"address\":\"0x085fb4f24031eaedbc2b611aa528f22343eb52db\"}"
+    ).unwrap();
+    c.add(&json);
+    let act = c.list();
+    assert_eq!(act.len(), 1);
+}
+
+#[test]
+fn invalidate_contract_wo_addr() {
+    let json = serde_json::from_str::<Value>("{\"version\": \"1.0\"}").unwrap();
+    let c = Contracts::new(contracts_path());
+    match c.is_valid(&json) {
+        Err(ContractError::InvalidContract) => {}
+        Err(_) => panic!("Should be InvalidContract"),
+        Ok(_) => panic!("Should fail"),
+    }
 }
 
 

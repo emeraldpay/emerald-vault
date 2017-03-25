@@ -11,6 +11,7 @@ extern crate futures;
 
 use self::glob::glob;
 use self::serde_json::Value;
+pub use keystore::Address;
 use std::fs::File;
 use std::path::Path;
 
@@ -19,16 +20,25 @@ pub struct Contracts {
     dir: String,
 }
 
+/// Contract Service Errors
+#[derive(Debug, Clone)]
+pub enum ContractError {
+    /// IO Error
+    IO,
+    /// Invalid Contract
+    InvalidContract,
+}
+
 impl Contracts {
     /// Initialize new contracts service for a dir
     pub fn new(dir: String) -> Contracts {
         Contracts { dir: dir }
     }
 
-    fn read_json(path: &Path) -> Result<Value, ()> {
+    fn read_json(path: &Path) -> Result<Value, ContractError> {
         match File::open(path) {
-            Ok(f) => serde_json::from_reader(f).or(Err(())),
-            Err(_) => Err(()),
+            Ok(f) => serde_json::from_reader(f).or(Err(ContractError::IO)),
+            Err(_) => Err(ContractError::IO),
         }
     }
 
@@ -40,5 +50,39 @@ impl Contracts {
             .filter(|x| x.is_ok())
             .map(|x| x.unwrap())
             .collect()
+    }
+
+    /// Validate contract structure
+    pub fn is_valid(&self, contract: &Value) -> Result<(), ContractError> {
+        if !contract.is_object() {
+            return Err(ContractError::InvalidContract);
+        }
+        let addr = match contract.get("address") {
+            Some(addr) => addr,
+            None => return Err(ContractError::InvalidContract),
+        };
+        if !addr.is_string() {
+            return Err(ContractError::InvalidContract);
+        }
+        match addr.as_str().unwrap().parse::<Address>() {
+            Ok(_) => {}
+            Err(_) => return Err(ContractError::InvalidContract),
+        }
+        return Ok(());
+    }
+
+    /// Add new contract to storage
+    pub fn add(&self, contract: &Value) -> Result<(), ContractError> {
+        self.is_valid(contract)?;
+        let addr = contract.get("address")
+            .unwrap()
+            .as_str()
+            .unwrap();
+        let filename = format!("{}/{}.json", &self.dir, addr);
+        let mut f = File::create(filename).unwrap();
+        match serde_json::to_writer_pretty(&mut f, contract) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(ContractError::IO),
+        }
     }
 }
