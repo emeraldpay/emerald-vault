@@ -1,6 +1,7 @@
 # https://github.com/rust-lang-nursery/rustfmt/blob/master/src/config.rs
 ideal_width = 80
 max_width = 100
+fn_call_width = 80
 newline_style = "Unix"
 format_strings = true
 reorder_imports = true

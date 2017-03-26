@@ -89,9 +89,8 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
 
     let eth_get_balance = url.clone();
 
-    io.add_async_method("eth_getBalance", move |p| {
-        eth_get_balance.request(&MethodParams(Method::EthGetBalance, &p))
-    });
+    io.add_async_method("eth_getBalance",
+                        move |p| eth_get_balance.request(&MethodParams(Method::EthGetBalance, &p)));
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,

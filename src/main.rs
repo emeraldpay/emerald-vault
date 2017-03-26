@@ -60,8 +60,7 @@ fn main() {
         args.flag_client_address.parse::<SocketAddr>().expect("Expect to parse client address");
 
     if log_enabled!(LogLevel::Info) {
-        info!("Starting Emerald Connector - v{}",
-              VERSION.unwrap_or("unknown"));
+        info!("Starting Emerald Connector - v{}", VERSION.unwrap_or("unknown"));
     }
 
     emerald::start(&addr, &client_addr);

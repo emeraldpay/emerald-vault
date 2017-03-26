@@ -11,8 +11,8 @@ pub const ADDRESS_BYTES: usize = 20;
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Address([u8; ADDRESS_BYTES]);
 
-#[derive(Debug)]
 /// `Address` struct parser errors
+#[derive(Debug)]
 pub enum AddressParserError {
     /// An invalid given length, not `ADDRESS_BYTES`.
     InvalidLength(usize),
@@ -108,7 +108,7 @@ impl fmt::Display for AddressParserError {
 
 impl error::Error for AddressParserError {
     fn description(&self) -> &str {
-        "Address parsing error"
+        "Address parser error"
     }
 
     fn cause(&self) -> Option<&error::Error> {
@@ -121,27 +121,27 @@ impl error::Error for AddressParserError {
 
 #[cfg(test)]
 mod tests {
-    use super::{ADDRESS_BYTES, Address};
+    use super::Address;
 
     #[test]
-    fn should_display_empty_address() {
-        assert_eq!(Address::new([0; ADDRESS_BYTES]).to_string(),
-                   "0x0000000000000000000000000000000000000000");
+    fn should_display_zero_address() {
+        assert_eq!(Address::default().to_string(), "0x0000000000000000000000000000000000000000");
     }
 
     #[test]
     fn should_display_real_address() {
-        assert_eq!(Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
-                                 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4])
-                       .to_string(),
-                   "0x0e7c045110b8dbf29765047380898919c5cb56f4");
+        let addr = Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
+                                 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
+
+        assert_eq!(addr.to_string(), "0x0e7c045110b8dbf29765047380898919c5cb56f4");
     }
 
     #[test]
     fn should_parse_real_address() {
-        assert_eq!("0x0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().unwrap(),
-                   Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
-                                 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]));
+        let addr = Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
+                                 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
+
+        assert_eq!("0x0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().unwrap(), addr);
     }
 
     #[test]
