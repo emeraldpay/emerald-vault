@@ -29,6 +29,7 @@ mod request;
 mod serialize;
 /// Contracts stuff
 pub mod contracts;
+mod storage;
 
 use self::serde_json::Value;
 use contracts::Contracts;
@@ -40,6 +41,7 @@ pub use keystore::{ADDRESS_BYTES, Address, address_exists};
 use log::LogLevel;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use storage::{ChainStorage, Storages};
 
 /// RPC methods
 pub enum Method {
@@ -95,7 +97,16 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
     io.add_async_method("eth_getBalance",
                         move |p| eth_get_balance.request(&MethodParams(Method::EthGetBalance, &p)));
 
-    let contracts_service = Arc::new(Contracts::new("./tests/contracts".to_string()));
+    let storage = Storages::new();
+    if !storage.init().is_ok() {
+        panic!("Unable to initialize storage")
+    }
+    let chain = ChainStorage::new(&storage, "default".to_string());
+    if !chain.init().is_ok() {
+        panic!("Unable to initialize chain")
+    }
+    let contracts_service = Arc::new(Contracts::new(chain.get_path("contracts".to_string())
+                                                        .expect("Directory for contracts")));
     let cs_list = contracts_service.clone();
     io.add_async_method("emerald_contracts",
                         move |_| futures::finished(Value::Array(cs_list.list())).boxed());

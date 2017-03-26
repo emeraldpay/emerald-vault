@@ -13,11 +13,11 @@ use self::glob::glob;
 use self::serde_json::Value;
 pub use keystore::Address;
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Contracts Service
 pub struct Contracts {
-    dir: String,
+    dir: PathBuf,
 }
 
 /// Contract Service Errors
@@ -31,7 +31,7 @@ pub enum ContractError {
 
 impl Contracts {
     /// Initialize new contracts service for a dir
-    pub fn new(dir: String) -> Contracts {
+    pub fn new(dir: PathBuf) -> Contracts {
         Contracts { dir: dir }
     }
 
@@ -44,7 +44,7 @@ impl Contracts {
 
     /// List all available contracts
     pub fn list(&self) -> Vec<Value> {
-        let files = glob(&format!("{}/*.json", &self.dir)).unwrap();
+        let files = glob(&format!("{}/*.json", &self.dir.to_str().unwrap())).unwrap();
         files.filter(|x| x.is_ok())
             .map(|x| Contracts::read_json(x.unwrap().as_path()))
             .filter(|x| x.is_ok())
@@ -78,7 +78,7 @@ impl Contracts {
             .unwrap()
             .as_str()
             .unwrap();
-        let filename = format!("{}/{}.json", &self.dir, addr);
+        let filename = format!("{}/{}.json", &self.dir.to_str().unwrap(), addr);
         let mut f = File::create(filename).unwrap();
         match serde_json::to_writer_pretty(&mut f, contract) {
             Ok(_) => Ok(()),
