@@ -1,9 +1,6 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
-#![deny(clippy, clippy_pedantic)]
-#![allow(missing_docs_in_private_items, unknown_lints)]
-
 use log::LogLevel;
 use std::fs;
 use std::io::Error;

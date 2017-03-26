@@ -20,7 +20,7 @@ fn should_see_all_contracts() {
 
 #[test]
 fn should_add_contract() {
-    let tmp_dir = TempDir::new("test-contracts").expect("create temp dir");
+    let tmp_dir = TempDir::new("test-contracts").expect("Expect a temp dir");
     let c = Contracts::new(tmp_dir.into_path());
     let act = c.list();
     assert_eq!(act.len(), 0);
@@ -37,7 +37,7 @@ fn should_add_contract() {
 fn invalidate_contract_wo_addr() {
     let json = serde_json::from_str::<Value>("{\"version\": \"1.0\"}").unwrap();
     let c = Contracts::new(contracts_path());
-    match c.is_valid(&json) {
+    match c.validate(&json) {
         Err(ContractError::InvalidContract) => {}
         Err(_) => panic!("Should be InvalidContract"),
         Ok(_) => panic!("Should fail"),
