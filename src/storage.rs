@@ -41,7 +41,9 @@ impl<'a> Storages<'a> {
 pub struct ChainStorage<'a> {
     /// subdir name
     id: String,
-    base: &'a Storages<'a>, //TODO addition config (human name, command line opts for geth/parity), read from resources
+    /// storage
+    base: &'a Storages<'a>,
+    //TODO add addition config (human name, command line opts for geth/parity), read from resources
 }
 
 impl<'a> ChainStorage<'a> {
