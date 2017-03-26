@@ -153,9 +153,11 @@ fn extract_address(text: &str) -> Option<Address> {
         static ref ADDR_RE: Regex = Regex::new(r#"address.+([a-fA-F0-9]{40})"#).unwrap();
     }
 
-    ADDR_RE.captures(text)
-        .and_then(|gr| gr.get(1))
-        .map(|m| format!("0x{}", m.as_str()).parse().unwrap())
+    ADDR_RE.captures(text).and_then(|gr| gr.get(1)).map(|m| {
+                                                            format!("0x{}", m.as_str())
+                                                                .parse()
+                                                                .unwrap()
+                                                        })
 }
 
 #[cfg(test)]
@@ -172,7 +174,7 @@ mod tests {
     fn should_display_real_address() {
         assert_eq!(Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
                                  0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4])
-                       .to_string(),
+                           .to_string(),
                    "0x0e7c045110b8dbf29765047380898919c5cb56f4");
     }
 
