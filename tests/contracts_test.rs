@@ -21,10 +21,7 @@ fn should_see_all_contracts() {
 #[test]
 fn should_add_contract() {
     let tmp_dir = TempDir::new("test-contracts").expect("create temp dir");
-    let c = Contracts::new(tmp_dir.into_path()
-                               .to_str()
-                               .unwrap()
-                               .to_string());
+    let c = Contracts::new(tmp_dir.into_path());
     let act = c.list();
     assert_eq!(act.len(), 0);
 
@@ -48,8 +45,8 @@ fn invalidate_contract_wo_addr() {
 }
 
 
-fn contracts_path() -> String {
+fn contracts_path() -> PathBuf {
     let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
     buf.push("tests/contracts");
-    buf.to_str().unwrap().to_string()
+    buf
 }
