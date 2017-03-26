@@ -9,7 +9,7 @@ os:
   - osx
 before_script:
   - |
-    (travis_wait cargo install rustfmt || true)
+    (travis_wait cargo install rustfmt --force || true)
 script:
   - |
     export PATH="$PATH":~/.cargo/bin &&
