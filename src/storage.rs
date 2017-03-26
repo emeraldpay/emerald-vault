@@ -43,7 +43,6 @@ pub struct ChainStorage<'a> {
     id: String,
     /// storage
     base: &'a Storages<'a>,
-    //TODO add addition config (human name, command line opts for geth/parity), read from resources
 }
 
 impl<'a> ChainStorage<'a> {
