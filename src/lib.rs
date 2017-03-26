@@ -21,11 +21,14 @@ extern crate jsonrpc_minihttp_server;
 extern crate hyper;
 extern crate regex;
 extern crate reqwest;
+extern crate tiny_keccak;
+extern crate secp256k1;
+extern crate byteorder;
 
 mod keystore;
 mod request;
 mod serialize;
-
+mod sign;
 
 use jsonrpc_core::{IoHandler, Params};
 use jsonrpc_minihttp_server::{cors, DomainsValidation, ServerBuilder};

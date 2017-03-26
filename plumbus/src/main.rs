@@ -41,7 +41,7 @@ impl Generator for Prefix {
         loop {
             match find_keys(seed).find() {
                 Some(key) => {
-                    println!("Key generated: {}", key.);
+                    println!("Key generated: {}", key);
                 },
                 None => {},
             }
