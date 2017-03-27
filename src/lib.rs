@@ -59,6 +59,9 @@ pub enum Method {
 
     /// [eth_getBalance](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getbalance)
     EthGetBalance,
+
+    /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
+    EthCall,
 }
 
 /// PRC method's parameters
@@ -96,6 +99,10 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
 
     io.add_async_method("eth_getBalance",
                         move |p| eth_get_balance.request(&MethodParams(Method::EthGetBalance, &p)));
+
+    let eth_call = url.clone();
+    io.add_async_method("eth_call",
+                        move |p| eth_call.request(&MethodParams(Method::EthCall, &p)));
 
     let storage = Storages::new();
     if !storage.init().is_ok() {
