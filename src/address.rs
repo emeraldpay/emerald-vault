@@ -1,7 +1,7 @@
 //! Account address (20 bytes)
 
 use rustc_serialize::hex::{self, FromHex, ToHex};
-use std::{error, fmt};
+use std::{error, fmt, ops};
 use std::str::FromStr;
 
 /// Fixed bytes number to represent `Address`
@@ -64,6 +64,26 @@ impl Address {
     }
 }
 
+impl ops::Deref for Address {
+    type Target = [u8; ADDRESS_BYTES];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<[u8; ADDRESS_BYTES]> for Address {
+    fn from(bytes: [u8; ADDRESS_BYTES]) -> Self {
+        Address::new(bytes)
+    }
+}
+
+impl From<hex::FromHexError> for AddressParserError {
+    fn from(err: hex::FromHexError) -> Self {
+        AddressParserError::UnexpectedEncoding(err)
+    }
+}
+
 impl FromStr for Address {
     type Err = AddressParserError;
 
@@ -74,13 +94,9 @@ impl FromStr for Address {
 
         let (_, s) = s.split_at(2);
 
-        s.from_hex().map_err(AddressParserError::from).and_then(Address::try_from)
-    }
-}
-
-impl From<hex::FromHexError> for AddressParserError {
-    fn from(err: hex::FromHexError) -> Self {
-        AddressParserError::UnexpectedEncoding(err)
+        s.from_hex()
+            .map_err(AddressParserError::from)
+            .and_then(Address::try_from)
     }
 }
 
@@ -141,27 +157,38 @@ mod tests {
         let addr = Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
                                  0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
-        assert_eq!("0x0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().unwrap(), addr);
+        assert_eq!("0x0e7c045110b8dbf29765047380898919c5cb56f4"
+                       .parse::<Address>()
+                       .unwrap(),
+                   addr);
     }
 
     #[test]
     fn should_catch_wrong_address_encoding() {
-        assert!("0x___c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
+        assert!("0x___c045110b8dbf29765047380898919c5cb56f4"
+                    .parse::<Address>()
+                    .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_insufficient_length() {
-        assert!("0x0e7c045110b8dbf297650473808989".parse::<Address>().is_err());
+        assert!("0x0e7c045110b8dbf297650473808989"
+                    .parse::<Address>()
+                    .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_excess_length() {
-        assert!("0x0e7c045110b8dbf29765047380898919c5cb56f400000000".parse::<Address>().is_err());
+        assert!("0x0e7c045110b8dbf29765047380898919c5cb56f400000000"
+                    .parse::<Address>()
+                    .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_prefix() {
-        assert!("0_0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
+        assert!("0_0e7c045110b8dbf29765047380898919c5cb56f4"
+                    .parse::<Address>()
+                    .is_err());
     }
 
     #[test]

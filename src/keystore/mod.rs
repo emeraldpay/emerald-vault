@@ -10,11 +10,14 @@ use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
 use std::str::FromStr;
+use uuid::Uuid;
 
 /// A keystore file corresponds UTC / JSON format (Web3 Secret Storage)
-#[derive(Debug, Clone, PartialEq, Eq, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone, Eq, RustcDecodable, RustcEncodable)]
 pub struct KeyFile {
-    pub address: Address,
+    pub version: u32,
+    pub id: Uuid,
+    pub address: Option<Address>,
 }
 
 /// Keystore file parser errors
@@ -25,9 +28,28 @@ pub enum KeyFileParserError {
 }
 
 impl KeyFile {
-    #[allow(dead_code)]
-    fn new(addr: &Address) -> Self {
-        KeyFile { address: *addr }
+    fn new() -> Self {
+        KeyFile {
+            version: 3,
+            id: Uuid::new_v4(),
+            address: None,
+        }
+    }
+}
+
+impl From<Uuid> for KeyFile {
+    fn from(id: Uuid) -> Self {
+        KeyFile {
+            version: 3,
+            id: id,
+            address: None,
+        }
+    }
+}
+
+impl PartialEq for KeyFile {
+    fn eq(&self, other: &KeyFile) -> bool {
+        self.id == other.id
     }
 }
 
@@ -47,7 +69,7 @@ impl From<json::DecoderError> for KeyFileParserError {
 
 impl fmt::Display for KeyFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Keystore file: {}", self.address)
+        write!(f, "Keystore file: {}", self.id)
     }
 }
 
@@ -55,7 +77,7 @@ impl fmt::Display for KeyFileParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             KeyFileParserError::UnexpectedEncoding(ref err) => {
-                write!(f, "Unexpected UTC / JSON encoding: {}", err)
+                write!(f, "Unexpected JSON encoding: {}", err)
             }
         }
     }
@@ -103,29 +125,21 @@ pub fn address_exists<P: AsRef<Path>>(path: P, addr: &Address) -> bool {
 #[cfg(test)]
 mod tests {
     use super::KeyFile;
-    use address::Address;
     use rustc_serialize::json;
 
-    const EXAMPLE_JSON: &'static str = r#"{
-      "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
-      "name": "",
-      "meta": "{}"
-    }"#;
-
     #[test]
-    fn should_encode_keyfile() {
-        let key_file =
-            KeyFile::new(&"0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b".parse::<Address>().unwrap());
+    fn should_decode_encode_keyfile() {
+        let in_json = r#"{
+          "version": 3,
+          "id": "9bec4728-37f9-4444-9990-2ba70ee038e9",
+          "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
+          "name": "",
+          "meta": "{}"
+        }"#;
 
-        assert_eq!(json::encode(&key_file).unwrap(),
-                   r#"{"address":"008aeeda4d805471df9b2a5b0f38a0c3bcba786b"}"#);
-    }
+        let out_json = "{\"version\":3,\"id\":\"9bec4728-37f9-4444-9990-2ba70ee038e9\",\
+                        \"address\":\"3f4e0668c20e100d7c2a27d4b177ac65b2875d26\"}";
 
-    #[test]
-    fn should_decode_keyfile() {
-        assert_eq!(EXAMPLE_JSON.parse::<KeyFile>().unwrap(),
-                   KeyFile::new(&"0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
-                                     .parse::<Address>()
-                                     .unwrap()));
+        assert_eq!(json::encode(&in_json.parse::<KeyFile>().unwrap()).unwrap(), out_json);
     }
 }

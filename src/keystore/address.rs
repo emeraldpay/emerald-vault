@@ -13,7 +13,8 @@ impl Encodable for Address {
 
 impl Decodable for Address {
     fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
-        d.read_str().map(|s| format!("0x{}", s))
+        d.read_str()
+            .map(|s| format!("0x{}", s))
             .and_then(|s| Address::from_str(&s).map_err(|e| d.error(&e.to_string())))
     }
 }
@@ -24,7 +25,8 @@ pub fn try_extract_address(text: &str) -> Option<Address> {
         static ref ADDR_RE: Regex = Regex::new(r#"address.+([a-fA-F0-9]{40})"#).unwrap();
     }
 
-    ADDR_RE.captures(text)
+    ADDR_RE
+        .captures(text)
         .and_then(|g| g.get(1).map(|m| format!("0x{}", m.as_str())))
         .and_then(|s| s.parse().ok())
 }
@@ -82,9 +84,16 @@ mod tests {
     }
 
     #[test]
+    fn should_not_decode_absent_address() {
+        assert!(json::decode::<Address>("").is_err());
+    }
+
+    #[test]
     fn should_extract_address() {
         assert_eq!(try_extract_address(r#"address: '008aeeda4d805471df9b2a5b0f38a0c3bcba786b',"#),
-                   Some("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b".parse::<Address>().unwrap()));
+                   Some("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b"
+                            .parse::<Address>()
+                            .unwrap()));
 
         assert_eq!(try_extract_address(r#""address": "0047201aed0b69875b24b614dda0270bcd9f11cc","#),
                    Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc".parse::<Address>().unwrap()));
@@ -94,7 +103,9 @@ mod tests {
                      "name": "",
                      "meta": "{}"
                    }"#),
-                   Some("0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26".parse::<Address>().unwrap()));
+                   Some("0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
+                            .parse::<Address>()
+                            .unwrap()));
     }
 
     #[test]

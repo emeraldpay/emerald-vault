@@ -25,10 +25,10 @@ fn should_ignore_unavailable_addresses() {
                                           .unwrap()));
 }
 
-fn keystore_path() -> std::ffi::OsString {
+fn keystore_path() -> PathBuf {
     let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
 
     buf.push("tests/keystore");
 
-    buf.into_os_string()
+    buf
 }
