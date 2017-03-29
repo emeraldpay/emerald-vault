@@ -23,7 +23,8 @@ extern crate regex;
 extern crate reqwest;
 extern crate tiny_keccak;
 extern crate secp256k1;
-extern crate byteorder;
+extern crate num_bigint;
+extern crate rand;
 
 mod keystore;
 mod request;

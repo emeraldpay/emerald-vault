@@ -1,18 +1,24 @@
-use byteorder::{WriteBytesExt, BigEndian};
 use tiny_keccak::Keccak;
 use secp256k1;
 use secp256k1::key::{SecretKey, PublicKey};
+use secp256k1::{Error, Message, RecoverableSignature, RecoveryId};
 use std::collections::HashMap;
+use num_bigint::{BigUint};
+use rand::{Rng, thread_rng};
 
 lazy_static! {
 	pub static ref SECP256K1: secp256k1::Secp256k1 = secp256k1::Secp256k1::new();
 }
 
 pub trait Encodable {
+    fn encode(&self) -> Vec<u8>;
+}
+
+pub trait ToBytes {
     fn to_bytes(&self, out: &mut Vec<u8>);
 }
 
-impl Encodable for usize {
+impl ToBytes for usize {
     fn to_bytes(&self, out: &mut Vec<u8>) {
         let val = *self as u64;
         let len = 8 - val.leading_zeros() / 8;
@@ -28,26 +34,39 @@ impl Encodable for usize {
 pub struct Signature {
     pub s: [u8; 32],
     pub r: [u8; 32],
-    pub v: [u8; 1],
+    pub v: u8,
 }
 
 impl Signature {
-    fn new(&data: [u8]) -> Result<Self, Error> {
+    fn new(data: &[u8]) -> Result<Self, Error> {
+        let mut r_val: [u8; 32] = [0u8; 32];
+        let mut s_val: [u8; 32] = [0u8; 32];
+
+        r_val.copy_from_slice(&data[0..32]);
+        s_val.copy_from_slice(&data[32..64]);
+
         Ok(Signature {
-            r: data[0..32],
-            s: data[33..64],
+            r: r_val,
+            s: s_val,
             v: data[64],
         })
     }
+
+    fn to_vec(&self) -> Vec<u8> {
+        let res = [self.r, self.s].concat();
+        res
+    }
 }
 
+
+
 /// Encoder for RLP compression.
-pub trait Encoder {
+pub struct RlpEncoder;
 
-    fn encode() -> [u8; 32];
-
+impl RlpEncoder {
     /// Compressing of simple values.
-    fn encode_raw_bytes(data: &[u8], out: &mut Vec<u8>) {
+    fn encode_raw_bytes (data: &[u8]) -> Vec<u8> {
+        let mut out: Vec<u8> = Vec::new();
         match data.len() {
             0 => { out.push(0x00); }
             1 => {
@@ -70,65 +89,97 @@ pub trait Encoder {
                 out.extend(data.iter().cloned());
             }
         }
+
+        out
     }
 
-    /// Compressing items of containers (nested values).
-    fn encode_nested_bytes(data: &[u8], out: &mut Vec<u8>) {
+    /// Compressing item of items sequence.
+    fn encode_nested_bytes (data: &[u8]) -> Vec<u8> {
+        let mut out: Vec<u8> = Vec::new();
         match data.len() {
-            0...55 => {
-                out.push(0x80 + len as u8);
+            len @ 0...55 => {
+                out.push(0xc0 + len as u8);
                 out.extend(data.iter().cloned());
             }
-            _ => {
+            len @ _ => {
                 let mut len_bytes = vec![];
                 len.to_bytes(&mut len_bytes);
 
-                out.push(0xb7 + len_bytes.len() as u8);
+                out.push(0xf7 + len_bytes.len() as u8);
                 out.extend(len_bytes.iter().cloned());
                 out.extend(data.iter().cloned());
             }
         }
+
+        out
     }
 }
 
-pub struct Transaction {
-    pub from: U256,
-    pub to: U256,
-    pub gas_price: U256,
-    pub gas: U256,
-    pub value: U256,
-    pub data: Bytes,
-    pub nonce: U256,
+struct Transaction {
+    nonce: BigUint,
+    gas_price: BigUint,
+    gas_limit: BigUint,
+    to: BigUint,
+    value: BigUint,
+    pub data: Vec<u8>,
 }
 
-impl Encoder for Transaction {
-    fn encode() -> [u8] {
-
+///Getter to extract first 32 bytes out of BigInt.
+macro_rules! impl_getter {
+    ($val: ident) => {
+        pub fn $val(&self) -> Vec<u8> {
+            let bytes = self.$val.to_bytes_be();
+            bytes[0..32].to_vec();
+            bytes
+        }
     }
+}
+
+macro_rules! extract_bigint {
+    ($args: expr, $val: expr) => {
+        BigUint::from_bytes_be($args.get($val).unwrap())
+    };
 }
 
 impl Transaction {
-    fn new(args: &HashMap<String, Item>) -> Self {
-        let mut tr = Transaction();
-        for (arg, val) in &args {
-            match arg {
-                "from" => {tr.from = val;}
-                "to" => {tr.to = val;}
-                "gas_price" => {tr.gas_price = val;}
-                "gas" => {tr.gas = val;}
-                "value" => {tr.val = val;}
-                "data" => {tr.data = val;}
-                "nonce" => {tr.nonce = val;}
-                _ => {}
-            }
-        }
 
-        tr
+    impl_getter!(nonce);
+    impl_getter!(gas_price);
+    impl_getter!(gas_limit);
+    impl_getter!(to);
+    impl_getter!(value);
+
+    pub fn new(args: &HashMap<&str, Vec<u8>>) -> Self {
+        Transaction {
+            nonce: extract_bigint!(args, "nonce"),
+            gas_price: extract_bigint!(args, "gas_price"),
+            gas_limit: extract_bigint!(args, "gas_limit"),
+            to: extract_bigint!(args, "to"),
+            value: extract_bigint!(args, "value"),
+            data: args.get("data").unwrap().to_vec(),
+        }
     }
+
 
 }
 
-fn hash(data: &[u8]) -> [u8; 32] {
+impl Encodable for Transaction {
+    fn encode(&self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = Vec::new();
+
+
+        bytes.extend(&RlpEncoder::encode_raw_bytes(&self.nonce()));
+        bytes.extend(&RlpEncoder::encode_raw_bytes(&self.gas_price()));
+        bytes.extend(&RlpEncoder::encode_raw_bytes(&self.gas_limit()));
+        bytes.extend(&RlpEncoder::encode_raw_bytes(&self.to()));
+        bytes.extend(&RlpEncoder::encode_raw_bytes(&self.value()));
+        bytes.extend(&RlpEncoder::encode_raw_bytes(&self.data));
+
+        bytes
+    }
+}
+
+fn kec(data: &[u8]) -> [u8; 32] {
     let mut sha3 = Keccak::new_sha3_256();
 
     sha3.update(data);
@@ -138,41 +189,57 @@ fn hash(data: &[u8]) -> [u8; 32] {
     res
 }
 
-fn sign (message: &[u8], private_key: &[u8]) -> Result<Signature, Error> {
+fn sign (message: &[u8], secret: &SecretKey) -> Result<Signature, Error> {
     let context = &SECP256K1;
-    let sec = SecretKey::from_slice(context, &secret)?;
-    let s = context.sign_recoverable(&SecpMessage::from_slice(&message[..])?, &sec)?;
-    let (rec_id, data) = s.serialize_compact(context);
+    let sig = context.sign_recoverable(&Message::from_slice(message)?, &secret)?;
+    let (rec_id, data) = sig.serialize_compact(context);
     let mut sig_data = [0; 65];
 
     sig_data[0..64].copy_from_slice(&data[0..64]);
     sig_data[64] = rec_id.to_i32() as u8;
 
-    Signature::new(sig_data)
+    Ok(Signature::new(&sig_data)?)
 }
+
+fn recover(message: &[u8], signature: &Signature) -> Result<PublicKey, Error> {
+    let context = &SECP256K1;
+    let rsig = RecoverableSignature::from_compact(context, &signature.to_vec(), RecoveryId::from_i32(signature.v as i32)?)?;
+    let pubkey = context.recover(&Message::from_slice(&message[..])?, &rsig)?;
+
+    Ok(pubkey)
+}
+
 
 #[cfg(test)]
 mod tests {
-    use super::{Transaction, hash, sign};
-    static tr_args: HashMap<> = HashMap::
+    use super::*;
+    lazy_static! {
+        static ref ARGS: HashMap<&'static str, Vec<u8>> = {
+            let args: HashMap<&str, Vec<u8>> =  ["nonce", "gas_price", "gas_limit", "to", "value", "data"].iter()
+            .map(|i| (*i, get_random()))
+            .collect();
+            args
+        };
+    }
+
+    fn get_random() -> Vec<u8> {
+        let mut msg = [0u8; 32].to_vec();
+        thread_rng().fill_bytes(&mut msg);
+
+        msg
+    }
 
     #[test]
-    fn should_rlp_compress() {
+    fn should_rlp_raw() {
         let data = vec![0x00];
-        let mut out = vec!();
-        rlp(&data, &mut out);
-        assert_eq!(data, out);
+        assert_eq!(data, RlpEncoder::encode_raw_bytes(&data));
 
         let data = vec![0x7F];
-        let mut out = vec!();
-        rlp(&data, &mut out);
-        assert_eq!(data, out);
+        assert_eq!(data, RlpEncoder::encode_raw_bytes(&data));
 
         let data = vec![0x80];
         let compressed = vec![0x81, 0x80];
-        let mut out = vec!();
-        rlp(&data, &mut out);
-        assert_eq!(compressed, out);
+        assert_eq!(compressed, RlpEncoder::encode_raw_bytes(&data));
 
         let mut data = vec!();
         let mut compressed = vec![0xB9, 0x04, 0x00];
@@ -180,17 +247,60 @@ mod tests {
             data.push(i as u8);
             compressed.push(i as u8);
         }
-        let mut out = vec!();
-        rlp(&data, &mut out);
-        assert_eq!(compressed, out);
+        assert_eq!(compressed, RlpEncoder::encode_raw_bytes(&data));
+    }
+
+
+    #[test]
+    fn should_create_transaction() {
+        let tr = Transaction::new(&ARGS);
+
+        let values: HashMap<&str, BigUint>= ARGS.iter()
+            .filter(|&(k, _)|  *k != "data")
+            .map(|(k, v)| (*k, BigUint::from_bytes_be(&v)))
+            .collect();
+
+        assert_eq!(tr.nonce, *values.get(&"nonce").unwrap());
+        assert_eq!(tr.gas_price, *values.get(&"gas_price").unwrap());
+        assert_eq!(tr.gas_limit, *values.get(&"gas_limit").unwrap());
+        assert_eq!(tr.to, *values.get(&"to").unwrap());
+        assert_eq!(tr.value, *values.get(&"value").unwrap());
+        assert_eq!(tr.data, *ARGS.get(&"data").unwrap());
+
+
+    }
+
+    #[test]
+    fn should_encode_transaction() {
+        let tr = Transaction::new(&ARGS);
+        let tr_encoded = &tr.encode();
+        assert_eq!(tr_encoded[0], 0xa0);
+
+        let keys_len = ARGS.keys().len();
+        assert_eq!(tr_encoded.len(), keys_len*32 + keys_len);
     }
 
     #[test]
     fn should_sign() {
-        let tr = Transaction::new(tr_args);
-        let key: [u8; 32] = [0; 32];
+        let context = &SECP256K1;
+        let (sk, _) = context.generate_keypair(&mut thread_rng()).unwrap();
+        let tr_encoded = Transaction::new(&ARGS).encode();
 
-        assert_eq!(vec![0], sign(hash(tr.encode()), key));
+
+        let sig = sign(&kec(&tr_encoded), &sk).unwrap();
+
+        assert!(sig.r.len() == 32);
+        assert!(sig.s.len() == 32);
     }
 
+    #[test]
+    fn should_recover() {
+        let context = &SECP256K1;
+        let message = get_random();
+        let (sk, pk) = context.generate_keypair(&mut thread_rng()).unwrap();
+
+        let sig = sign(&message, &sk).unwrap();
+
+        assert_eq!(recover(&message, &sig), Ok(pk));
+    }
 }
