@@ -76,7 +76,9 @@ impl FromStr for Address {
 
         let (_, s) = s.split_at(2);
 
-        s.from_hex().map_err(AddressParseError::from).and_then(Address::try_from)
+        s.from_hex()
+            .map_err(AddressParseError::from)
+            .and_then(Address::try_from)
     }
 }
 
@@ -153,11 +155,10 @@ fn extract_address(text: &str) -> Option<Address> {
         static ref ADDR_RE: Regex = Regex::new(r#"address.+([a-fA-F0-9]{40})"#).unwrap();
     }
 
-    ADDR_RE.captures(text).and_then(|gr| gr.get(1)).map(|m| {
-                                                            format!("0x{}", m.as_str())
-                                                                .parse()
-                                                                .unwrap()
-                                                        })
+    ADDR_RE
+        .captures(text)
+        .and_then(|gr| gr.get(1))
+        .map(|m| format!("0x{}", m.as_str()).parse().unwrap())
 }
 
 #[cfg(test)]
@@ -180,29 +181,39 @@ mod tests {
 
     #[test]
     fn should_parse_real_address() {
-        assert_eq!("0x0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().unwrap(),
+        assert_eq!("0x0e7c045110b8dbf29765047380898919c5cb56f4"
+                       .parse::<Address>()
+                       .unwrap(),
                    Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
                                  0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]));
     }
 
     #[test]
     fn should_catch_wrong_address_encoding() {
-        assert!("0x___c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
+        assert!("0x___c045110b8dbf29765047380898919c5cb56f4"
+                    .parse::<Address>()
+                    .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_insufficient_length() {
-        assert!("0x0e7c045110b8dbf297650473808989".parse::<Address>().is_err());
+        assert!("0x0e7c045110b8dbf297650473808989"
+                    .parse::<Address>()
+                    .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_excess_length() {
-        assert!("0x0e7c045110b8dbf29765047380898919c5cb56f400000000".parse::<Address>().is_err());
+        assert!("0x0e7c045110b8dbf29765047380898919c5cb56f400000000"
+                    .parse::<Address>()
+                    .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_prefix() {
-        assert!("0_0e7c045110b8dbf29765047380898919c5cb56f4".parse::<Address>().is_err());
+        assert!("0_0e7c045110b8dbf29765047380898919c5cb56f4"
+                    .parse::<Address>()
+                    .is_err());
     }
 
     #[test]
@@ -218,15 +229,21 @@ mod tests {
     #[test]
     fn should_extract_address() {
         assert_eq!(extract_address(r#"address: '008aeeda4d805471df9b2a5b0f38a0c3bcba786b',"#),
-                   Some("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b".parse::<Address>().unwrap()));
+                   Some("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b"
+                            .parse::<Address>()
+                            .unwrap()));
         assert_eq!(extract_address(r#"  "address": "0047201aed0b69875b24b614dda0270bcd9f11cc","#),
-                   Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc".parse::<Address>().unwrap()));
+                   Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc"
+                            .parse::<Address>()
+                            .unwrap()));
         assert_eq!(extract_address(r#"  },
                                       "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
                                       "name": "",
                                       "meta": "{}"
                                     }"#),
-                   Some("0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26".parse::<Address>().unwrap()));
+                   Some("0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
+                            .parse::<Address>()
+                            .unwrap()));
     }
 
     #[test]

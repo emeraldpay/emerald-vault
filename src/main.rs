@@ -47,17 +47,22 @@ fn main() {
 
     log_builder.init().expect("Expect to initialize logger");
 
-    let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
+    let args: Args = Docopt::new(USAGE)
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
 
     if args.flag_version {
         println!("v{}", VERSION.unwrap_or("unknown"));
         exit(0);
     }
 
-    let addr = args.flag_address.parse::<SocketAddr>().expect("Expect to parse address");
+    let addr = args.flag_address
+        .parse::<SocketAddr>()
+        .expect("Expect to parse address");
 
-    let client_addr =
-        args.flag_client_address.parse::<SocketAddr>().expect("Expect to parse client address");
+    let client_addr = args.flag_client_address
+        .parse::<SocketAddr>()
+        .expect("Expect to parse client address");
 
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}",

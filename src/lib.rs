@@ -120,7 +120,8 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
     if !chain.init().is_ok() {
         panic!("Unable to initialize chain")
     }
-    let contracts_service = Arc::new(Contracts::new(chain.get_path("contracts".to_string())
+    let contracts_service = Arc::new(Contracts::new(chain
+                                                        .get_path("contracts".to_string())
                                                         .expect("Expect directory for contracts")));
     let cs_list = contracts_service.clone();
     io.add_async_method("emerald_contracts",

@@ -1,4 +1,4 @@
-use num_bigint::{BigUint};
+use num_bigint::BigUint;
 use std::collections::HashMap;
 use util::RlpEncoder;
 
@@ -83,8 +83,8 @@ mod tests {
     fn should_create_transaction() {
         let tr = Transaction::new(&ARGS);
 
-        let values: HashMap<&str, BigUint>= ARGS.iter()
-            .filter(|&(k, _)|  *k != "data")
+        let values: HashMap<&str, BigUint> = ARGS.iter()
+            .filter(|&(k, _)| *k != "data")
             .map(|(k, v)| (*k, BigUint::from_bytes_be(&v)))
             .collect();
 
@@ -120,6 +120,6 @@ mod tests {
         assert_eq!(tr_encoded[0], 0xa0);
 
         let keys_len = ARGS.keys().len();
-        assert_eq!(tr_encoded.len(), keys_len*32 + keys_len);
+        assert_eq!(tr_encoded.len(), keys_len * 32 + keys_len);
     }
 }

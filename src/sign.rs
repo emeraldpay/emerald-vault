@@ -1,6 +1,7 @@
-use tiny_keccak::Keccak;
-use secp256k1::key::{SecretKey, PublicKey};
+
 use secp256k1::{self, Error, Message, RecoverableSignature, RecoveryId};
+use secp256k1::key::{PublicKey, SecretKey};
+use tiny_keccak::Keccak;
 
 lazy_static! {
 	pub static ref SECP256K1: secp256k1::Secp256k1 = secp256k1::Secp256k1::new();
@@ -22,10 +23,10 @@ impl Signature {
         s_val.copy_from_slice(&data[32..64]);
 
         Ok(Signature {
-            r: r_val,
-            s: s_val,
-            v: data[64],
-        })
+               r: r_val,
+               s: s_val,
+               v: data[64],
+           })
     }
 
     fn to_vec(&self) -> Vec<u8> {
@@ -44,7 +45,7 @@ fn kec(data: &[u8]) -> [u8; 32] {
     res
 }
 
-fn sign (message: &[u8], secret: &SecretKey) -> Result<Signature, Error> {
+fn sign(message: &[u8], secret: &SecretKey) -> Result<Signature, Error> {
     let context = &SECP256K1;
     let sig = context.sign_recoverable(&Message::from_slice(message)?, &secret)?;
     let (rec_id, data) = sig.serialize_compact(context);
@@ -58,7 +59,9 @@ fn sign (message: &[u8], secret: &SecretKey) -> Result<Signature, Error> {
 
 fn recover(message: &[u8], signature: &Signature) -> Result<PublicKey, Error> {
     let context = &SECP256K1;
-    let rsig = RecoverableSignature::from_compact(context, &signature.to_vec(), RecoveryId::from_i32(signature.v as i32)?)?;
+    let rsig = RecoverableSignature::from_compact(context,
+                                                  &signature.to_vec(),
+                                                  RecoveryId::from_i32(signature.v as i32)?)?;
     let pubkey = context.recover(&Message::from_slice(&message[..])?, &rsig)?;
 
     Ok(pubkey)
@@ -69,8 +72,8 @@ fn recover(message: &[u8], signature: &Signature) -> Result<PublicKey, Error> {
 mod tests {
     use super::*;
     use rand::{Rng, thread_rng};
-    use transaction::Transaction;
     use std::collections::HashMap;
+    use transaction::Transaction;
 
     lazy_static! {
         static ref ARGS: HashMap<&'static str, Vec<u8>> = {
