@@ -82,7 +82,7 @@ impl RlpEncoder {
             }
             len => {
                 let mut len_bytes = vec![];
-                len.to_bytes(&mut len_bytes)
+                len.to_bytes(&mut len_bytes);
                 out.push(0xb7 + len_bytes.len() as u8);
                 out.extend(len_bytes.iter().cloned());
                 out.extend(data.iter().cloned());
