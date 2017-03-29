@@ -140,6 +140,7 @@ mod tests {
         let out_json = "{\"version\":3,\"id\":\"9bec4728-37f9-4444-9990-2ba70ee038e9\",\
                         \"address\":\"3f4e0668c20e100d7c2a27d4b177ac65b2875d26\"}";
 
-        assert_eq!(json::encode(&in_json.parse::<KeyFile>().unwrap()).unwrap(), out_json);
+        assert_eq!(json::encode(&in_json.parse::<KeyFile>().unwrap()).unwrap(),
+                   out_json);
     }
 }

@@ -1,9 +1,5 @@
 # https://github.com/rust-lang-nursery/rustfmt/blob/master/src/config.rs
-max_width = 100
-fn_call_width = 80
 newline_style = "Unix"
 format_strings = true
 reorder_imports = true
 reorder_imported_names = true
-report_todo = "Never"
-report_fixme = "Never"
