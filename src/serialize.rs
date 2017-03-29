@@ -30,6 +30,7 @@ impl<'a> Serialize for ::MethodParams<'a> {
     }
 }
 
+
 #[derive(Serialize, Debug)]
 struct JsonData<'a> {
     jsonrpc: &'static str,
