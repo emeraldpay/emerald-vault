@@ -31,10 +31,13 @@ extern crate rand;
 mod keystore;
 mod request;
 mod serialize;
+mod transaction;
 mod sign;
+
 /// Contracts stuff
 pub mod contracts;
 mod storage;
+mod util;
 
 use self::serde_json::Value;
 use contracts::Contracts;
