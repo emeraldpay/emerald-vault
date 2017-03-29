@@ -1,6 +1,3 @@
-#![cfg_attr(feature = "dev", feature(plugin))]
-#![cfg_attr(feature = "dev", plugin(clippy))]
-
 use log::LogLevel;
 use std::fs;
 use std::io::Error;
@@ -18,7 +15,7 @@ impl<'a> Storages<'a> {
     pub fn new() -> Storages<'a> {
         Storages {
             //TODO use user home subdir
-            base_dir: &Path::new("emerald_data"),
+            base_dir: Path::new("emerald_data"),
         }
     }
 
@@ -44,16 +41,10 @@ pub struct ChainStorage<'a> {
 
 impl<'a> ChainStorage<'a> {
     pub fn new(base: &'a Storages, id: String) -> ChainStorage<'a> {
-        ChainStorage {
-            id: id,
-            base: base,
-        }
+        ChainStorage { id: id, base: base }
     }
     pub fn init(&self) -> Result<(), Error> {
-        let mut p: PathBuf = self.base
-            .base_dir
-            .to_path_buf()
-            .clone();
+        let mut p: PathBuf = self.base.base_dir.to_path_buf().clone();
         p.push(self.id.clone());
         if !p.exists() {
             if log_enabled!(LogLevel::Info) {
@@ -65,10 +56,7 @@ impl<'a> ChainStorage<'a> {
     }
 
     pub fn get_path(&self, id: String) -> Result<PathBuf, Error> {
-        let mut p: PathBuf = self.base
-            .base_dir
-            .to_path_buf()
-            .clone();
+        let mut p: PathBuf = self.base.base_dir.to_path_buf().clone();
         p.push(self.id.clone());
         p.push(id.clone());
         if !p.exists() {
