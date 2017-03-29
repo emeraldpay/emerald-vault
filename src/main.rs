@@ -5,13 +5,18 @@
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
-extern crate docopt;
+#[macro_use]
+extern crate log;
 extern crate env_logger;
+
+extern crate docopt;
 extern crate rustc_serialize;
 
 extern crate emerald;
 
 use docopt::Docopt;
+use env_logger::LogBuilder;
+use log::{LogLevel, LogLevelFilter};
 use std::env;
 use std::net::SocketAddr;
 use std::process::*;
@@ -32,7 +37,15 @@ struct Args {
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
 
-    env_logger::init().expect("Expect to initialize logger");
+    let mut log_builder = LogBuilder::new();
+
+    log_builder.filter(None, LogLevelFilter::Info);
+
+    if env::var("RUST_LOG").is_ok() {
+        log_builder.parse(&env::var("RUST_LOG").unwrap());
+    }
+
+    log_builder.init().expect("Expect to initialize logger");
 
     let args: Args = Docopt::new(USAGE).and_then(|d| d.decode()).unwrap_or_else(|e| e.exit());
 
@@ -45,6 +58,11 @@ fn main() {
 
     let client_addr =
         args.flag_client_address.parse::<SocketAddr>().expect("Expect to parse client address");
+
+    if log_enabled!(LogLevel::Info) {
+        info!("Starting Emerald Connector - v{}",
+              VERSION.unwrap_or("unknown"));
+    }
 
     emerald::start(&addr, &client_addr);
 }

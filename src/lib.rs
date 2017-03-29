@@ -14,6 +14,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
+extern crate serde_json;
 
 extern crate futures;
 extern crate jsonrpc_core;
@@ -21,6 +22,7 @@ extern crate jsonrpc_minihttp_server;
 extern crate hyper;
 extern crate regex;
 extern crate reqwest;
+extern crate rustc_serialize;
 extern crate tiny_keccak;
 extern crate secp256k1;
 extern crate num_bigint;
@@ -30,14 +32,21 @@ mod keystore;
 mod request;
 mod serialize;
 mod sign;
+/// Contracts stuff
+pub mod contracts;
+mod storage;
 
-use jsonrpc_core::{IoHandler, Params};
-use jsonrpc_minihttp_server::{cors, DomainsValidation, ServerBuilder};
-pub use keystore::address_exists;
+use self::serde_json::Value;
+use contracts::Contracts;
+use jsonrpc_core::{Error, ErrorCode, IoHandler, Params};
+use jsonrpc_core::futures::Future;
+use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
+pub use keystore::{ADDRESS_BYTES, Address, address_exists};
 
 use log::LogLevel;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use storage::{ChainStorage, Storages};
 
 /// RPC methods
 pub enum Method {
@@ -55,6 +64,9 @@ pub enum Method {
 
     /// [eth_getBalance](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getbalance)
     EthGetBalance,
+
+    /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
+    EthCall,
 }
 
 /// PRC method's parameters
@@ -90,8 +102,43 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
 
     let eth_get_balance = url.clone();
 
-    io.add_async_method("eth_getBalance", move |p| {
-        eth_get_balance.request(&MethodParams(Method::EthGetBalance, &p))
+    io.add_async_method("eth_getBalance",
+                        move |p| eth_get_balance.request(&MethodParams(Method::EthGetBalance, &p)));
+
+    let eth_call = url.clone();
+    io.add_async_method("eth_call",
+                        move |p| eth_call.request(&MethodParams(Method::EthCall, &p)));
+
+    let storage = Storages::new();
+    if !storage.init().is_ok() {
+        panic!("Unable to initialize storage")
+    }
+    let chain = ChainStorage::new(&storage, "default".to_string());
+    if !chain.init().is_ok() {
+        panic!("Unable to initialize chain")
+    }
+    let contracts_service = Arc::new(Contracts::new(chain.get_path("contracts".to_string())
+                                                        .expect("Expect directory for contracts")));
+    let cs_list = contracts_service.clone();
+    io.add_async_method("emerald_contracts",
+                        move |_| futures::finished(Value::Array(cs_list.list())).boxed());
+    let cs_add = contracts_service.clone();
+    io.add_async_method("emerald_addContract", move |p: Params| {
+        let res: Result<Value, Error> = match &p {
+            &Params::Array(ref vals) => {
+                let ref json = vals[0];
+                match cs_add.add(&json) {
+                    Ok(_) => Ok(Value::Bool(true)),
+                    Err(_) => Err(Error::new(ErrorCode::InternalError)),
+                }
+            }
+            _ => Err(Error::new(ErrorCode::InvalidParams)),
+        };
+        match res {
+                Ok(v) => futures::finished(v),
+                Err(e) => futures::failed(e),
+            }
+            .boxed()
     });
 
     let server = ServerBuilder::new(io)
@@ -101,7 +148,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
         .expect("Expect to build HTTP RPC server");
 
     if log_enabled!(LogLevel::Info) {
-        info!("Connector is started on {}", server.address());
+        info!("Connector started on http://{}", server.address());
     }
 
     server.wait().expect("Expect to start HTTP RPC server");

@@ -82,8 +82,7 @@ impl RlpEncoder {
             }
             len => {
                 let mut len_bytes = vec![];
-                len.to_bytes(&mut len_bytes);
-
+                len.to_bytes(&mut len_bytes)
                 out.push(0xb7 + len_bytes.len() as u8);
                 out.extend(len_bytes.iter().cloned());
                 out.extend(data.iter().cloned());
@@ -285,7 +284,6 @@ mod tests {
         let context = &SECP256K1;
         let (sk, _) = context.generate_keypair(&mut thread_rng()).unwrap();
         let tr_encoded = Transaction::new(&ARGS).encode();
-
 
         let sig = sign(&kec(&tr_encoded), &sk).unwrap();
 

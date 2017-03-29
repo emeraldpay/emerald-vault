@@ -25,6 +25,7 @@ impl<'a> Serialize for ::MethodParams<'a> {
             ::Method::EthGetBalance => {
                 serializer.serialize_some(&method_params("eth_getBalance", self.1))
             }
+            ::Method::EthCall => serializer.serialize_some(&method_params("eth_call", self.1)),
         }
     }
 }

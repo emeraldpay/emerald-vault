@@ -1,6 +1,6 @@
 use hyper::Url;
 use hyper::client::IntoUrl;
-use jsonrpc_core::{Value, Error};
+use jsonrpc_core::{Error, Value};
 use jsonrpc_core::futures::{BoxFuture, Future};
 use reqwest::Client;
 

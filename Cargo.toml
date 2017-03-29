@@ -30,15 +30,17 @@ jsonrpc-minihttp-server = { git = "https://github.com/ethcore/jsonrpc.git", bran
 lazy_static = "0.2"
 log = "0.3"
 regex = "0.2"
+rustc-serialize = "0.3"
 serde = "0.9"
 serde_json = "0.9"
 serde_derive = "0.9"
+glob = "0.2"
+tempdir = "0.3"
 # optional dependencies
 docopt = { version = "0.7", optional = true }
 env_logger = { version = "0.4", optional = true }
 hyper = { version = "0.10", optional = true }
 reqwest = { version = "0.4", optional = true }
-rustc-serialize = { version = "0.3", optional = true }
 clippy = {version = "0.0", optional = true}
 eth-secp256k1 = { git = "https://github.com/ethcore/rust-secp256k1" }
 tiny-keccak = "1.2"
@@ -49,6 +51,6 @@ rand = "0.3.15"
 
 [features]
 default = ["cli", "http"]
-cli = ["docopt", "env_logger", "rustc-serialize"]
+cli = ["docopt", "env_logger"]
 http = ["hyper", "reqwest"]
 dev = ["clippy"]
