@@ -1,4 +1,3 @@
-
 use secp256k1::{self, Error, Message, RecoverableSignature, RecoveryId};
 use secp256k1::key::{PublicKey, SecretKey};
 use tiny_keccak::Keccak;
@@ -77,7 +76,9 @@ mod tests {
 
     lazy_static! {
         static ref ARGS: HashMap<&'static str, Vec<u8>> = {
-            let args: HashMap<&str, Vec<u8>> =  ["nonce", "gas_price", "gas_limit", "to", "value", "data"].iter()
+            let args: HashMap<&str, Vec<u8>> =  [
+                "nonce", "gas_price", "gas_limit",  "to", "value", "data"
+            ].iter()
             .map(|i| (*i, get_random()))
             .collect();
             args
