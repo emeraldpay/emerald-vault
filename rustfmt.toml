@@ -1,5 +1,5 @@
-# https://github.com/rust-lang-nursery/rustfmt/blob/master/src/config.rs
-newline_style = "Unix"
+# (config.rs)[https://github.com/rust-lang-nursery/rustfmt/blob/master/src/config.rs]
 format_strings = true
+newline_style = "Unix"
 reorder_imports = true
 reorder_imported_names = true

@@ -42,10 +42,13 @@ impl Decodable for KeyFile {
 
             let addr = d.read_struct_field("address", 2, |d| Decodable::decode(d))?;
 
-            Ok(KeyFile {
-                   id: id,
-                   address: addr,
-               })
+            let mut key_file = KeyFile::from(id);
+
+            if let Some(addr) = addr {
+                key_file.with_address(&addr);
+            }
+
+            Ok(key_file)
         })
     }
 }

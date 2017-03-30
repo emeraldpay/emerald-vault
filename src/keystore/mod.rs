@@ -1,4 +1,7 @@
-//! Keystore files (UTC / JSON) encrypted with a passphrase
+//! Keystore files (UTC / JSON) encrypted with a passphrase (Web3 Secret Storage)
+//!
+//! (Web3 Secret Storage Definition)
+//! [https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition]
 
 mod serialize;
 
@@ -9,11 +12,40 @@ use std::io::Read;
 use std::path::Path;
 use uuid::Uuid;
 
-/// A keystore file corresponds UTC / JSON format (Web3 Secret Storage)
+/// Derived key length in bytes (by default)
+pub const DEFAULT_DK_LENGTH: u32 = 32;
+
+/// Key derivation function salt length in bytes
+pub const KDF_SALT_BYTES: usize = 32;
+
+/// Keccak-256 hash length in bytes
+pub const KECCAK256_BYTES: usize = 32;
+
+/// Cipher initialization vector length in bytes
+pub const CIPHER_IV_BYTES: usize = 16;
+
+/// A keystore file (account private key encrypted with a passphrase)
 #[derive(Clone, Debug, Eq)]
 pub struct KeyFile {
     pub id: Uuid,
     pub address: Option<Address>,
+    pub dk_length: u32,
+    pub kdf: Kdf,
+    pub kdf_salt: [u8; KDF_SALT_BYTES],
+    pub keccak256_mac: [u8; KECCAK256_BYTES],
+    pub cipher_text: Vec<u8>,
+    pub cipher_iv: [u8; CIPHER_IV_BYTES],
+}
+
+/// Key derivation function
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Kdf {
+    /// PBKDF2 (specified in (RFC 2898)[https://tools.ietf.org/html/rfc2898])
+    #[allow(dead_code)]
+    Pbkdf2(u32),
+
+    /// Scrypt (specified in (RPC 7914)[https://tools.ietf.org/html/rfc7914])
+    Scrypt(u32, u32, u32),
 }
 
 impl KeyFile {
@@ -22,7 +54,6 @@ impl KeyFile {
         Self::from(Uuid::new_v4())
     }
 
-    #[allow(dead_code)]
     fn with_address(&mut self, addr: &Address) {
         self.address = Some(*addr);
     }
@@ -33,6 +64,12 @@ impl From<Uuid> for KeyFile {
         KeyFile {
             id: id,
             address: None,
+            dk_length: DEFAULT_DK_LENGTH,
+            kdf: Kdf::Scrypt(262144, 8, 1),
+            kdf_salt: [0; KDF_SALT_BYTES],
+            keccak256_mac: [0; KECCAK256_BYTES],
+            cipher_text: vec![],
+            cipher_iv: [0; CIPHER_IV_BYTES],
         }
     }
 }
