@@ -10,17 +10,12 @@ fn should_find_available_addresses() {
                                     &"0x0047201aed0b69875b24b614dda0270bcd9f11cc"
                                          .parse::<emerald::Address>()
                                          .unwrap()));
-
-    assert!(emerald::address_exists(&keystore_path(),
-                                    &"0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
-                                         .parse::<emerald::Address>()
-                                         .unwrap()));
 }
 
 #[test]
 fn should_ignore_unavailable_addresses() {
     assert!(!emerald::address_exists(&keystore_path(),
-                                     &"0x0e7c045110b8dbf29765047380898919c5cb56f4"
+                                     &"0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
                                           .parse::<emerald::Address>()
                                           .unwrap()));
 }

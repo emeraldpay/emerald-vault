@@ -112,12 +112,12 @@ mod tests {
     }
 
     #[test]
-    fn should_ignore_pointless() {
+    fn should_ignore_text_without_address() {
         assert_eq!(try_extract_address("\"version\": 3"), None);
     }
 
     #[test]
-    fn should_ignore_empty() {
+    fn should_ignore_empty_text() {
         assert_eq!(try_extract_address(""), None);
     }
 }

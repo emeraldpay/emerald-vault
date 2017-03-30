@@ -134,25 +134,22 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
         .get_path("contracts".to_string())
         .expect("Expect directory for contracts");
 
-    let contracts_service = Arc::new(Contracts::new(dir));
+    let contracts = Arc::new(Contracts::new(dir));
 
     {
-        let contracts_service = contracts_service.clone();
+        let contracts = contracts.clone();
 
-        io.add_async_method("emerald_contracts", move |_| {
-            futures::finished(Value::Array(contracts_service.list())).boxed()
-        });
+        io.add_async_method("emerald_contracts",
+                            move |_| futures::finished(Value::Array(contracts.list())).boxed());
     }
 
     {
-        let contracts_service = contracts_service.clone();
+        let contracts = contracts.clone();
 
         io.add_async_method("emerald_addContract", move |p: Params| {
-            let res: Result<Value, Error> = match p {
-                Params::Array(ref vals) => {
-                    let json = &vals[0];
-
-                    match contracts_service.add(json) {
+            let res = match p {
+                Params::Array(ref vec) => {
+                    match contracts.add(&vec[0]) {
                         Ok(_) => Ok(Value::Bool(true)),
                         Err(_) => Err(Error::new(ErrorCode::InternalError)),
                     }
@@ -160,11 +157,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
                 _ => Err(Error::new(ErrorCode::InvalidParams)),
             };
 
-            match res {
-                    Ok(v) => futures::finished(v),
-                    Err(e) => futures::failed(e),
-                }
-                .boxed()
+            futures::done(res).boxed()
         });
     }
 

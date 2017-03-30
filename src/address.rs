@@ -8,19 +8,8 @@ use std::str::FromStr;
 pub const ADDRESS_BYTES: usize = 20;
 
 /// Account address (20 bytes)
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Address([u8; ADDRESS_BYTES]);
-
-/// `Address` struct parser errors
-#[derive(Debug)]
-pub enum AddressParserError {
-    /// An invalid given length, not `ADDRESS_BYTES`.
-    InvalidLength(usize),
-    /// An unexpected hexadecimal prefix (should be '0x')
-    UnexpectedPrefix(String),
-    /// An unexpected hexadecimal encoding error
-    UnexpectedEncoding(hex::FromHexError),
-}
 
 impl Address {
     /// Create a new `Address` from given 20 bytes.
@@ -78,12 +67,6 @@ impl From<[u8; ADDRESS_BYTES]> for Address {
     }
 }
 
-impl From<hex::FromHexError> for AddressParserError {
-    fn from(err: hex::FromHexError) -> Self {
-        AddressParserError::UnexpectedEncoding(err)
-    }
-}
-
 impl FromStr for Address {
     type Err = AddressParserError;
 
@@ -103,6 +86,23 @@ impl FromStr for Address {
 impl fmt::Display for Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "0x{}", self.0.to_hex())
+    }
+}
+
+/// `Address` struct parser errors
+#[derive(Debug)]
+pub enum AddressParserError {
+    /// An invalid given length, not `ADDRESS_BYTES`.
+    InvalidLength(usize),
+    /// An unexpected hexadecimal prefix (should be '0x')
+    UnexpectedPrefix(String),
+    /// An unexpected hexadecimal encoding error
+    UnexpectedEncoding(hex::FromHexError),
+}
+
+impl From<hex::FromHexError> for AddressParserError {
+    fn from(err: hex::FromHexError) -> Self {
+        AddressParserError::UnexpectedEncoding(err)
     }
 }
 
