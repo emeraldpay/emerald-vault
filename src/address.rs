@@ -32,29 +32,29 @@ impl Address {
     ///
     /// # Arguments
     ///
-    /// * `vec` - A byte vector with `ADDRESS_BYTES` length
+    /// * `data` - A byte slice with `ADDRESS_BYTES` length
     ///
     /// # Example
     ///
     /// ```
-    /// let addr = emerald::Address::try_from(vec![0; emerald::ADDRESS_BYTES]).unwrap();
+    /// let addr = emerald::Address::try_from(&vec![0; emerald::ADDRESS_BYTES]).unwrap();
     /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
     /// ```
-    pub fn try_from(vec: Vec<u8>) -> Result<Self, AddressParserError> {
-        if vec.len() != ADDRESS_BYTES {
-            return Err(AddressParserError::InvalidLength(vec.len()));
+    pub fn try_from(data: &[u8]) -> Result<Self, AddressParserError> {
+        if data.len() != ADDRESS_BYTES {
+            return Err(AddressParserError::InvalidLength(data.len()));
         }
 
         let mut bytes = [0; ADDRESS_BYTES];
 
-        bytes.clone_from_slice(vec.as_slice());
+        bytes.clone_from_slice(data);
 
         Ok(Address(bytes))
     }
 }
 
 impl ops::Deref for Address {
-    type Target = [u8; ADDRESS_BYTES];
+    type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -79,7 +79,7 @@ impl FromStr for Address {
 
         s.from_hex()
             .map_err(AddressParserError::from)
-            .and_then(Address::try_from)
+            .and_then(|v| Address::try_from(&v))
     }
 }
 

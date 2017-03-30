@@ -1,4 +1,4 @@
-//! Keystore files (UTC / JSON) encrypted with a passphrase (Web3 Secret Storage)
+//! Keystore files (UTC / JSON) encrypted with a passphrase
 //!
 //! (Web3 Secret Storage Definition)
 //! [https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition]
@@ -37,17 +37,6 @@ pub struct KeyFile {
     pub cipher_iv: [u8; CIPHER_IV_BYTES],
 }
 
-/// Key derivation function
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Kdf {
-    /// PBKDF2 (specified in (RFC 2898)[https://tools.ietf.org/html/rfc2898])
-    #[allow(dead_code)]
-    Pbkdf2(u32),
-
-    /// Scrypt (specified in (RPC 7914)[https://tools.ietf.org/html/rfc7914])
-    Scrypt(u32, u32, u32),
-}
-
 impl KeyFile {
     #[allow(dead_code)]
     fn new() -> Self {
@@ -65,7 +54,7 @@ impl From<Uuid> for KeyFile {
             id: id,
             address: None,
             dk_length: DEFAULT_DK_LENGTH,
-            kdf: Kdf::Scrypt(262144, 8, 1),
+            kdf: Kdf::default(),
             kdf_salt: [0; KDF_SALT_BYTES],
             keccak256_mac: [0; KECCAK256_BYTES],
             cipher_text: vec![],
@@ -95,6 +84,25 @@ impl Ord for KeyFile {
 impl fmt::Display for KeyFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Keystore file: {}", self.id)
+    }
+}
+
+/// Key derivation function
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Kdf {
+    /// PBKDF2 (specified in (RFC 2898)[https://tools.ietf.org/html/rfc2898])
+    #[allow(dead_code)]
+    Pbkdf2(u32 /* c - number of iterations */),
+
+    /// Scrypt (specified in (RPC 7914)[https://tools.ietf.org/html/rfc7914])
+    Scrypt(u32, /* n - number of iterations */
+           u32, /* r - block size for underlying hash */
+           u32 /* p - parallelization parameter */),
+}
+
+impl Default for Kdf {
+    fn default() -> Kdf {
+        Kdf::Scrypt(262144, 8, 1)
     }
 }
 
