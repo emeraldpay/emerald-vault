@@ -1,4 +1,4 @@
-//! Serialize RPC parameters in JSON
+//! # Serialize RPC parameters in JSON
 
 use jsonrpc_core::Params;
 

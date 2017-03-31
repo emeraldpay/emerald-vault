@@ -1,4 +1,4 @@
-//! Account address (20 bytes)
+//! # Account address (20 bytes)
 
 use rustc_serialize::hex::{self, FromHex, ToHex};
 use std::{error, fmt, ops};

@@ -1,4 +1,4 @@
-//! Keystore files (UTC / JSON) encrypted with a passphrase
+//! # Keystore files (UTC / JSON) encrypted with a passphrase
 //!
 //! (Web3 Secret Storage Definition)
 //! [https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition]
@@ -92,17 +92,19 @@ impl fmt::Display for KeyFile {
 pub enum Kdf {
     /// PBKDF2 (specified in (RFC 2898)[https://tools.ietf.org/html/rfc2898])
     #[allow(dead_code)]
-    Pbkdf2(u32 /* c - number of iterations */),
+    Pbkdf2 { c: u32 },
 
     /// Scrypt (specified in (RPC 7914)[https://tools.ietf.org/html/rfc7914])
-    Scrypt(u32, /* n - number of iterations */
-           u32, /* r - block size for underlying hash */
-           u32 /* p - parallelization parameter */),
+    Scrypt { n: u32, r: u32, p: u32 },
 }
 
 impl Default for Kdf {
     fn default() -> Kdf {
-        Kdf::Scrypt(262144, 8, 1)
+        Kdf::Scrypt {
+            n: 262144,
+            r: 8,
+            p: 1,
+        }
     }
 }
 

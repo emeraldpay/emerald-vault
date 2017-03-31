@@ -1,4 +1,4 @@
-//! Custom JSON format for account addresses (without '0x' prefix)
+//! # Custom JSON format for account addresses (without '0x' prefix)
 
 use address::Address;
 use regex::Regex;

@@ -1,4 +1,4 @@
-//! CLI wrapper for ethereum classic web3 like connector.
+//! # CLI wrapper for ethereum classic web3 like connector.
 
 #![cfg(feature = "cli")]
 
@@ -53,7 +53,6 @@ fn main() {
 
     if args.flag_version {
         println!("v{}", VERSION.unwrap_or("unknown"));
-
         exit(0);
     }
 

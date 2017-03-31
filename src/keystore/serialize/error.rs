@@ -1,4 +1,4 @@
-//! Serialize keystore files (UTC / JSON) errors
+//! # Serialize keystore files (UTC / JSON) errors
 
 use std::{error, fmt};
 

@@ -1,4 +1,4 @@
-//! Serialize keystore files (UTC / JSON) encrypted with a passphrase
+//! # Serialize keystore files (UTC / JSON) encrypted with a passphrase
 
 mod address;
 mod error;
