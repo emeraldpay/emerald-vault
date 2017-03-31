@@ -1,4 +1,4 @@
-//! Ethereum classic web3 like connector library.
+//! # Ethereum classic web3 like connector library.
 
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
@@ -23,7 +23,9 @@ extern crate hyper;
 extern crate regex;
 extern crate reqwest;
 extern crate rustc_serialize;
+extern crate uuid;
 
+mod address;
 mod keystore;
 mod request;
 mod serialize;
@@ -32,11 +34,12 @@ pub mod contracts;
 mod storage;
 
 use self::serde_json::Value;
+pub use address::{ADDRESS_BYTES, Address};
 use contracts::Contracts;
 use jsonrpc_core::{Error, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
-pub use keystore::{ADDRESS_BYTES, Address, address_exists};
+pub use keystore::address_exists;
 
 use log::LogLevel;
 use std::net::SocketAddr;
@@ -73,68 +76,90 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
 
     let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));
 
-    let web3_client_version = url.clone();
+    {
+        let url = url.clone();
 
-    io.add_async_method("web3_clientVersion", move |p| {
-        web3_client_version.request(&MethodParams(Method::ClientVersion, &p))
-    });
+        io.add_async_method("web3_clientVersion",
+                            move |p| url.request(&MethodParams(Method::ClientVersion, &p)));
+    }
 
-    let eth_syncing = url.clone();
+    {
+        let url = url.clone();
 
-    io.add_async_method("eth_syncing",
-                        move |p| eth_syncing.request(&MethodParams(Method::EthSyncing, &p)));
+        io.add_async_method("eth_syncing",
+                            move |p| url.request(&MethodParams(Method::EthSyncing, &p)));
+    }
 
-    let eth_block_number = url.clone();
+    {
+        let url = url.clone();
 
-    io.add_async_method("eth_blockNumber", move |p| {
-        eth_block_number.request(&MethodParams(Method::EthBlockNumber, &p))
-    });
+        io.add_async_method("eth_blockNumber",
+                            move |p| url.request(&MethodParams(Method::EthBlockNumber, &p)));
+    }
 
-    let eth_accounts = url.clone();
+    {
+        let url = url.clone();
 
-    io.add_async_method("eth_accounts",
-                        move |p| eth_accounts.request(&MethodParams(Method::EthAccounts, &p)));
+        io.add_async_method("eth_accounts",
+                            move |p| url.request(&MethodParams(Method::EthAccounts, &p)));
+    }
 
-    let eth_get_balance = url.clone();
+    {
+        let url = url.clone();
 
-    io.add_async_method("eth_getBalance",
-                        move |p| eth_get_balance.request(&MethodParams(Method::EthGetBalance, &p)));
+        io.add_async_method("eth_getBalance",
+                            move |p| url.request(&MethodParams(Method::EthGetBalance, &p)));
+    }
 
-    let eth_call = url.clone();
-    io.add_async_method("eth_call",
-                        move |p| eth_call.request(&MethodParams(Method::EthCall, &p)));
+    {
+        let url = url.clone();
+
+        io.add_async_method("eth_call",
+                            move |p| url.request(&MethodParams(Method::EthCall, &p)));
+    }
 
     let storage = Storages::new();
-    if !storage.init().is_ok() {
-        panic!("Unable to initialize storage")
+
+    if storage.init().is_err() {
+        panic!("Unable to initialize storage");
     }
+
     let chain = ChainStorage::new(&storage, "default".to_string());
-    if !chain.init().is_ok() {
-        panic!("Unable to initialize chain")
+
+    if chain.init().is_err() {
+        panic!("Unable to initialize chain");
     }
-    let contracts_service = Arc::new(Contracts::new(chain.get_path("contracts".to_string())
-                                                        .expect("Expect directory for contracts")));
-    let cs_list = contracts_service.clone();
-    io.add_async_method("emerald_contracts",
-                        move |_| futures::finished(Value::Array(cs_list.list())).boxed());
-    let cs_add = contracts_service.clone();
-    io.add_async_method("emerald_addContract", move |p: Params| {
-        let res: Result<Value, Error> = match &p {
-            &Params::Array(ref vals) => {
-                let ref json = vals[0];
-                match cs_add.add(&json) {
-                    Ok(_) => Ok(Value::Bool(true)),
-                    Err(_) => Err(Error::new(ErrorCode::InternalError)),
+
+    let dir = chain
+        .get_path("contracts".to_string())
+        .expect("Expect directory for contracts");
+
+    let contracts = Arc::new(Contracts::new(dir));
+
+    {
+        let contracts = contracts.clone();
+
+        io.add_async_method("emerald_contracts",
+                            move |_| futures::finished(Value::Array(contracts.list())).boxed());
+    }
+
+    {
+        let contracts = contracts.clone();
+
+        io.add_async_method("emerald_addContract", move |p: Params| {
+            let res = match p {
+                Params::Array(ref vec) => {
+                    match contracts.add(&vec[0]) {
+                        Ok(_) => Ok(Value::Bool(true)),
+                        Err(_) => Err(Error::new(ErrorCode::InternalError)),
+                    }
                 }
-            }
-            _ => Err(Error::new(ErrorCode::InvalidParams)),
-        };
-        match res {
-                Ok(v) => futures::finished(v),
-                Err(e) => futures::failed(e),
-            }
-            .boxed()
-    });
+                _ => Err(Error::new(ErrorCode::InvalidParams)),
+            };
+
+            futures::done(res).boxed()
+        });
+    }
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,

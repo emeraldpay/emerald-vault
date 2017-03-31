@@ -1,3 +1,5 @@
+//! # Send HTTP RPC requests
+
 use hyper::Url;
 use hyper::client::IntoUrl;
 use jsonrpc_core::{Error, Value};
@@ -16,12 +18,14 @@ impl AsyncWrapper {
     pub fn request(&self, params: &::MethodParams) -> BoxFuture<Value, Error> {
         let client = Client::new().expect("Expect to create a request client");
 
-        let mut res = client.post(self.url.clone())
+        let mut res = client
+            .post(self.url.clone())
             .json(params)
             .send()
             .expect("Expect to receive response");
 
-        let json: Value = res.json().expect("Expect to deserialize a response as JSON");
+        let json: Value = res.json()
+            .expect("Expect to deserialize a response as JSON");
 
         ::futures::finished(json["result"].clone()).boxed()
     }

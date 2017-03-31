@@ -1,5 +1,4 @@
-// https://github.com/Manishearth/rust-clippy/issues/1580
-#![allow(zero_ptr)]
+//! # Serialize RPC parameters in JSON
 
 use jsonrpc_core::Params;
 
@@ -30,7 +29,7 @@ impl<'a> Serialize for ::MethodParams<'a> {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug, Serialize)]
 struct JsonData<'a> {
     jsonrpc: &'static str,
     method: &'static str,
