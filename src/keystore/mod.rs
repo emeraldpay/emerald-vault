@@ -4,6 +4,7 @@
 //! [https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition]
 
 mod serialize;
+mod keycipher;
 
 use self::serialize::try_extract_address;
 use address::Address;
