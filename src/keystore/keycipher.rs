@@ -4,11 +4,13 @@ use self::crypto::aes::{KeySize, ctr};
 use self::crypto::digest::Digest;
 use self::crypto::hmac::Hmac;
 use self::crypto::pbkdf2::pbkdf2;
+use self::crypto::scrypt::{ScryptParams, scrypt};
 use self::crypto::sha2::Sha256;
 use self::crypto::sha3::{Sha3, Sha3Mode};
 use keystore::{Kdf, KeyFile};
 use rustc_serialize::hex::ToHex;
 use std::fmt;
+use std::mem::transmute;
 
 pub type PrivateKey = [u8; 32];
 pub type DerivedKey = [u8; 32];
@@ -42,6 +44,13 @@ pub struct SS3Decrypt {
     key: Box<KeyFile>,
 }
 
+#[derive(Clone, Copy)]
+pub struct AnyScryptParams {
+    log_n: u8,
+    r: u32,
+    p: u32,
+}
+
 impl SS3Decrypt {
     pub fn new(key: KeyFile) -> SS3Decrypt {
         SS3Decrypt { key: Box::new(key) }
@@ -55,7 +64,25 @@ impl SS3Decrypt {
                 pbkdf2(&mut hmac_f, &self.key.kdf_salt, c, &mut derived);
                 Ok(derived)
             }
-            _ => Err(CipherError::UnsupportedKDF),
+            Kdf::Scrypt { n, r, p } => {
+                let log_n = (n as f64).log2().round() as u8; //TODO validate
+                let params = unsafe {
+                    // Ethereum test vectors are using n ~ r combination which doesn't
+                    // pass ScryptParams verification in ::new()
+                    // so we have to fill ScryptParams in other way, without calling verification
+                    transmute::<AnyScryptParams, ScryptParams>(AnyScryptParams {
+                                                                   log_n: log_n,
+                                                                   r: r,
+                                                                   p: p,
+                                                               })
+                };
+                let mut derived = [0u8; 32];
+                scrypt(password.as_bytes(),
+                       &self.key.kdf_salt,
+                       &params,
+                       &mut derived);
+                Ok(derived)
+            }
         }
     }
 
@@ -124,6 +151,34 @@ pub mod tests {
         SS3Decrypt::new(key)
     }
 
+    fn test_vector_2() -> SS3Decrypt {
+        let mac = "2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097"
+            .from_hex()
+            .unwrap();
+        let salt = "ab0c7876052600dd703518d6fc3fe8984592145b591fc8fb5c6d43190334ba19"
+            .from_hex()
+            .unwrap();
+        let iv = "83dbcc02d8ccb40e466191a123791e0e".from_hex().unwrap();
+
+        let key = KeyFile {
+            id: Uuid::from_str("3198bc9c-6672-5ab3-d995-4942343ae5b6").unwrap(),
+            address: None,
+            cipher_iv: *array_ref!(iv.as_slice(), 0, 16),
+            cipher_text: "d172bf743a674da9cdad04534d56926ef8358534d458fffccd4e6ad2fbde479c"
+                .from_hex()
+                .unwrap(),
+            kdf: Kdf::Scrypt {
+                n: 262144,
+                r: 1,
+                p: 8,
+            },
+            kdf_salt: *array_ref!(salt.as_slice(), 0, 32),
+            keccak256_mac: *array_ref!(mac.as_slice(), 0, 32),
+            dk_length: 32,
+        };
+        SS3Decrypt::new(key)
+    }
+
 
     #[test]
     fn should_derive_key_tv1() {
@@ -150,6 +205,38 @@ pub mod tests {
     #[test]
     fn should_get_pk_tv1() {
         let key = test_vector_1();
+        assert_eq!(key.get_pk("testpassword".to_string()).unwrap(),
+                   "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
+                       .from_hex()
+                       .unwrap()
+                       .as_slice());
+    }
+
+    #[test]
+    fn should_derive_key_tv2() {
+        let key = test_vector_2();
+        assert_eq!(key.derive_key(&"testpassword".to_string()).unwrap(),
+                   "fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd"
+                       .from_hex()
+                       .unwrap()
+                       .as_slice())
+    }
+
+    #[test]
+    fn should_mac_tv2() {
+        let key = test_vector_2();
+        let derived_key = "fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd"
+            .from_hex()
+            .unwrap();
+        assert_eq!(key.prepare_mac(*array_ref!(derived_key.as_slice(), 0, 32))
+                       .unwrap()
+                       .to_hex(),
+                   "2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097")
+    }
+
+    #[test]
+    fn should_get_pk_tv2() {
+        let key = test_vector_2();
         assert_eq!(key.get_pk("testpassword".to_string()).unwrap(),
                    "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
                        .from_hex()
