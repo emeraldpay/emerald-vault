@@ -39,82 +39,75 @@ impl fmt::Debug for CipherError {
     }
 }
 
-/// Key Decryption of version 3 of the Web3 Secret Storage Definition.
-pub struct SS3Decrypt {
-    key: Box<KeyFile>,
-}
-
 #[derive(Clone, Copy)]
-pub struct AnyScryptParams {
+struct AnyScryptParams {
     log_n: u8,
     r: u32,
     p: u32,
 }
 
-impl SS3Decrypt {
-    pub fn new(key: KeyFile) -> SS3Decrypt {
-        SS3Decrypt { key: Box::new(key) }
-    }
+pub trait GetPkey {
+    fn get_pk(&self, password: String) -> Result<PrivateKey, CipherError>;
+}
 
-    fn derive_key(&self, password: &String) -> Result<DerivedKey, CipherError> {
-        match self.key.kdf {
-            Kdf::Pbkdf2 { c } => {
-                let mut hmac_f = Hmac::new(Sha256::new(), password.as_bytes());
-                let mut derived = [0u8; 32];
-                pbkdf2(&mut hmac_f, &self.key.kdf_salt, c, &mut derived);
-                Ok(derived)
-            }
-            Kdf::Scrypt { n, r, p } => {
-                let log_n = (n as f64).log2().round() as u8; //TODO validate
-                let params = if n == 262144 && r == 1 {
-                    // Ethereum test vectors are using n ~ r combination which doesn't
-                    // pass ScryptParams verification in ::new()
-                    // so we have to fill ScryptParams in other way, without calling verification
-                    unsafe {
-                        transmute::<AnyScryptParams, ScryptParams>(AnyScryptParams {
-                                                                       log_n: log_n,
-                                                                       r: r,
-                                                                       p: p,
-                                                                   })
-                    }
-                } else {
-                    ScryptParams::new(log_n, r, p)
-                };
-                let mut derived = [0u8; 32];
-                scrypt(password.as_bytes(),
-                       &self.key.kdf_salt,
-                       &params,
-                       &mut derived);
-                Ok(derived)
-            }
+fn derive_key(key: &KeyFile, password: &String) -> Result<DerivedKey, CipherError> {
+    match key.kdf {
+        Kdf::Pbkdf2 { c } => {
+            let mut hmac_f = Hmac::new(Sha256::new(), password.as_bytes());
+            let mut derived = [0u8; 32];
+            pbkdf2(&mut hmac_f, &key.kdf_salt, c, &mut derived);
+            Ok(derived)
+        }
+        Kdf::Scrypt { n, r, p } => {
+            let log_n = (n as f64).log2().round() as u8; //TODO validate
+            let params = if n == 262144 && r == 1 {
+                // Ethereum test vectors are using n ~ r combination which doesn't
+                // pass ScryptParams verification in ::new()
+                // so we have to fill ScryptParams in other way, without calling verification
+                unsafe {
+                    transmute::<AnyScryptParams, ScryptParams>(AnyScryptParams {
+                                                                   log_n: log_n,
+                                                                   r: r,
+                                                                   p: p,
+                                                               })
+                }
+            } else {
+                ScryptParams::new(log_n, r, p)
+            };
+            let mut derived = [0u8; 32];
+            scrypt(password.as_bytes(), &key.kdf_salt, &params, &mut derived);
+            Ok(derived)
         }
     }
+}
 
 
-    fn prepare_mac(&self, derived: DerivedKey) -> Result<MAC, CipherError> {
-        let mut sha3 = Sha3::new(Sha3Mode::Keccak256);
-        let mut mac: MAC = [0u8; 32];
-        sha3.input(&derived[16..32]);
-        sha3.input(&self.key.cipher_text.as_slice());
-        sha3.result(&mut mac);
-        Ok(mac)
-    }
+fn prepare_mac(key: &KeyFile, derived: DerivedKey) -> Result<MAC, CipherError> {
+    let mut sha3 = Sha3::new(Sha3Mode::Keccak256);
+    let mut mac: MAC = [0u8; 32];
+    sha3.input(&derived[16..32]);
+    sha3.input(&key.cipher_text.as_slice());
+    sha3.result(&mut mac);
+    Ok(mac)
+}
 
+
+impl GetPkey for KeyFile {
     /// Extract Private Key using provided password
-    pub fn get_pk(&self, password: String) -> Result<PrivateKey, CipherError> {
-        let derived = self.derive_key(&password)?;
-        let mac = self.prepare_mac(derived)?;
+    fn get_pk(&self, password: String) -> Result<PrivateKey, CipherError> {
+        let derived = derive_key(&self, &password)?;
+        let mac = prepare_mac(&self, derived)?;
 
-        if mac != self.key.keccak256_mac {
+        if mac != self.keccak256_mac {
             return Err(CipherError::InvalidMAC {
-                           exp: self.key.keccak256_mac,
+                           exp: self.keccak256_mac,
                            act: mac,
                        });
         }
 
-        let mut cipher = ctr(KeySize::KeySize128, &derived[0..16], &self.key.cipher_iv);
+        let mut cipher = ctr(KeySize::KeySize128, &derived[0..16], &self.cipher_iv);
         let mut pkey = [0u8; 32];
-        cipher.process(&self.key.cipher_text.as_slice(), &mut pkey);
+        cipher.process(&self.cipher_text.as_slice(), &mut pkey);
         Ok(pkey)
     }
 }
@@ -123,7 +116,7 @@ impl SS3Decrypt {
 #[cfg(test)]
 pub mod tests {
 
-    use super::SS3Decrypt;
+    use super::{GetPkey, derive_key, prepare_mac};
     use super::super::{Kdf, KeyFile};
     use rustc_serialize::hex::{FromHex, ToHex};
     use std::str::FromStr;
@@ -131,7 +124,7 @@ pub mod tests {
 
     // Test Vectors from https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
 
-    fn test_vector_1() -> SS3Decrypt {
+    fn test_vector_1() -> KeyFile {
         let mac = "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2"
             .from_hex()
             .unwrap();
@@ -140,7 +133,7 @@ pub mod tests {
             .unwrap();
         let iv = "6087dab2f9fdbbfaddc31a909735c1e6".from_hex().unwrap();
 
-        let key = KeyFile {
+        KeyFile {
             id: Uuid::from_str("3198bc9c-6672-5ab3-d995-4942343ae5b6").unwrap(),
             address: None,
             cipher_iv: *array_ref!(iv.as_slice(), 0, 16),
@@ -151,11 +144,10 @@ pub mod tests {
             kdf_salt: *array_ref!(salt.as_slice(), 0, 32),
             keccak256_mac: *array_ref!(mac.as_slice(), 0, 32),
             dk_length: 32,
-        };
-        SS3Decrypt::new(key)
+        }
     }
 
-    fn test_vector_2() -> SS3Decrypt {
+    fn test_vector_2() -> KeyFile {
         let mac = "2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097"
             .from_hex()
             .unwrap();
@@ -164,7 +156,7 @@ pub mod tests {
             .unwrap();
         let iv = "83dbcc02d8ccb40e466191a123791e0e".from_hex().unwrap();
 
-        let key = KeyFile {
+        KeyFile {
             id: Uuid::from_str("3198bc9c-6672-5ab3-d995-4942343ae5b6").unwrap(),
             address: None,
             cipher_iv: *array_ref!(iv.as_slice(), 0, 16),
@@ -179,15 +171,14 @@ pub mod tests {
             kdf_salt: *array_ref!(salt.as_slice(), 0, 32),
             keccak256_mac: *array_ref!(mac.as_slice(), 0, 32),
             dk_length: 32,
-        };
-        SS3Decrypt::new(key)
+        }
     }
 
 
     #[test]
     fn should_derive_key_tv1() {
         let key = test_vector_1();
-        assert_eq!(key.derive_key(&"testpassword".to_string()).unwrap(),
+        assert_eq!(derive_key(&key, &"testpassword".to_string()).unwrap(),
                    "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551"
                        .from_hex()
                        .unwrap()
@@ -200,7 +191,7 @@ pub mod tests {
         let derived_key = "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551"
             .from_hex()
             .unwrap();
-        assert_eq!(key.prepare_mac(*array_ref!(derived_key.as_slice(), 0, 32))
+        assert_eq!(prepare_mac(&key, *array_ref!(derived_key.as_slice(), 0, 32))
                        .unwrap()
                        .to_hex(),
                    "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
@@ -219,7 +210,7 @@ pub mod tests {
     #[test]
     fn should_derive_key_tv2() {
         let key = test_vector_2();
-        assert_eq!(key.derive_key(&"testpassword".to_string()).unwrap(),
+        assert_eq!(derive_key(&key, &"testpassword".to_string()).unwrap(),
                    "fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd"
                        .from_hex()
                        .unwrap()
@@ -232,7 +223,7 @@ pub mod tests {
         let derived_key = "fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd"
             .from_hex()
             .unwrap();
-        assert_eq!(key.prepare_mac(*array_ref!(derived_key.as_slice(), 0, 32))
+        assert_eq!(prepare_mac(&key, *array_ref!(derived_key.as_slice(), 0, 32))
                        .unwrap()
                        .to_hex(),
                    "2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097")
