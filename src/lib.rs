@@ -65,6 +65,9 @@ pub enum Method {
 
     /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
     EthCall,
+
+    ///
+    TraceCall,
 }
 
 /// PRC method's parameters
@@ -116,6 +119,13 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
 
         io.add_async_method("eth_call",
                             move |p| url.request(&MethodParams(Method::EthCall, &p)));
+    }
+
+    {
+        let url = url.clone();
+
+        io.add_async_method("trace_call",
+                            move |p| url.request(&MethodParams(Method::TraceCall, &p)));
     }
 
     let storage = Storages::new();
