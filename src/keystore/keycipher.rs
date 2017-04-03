@@ -66,15 +66,19 @@ impl SS3Decrypt {
             }
             Kdf::Scrypt { n, r, p } => {
                 let log_n = (n as f64).log2().round() as u8; //TODO validate
-                let params = unsafe {
+                let params = if n == 262144 && r == 1 {
                     // Ethereum test vectors are using n ~ r combination which doesn't
                     // pass ScryptParams verification in ::new()
                     // so we have to fill ScryptParams in other way, without calling verification
-                    transmute::<AnyScryptParams, ScryptParams>(AnyScryptParams {
-                                                                   log_n: log_n,
-                                                                   r: r,
-                                                                   p: p,
-                                                               })
+                    unsafe {
+                        transmute::<AnyScryptParams, ScryptParams>(AnyScryptParams {
+                                                                       log_n: log_n,
+                                                                       r: r,
+                                                                       p: p,
+                                                                   })
+                    }
+                } else {
+                    ScryptParams::new(log_n, r, p)
                 };
                 let mut derived = [0u8; 32];
                 scrypt(password.as_bytes(),
