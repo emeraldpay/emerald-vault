@@ -21,8 +21,6 @@ pub type MAC = [u8; 32];
 pub enum CipherError {
     /// MAC validation error
     InvalidMAC { exp: MAC, act: MAC },
-    /// KD Function is not supported
-    UnsupportedKDF,
 }
 
 impl fmt::Debug for CipherError {
@@ -34,7 +32,6 @@ impl fmt::Debug for CipherError {
                        exp.to_hex(),
                        act.to_hex())
             }
-            CipherError::UnsupportedKDF => write!(f, "Unsupported KDF"),
         }
     }
 }
@@ -52,7 +49,7 @@ pub trait GetPkey {
 
 fn derive_key(key: &KeyFile, password: &String) -> Result<DerivedKey, CipherError> {
     match key.kdf {
-        Kdf::Pbkdf2 { c } => {
+        Kdf::Pbkdf2 { c, .. } => {
             let mut hmac_f = Hmac::new(Sha256::new(), password.as_bytes());
             let mut derived = [0u8; 32];
             pbkdf2(&mut hmac_f, &key.kdf_salt, c, &mut derived);
@@ -115,9 +112,8 @@ impl GetPkey for KeyFile {
 
 #[cfg(test)]
 pub mod tests {
-
     use super::{GetPkey, derive_key, prepare_mac};
-    use super::super::{Kdf, KeyFile};
+    use keystore::{Cipher, Kdf, KeyFile, Prf};
     use rustc_serialize::hex::{FromHex, ToHex};
     use std::str::FromStr;
     use uuid::Uuid;
@@ -134,13 +130,17 @@ pub mod tests {
         let iv = "6087dab2f9fdbbfaddc31a909735c1e6".from_hex().unwrap();
 
         KeyFile {
-            id: Uuid::from_str("3198bc9c-6672-5ab3-d995-4942343ae5b6").unwrap(),
+            uuid: Uuid::from_str("3198bc9c-6672-5ab3-d995-4942343ae5b6").unwrap(),
             address: None,
+            cipher: Cipher::default(),
             cipher_iv: *array_ref!(iv.as_slice(), 0, 16),
             cipher_text: "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46"
                 .from_hex()
                 .unwrap(),
-            kdf: Kdf::Pbkdf2 { c: 262144 },
+            kdf: Kdf::Pbkdf2 {
+                prf: Prf::default(),
+                c: 262144,
+            },
             kdf_salt: *array_ref!(salt.as_slice(), 0, 32),
             keccak256_mac: *array_ref!(mac.as_slice(), 0, 32),
             dk_length: 32,
@@ -157,8 +157,9 @@ pub mod tests {
         let iv = "83dbcc02d8ccb40e466191a123791e0e".from_hex().unwrap();
 
         KeyFile {
-            id: Uuid::from_str("3198bc9c-6672-5ab3-d995-4942343ae5b6").unwrap(),
+            uuid: Uuid::from_str("3198bc9c-6672-5ab3-d995-4942343ae5b6").unwrap(),
             address: None,
+            cipher: Cipher::default(),
             cipher_iv: *array_ref!(iv.as_slice(), 0, 16),
             cipher_text: "d172bf743a674da9cdad04534d56926ef8358534d458fffccd4e6ad2fbde479c"
                 .from_hex()
