@@ -5,6 +5,7 @@
 
 pub mod cipher;
 mod serialize;
+mod keycipher;
 pub mod kdf;
 pub mod prf;
 
