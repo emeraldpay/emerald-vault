@@ -1,55 +1,70 @@
 //! # Serialize keystore files (UTC / JSON) encrypted with a passphrase
 
 mod address;
+#[macro_use]
+mod byte_array;
+mod crypto;
 mod error;
 
 pub use self::address::try_extract_address;
+use self::crypto::Crypto;
 use self::error::SerializeError;
+use address::Address;
 use keystore::KeyFile;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use uuid::Uuid;
 
+/// Keystore file current version used for serializing
+pub const CURRENT_VERSION: u8 = 3;
+
 /// Supported keystore file versions (only current V3 now)
-pub static SUPPORTED_VERSIONS: &'static [u8] = &[3];
-
-impl Encodable for KeyFile {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        s.emit_struct("KeyFile", 3, |s| {
-            (s.emit_struct_field("version", 0, |s| s.emit_usize(3)))?;
-            (s.emit_struct_field("id", 1, |s| self.id.encode(s)))?;
-
-            if let Some(addr) = self.address {
-                (s.emit_struct_field("address", 2, |s| addr.encode(s)))?;
-            }
-
-            Ok(())
-        })
-    }
-}
+pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
 
 impl Decodable for KeyFile {
     fn decode<D: Decoder>(d: &mut D) -> Result<KeyFile, D::Error> {
-        d.read_struct("KeyFile", 2, |d| {
-            let ver = (d.read_struct_field("version", 0, |d| d.read_u8()))?;
+        let ser = (SerializableKeyFile::decode(d))?;
 
-            if !SUPPORTED_VERSIONS.contains(&ver) {
-                return Err(d.error(&SerializeError::UnsupportedVersion(ver).to_string()));
-            }
+        if !SUPPORTED_VERSIONS.contains(&ser.version) {
+            return Err(d.error(&SerializeError::UnsupportedVersion(ser.version).to_string()));
+        }
 
-            let id =
-                (d.read_struct_field("id", 1, |d| d.read_str())
-                     .and_then(|s| Uuid::parse_str(&s).map_err(|e| d.error(&e.to_string()))))?;
+        Ok(KeyFile::from(ser))
+    }
+}
 
-            let addr = d.read_struct_field("address", 2, |d| Decodable::decode(d))?;
+impl Encodable for KeyFile {
+    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+        SerializableKeyFile::from(self.clone()).encode(s)
+    }
+}
 
-            let mut key_file = KeyFile::from(id);
+/// A serializable keystore file (UTC / JSON format)
+#[derive(Clone, Debug, RustcDecodable, RustcEncodable)]
+struct SerializableKeyFile {
+    version: u8,
+    id: Uuid,
+    address: Option<Address>,
+    crypto: Crypto,
+}
 
-            if let Some(addr) = addr {
-                key_file.with_address(&addr);
-            }
+impl From<KeyFile> for SerializableKeyFile {
+    fn from(key_file: KeyFile) -> Self {
+        SerializableKeyFile {
+            version: CURRENT_VERSION,
+            id: key_file.uuid,
+            address: key_file.address,
+            crypto: Crypto::from(key_file),
+        }
+    }
+}
 
-            Ok(key_file)
-        })
+impl From<SerializableKeyFile> for KeyFile {
+    fn from(ser: SerializableKeyFile) -> KeyFile {
+        KeyFile {
+            uuid: ser.id,
+            address: ser.address,
+            ..KeyFile::from(ser.crypto)
+        }
     }
 }
 
@@ -57,40 +72,6 @@ impl Decodable for KeyFile {
 mod tests {
     use keystore::KeyFile;
     use rustc_serialize::json;
-
-    #[test]
-    fn should_decode_encode_keyfile_with_address() {
-        let str = r#"{
-          "version": 3,
-          "id": "9bec4728-37f9-4444-9990-2ba70ee038e9",
-          "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
-          "name": "",
-          "meta": "{}"
-        }"#;
-
-        let exp = "{\"version\":3,\"id\":\"9bec4728-37f9-4444-9990-2ba70ee038e9\",\"address\":\
-                   \"3f4e0668c20e100d7c2a27d4b177ac65b2875d26\"}";
-
-        let key = json::decode::<KeyFile>(str).unwrap();
-
-        assert_eq!(json::encode(&key).unwrap(), exp);
-    }
-
-    #[test]
-    fn should_decode_encode_keyfile_without_address() {
-        let str = r#"{
-          "version": 3,
-          "id": "9bec4728-37f9-4444-9990-2ba70ee038e9",
-          "name": "",
-          "meta": "{}"
-        }"#;
-
-        let exp = "{\"version\":3,\"id\":\"9bec4728-37f9-4444-9990-2ba70ee038e9\"}";
-
-        let key = json::decode::<KeyFile>(str).unwrap();
-
-        assert_eq!(json::encode(&key).unwrap(), exp);
-    }
 
     #[test]
     fn should_catch_unsupported_keyfile_version() {

@@ -3,8 +3,14 @@
 //! (Web3 Secret Storage Definition)
 //! [https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition]
 
+pub mod cipher;
 mod serialize;
+pub mod kdf;
+pub mod prf;
 
+pub use self::cipher::{Cipher, DEFAULT_CIPHER_NAME};
+pub use self::kdf::{DEFAULT_KDF_NAME, Kdf};
+pub use self::prf::{DEFAULT_PRF_NAME, Prf};
 use self::serialize::try_extract_address;
 use address::Address;
 use std::{cmp, fmt, fs};
@@ -27,45 +33,76 @@ pub const CIPHER_IV_BYTES: usize = 16;
 /// A keystore file (account private key encrypted with a passphrase)
 #[derive(Clone, Debug, Eq)]
 pub struct KeyFile {
-    pub id: Uuid,
+    /// UUID v4
+    pub uuid: Uuid,
+
+    /// Public address (optional)
     pub address: Option<Address>,
+
+    /// Derived key length
     pub dk_length: u32,
+
+    /// Key derivation function
     pub kdf: Kdf,
+
+    /// Key derivation function salt
     pub kdf_salt: [u8; KDF_SALT_BYTES],
+
+    /// Keccak-256 mac to confirm the derived key integrity
     pub keccak256_mac: [u8; KECCAK256_BYTES],
+
+    /// Cipher type
+    pub cipher: Cipher,
+
+    /// Cipher encoded text
     pub cipher_text: Vec<u8>,
+
+    /// Cipher initialization vector
     pub cipher_iv: [u8; CIPHER_IV_BYTES],
 }
 
 impl KeyFile {
+    // FIXME
     #[allow(dead_code)]
     fn new() -> Self {
         Self::from(Uuid::new_v4())
     }
 
+    // FIXME
+    #[allow(dead_code)]
     fn with_address(&mut self, addr: &Address) {
         self.address = Some(*addr);
     }
 }
 
-impl From<Uuid> for KeyFile {
-    fn from(id: Uuid) -> Self {
+impl Default for KeyFile {
+    fn default() -> KeyFile {
         KeyFile {
-            id: id,
+            uuid: Uuid::default(),
             address: None,
             dk_length: DEFAULT_DK_LENGTH,
             kdf: Kdf::default(),
             kdf_salt: [0; KDF_SALT_BYTES],
             keccak256_mac: [0; KECCAK256_BYTES],
+            cipher: Cipher::default(),
             cipher_text: vec![],
             cipher_iv: [0; CIPHER_IV_BYTES],
         }
     }
 }
 
+impl From<Uuid> for KeyFile {
+    fn from(uuid: Uuid) -> Self {
+        KeyFile {
+            uuid: uuid,
+            ..KeyFile::default()
+        }
+    }
+}
+
 impl PartialEq for KeyFile {
     fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+        self.uuid == other.uuid
     }
 }
 
@@ -77,34 +114,13 @@ impl PartialOrd for KeyFile {
 
 impl Ord for KeyFile {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
-        self.id.cmp(&other.id)
+        self.uuid.cmp(&other.uuid)
     }
 }
 
 impl fmt::Display for KeyFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Keystore file: {}", self.id)
-    }
-}
-
-/// Key derivation function
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Kdf {
-    /// PBKDF2 (specified in (RFC 2898)[https://tools.ietf.org/html/rfc2898])
-    #[allow(dead_code)]
-    Pbkdf2 { c: u32 },
-
-    /// Scrypt (specified in (RPC 7914)[https://tools.ietf.org/html/rfc7914])
-    Scrypt { n: u32, r: u32, p: u32 },
-}
-
-impl Default for Kdf {
-    fn default() -> Kdf {
-        Kdf::Scrypt {
-            n: 262144,
-            r: 8,
-            p: 1,
-        }
+        write!(f, "Keystore file: {}", self.uuid)
     }
 }
 
@@ -136,4 +152,20 @@ pub fn address_exists<P: AsRef<Path>>(path: P, addr: &Address) -> bool {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::KeyFile;
+    use address::Address;
+
+    #[test]
+    fn should_eq() {
+        let key1 = KeyFile::new();
+
+        let mut key2 = key1.clone();
+
+        key2.with_address(&"0x0e7c045110b8dbf29765047380898919c5cb56f4"
+                               .parse::<Address>()
+                               .unwrap());
+
+        assert_eq!(key1, key2);
+    }
+}
