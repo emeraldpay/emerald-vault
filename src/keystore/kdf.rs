@@ -4,9 +4,6 @@ use super::prf::Prf;
 use std::{error, fmt};
 use std::str::FromStr;
 
-/// Default key derivation function name
-pub const DEFAULT_KDF_NAME: &'static str = SCRYPT_KDF_NAME;
-
 /// PBKDF2 key derivation function name
 pub const PBKDF2_KDF_NAME: &'static str = "pbkdf2";
 
@@ -119,28 +116,5 @@ impl error::Error for KdfParserError {
         match *self {
             _ => None,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{Kdf, PBKDF2_KDF_NAME, SCRYPT_KDF_NAME};
-    use std::str::FromStr;
-
-    #[test]
-    fn should_decode_pbkdf2_kdf() {
-        assert_eq!(Kdf::from_str(PBKDF2_KDF_NAME).unwrap().to_string(),
-                   PBKDF2_KDF_NAME);
-    }
-
-    #[test]
-    fn should_decode_scrypt_kdf() {
-        assert_eq!(Kdf::from_str(SCRYPT_KDF_NAME).unwrap().to_string(),
-                   SCRYPT_KDF_NAME);
-    }
-
-    #[test]
-    fn should_not_decode_unknown_kdf() {
-        assert!(Kdf::from_str("unknown").is_err());
     }
 }

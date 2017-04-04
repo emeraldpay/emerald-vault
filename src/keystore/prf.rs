@@ -3,9 +3,6 @@
 use std::{error, fmt};
 use std::str::FromStr;
 
-/// Default pseudo-random function name
-pub const DEFAULT_PRF_NAME: &'static str = HMAC_SHA256_PRF_NAME;
-
 /// `HMAC_SHA256` pseudo-random function name
 pub const HMAC_SHA256_PRF_NAME: &'static str = "hmac-sha256";
 
@@ -67,21 +64,5 @@ impl error::Error for PrfParserError {
         match *self {
             _ => None,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{DEFAULT_PRF_NAME, Prf};
-    use std::str::FromStr;
-
-    #[test]
-    fn should_decode_default_prf() {
-        assert_eq!(Prf::from_str(DEFAULT_PRF_NAME).unwrap(), Prf::default());
-    }
-
-    #[test]
-    fn should_not_decode_unknown_prf() {
-        assert!(Prf::from_str("unknown").is_err());
     }
 }

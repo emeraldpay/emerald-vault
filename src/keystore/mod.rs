@@ -8,9 +8,9 @@ mod serialize;
 pub mod kdf;
 pub mod prf;
 
-pub use self::cipher::{Cipher, DEFAULT_CIPHER_NAME};
-pub use self::kdf::{DEFAULT_KDF_NAME, Kdf};
-pub use self::prf::{DEFAULT_PRF_NAME, Prf};
+pub use self::cipher::Cipher;
+pub use self::kdf::Kdf;
+pub use self::prf::Prf;
 use self::serialize::try_extract_address;
 use address::Address;
 use std::{cmp, fmt, fs};

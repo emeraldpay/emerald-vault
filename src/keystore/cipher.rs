@@ -3,9 +3,6 @@
 use std::{error, fmt};
 use std::str::FromStr;
 
-/// Default cipher name
-pub const DEFAULT_CIPHER_NAME: &'static str = AES256_CTR_CIPHER_NAME;
-
 /// `AES256_CRT` cipher name
 pub const AES256_CTR_CIPHER_NAME: &'static str = "aes-128-ctr";
 
@@ -67,22 +64,5 @@ impl error::Error for CipherParserError {
         match *self {
             _ => None,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{Cipher, DEFAULT_CIPHER_NAME};
-    use std::str::FromStr;
-
-    #[test]
-    fn should_decode_default_cipher() {
-        assert_eq!(Cipher::from_str(DEFAULT_CIPHER_NAME).unwrap(),
-                   Cipher::default());
-    }
-
-    #[test]
-    fn should_not_decode_unknown_cipher() {
-        assert!(Cipher::from_str("unknown").is_err());
     }
 }
