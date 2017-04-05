@@ -6,7 +6,7 @@ use self::secp256k1::key::{SecretKey};
 use self::rand::{thread_rng, ThreadRng};
 
 
-///
+/// Errors for key generation.
 pub enum GeneratorError {
     InvalidKey,
 }
@@ -17,7 +17,8 @@ impl From<secp256k1::Error> for GeneratorError {
     }
 }
 
-///
+/// Secret key generator.
+/// Runs for `ticks` times, yielding each time key.
 pub struct Generator<'call> {
     ticks: u64,
     secp256: Secp256k1,
@@ -25,6 +26,19 @@ pub struct Generator<'call> {
 }
 
 impl<'call> Generator<'call> {
+    /// Create a new `Generator`.
+    ///
+    /// # Arguments
+    ///
+    /// * `ticks` - number of yielded keys.
+    /// * `r` - random number generator.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let gen = Generator::new(100, &rng);
+    /// assert_eq!(gen.collect::<Vec<_>>().len(), 100);
+    /// ```
     fn new(t: u64, r: &'call Fn() -> ThreadRng) -> Self{
         Generator {
             ticks: t,
@@ -47,18 +61,10 @@ impl<'call> Iterator for Generator<'call> {
     }
 }
 
-///
-fn filter() {
-
-}
-
 #[cfg(test)]
 mod tests {
-    extern crate rand;
-
     use super::*;
     use self::rand::thread_rng;
-
 
     #[test]
     fn should_generate_keys() {
