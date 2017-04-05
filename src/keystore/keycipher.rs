@@ -209,6 +209,7 @@ pub mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_derive_key_tv2() {
         let key = test_vector_2();
         assert_eq!(derive_key(&key, &"testpassword".to_string()).unwrap(),
@@ -231,6 +232,7 @@ pub mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_get_pk_tv2() {
         let key = test_vector_2();
         assert_eq!(key.get_pk("testpassword".to_string()).unwrap(),

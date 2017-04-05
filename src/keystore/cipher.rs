@@ -25,7 +25,7 @@ impl FromStr for Cipher {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             _ if s == AES256_CTR_CIPHER_NAME => Ok(Cipher::Aes256Ctr),
-            _ => Err(CipherParserError::UnsupportedCipher(s.to_owned())),
+            _ => Err(CipherParserError::UnsupportedCipher(s.to_string())),
         }
     }
 }
@@ -49,7 +49,7 @@ impl fmt::Display for CipherParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             CipherParserError::UnsupportedCipher(ref str) => {
-                write!(f, "Unsupported cipher name: {}", str)
+                write!(f, "Unsupported cipher: {}", str)
             }
         }
     }
