@@ -2,7 +2,7 @@
   "version": 3,
   "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
   "address": "0047201aed0b69875b24b614dda0270bcd9f11cc",
-  "Crypto": {
+  "crypto": {
     "ciphertext": "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
     "cipherparams": {
       "iv": "9df1649dd1c50f2153917e3b9e7164e9"

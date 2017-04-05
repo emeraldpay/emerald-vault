@@ -11,6 +11,10 @@ extern crate log;
 #[macro_use]
 extern crate lazy_static;
 
+#[cfg(test)]
+#[macro_use]
+extern crate arrayref;
+
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
@@ -26,8 +30,8 @@ extern crate rustc_serialize;
 extern crate uuid;
 
 mod address;
-mod keystore;
 mod key_generator;
+pub mod keystore;
 mod request;
 mod serialize;
 /// Contracts stuff
@@ -40,7 +44,7 @@ use contracts::Contracts;
 use jsonrpc_core::{Error, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
-pub use keystore::address_exists;
+pub use keystore::{KeyFile, address_exists};
 
 use log::LogLevel;
 use std::net::SocketAddr;
