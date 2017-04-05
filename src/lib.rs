@@ -27,6 +27,7 @@ extern crate uuid;
 
 mod address;
 mod keystore;
+mod key_generator;
 mod request;
 mod serialize;
 /// Contracts stuff
