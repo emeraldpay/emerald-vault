@@ -1,9 +1,9 @@
 extern crate secp256k1;
 extern crate rand;
 
-use self::secp256k1::{Secp256k1};
-use self::secp256k1::key::{SecretKey};
-use self::rand::{thread_rng, ThreadRng};
+use self::rand::{ThreadRng, thread_rng};
+use self::secp256k1::Secp256k1;
+use self::secp256k1::key::SecretKey;
 
 
 /// Errors for key generation.
@@ -39,11 +39,11 @@ impl<'call> Generator<'call> {
     /// let gen = Generator::new(100, &rng);
     /// assert_eq!(gen.collect::<Vec<_>>().len(), 100);
     /// ```
-    fn new(t: u64, r: &'call Fn() -> ThreadRng) -> Self{
+    fn new(t: u64, r: &'call Fn() -> ThreadRng) -> Self {
         Generator {
             ticks: t,
             secp256: Secp256k1::new(),
-            thread_rng: r
+            thread_rng: r,
         }
     }
 }
@@ -52,7 +52,7 @@ impl<'call> Iterator for Generator<'call> {
     type Item = SecretKey;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if  self.ticks > 0 {
+        if self.ticks > 0 {
             self.ticks -= 1;
             Some(SecretKey::new(&self.secp256, &mut (self.thread_rng)()))
         } else {
@@ -63,8 +63,8 @@ impl<'call> Iterator for Generator<'call> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use self::rand::thread_rng;
+    use super::*;
 
     #[test]
     fn should_generate_keys() {
