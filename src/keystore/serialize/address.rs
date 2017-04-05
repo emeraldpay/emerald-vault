@@ -1,21 +1,21 @@
-//! # Custom JSON format for account addresses (without '0x' prefix)
+//! # JSON serialize format for hex encoded account addresses (without '0x' prefix)
 
 use address::Address;
 use regex::Regex;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use std::str::FromStr;
 
-impl Encodable for Address {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        s.emit_str(&self.to_string()[2..]) /* cut '0x' prefix */
-    }
-}
-
 impl Decodable for Address {
     fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
         d.read_str()
             .map(|s| format!("0x{}", s))
             .and_then(|s| Address::from_str(&s).map_err(|e| d.error(&e.to_string())))
+    }
+}
+
+impl Encodable for Address {
+    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+        s.emit_str(&self.to_string()[2..]) /* cut '0x' prefix */
     }
 }
 
@@ -38,9 +38,16 @@ mod tests {
     use rustc_serialize::json;
 
     #[test]
-    fn should_encode_zero_address() {
+    fn should_encode_default_address() {
         assert_eq!(json::encode(&Address::default()).unwrap(),
                    "\"0000000000000000000000000000000000000000\"");
+    }
+
+    #[test]
+    fn should_decode_zero_address() {
+        assert_eq!(json::decode::<Address>("\"0000000000000000000000000000000000000000\"")
+                       .unwrap(),
+                   Address::default());
     }
 
     #[test]
@@ -50,13 +57,6 @@ mod tests {
 
         assert_eq!(json::encode(&addr).unwrap(),
                    "\"0e7c045110b8dbf29765047380898919c5cb56f4\"");
-    }
-
-    #[test]
-    fn should_decode_zero_address() {
-        assert_eq!(json::decode::<Address>("\"0000000000000000000000000000000000000000\"")
-                       .unwrap(),
-                   Address::default());
     }
 
     #[test]
