@@ -72,7 +72,7 @@ impl FromStr for Address {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with("0x") {
-            return Err(AddressParserError::UnexpectedPrefix(s.to_owned()));
+            return Err(AddressParserError::UnexpectedPrefix(s.to_string()));
         }
 
         let (_, s) = s.split_at(2);

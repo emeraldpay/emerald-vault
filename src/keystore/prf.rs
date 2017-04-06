@@ -25,7 +25,7 @@ impl FromStr for Prf {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             _ if s == HMAC_SHA256_PRF_NAME => Ok(Prf::HmacSha256),
-            _ => Err(PrfParserError::UnsupportedPrf(s.to_owned())),
+            _ => Err(PrfParserError::UnsupportedPrf(s.to_string())),
         }
     }
 }
@@ -49,7 +49,7 @@ impl fmt::Display for PrfParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             PrfParserError::UnsupportedPrf(ref str) => {
-                write!(f, "Unsupported pseudo-random function name: {}", str)
+                write!(f, "Unsupported pseudo-random function: {}", str)
             }
         }
     }
