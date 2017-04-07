@@ -40,6 +40,7 @@ use jsonrpc_core::{Error, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 pub use keystore::address_exists;
+use std::path::Path;
 
 use log::LogLevel;
 use std::net::SocketAddr;
@@ -74,7 +75,7 @@ pub enum Method {
 pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
-pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
+pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<&Path>, key_path: Option<&Path>) {
     let mut io = IoHandler::default();
 
     let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));
@@ -128,7 +129,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
                             move |p| url.request(&MethodParams(Method::TraceCall, &p)));
     }
 
-    let storage = Storages::new();
+    let storage = Storages::new(base_path);
 
     if storage.init().is_err() {
         panic!("Unable to initialize storage");

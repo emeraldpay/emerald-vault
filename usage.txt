@@ -12,3 +12,5 @@ Options:
     -q, --quiet                 No output printed to stdout.
     --address ADDR              Emerald wallet listen address. [default: 127.0.0.1:1920]
     --client-address ADDR       Ethereum client connect to address. [default: 127.0.0.1:8545]
+    --base-path PATH            Base directory path.
+    --key-path PATH             Keystore directory path.

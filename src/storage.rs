@@ -11,11 +11,12 @@ pub struct Storages<'a> {
 }
 
 impl<'a> Storages<'a> {
-    /// Create storage using default directory
-    pub fn new() -> Storages<'a> {
-        Storages {
-            //TODO use user home subdir
-            base_dir: Path::new("emerald_data"),
+    /// Create storage using user directory if specified,
+    /// or default path in other case.
+    pub fn new(path: Option<&'a Path>) -> Storages<'a> {
+        match path {
+            Some(p) => Storages { base_dir: p },
+            _ => Storages { base_dir: Path::new("emerald_data") }
         }
     }
 
@@ -66,5 +67,25 @@ impl<'a> ChainStorage<'a> {
             fs::create_dir(&p)?
         }
         Ok(p)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn should_use_default_path() {
+        let st = Storages::new(None);
+
+        assert_eq!(st.base_dir.as_os_str(), Path::new("emerald_data").as_os_str());
+    }
+
+    #[test]
+    fn should_use_user_path() {
+        let user_path = Path::new("../some/path");
+        let st = Storages::new(Some(&user_path));
+
+        assert_eq!(st.base_dir.as_os_str(), user_path.as_os_str());
     }
 }

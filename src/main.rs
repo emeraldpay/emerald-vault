@@ -20,6 +20,7 @@ use log::{LogLevel, LogLevelFilter};
 use std::env;
 use std::net::SocketAddr;
 use std::process::*;
+use std::path::Path;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
@@ -32,6 +33,8 @@ struct Args {
     flag_quiet: bool,
     flag_address: String,
     flag_client_address: String,
+    flag_base_path: String,
+    flag_key_path: String,
 }
 
 fn main() {
@@ -64,10 +67,30 @@ fn main() {
         .parse::<SocketAddr>()
         .expect("Expect to parse client address");
 
+    let base_path_str = args.flag_base_path
+        .parse::<String>()
+        .expect("Expect to parse base path");
+    let base_path;
+    if !base_path_str.is_empty() {
+        base_path = Some(Path::new(&base_path_str));
+    } else {
+        base_path = None;
+    }
+
+    let key_path_str = args.flag_key_path
+        .parse::<String>()
+        .expect("Expect to parse key path");
+    let key_path;
+    if !key_path_str.is_empty() {
+        key_path = Some(Path::new(&key_path_str));
+    } else {
+        key_path = None;
+    }
+
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}",
               VERSION.unwrap_or("unknown"));
     }
 
-    emerald::start(&addr, &client_addr);
+    emerald::start(&addr, &client_addr, base_path, key_path);
 }
