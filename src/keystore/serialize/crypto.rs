@@ -15,7 +15,7 @@ pub struct Crypto {
     cipher_text: Vec<u8>,
     cipher_params: CipherParams,
     kdf: Kdf,
-    kdfparams_dklen: u32,
+    kdfparams_dklen: usize,
     kdfparams_salt: Salt,
     mac: Mac,
 }
@@ -75,7 +75,7 @@ impl Decodable for Crypto {
                     ref mut c,
                 } => {
                     d.read_struct("KdfParams", 4, |d| {
-                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_u32())?;
+                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
                         let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
 
                         *prf = d.read_struct_field("prf", 2, |d| decode_str(d))?;
@@ -90,7 +90,7 @@ impl Decodable for Crypto {
                     ref mut p,
                 } => {
                     d.read_struct("KdfParams", 5, |d| {
-                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_u32())?;
+                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
                         let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
 
                         *n = d.read_struct_field("n", 2, |d| d.read_u32())?;
@@ -127,7 +127,7 @@ impl Encodable for Crypto {
             (s.emit_struct_field("kdfparams", 4, |s| match self.kdf {
                 Kdf::Pbkdf2 { prf, c } => {
                     s.emit_struct("KdfParams", 4, |s| {
-                        (s.emit_struct_field("dklen", 0, |s| s.emit_u32(self.kdfparams_dklen)))?;
+                        (s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen)))?;
                         (s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s)))?;
                         (s.emit_struct_field("prf", 2, |s| s.emit_str(&prf.to_string())))?;
                         (s.emit_struct_field("c", 3, |s| s.emit_u32(c)))?;
@@ -137,7 +137,7 @@ impl Encodable for Crypto {
                 }
                 Kdf::Scrypt { n, r, p } => {
                     s.emit_struct("KdfParams", 5, |s| {
-                        (s.emit_struct_field("dklen", 0, |s| s.emit_u32(self.kdfparams_dklen)))?;
+                        (s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen)))?;
                         (s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s)))?;
                         (s.emit_struct_field("n", 2, |s| s.emit_u32(n)))?;
                         (s.emit_struct_field("r", 3, |s| s.emit_u32(r)))?;

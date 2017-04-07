@@ -24,7 +24,7 @@ pub enum Kdf {
 
     /// Scrypt (by default, specified in (RPC 7914)[https://tools.ietf.org/html/rfc7914])
     Scrypt {
-        /// Number of iterations (`262144` by default)
+        /// Number of iterations (`4096` by default)
         n: u32,
 
         /// Block size for the underlying hash (`8` by default)
