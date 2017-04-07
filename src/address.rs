@@ -72,13 +72,13 @@ impl FromStr for Address {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with("0x") {
-            return Err(AddressParserError::UnexpectedPrefix(s.to_owned()));
+            return Err(AddressParserError::UnexpectedPrefix(s.to_string()));
         }
 
         let (_, s) = s.split_at(2);
 
         s.from_hex()
-            .map_err(AddressParserError::from)
+            .map_err(AddressParserError::UnexpectedEncoding)
             .and_then(|v| Address::try_from(&v))
     }
 }
@@ -98,12 +98,6 @@ pub enum AddressParserError {
     UnexpectedPrefix(String),
     /// An unexpected hexadecimal encoding error
     UnexpectedEncoding(hex::FromHexError),
-}
-
-impl From<hex::FromHexError> for AddressParserError {
-    fn from(err: hex::FromHexError) -> Self {
-        AddressParserError::UnexpectedEncoding(err)
-    }
 }
 
 impl fmt::Display for AddressParserError {
