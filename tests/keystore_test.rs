@@ -4,7 +4,7 @@ extern crate rustc_serialize;
 extern crate uuid;
 
 use emerald::keystore::*;
-use rustc_serialize::hex::FromHex;
+use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
 use std::fs;
 use std::io::Read;
@@ -32,11 +32,8 @@ fn should_extract_scrypt_based_kdf_private_key() {
     let key = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
 
     assert!(key.extract_key("_").is_err());
-    assert_eq!(&key.extract_key("1234567890").unwrap(),
-               &"fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f"
-                    .from_hex()
-                    .unwrap()
-                    [..]);
+    assert_eq!(key.extract_key("1234567890").unwrap().to_hex(),
+               "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f");
 }
 
 #[test]
@@ -46,11 +43,8 @@ fn should_extract_pbkdf2_based_kdf_private_key() {
     let key = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
 
     assert!(key.extract_key("_").is_err());
-    assert_eq!(&key.extract_key("1234567890").unwrap(),
-               &"00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf"
-                    .from_hex()
-                    .unwrap()
-                    [..]);
+    assert_eq!(key.extract_key("1234567890").unwrap().to_hex(),
+               "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf");
 }
 
 #[test]
