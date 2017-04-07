@@ -4,10 +4,10 @@
 //! [https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition]
 
 pub mod cipher;
-mod extract_key;
+pub mod extract_key;
 pub mod kdf;
 pub mod prf;
-mod serialize;
+pub mod serialize;
 
 pub use self::cipher::Cipher;
 pub use self::extract_key::PRIVATE_KEY_BYTES;
@@ -84,11 +84,11 @@ impl Default for KeyFile {
             address: None,
             dk_length: DEFAULT_DK_LENGTH,
             kdf: Kdf::default(),
-            kdf_salt: [0; KDF_SALT_BYTES],
-            keccak256_mac: [0; KECCAK256_BYTES],
+            kdf_salt: [0u8; KDF_SALT_BYTES],
+            keccak256_mac: [0u8; KECCAK256_BYTES],
             cipher: Cipher::default(),
             cipher_text: vec![],
-            cipher_iv: [0; CIPHER_IV_BYTES],
+            cipher_iv: [0u8; CIPHER_IV_BYTES],
         }
     }
 }

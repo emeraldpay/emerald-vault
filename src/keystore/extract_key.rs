@@ -34,7 +34,7 @@ impl KeyFile {
     }
 
     fn derive_key(&self, passphrase: &str) -> Vec<u8> {
-        let mut key = vec![0; self.dk_length];
+        let mut key = vec![0u8; self.dk_length];
 
         match self.kdf {
             Kdf::Pbkdf2 { prf: _prf, c } => {
