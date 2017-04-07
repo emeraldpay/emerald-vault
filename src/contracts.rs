@@ -1,11 +1,8 @@
-extern crate serde;
-extern crate serde_json;
-extern crate glob;
-extern crate futures;
+//! Contracts utils
 
-use self::glob::glob;
-use self::serde_json::Value;
 use address::Address;
+use glob::glob;
+use serde_json::{self, Value};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
