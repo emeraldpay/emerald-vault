@@ -1,16 +1,20 @@
-extern crate crypto;
+//! Extract private keys from keystore files
 
-use self::crypto::aes::{KeySize, ctr};
-use self::crypto::digest::Digest;
-use self::crypto::hmac::Hmac;
-use self::crypto::pbkdf2::pbkdf2;
-use self::crypto::scrypt::{ScryptParams, scrypt};
-use self::crypto::sha2::Sha256;
-use self::crypto::sha3::{Sha3, Sha3Mode};
+use crypto::aes::{KeySize, ctr};
+use crypto::digest::Digest;
+use crypto::hmac::Hmac;
+use crypto::pbkdf2::pbkdf2;
+use crypto::scrypt::{ScryptParams, scrypt};
+use crypto::sha2::Sha256;
+use crypto::sha3::{Sha3, Sha3Mode};
 use keystore::{Kdf, KeyFile};
 use rustc_serialize::hex::ToHex;
 use std::fmt;
-use std::mem::transmute;
+
+pub trait ExtractKey {
+    /// Extract private key using provided password
+    fn get_pk(&self, password: String) -> Result<PrivateKey, CipherError>;
+}
 
 pub type PrivateKey = [u8; 32];
 pub type DerivedKey = [u8; 32];
@@ -36,17 +40,6 @@ impl fmt::Debug for CipherError {
     }
 }
 
-#[derive(Clone, Copy)]
-struct AnyScryptParams {
-    log_n: u8,
-    r: u32,
-    p: u32,
-}
-
-pub trait GetPkey {
-    fn get_pk(&self, password: String) -> Result<PrivateKey, CipherError>;
-}
-
 fn derive_key(key: &KeyFile, password: &String) -> Result<DerivedKey, CipherError> {
     match key.kdf {
         Kdf::Pbkdf2 { c, .. } => {
@@ -57,27 +50,13 @@ fn derive_key(key: &KeyFile, password: &String) -> Result<DerivedKey, CipherErro
         }
         Kdf::Scrypt { n, r, p } => {
             let log_n = (n as f64).log2().round() as u8; //TODO validate
-            let params = if n == 262144 && r == 1 {
-                // Ethereum test vectors are using n ~ r combination which doesn't
-                // pass ScryptParams verification in ::new()
-                // so we have to fill ScryptParams in other way, without calling verification
-                unsafe {
-                    transmute::<AnyScryptParams, ScryptParams>(AnyScryptParams {
-                                                                   log_n: log_n,
-                                                                   r: r,
-                                                                   p: p,
-                                                               })
-                }
-            } else {
-                ScryptParams::new(log_n, r, p)
-            };
+            let params = ScryptParams::new(log_n, r, p);
             let mut derived = [0u8; 32];
             scrypt(password.as_bytes(), &key.kdf_salt, &params, &mut derived);
             Ok(derived)
         }
     }
 }
-
 
 fn prepare_mac(key: &KeyFile, derived: DerivedKey) -> Result<MAC, CipherError> {
     let mut sha3 = Sha3::new(Sha3Mode::Keccak256);
@@ -88,9 +67,7 @@ fn prepare_mac(key: &KeyFile, derived: DerivedKey) -> Result<MAC, CipherError> {
     Ok(mac)
 }
 
-
 impl GetPkey for KeyFile {
-    /// Extract Private Key using provided password
     fn get_pk(&self, password: String) -> Result<PrivateKey, CipherError> {
         let derived = derive_key(&self, &password)?;
         let mac = prepare_mac(&self, derived)?;
@@ -109,31 +86,33 @@ impl GetPkey for KeyFile {
     }
 }
 
-
 #[cfg(test)]
 pub mod tests {
     use super::{GetPkey, derive_key, prepare_mac};
-    use keystore::{Cipher, Kdf, KeyFile, Prf};
+    use keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, KECCAK256_BYTES, Kdf, KeyFile, Prf};
     use rustc_serialize::hex::{FromHex, ToHex};
     use std::str::FromStr;
     use uuid::Uuid;
 
-    // Test Vectors from https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
+    macro_rules! arr {
+        ($bytes: expr, $num: expr) => ({
+            let mut arr = [0; $num];
+
+            arr.clone_from_slice($bytes);
+
+            arr
+        })
+    }
+
+    // [Test vectors](https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition)
 
     fn test_vector_1() -> KeyFile {
-        let mac = "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2"
-            .from_hex()
-            .unwrap();
-        let salt = "ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd"
-            .from_hex()
-            .unwrap();
-        let iv = "6087dab2f9fdbbfaddc31a909735c1e6".from_hex().unwrap();
-
         KeyFile {
             uuid: Uuid::from_str("3198bc9c-6672-5ab3-d995-4942343ae5b6").unwrap(),
             address: None,
             cipher: Cipher::default(),
-            cipher_iv: *array_ref!(iv.as_slice(), 0, 16),
+            cipher_iv: arr!(&"6087dab2f9fdbbfaddc31a909735c1e6".from_hex().unwrap(),
+                            CIPHER_IV_BYTES),
             cipher_text: "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46"
                 .from_hex()
                 .unwrap(),
@@ -141,40 +120,44 @@ pub mod tests {
                 prf: Prf::default(),
                 c: 262144,
             },
-            kdf_salt: *array_ref!(salt.as_slice(), 0, 32),
-            keccak256_mac: *array_ref!(mac.as_slice(), 0, 32),
+            kdf_salt: arr!(&"ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd"
+                                .from_hex()
+                                .unwrap(),
+                           KDF_SALT_BYTES),
+            keccak256_mac: arr!(&"517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2"
+                                    .from_hex()
+                                    .unwrap(),
+                                KECCAK256_BYTES),
             dk_length: 32,
         }
     }
 
     fn test_vector_2() -> KeyFile {
-        let mac = "2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097"
-            .from_hex()
-            .unwrap();
-        let salt = "ab0c7876052600dd703518d6fc3fe8984592145b591fc8fb5c6d43190334ba19"
-            .from_hex()
-            .unwrap();
-        let iv = "83dbcc02d8ccb40e466191a123791e0e".from_hex().unwrap();
-
         KeyFile {
             uuid: Uuid::from_str("3198bc9c-6672-5ab3-d995-4942343ae5b6").unwrap(),
             address: None,
             cipher: Cipher::default(),
-            cipher_iv: *array_ref!(iv.as_slice(), 0, 16),
+            cipher_iv: arr!(&"83dbcc02d8ccb40e466191a123791e0e".from_hex().unwrap(),
+                            CIPHER_IV_BYTES),
             cipher_text: "d172bf743a674da9cdad04534d56926ef8358534d458fffccd4e6ad2fbde479c"
                 .from_hex()
                 .unwrap(),
             kdf: Kdf::Scrypt {
                 n: 262144,
-                r: 1,
-                p: 8,
+                r: 8,
+                p: 1,
             },
-            kdf_salt: *array_ref!(salt.as_slice(), 0, 32),
-            keccak256_mac: *array_ref!(mac.as_slice(), 0, 32),
+            kdf_salt: arr!(&"ab0c7876052600dd703518d6fc3fe8984592145b591fc8fb5c6d43190334ba19"
+                                .from_hex()
+                                .unwrap(),
+                           KDF_SALT_BYTES),
+            keccak256_mac: arr!(&"2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097"
+                                    .from_hex()
+                                    .unwrap(),
+                                KECCAK256_BYTES),
             dk_length: 32,
         }
     }
-
 
     #[test]
     fn should_derive_key_tv1() {
@@ -189,12 +172,11 @@ pub mod tests {
     #[test]
     fn should_mac_tv1() {
         let key = test_vector_1();
-        let derived_key = "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551"
-            .from_hex()
-            .unwrap();
-        assert_eq!(prepare_mac(&key, *array_ref!(derived_key.as_slice(), 0, 32))
-                       .unwrap()
-                       .to_hex(),
+        let derived_key = arr!(&"f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551"
+                                    .from_hex()
+                                    .unwrap(),
+                               KECCAK256_BYTES);
+        assert_eq!(prepare_mac(&key, derived_key).unwrap().to_hex(),
                    "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
     }
 
@@ -222,17 +204,15 @@ pub mod tests {
     #[test]
     fn should_mac_tv2() {
         let key = test_vector_2();
-        let derived_key = "fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd"
-            .from_hex()
-            .unwrap();
-        assert_eq!(prepare_mac(&key, *array_ref!(derived_key.as_slice(), 0, 32))
-                       .unwrap()
-                       .to_hex(),
+        let derived_key = arr!(&"fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd"
+                                    .from_hex()
+                                    .unwrap(),
+                               KECCAK256_BYTES);
+        assert_eq!(prepare_mac(&key, derived_key).unwrap().to_hex(),
                    "2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097")
     }
 
     #[test]
-    #[ignore]
     fn should_get_pk_tv2() {
         let key = test_vector_2();
         assert_eq!(key.get_pk("testpassword".to_string()).unwrap(),
