@@ -79,9 +79,7 @@ pub enum Method {
 pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
-pub fn start(addr: &SocketAddr,
-             client_addr: &SocketAddr,
-             base_path: Option<&Path>) {
+pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<&Path>) {
     let mut io = IoHandler::default();
 
     let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));
