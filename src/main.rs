@@ -19,8 +19,8 @@ use env_logger::LogBuilder;
 use log::{LogLevel, LogLevelFilter};
 use std::env;
 use std::net::SocketAddr;
-use std::process::*;
 use std::path::Path;
+use std::process::*;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
@@ -77,20 +77,10 @@ fn main() {
         base_path = None;
     }
 
-    let key_path_str = args.flag_key_path
-        .parse::<String>()
-        .expect("Expect to parse key path");
-    let key_path;
-    if !key_path_str.is_empty() {
-        key_path = Some(Path::new(&key_path_str));
-    } else {
-        key_path = None;
-    }
-
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}",
               VERSION.unwrap_or("unknown"));
     }
 
-    emerald::start(&addr, &client_addr, base_path, key_path);
+    emerald::start(&addr, &client_addr, base_path);
 }
