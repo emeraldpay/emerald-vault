@@ -11,11 +11,11 @@ pub struct Storages<'a> {
 }
 
 #[cfg(target_os="macos")]
-static DEFAULT_PATH: &str = "~/Library/Emerald";
+static DEFAULT_PATH: &'static str = "~/Library/Emerald";
 #[cfg(target_os="linux")]
-static DEFAULT_PATH: &str = "~/.emerald";
+static DEFAULT_PATH: &'static str = "~/.emerald";
 #[cfg(target_os="windows")]
-static DEFAULT_PATH: &str = "%USERDIR%\\.emerald";
+static DEFAULT_PATH: &'static str = "%USERDIR%\\.emerald";
 
 impl<'a> Storages<'a> {
     /// Create storage using user directory if specified,
