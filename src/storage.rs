@@ -23,7 +23,7 @@ impl<'a> Storages<'a> {
     pub fn new(path: Option<&'a Path>) -> Storages<'a> {
         match path {
             Some(p) => Storages { base_dir: p },
-            _ => Storages { base_dir: Path::new(DEFAULT_PATH) }
+            _ => Storages { base_dir: Path::new(DEFAULT_PATH) },
         }
     }
 
@@ -84,8 +84,7 @@ mod test {
     #[test]
     fn should_use_default_path() {
         let st = Storages::new(None);
-        assert_eq!(st.base_dir.as_os_str(),
-                   Path::new(DEFAULT_PATH).as_os_str());
+        assert_eq!(st.base_dir.as_os_str(), Path::new(DEFAULT_PATH).as_os_str());
     }
 
     #[test]
