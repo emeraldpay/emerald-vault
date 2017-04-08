@@ -35,7 +35,7 @@ macro_rules! byte_array_struct {
                     return Err(d.error(&format!("Byte array invalid length: {}", v.len())));
                 }
 
-                let mut bytes = [0; $num];
+                let mut bytes = [0u8; $num];
 
                 bytes.clone_from_slice(&v);
 
