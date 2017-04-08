@@ -34,7 +34,6 @@ struct Args {
     flag_address: String,
     flag_client_address: String,
     flag_base_path: String,
-    flag_key_path: String,
 }
 
 fn main() {
@@ -70,12 +69,11 @@ fn main() {
     let base_path_str = args.flag_base_path
         .parse::<String>()
         .expect("Expect to parse base path");
-    let base_path;
-    if !base_path_str.is_empty() {
-        base_path = Some(Path::new(&base_path_str));
+    let base_path = if !base_path_str.is_empty() {
+        Some(Path::new(&base_path_str))
     } else {
-        base_path = None;
-    }
+        None
+    };
 
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}",

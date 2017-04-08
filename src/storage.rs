@@ -10,13 +10,20 @@ pub struct Storages<'a> {
     base_dir: &'a Path,
 }
 
+#[cfg(target_os="macos")]
+static DEFAULT_PATH: &str = "~/Library/Emerald";
+#[cfg(target_os="linux")]
+static DEFAULT_PATH: &str = "~/.emerald";
+#[cfg(target_os="windows")]
+static DEFAULT_PATH: &str = "%USERDIR%\\.emerald";
+
 impl<'a> Storages<'a> {
     /// Create storage using user directory if specified,
     /// or default path in other case.
     pub fn new(path: Option<&'a Path>) -> Storages<'a> {
         match path {
             Some(p) => Storages { base_dir: p },
-            _ => Storages { base_dir: Path::new("emerald_data") },
+            _ => Storages { base_dir: Path::new(DEFAULT_PATH) }
         }
     }
 
@@ -77,9 +84,8 @@ mod test {
     #[test]
     fn should_use_default_path() {
         let st = Storages::new(None);
-
         assert_eq!(st.base_dir.as_os_str(),
-                   Path::new("emerald_data").as_os_str());
+                   Path::new(DEFAULT_PATH).as_os_str());
     }
 
     #[test]
