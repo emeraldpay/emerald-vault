@@ -11,16 +11,14 @@ extern crate log;
 #[macro_use]
 extern crate lazy_static;
 
-#[cfg(test)]
-#[macro_use]
-extern crate arrayref;
-
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 
+extern crate crypto;
 extern crate futures;
+extern crate glob;
 extern crate jsonrpc_core;
 extern crate jsonrpc_minihttp_server;
 extern crate hyper;
@@ -33,7 +31,6 @@ mod address;
 pub mod keystore;
 mod request;
 mod serialize;
-/// Contracts stuff
 pub mod contracts;
 mod storage;
 

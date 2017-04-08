@@ -4,12 +4,13 @@
 //! [https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition]
 
 pub mod cipher;
-mod serialize;
-mod keycipher;
+pub mod extract_key;
 pub mod kdf;
 pub mod prf;
+pub mod serialize;
 
 pub use self::cipher::Cipher;
+pub use self::extract_key::PRIVATE_KEY_BYTES;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;
@@ -20,7 +21,7 @@ use std::path::Path;
 use uuid::Uuid;
 
 /// Derived key length in bytes (by default)
-pub const DEFAULT_DK_LENGTH: u32 = 32;
+pub const DEFAULT_DK_LENGTH: usize = 32;
 
 /// Key derivation function salt length in bytes
 pub const KDF_SALT_BYTES: usize = 32;
@@ -41,7 +42,7 @@ pub struct KeyFile {
     pub address: Option<Address>,
 
     /// Derived key length
-    pub dk_length: u32,
+    pub dk_length: usize,
 
     /// Key derivation function
     pub kdf: Kdf,
@@ -83,11 +84,11 @@ impl Default for KeyFile {
             address: None,
             dk_length: DEFAULT_DK_LENGTH,
             kdf: Kdf::default(),
-            kdf_salt: [0; KDF_SALT_BYTES],
-            keccak256_mac: [0; KECCAK256_BYTES],
+            kdf_salt: [0u8; KDF_SALT_BYTES],
+            keccak256_mac: [0u8; KECCAK256_BYTES],
             cipher: Cipher::default(),
             cipher_text: vec![],
-            cipher_iv: [0; CIPHER_IV_BYTES],
+            cipher_iv: [0u8; CIPHER_IV_BYTES],
         }
     }
 }
