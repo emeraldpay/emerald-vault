@@ -26,10 +26,13 @@ extern crate regex;
 extern crate reqwest;
 extern crate rustc_serialize;
 extern crate uuid;
+extern crate secp256k1;
+extern crate rand;
+extern crate tiny_keccak;
 
 mod address;
-mod key_generator;
-pub mod keystore;
+pub mod key_generator;
+mod keystore;
 mod request;
 mod serialize;
 pub mod contracts;

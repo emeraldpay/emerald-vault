@@ -1,12 +1,10 @@
-extern crate secp256k1;
-extern crate rand;
-extern crate tiny_keccak;
+//! # Secret key generator
 
-use self::rand::{ThreadRng, thread_rng};
-use self::secp256k1::{Error, Secp256k1};
-use self::secp256k1::key::{PublicKey, SecretKey};
-use self::tiny_keccak::Keccak;
 use address::{ADDRESS_BYTES, Address};
+use rand::{ThreadRng, thread_rng};
+use secp256k1::{Error, Secp256k1};
+use secp256k1::key::{PublicKey, SecretKey};
+use tiny_keccak::Keccak;
 
 lazy_static! {
     static ref SECP256K1: Secp256k1 = Secp256k1::new();
@@ -14,18 +12,19 @@ lazy_static! {
 
 /// Errors for key generation.
 pub enum GeneratorError {
+    /// Can't generate new key.
     InvalidKey,
 }
 
-impl From<secp256k1::Error> for GeneratorError {
-    fn from(err: secp256k1::Error) -> Self {
+impl From<Error> for GeneratorError {
+    fn from(err: Error) -> Self {
         GeneratorError::InvalidKey
     }
 }
 
 /// Secret key generator.
 pub struct Generator<'call> {
-    thread_rng: &'call Fn() -> ThreadRng,
+    rng: &'call Fn() -> ThreadRng,
 }
 
 impl<'call> Generator<'call> {
@@ -42,7 +41,7 @@ impl<'call> Generator<'call> {
     /// assert_eq!(gen.collect::<Vec<_>>().len(), 100);
     /// ```
     fn new(r: &'call Fn() -> ThreadRng) -> Self {
-        Generator { thread_rng: r }
+        Generator { rng: r }
     }
 }
 
@@ -50,7 +49,7 @@ impl<'call> Iterator for Generator<'call> {
     type Item = SecretKey;
 
     fn next(&mut self) -> Option<Self::Item> {
-        Some(SecretKey::new(&SECP256K1, &mut (self.thread_rng)()))
+        Some(SecretKey::new(&SECP256K1, &mut (self.rng)()))
     }
 }
 
@@ -78,7 +77,6 @@ pub fn to_address(sec: &SecretKey) -> Result<Address, Error> {
 
 #[cfg(test)]
 mod tests {
-    use self::rand::thread_rng;
     use super::*;
 
     #[test]
