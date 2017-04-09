@@ -50,7 +50,7 @@ pub struct KeyFile {
     /// Key derivation function salt
     pub kdf_salt: [u8; KDF_SALT_BYTES],
 
-    /// Keccak-256 keyed-hash message authentication code (HMAC)
+    /// Keccak-256 based message authentication code
     pub keccak256_mac: [u8; KECCAK256_BYTES],
 
     /// Cipher type
