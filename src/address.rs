@@ -37,7 +37,7 @@ impl Address {
     /// # Example
     ///
     /// ```
-    /// let addr = emerald::Address::try_from(&vec![0; emerald::ADDRESS_BYTES]).unwrap();
+    /// let addr = emerald::Address::try_from(&vec![0u8; emerald::ADDRESS_BYTES]).unwrap();
     /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
     /// ```
     pub fn try_from(data: &[u8]) -> Result<Self, AddressParserError> {
@@ -45,7 +45,7 @@ impl Address {
             return Err(AddressParserError::InvalidLength(data.len()));
         }
 
-        let mut bytes = [0; ADDRESS_BYTES];
+        let mut bytes = [0u8; ADDRESS_BYTES];
 
         bytes.clone_from_slice(data);
 
@@ -72,7 +72,7 @@ impl FromStr for Address {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with("0x") {
-            return Err(AddressParserError::UnexpectedPrefix(s.to_owned()));
+            return Err(AddressParserError::UnexpectedPrefix(s.to_string()));
         }
 
         let (_, s) = s.split_at(2);

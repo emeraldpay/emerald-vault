@@ -11,16 +11,14 @@ extern crate log;
 #[macro_use]
 extern crate lazy_static;
 
-#[cfg(test)]
-#[macro_use]
-extern crate arrayref;
-
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
 extern crate serde_json;
 
+extern crate crypto;
 extern crate futures;
+extern crate glob;
 extern crate jsonrpc_core;
 extern crate jsonrpc_minihttp_server;
 extern crate hyper;
@@ -34,7 +32,6 @@ mod key_generator;
 pub mod keystore;
 mod request;
 mod serialize;
-/// Contracts stuff
 pub mod contracts;
 mod storage;
 
@@ -73,6 +70,14 @@ pub enum Method {
 
     ///
     TraceCall,
+
+    /// eth_getTransactionByHash
+    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash
+    GetTxByHash,
+
+    /// eth_getTransactionReceipt
+    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionreceipt
+    GetTxReceipt,
 }
 
 /// PRC method's parameters
@@ -117,6 +122,13 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
 
         io.add_async_method("eth_getBalance",
                             move |p| url.request(&MethodParams(Method::EthGetBalance, &p)));
+    }
+
+    {
+        let url = url.clone();
+
+        io.add_async_method("eth_getTransactionByHash",
+                            move |p| url.request(&MethodParams(Method::GetTxByHash, &p)));
     }
 
     {

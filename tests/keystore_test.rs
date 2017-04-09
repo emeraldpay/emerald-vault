@@ -4,7 +4,7 @@ extern crate rustc_serialize;
 extern crate uuid;
 
 use emerald::keystore::*;
-use rustc_serialize::hex::FromHex;
+use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
 use std::fs;
 use std::io::Read;
@@ -16,12 +16,35 @@ const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 
 macro_rules! arr {
     ($bytes: expr, $num: expr) => ({
-        let mut arr = [0; $num];
+        let mut arr = [0u8; $num];
 
         arr.clone_from_slice($bytes);
 
         arr
     })
+}
+
+#[test]
+fn should_extract_scrypt_based_kdf_private_key() {
+    let path = keyfile_path("UTC--2017-03-17T10-52-08.\
+                             229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
+
+    let key = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
+
+    assert!(key.extract_key("_").is_err());
+    assert_eq!(key.extract_key("1234567890").unwrap().to_hex(),
+               "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f");
+}
+
+#[test]
+fn should_extract_pbkdf2_based_kdf_private_key() {
+    let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
+
+    let key = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
+
+    assert!(key.extract_key("_").is_err());
+    assert_eq!(key.extract_key("1234567890").unwrap().to_hex(),
+               "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf");
 }
 
 #[test]

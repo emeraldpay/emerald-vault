@@ -1,3 +1,5 @@
+//! Chain-related storage
+
 use log::LogLevel;
 use std::fs;
 use std::io::Error;

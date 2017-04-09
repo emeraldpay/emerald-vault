@@ -1,6 +1,6 @@
 //! # JSON serialize for crypto field (UTC / JSON)
 
-use keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, KECCAK256_BYTES, Kdf, KeyFile, Prf};
+use keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, KECCAK256_BYTES, Kdf, KeyFile};
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use rustc_serialize::hex::{FromHex, ToHex};
 use std::str::FromStr;
@@ -15,7 +15,7 @@ pub struct Crypto {
     cipher_text: Vec<u8>,
     cipher_params: CipherParams,
     kdf: Kdf,
-    kdfparams_dklen: u32,
+    kdfparams_dklen: usize,
     kdfparams_salt: Salt,
     mac: Mac,
 }
@@ -57,10 +57,7 @@ impl From<KeyFile> for Crypto {
 impl Decodable for Crypto {
     fn decode<D: Decoder>(d: &mut D) -> Result<Crypto, D::Error> {
         d.read_struct("Crypto", 6, |d| {
-            let cipher = (d.read_struct_field("cipher", 0, |d| {
-                d.read_str()
-                    .and_then(|s| Cipher::from_str(&s).map_err(|e| d.error(&e.to_string())))
-            }))?;
+            let cipher = (d.read_struct_field("cipher", 0, |d| decode_str(d)))?;
 
             let cipher_params =
                 (d.read_struct_field("cipherparams", 1, |d| CipherParams::decode(d)))?;
@@ -70,10 +67,7 @@ impl Decodable for Crypto {
                     .and_then(|s| s.from_hex().map_err(|e| d.error(&e.to_string())))
             }))?;
 
-            let mut kdf = (d.read_struct_field("kdf", 3, |d| {
-                d.read_str()
-                    .and_then(|s| Kdf::from_str(&s).map_err(|e| d.error(&e.to_string())))
-            }))?;
+            let mut kdf = (d.read_struct_field("kdf", 3, |d| decode_str(d)))?;
 
             let (dklen, salt) = (d.read_struct_field("kdfparams", 4, |d| match kdf {
                 Kdf::Pbkdf2 {
@@ -81,14 +75,10 @@ impl Decodable for Crypto {
                     ref mut c,
                 } => {
                     d.read_struct("KdfParams", 4, |d| {
-                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_u32())?;
+                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
                         let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
 
-                        *prf = d.read_struct_field("prf", 2, |d| {
-                                d.read_str().and_then(|s| {
-                                Prf::from_str(&s).map_err(|e| d.error(&e.to_string()))
-                            })
-                            })?;
+                        *prf = d.read_struct_field("prf", 2, |d| decode_str(d))?;
                         *c = d.read_struct_field("c", 3, |d| d.read_u32())?;
 
                         Ok((dklen, salt))
@@ -100,7 +90,7 @@ impl Decodable for Crypto {
                     ref mut p,
                 } => {
                     d.read_struct("KdfParams", 5, |d| {
-                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_u32())?;
+                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
                         let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
 
                         *n = d.read_struct_field("n", 2, |d| d.read_u32())?;
@@ -137,7 +127,7 @@ impl Encodable for Crypto {
             (s.emit_struct_field("kdfparams", 4, |s| match self.kdf {
                 Kdf::Pbkdf2 { prf, c } => {
                     s.emit_struct("KdfParams", 4, |s| {
-                        (s.emit_struct_field("dklen", 0, |s| s.emit_u32(self.kdfparams_dklen)))?;
+                        (s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen)))?;
                         (s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s)))?;
                         (s.emit_struct_field("prf", 2, |s| s.emit_str(&prf.to_string())))?;
                         (s.emit_struct_field("c", 3, |s| s.emit_u32(c)))?;
@@ -147,7 +137,7 @@ impl Encodable for Crypto {
                 }
                 Kdf::Scrypt { n, r, p } => {
                     s.emit_struct("KdfParams", 5, |s| {
-                        (s.emit_struct_field("dklen", 0, |s| s.emit_u32(self.kdfparams_dklen)))?;
+                        (s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen)))?;
                         (s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s)))?;
                         (s.emit_struct_field("n", 2, |s| s.emit_u32(n)))?;
                         (s.emit_struct_field("r", 3, |s| s.emit_u32(r)))?;
@@ -162,6 +152,14 @@ impl Encodable for Crypto {
             Ok(())
         })
     }
+}
+
+#[inline]
+fn decode_str<T: FromStr, D: Decoder>(d: &mut D) -> Result<T, D::Error>
+    where <T as FromStr>::Err: ::std::fmt::Display
+{
+    d.read_str()
+        .and_then(|s| T::from_str(&s).map_err(|e| d.error(&e.to_string())))
 }
 
 #[cfg(test)]
