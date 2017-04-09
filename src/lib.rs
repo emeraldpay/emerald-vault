@@ -73,6 +73,10 @@ pub enum Method {
     /// eth_getTransactionByHash
     /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash
     GetTxByHash,
+
+    /// eth_getTransactionReceipt
+    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionreceipt
+    GetTxReceipt,
 }
 
 /// PRC method's parameters

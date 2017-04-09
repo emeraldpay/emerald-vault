@@ -29,6 +29,9 @@ impl<'a> Serialize for ::MethodParams<'a> {
             ::Method::GetTxByHash => {
                 serializer.serialize_some(&method_params("eth_getTransactionByHash", self.1))
             }
+            ::Method::GetTxReceipt => {
+                serializer.serialize_some(&method_params("eth_getTransactionReceipt", self.1))
+            }
         }
     }
 }
