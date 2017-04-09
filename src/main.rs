@@ -31,8 +31,10 @@ struct Args {
     flag_version: bool,
     flag_verbose: bool,
     flag_quiet: bool,
-    flag_address: String,
-    flag_client_address: String,
+    flag_host: String,
+    flag_port: String,
+    flag_client_host: String,
+    flag_client_port: String,
     flag_base_path: String,
 }
 
@@ -58,11 +60,11 @@ fn main() {
         exit(0);
     }
 
-    let addr = args.flag_address
+    let addr = format!("{}:{}", args.flag_host, args.flag_port)
         .parse::<SocketAddr>()
         .expect("Expect to parse address");
 
-    let client_addr = args.flag_client_address
+    let client_addr = format!("{}:{}", args.flag_client_host, args.flag_client_port)
         .parse::<SocketAddr>()
         .expect("Expect to parse client address");
 

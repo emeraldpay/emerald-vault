@@ -70,6 +70,14 @@ pub enum Method {
 
     ///
     TraceCall,
+
+    /// eth_getTransactionByHash
+    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash
+    GetTxByHash,
+
+    /// eth_getTransactionReceipt
+    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionreceipt
+    GetTxReceipt,
 }
 
 /// PRC method's parameters
@@ -114,6 +122,13 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<&Pat
 
         io.add_async_method("eth_getBalance",
                             move |p| url.request(&MethodParams(Method::EthGetBalance, &p)));
+    }
+
+    {
+        let url = url.clone();
+
+        io.add_async_method("eth_getTransactionByHash",
+                            move |p| url.request(&MethodParams(Method::GetTxByHash, &p)));
     }
 
     {
