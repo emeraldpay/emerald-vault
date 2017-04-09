@@ -26,6 +26,9 @@ impl<'a> Serialize for ::MethodParams<'a> {
             }
             ::Method::EthCall => serializer.serialize_some(&method_params("eth_call", self.1)),
             ::Method::TraceCall => serializer.serialize_some(&method_params("trace_call", self.1)),
+            ::Method::GetTxByHash => {
+                serializer.serialize_some(&method_params("eth_getTransactionByHash", self.1))
+            }
         }
     }
 }
