@@ -14,3 +14,8 @@ Options:
     --port PORT                 Emerald wallet listen port [default: 1920]
     --client-host HOST          Ethereum client connect to host [default: 127.0.0.1]
     --client-port PORT          Ethereum client connect to port [default: 8545]
+    --base-path PATH            Base directory path.
+                                    If omitted default os-specific value will be used:
+                                        + Mac OS X: ~/Library/Emerald
+                                        + Linux: ~/.emerald
+                                        + Windows: %USERDIR%\.emerald
