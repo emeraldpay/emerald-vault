@@ -24,9 +24,7 @@ impl From<secp256k1::Error> for GeneratorError {
 }
 
 /// Secret key generator.
-/// Runs for `ticks` times, yielding each time key.
 pub struct Generator<'call> {
-    ticks: u64,
     thread_rng: &'call Fn() -> ThreadRng,
 }
 
@@ -35,7 +33,6 @@ impl<'call> Generator<'call> {
     ///
     /// # Arguments
     ///
-    /// * `ticks` - number of yielded keys.
     /// * `r` - random number generator.
     ///
     /// # Example
@@ -44,11 +41,8 @@ impl<'call> Generator<'call> {
     /// let gen = Generator::new(100, &rng);
     /// assert_eq!(gen.collect::<Vec<_>>().len(), 100);
     /// ```
-    fn new(t: u64, r: &'call Fn() -> ThreadRng) -> Self {
-        Generator {
-            ticks: t,
-            thread_rng: r,
-        }
+    fn new(r: &'call Fn() -> ThreadRng) -> Self {
+        Generator { thread_rng: r }
     }
 }
 
@@ -56,12 +50,7 @@ impl<'call> Iterator for Generator<'call> {
     type Item = SecretKey;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.ticks > 0 {
-            self.ticks -= 1;
-            Some(SecretKey::new(&SECP256K1, &mut (self.thread_rng)()))
-        } else {
-            None
-        }
+        Some(SecretKey::new(&SECP256K1, &mut (self.thread_rng)()))
     }
 }
 
@@ -94,12 +83,15 @@ mod tests {
 
     #[test]
     fn should_generate_keys() {
-        let gen_ticks = 100;
         let rng = thread_rng;
-        let gen = Generator::new(gen_ticks, &rng);
+        let mut gen = Generator::new(&rng);
+        let mut keys = Vec::new();
 
-        let keys = gen.collect::<Vec<_>>();
-        assert_eq!(keys.len(), gen_ticks as usize);
+        for _ in 0..5 {
+            keys.push(gen.next());
+        }
+
+        assert_eq!(keys.len(), 5);
     }
 
     #[test]
