@@ -1,10 +1,11 @@
 //! # Secret key generator
 
 use address::{ADDRESS_BYTES, Address};
-use rand::{ThreadRng, thread_rng};
+use crypto::digest::Digest;
+use crypto::sha3::{Sha3, Sha3Mode};
+use rand::ThreadRng;
 use secp256k1::{Error, Secp256k1};
 use secp256k1::key::{PublicKey, SecretKey};
-use tiny_keccak::Keccak;
 
 lazy_static! {
     static ref SECP256K1: Secp256k1 = Secp256k1::new();
@@ -34,12 +35,6 @@ impl<'call> Generator<'call> {
     ///
     /// * `r` - random number generator.
     ///
-    /// # Example
-    ///
-    /// ```
-    /// let gen = Generator::new(100, &rng);
-    /// assert_eq!(gen.collect::<Vec<_>>().len(), 100);
-    /// ```
     fn new(r: &'call Fn() -> ThreadRng) -> Self {
         Generator { rng: r }
     }
@@ -60,14 +55,14 @@ pub fn to_public(sec: &SecretKey) -> Result<PublicKey, Error> {
 
 /// Creates a new address from a secret key.
 pub fn to_address(sec: &SecretKey) -> Result<Address, Error> {
-    let mut sha3 = Keccak::new_sha3_256();
+    let mut res: [u8; 32] = [0; 32];
+    let mut sha3 = Sha3::new(Sha3Mode::Keccak256);
     let pk_data = to_public(sec)
         .and_then(|i| Ok(i.serialize_vec(&SECP256K1, false)))
         .unwrap();
 
-    let mut res: [u8; 32] = [0; 32];
-    sha3.update(&pk_data);
-    sha3.finalize(&mut res);
+    sha3.input(&pk_data);
+    sha3.result(&mut res);
 
     let mut addr_data: [u8; ADDRESS_BYTES] = [0u8; 20];
     addr_data.copy_from_slice(&res[11..32]);
@@ -78,6 +73,7 @@ pub fn to_address(sec: &SecretKey) -> Result<Address, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::thread_rng;
 
     #[test]
     fn should_generate_keys() {

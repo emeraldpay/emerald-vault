@@ -28,15 +28,14 @@ extern crate rustc_serialize;
 extern crate uuid;
 extern crate secp256k1;
 extern crate rand;
-extern crate tiny_keccak;
 
 mod address;
-pub mod key_generator;
-mod keystore;
+pub mod keystore;
 mod request;
 mod serialize;
 pub mod contracts;
 mod storage;
+mod key_generator;
 
 use self::serde_json::Value;
 pub use address::{ADDRESS_BYTES, Address};
