@@ -44,6 +44,7 @@ pub use keystore::{KeyFile, address_exists};
 
 use log::LogLevel;
 use std::net::SocketAddr;
+use std::path::Path;
 use std::sync::Arc;
 use storage::{ChainStorage, Storages};
 
@@ -83,7 +84,7 @@ pub enum Method {
 pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
-pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
+pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<&Path>) {
     let mut io = IoHandler::default();
 
     let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));
@@ -144,7 +145,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr) {
                             move |p| url.request(&MethodParams(Method::TraceCall, &p)));
     }
 
-    let storage = Storages::new();
+    let storage = Storages::new(base_path);
 
     if storage.init().is_err() {
         panic!("Unable to initialize storage");
