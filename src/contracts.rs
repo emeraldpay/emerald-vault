@@ -1,4 +1,4 @@
-//! Contracts utils
+//! # Contracts utils
 
 use address::Address;
 use glob::glob;

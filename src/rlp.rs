@@ -8,20 +8,17 @@
 //! See RLP spec https://github.com/ethereumproject/wiki/wiki/RLP
 
 fn bytes_count(x: usize) -> u8 {
-    if x > 0xff {
-        return 1 + bytes_count(x >> 8);
-    } else if x > 0 {
-        return 1;
-    } else {
-        return 0;
+    match x {
+        _ if x > 0xff => 1 + bytes_count(x >> 8),
+        _ if x > 0 => 1,
+        _ => 0,
     }
 }
 
-fn to_bytes(x: &usize, b_len: u8) -> Vec<u8> {
+fn to_bytes(x: usize, b_len: u8) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::with_capacity(b_len as usize);
-    let y = x.clone();
     for i in 0..b_len {
-        let u = (y >> ((b_len - i - 1) * 8)) & 0xff;
+        let u = (x >> ((b_len - i - 1) * 8)) & 0xff;
         buf.push(u as u8);
     }
     buf
@@ -33,13 +30,8 @@ pub struct RLPList {
 }
 
 impl RLPList {
-    /// start empty list
-    pub fn new() -> RLPList {
-        RLPList { tail: Vec::new() }
-    }
-
     /// start with provided vector
-    pub fn from_vec<T: WriteRLP>(items: &Vec<T>) -> RLPList {
+    pub fn from_slice<T: WriteRLP>(items: &[T]) -> RLPList {
         let mut start = RLPList { tail: Vec::new() };
         for i in items {
             start.push(i)
@@ -53,6 +45,11 @@ impl RLPList {
     }
 }
 
+impl Default for RLPList {
+    fn default() -> RLPList {
+        RLPList { tail: Vec::new() }
+    }
+}
 
 /// The `WriteRLP` trait is used to specify functionality of serializing data to RLP bytes
 pub trait WriteRLP {
@@ -74,30 +71,29 @@ impl WriteRLP for String {
 
 impl WriteRLP for u8 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(&(*self as usize), 1).as_slice().write_rlp(buf)
+        to_bytes(*self as usize, 1).as_slice().write_rlp(buf)
     }
 }
 impl WriteRLP for u16 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(&(*self as usize), 2).as_slice().write_rlp(buf)
+        to_bytes(*self as usize, 2).as_slice().write_rlp(buf)
     }
 }
 impl WriteRLP for u32 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(&(*self as usize), 4).as_slice().write_rlp(buf)
+        to_bytes(*self as usize, 4).as_slice().write_rlp(buf)
     }
 }
 
 impl WriteRLP for u64 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        //        write_bytes(&to_bytes(&(*self as usize), 8).as_slice(), buf)
-        to_bytes(&(*self as usize), 8).as_slice().write_rlp(buf)
+        to_bytes(*self as usize, 8).as_slice().write_rlp(buf)
     }
 }
 
 impl<T: WriteRLP> WriteRLP for Vec<T> {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        RLPList::from_vec(self).write_rlp(buf);
+        RLPList::from_slice(self).write_rlp(buf);
     }
 }
 
@@ -149,7 +145,7 @@ impl WriteRLP for RLPList {
             // thus [0xf8, 0xff].
             let len_bytes = bytes_count(len);
             buf.push(0xf7 + len_bytes);
-            let len_data = to_bytes(&len, len_bytes);
+            let len_data = to_bytes(len, len_bytes);
             buf.extend_from_slice(len_data.as_slice());
         }
         buf.extend_from_slice(self.tail.as_slice());
@@ -158,9 +154,9 @@ impl WriteRLP for RLPList {
 
 impl<T: WriteRLP> WriteRLP for Option<T> {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        match self {
-            &Some(ref x) => x.write_rlp(buf),
-            &None => [].write_rlp(buf),
+        match *self {
+            Some(ref x) => x.write_rlp(buf),
+            None => [].write_rlp(buf),
         }
     }
 }
@@ -172,83 +168,36 @@ mod tests {
 
     #[test]
     fn u8_to_bytes() {
-        {
-            let x: u8 = 1;
-            assert_eq!([1], to_bytes(&(x as usize), 1).as_slice());
-        }
-        {
-            let x: u8 = 2;
-            assert_eq!([2], to_bytes(&(x as usize), 1).as_slice());
-        }
-        {
-            let x: u8 = 127;
-            assert_eq!([127], to_bytes(&(x as usize), 1).as_slice());
-        }
-        {
-            let x: u8 = 128;
-            assert_eq!([128], to_bytes(&(x as usize), 1).as_slice());
-        }
-        {
-            let x: u8 = 255;
-            assert_eq!([255], to_bytes(&(x as usize), 1).as_slice());
-        }
+        assert_eq!([1], to_bytes(1, 1).as_slice());
+        assert_eq!([2], to_bytes(2, 1).as_slice());
+        assert_eq!([127], to_bytes(127, 1).as_slice());
+        assert_eq!([128], to_bytes(128, 1).as_slice());
+        assert_eq!([255], to_bytes(255, 1).as_slice());
     }
 
     #[test]
     fn u16_to_bytes() {
-        {
-            let x: u16 = 1;
-            assert_eq!([0, 1], to_bytes(&(x as usize), 2).as_slice());
-        }
-        {
-            let x: u16 = 2;
-            assert_eq!([0, 2], to_bytes(&(x as usize), 2).as_slice());
-        }
-        {
-            let x: u16 = 255;
-            assert_eq!([0, 255], to_bytes(&(x as usize), 2).as_slice());
-        }
-        {
-            let x: u16 = 256;
-            assert_eq!([1, 0], to_bytes(&(x as usize), 2).as_slice());
-        }
-        {
-            let x: u16 = 0x1234;
-            assert_eq!([0x12, 0x34], to_bytes(&(x as usize), 2).as_slice());
-        }
-        {
-            let x: u16 = 0xffff;
-            assert_eq!([0xff, 0xff], to_bytes(&(x as usize), 2).as_slice());
-        }
+        assert_eq!([0, 1], to_bytes(1, 2).as_slice());
+        assert_eq!([0, 2], to_bytes(2, 2).as_slice());
+        assert_eq!([0, 255], to_bytes(255, 2).as_slice());
+        assert_eq!([1, 0], to_bytes(256, 2).as_slice());
+        assert_eq!([0x12, 0x34], to_bytes(0x1234, 2).as_slice());
+        assert_eq!([0xff, 0xff], to_bytes(0xffff, 2).as_slice());
     }
 
     #[test]
     fn u32_to_bytes() {
-        {
-            let x: u32 = 1;
-            assert_eq!([0, 0, 0, 1], to_bytes(&(x as usize), 4).as_slice());
-        }
-        {
-            let x: u32 = 0x12345678;
-            assert_eq!([0x12, 0x34, 0x56, 0x78],
-                       to_bytes(&(x as usize), 4).as_slice());
-        }
-        {
-            let x: u32 = 0xff000000;
-            assert_eq!([0xff, 0x0, 0x0, 0x0], to_bytes(&(x as usize), 4).as_slice());
-        }
-        {
-            let x: u32 = 0x00ff0000;
-            assert_eq!([0x00, 0xff, 0x0, 0x0],
-                       to_bytes(&(x as usize), 4).as_slice());
-        }
+        assert_eq!([0, 0, 0, 1], to_bytes(1, 4).as_slice());
+        assert_eq!([0x12, 0x34, 0x56, 0x78], to_bytes(0x12345678, 4).as_slice());
+        assert_eq!([0xff, 0x0, 0x0, 0x0], to_bytes(0xff000000, 4).as_slice());
+        assert_eq!([0x00, 0xff, 0x0, 0x0], to_bytes(0x00ff0000, 4).as_slice());
     }
 
     #[test]
     fn encode_str() {
         let mut buf = Vec::new();
         "dog".write_rlp(&mut buf);
-        assert_eq!([0x83, 'd' as u8, 'o' as u8, 'g' as u8], buf.as_slice());
+        assert_eq!([0x83, b'd', b'o', b'g'], buf.as_slice());
     }
 
     #[test]
@@ -257,8 +206,7 @@ mod tests {
             let mut buf = Vec::new();
             let list = vec!["cat".to_string(), "dog".to_string()];
             list.write_rlp(&mut buf);
-            assert_eq!([0xc8, 0x83, 'c' as u8, 'a' as u8, 't' as u8, 0x83, 'd' as u8, 'o' as u8,
-                        'g' as u8],
+            assert_eq!([0xc8, 0x83, b'c', b'a', b't', 0x83, b'd', b'o', b'g'],
                        buf.as_slice());
         }
         {
@@ -269,15 +217,15 @@ mod tests {
         }
         {
             let mut buf = Vec::new();
-            let mut list = RLPList::new();
-            list.push(&RLPList::new());
-            let mut item1 = RLPList::new();
-            item1.push(&RLPList::new());
+            let mut list = RLPList::default();
+            list.push(&RLPList::default());
+            let mut item1 = RLPList::default();
+            item1.push(&RLPList::default());
             list.push(&item1);
-            let mut item2 = RLPList::new();
-            item2.push(&RLPList::new());
-            let mut item21 = RLPList::new();
-            item21.push(&RLPList::new());
+            let mut item2 = RLPList::default();
+            item2.push(&RLPList::default());
+            let mut item21 = RLPList::default();
+            item21.push(&RLPList::default());
             item2.push(&item21);
             list.push(&item2);
             list.write_rlp(&mut buf);
