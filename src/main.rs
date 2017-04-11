@@ -19,7 +19,7 @@ use env_logger::LogBuilder;
 use log::{LogLevel, LogLevelFilter};
 use std::env;
 use std::net::SocketAddr;
-use std::path::Path;
+use std::path::PathBuf;
 use std::process::*;
 
 const USAGE: &'static str = include_str!("../usage.txt");
@@ -72,7 +72,7 @@ fn main() {
         .parse::<String>()
         .expect("Expect to parse base path");
     let base_path = if !base_path_str.is_empty() {
-        Some(Path::new(&base_path_str))
+        Some(PathBuf::from(base_path_str))
     } else {
         None
     };

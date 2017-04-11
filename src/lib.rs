@@ -26,6 +26,7 @@ extern crate regex;
 extern crate reqwest;
 extern crate rustc_serialize;
 extern crate uuid;
+extern crate xdg;
 
 mod address;
 pub mod keystore;
@@ -44,7 +45,7 @@ pub use keystore::{KeyFile, address_exists};
 
 use log::LogLevel;
 use std::net::SocketAddr;
-use std::path::Path;
+use std::path::PathBuf;
 use std::sync::Arc;
 use storage::{ChainStorage, Storages};
 
@@ -84,7 +85,7 @@ pub enum Method {
 pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
-pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<&Path>) {
+pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<PathBuf>) {
     let mut io = IoHandler::default();
 
     let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));

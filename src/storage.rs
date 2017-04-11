@@ -1,31 +1,47 @@
 //! Chain-related storage
 
 use log::LogLevel;
+use std::env;
 use std::fs;
 use std::io::Error;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
 #[derive(Debug, Clone)]
-pub struct Storages<'a> {
+pub struct Storages {
     /// base dir
-    base_dir: &'a Path,
+    base_dir: PathBuf,
 }
 
-#[cfg(target_os="macos")]
-static DEFAULT_PATH: &'static str = "~/Library/Emerald";
-#[cfg(target_os="linux")]
-static DEFAULT_PATH: &'static str = "~/.emerald";
-#[cfg(target_os="windows")]
-static DEFAULT_PATH: &'static str = "%USERDIR%\\.emerald";
+#[cfg(all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android")))]
+pub fn default_path() -> PathBuf {
+    let mut config_dir = env::home_dir().unwrap();
+    config_dir.push(".emerald");
+    config_dir
+}
 
-impl<'a> Storages<'a> {
-    /// Create storage using user directory if specified,
+#[cfg(target_os = "macos")]
+pub fn default_path() -> PathBuf {
+    let mut config_dir = env::home_dir().unwrap();
+    config_dir.push("Library");
+    config_dir.push("Emerald");
+    config_dir
+}
+
+#[cfg(target_os = "windows")]
+pub fn default_path() -> PathBuf {
+    let mut config_dir = env::var("APPDATA").unwrap();
+    config_dir.push(".emerald");
+    config_dir
+}
+
+impl Storages {
+    /// Create storage using user directory if specifunwrapied,
     /// or default path in other case.
-    pub fn new(path: Option<&'a Path>) -> Storages<'a> {
+    pub fn new(path: Option<PathBuf>) -> Storages {
         match path {
             Some(p) => Storages { base_dir: p },
-            _ => Storages { base_dir: Path::new(DEFAULT_PATH) },
+            _ => Storages { base_dir: default_path() },
         }
     }
 
@@ -34,7 +50,7 @@ impl<'a> Storages<'a> {
             if log_enabled!(LogLevel::Info) {
                 info!("Init new storage at {}", self.base_dir.display());
             }
-            fs::create_dir(self.base_dir)?
+            fs::create_dir(self.base_dir.as_path())?
         }
         Ok(())
     }
@@ -46,7 +62,7 @@ pub struct ChainStorage<'a> {
     /// subdir name
     id: String,
     /// storage
-    base: &'a Storages<'a>,
+    base: &'a Storages,
 }
 
 impl<'a> ChainStorage<'a> {
@@ -86,14 +102,14 @@ mod test {
     #[test]
     fn should_use_default_path() {
         let st = Storages::new(None);
-        assert_eq!(st.base_dir.as_os_str(), Path::new(DEFAULT_PATH).as_os_str());
+        assert_eq!(st.base_dir, default_path());
     }
 
     #[test]
     fn should_use_user_path() {
-        let user_path = Path::new("../some/path");
-        let st = Storages::new(Some(&user_path));
+        let user_path: &str = "/tmp/some";
+        let st = Storages::new(Some(PathBuf::from(user_path)));
 
-        assert_eq!(st.base_dir.as_os_str(), user_path.as_os_str());
+        assert_eq!(st.base_dir, PathBuf::from(user_path));
     }
 }

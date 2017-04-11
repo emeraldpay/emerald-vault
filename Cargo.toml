@@ -38,6 +38,7 @@ glob = "0.2"
 tempdir = "0.3"
 uuid = { version = "0.4", features = ["rustc-serialize", "v4"] }
 rust-crypto = "0.2"
+xdg = "2.1.0"
 # optional dependencies
 docopt = { version = "0.7", optional = true }
 env_logger = { version = "0.4", optional = true }
