@@ -3,7 +3,7 @@
 use address::{ADDRESS_BYTES, Address};
 use crypto::digest::Digest;
 use crypto::sha3::{Sha3, Sha3Mode};
-use rand::ThreadRng;
+use rand::OsRng;
 use secp256k1::{Error, Secp256k1};
 use secp256k1::key::{PublicKey, SecretKey};
 
@@ -24,27 +24,27 @@ impl From<Error> for GeneratorError {
 }
 
 /// Secret key generator.
-pub struct Generator<'call> {
-    rng: &'call Fn() -> ThreadRng,
+pub struct Generator {
+    rng: OsRng,
 }
 
-impl<'call> Generator<'call> {
+impl Generator {
     /// Create a new `Generator`.
     ///
     /// # Arguments
     ///
     /// * `r` - random number generator.
     ///
-    fn new(r: &'call Fn() -> ThreadRng) -> Self {
+    fn new(r: OsRng) -> Self {
         Generator { rng: r }
     }
 }
 
-impl<'call> Iterator for Generator<'call> {
+impl Iterator for Generator {
     type Item = SecretKey;
 
     fn next(&mut self) -> Option<Self::Item> {
-        Some(SecretKey::new(&SECP256K1, &mut (self.rng)()))
+        Some(SecretKey::new(&SECP256K1, &mut self.rng))
     }
 }
 
@@ -73,12 +73,12 @@ pub fn to_address(sec: &SecretKey) -> Result<Address, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rand::thread_rng;
+    use rand::OsRng;
 
     #[test]
     fn should_generate_keys() {
-        let rng = thread_rng;
-        let mut gen = Generator::new(&rng);
+        let rng = OsRng::new().unwrap();
+        let mut gen = Generator::new(rng);
         let mut keys = Vec::new();
 
         for _ in 0..5 {
@@ -90,16 +90,10 @@ mod tests {
 
     #[test]
     fn should_convert_to_public() {
-        let (sk, pk) = SECP256K1.generate_keypair(&mut thread_rng()).unwrap();
+        let mut rng = OsRng::new().unwrap();
+        let (sk, pk) = SECP256K1.generate_keypair(&mut rng).unwrap();
         let extracted = to_public(&sk).unwrap();
 
         assert_eq!(pk, extracted);
-    }
-
-    #[test]
-    fn should_convert_to_address() {
-        let (sk, pk) = SECP256K1.generate_keypair(&mut thread_rng()).unwrap();
-
-        //        assert_eq!(keys.len(), gen_ticks as usize);
     }
 }
