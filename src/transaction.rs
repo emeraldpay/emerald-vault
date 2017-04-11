@@ -100,7 +100,6 @@ mod tests {
         buf
     }
 
-
     #[test]
     fn do_basic_sign() {
         let tx = Transaction {
