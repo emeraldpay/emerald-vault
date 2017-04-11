@@ -1,7 +1,8 @@
-//! Keystore files key derivation function
+//! # Keystore files key derivation function
 
+use super::KeyFileError;
 use super::prf::Prf;
-use std::{error, fmt};
+use std::fmt;
 use std::str::FromStr;
 
 /// PBKDF2 key derivation function name
@@ -65,7 +66,7 @@ impl From<(u32, u32, u32)> for Kdf {
 }
 
 impl FromStr for Kdf {
-    type Err = KdfParserError;
+    type Err = KeyFileError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -76,7 +77,7 @@ impl FromStr for Kdf {
                    })
             }
             _ if s == SCRYPT_KDF_NAME => Ok(Kdf::default()),
-            _ => Err(KdfParserError::UnsupportedKdf(s.to_string())),
+            _ => Err(KeyFileError::UnsupportedKdf(s.to_string())),
         }
     }
 }
@@ -86,35 +87,6 @@ impl fmt::Display for Kdf {
         match *self {
             Kdf::Pbkdf2 { .. } => f.write_str(PBKDF2_KDF_NAME),
             Kdf::Scrypt { .. } => f.write_str(SCRYPT_KDF_NAME),
-        }
-    }
-}
-
-/// `Kdf` enum parser errors
-#[derive(Debug)]
-pub enum KdfParserError {
-    /// An unsupported key derivation function
-    UnsupportedKdf(String),
-}
-
-impl fmt::Display for KdfParserError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            KdfParserError::UnsupportedKdf(ref str) => {
-                write!(f, "Unsupported key derivation function: {}", str)
-            }
-        }
-    }
-}
-
-impl error::Error for KdfParserError {
-    fn description(&self) -> &str {
-        "Key derivation function parser error"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            _ => None,
         }
     }
 }
