@@ -7,68 +7,14 @@
 //!
 //! See RLP spec https://github.com/ethereumproject/wiki/wiki/RLP
 
-fn bytes(x: usize) -> u8 {
+fn bytes_count(x: usize) -> u8 {
     if x > 0xff {
-        return 1 + bytes(x >> 8);
+        return 1 + bytes_count(x >> 8);
     } else if x > 0 {
         return 1;
     } else {
         return 0;
     }
-}
-
-fn write_bytes(data: &[u8], buf: &mut Vec<u8>) {
-    // For a single byte whose value is in the [0x00, 0x7f] range,
-    // that byte is its own RLP encoding.
-    if data.len() == 1 && data[0] < 0x7f {
-        buf.push(data[0])
-    } else if data.len() <= 55 {
-        // Otherwise, if a string is 0-55 bytes long, the RLP encoding consists of a single byte
-        // with value 0x80 plus the length of the string followed by the string. The range of
-        // the first byte is thus [0x80, 0xb7].
-        let len = data.len();
-        buf.push(0x80 + len as u8);
-        buf.extend_from_slice(data);
-    } else {
-        // If a string is more than 55 bytes long, the RLP encoding consists of a single byte
-        // with value 0xb7 plus the length in bytes of the length of the string in binary form,
-        // followed by the length of the string, followed by the string. For example, a length-1024
-        // string would be encoded as \xb9\x04\x00 followed by the string. The range of the first
-        // byte is thus [0xb8, 0xbf].
-        let len = data.len();
-        let len_bytes = bytes(len);
-        buf.push(0xb7 + len_bytes);
-        for x in 0..len_bytes {
-            buf.push((0xff & (len >> (8 * x))) as u8);
-        }
-        buf.extend_from_slice(data);
-    }
-}
-
-fn write_list<T: WriteRLP>(list: &Vec<T>, buf: &mut Vec<u8>) {
-    let mut tail = Vec::new();
-    for item in list {
-        item.write_rlp(&mut tail)
-    }
-    let len = tail.len();
-
-    if len <= 55 {
-        // If the total payload of a list (i.e. the combined length of all its items) is 0-55
-        // bytes long, the RLP encoding consists of a single byte with value 0xc0 plus the length
-        // of the list followed by the concatenation of the RLP encodings of the items. The range
-        // of the first byte is thus [0xc0, 0xf7].
-        buf.push((0xc0 + len) as u8);
-    } else {
-        // If the total payload of a list is more than 55 bytes long, the RLP encoding consists of
-        // a single byte with value 0xf7 plus the length in bytes of the length of the payload in
-        // binary form, followed by the length of the payload, followed by the concatenation of
-        // the RLP encodings of the items. The range of the first byte is thus [0xf8, 0xff].
-        let len_bytes = bytes(len);
-        buf.push(0xf7 + len_bytes);
-        let len_data = to_bytes(&len, len_bytes);
-        buf.extend_from_slice(len_data.as_slice());
-    }
-    buf.extend_from_slice(tail.as_slice())
 }
 
 fn to_bytes(x: &usize, b_len: u8) -> Vec<u8> {
@@ -81,6 +27,33 @@ fn to_bytes(x: &usize, b_len: u8) -> Vec<u8> {
     buf
 }
 
+/// A list serializable to RLP
+pub struct RLPList {
+    tail: Vec<u8>,
+}
+
+impl RLPList {
+    /// start empty list
+    pub fn new() -> RLPList {
+        RLPList { tail: Vec::new() }
+    }
+
+    /// start with provided vector
+    pub fn from_vec<T: WriteRLP>(items: &Vec<T>) -> RLPList {
+        let mut start = RLPList { tail: Vec::new() };
+        for i in items {
+            start.push(i)
+        }
+        start
+    }
+
+    /// add an item to the list
+    pub fn push<T: WriteRLP>(&mut self, item: &T) {
+        item.write_rlp(&mut self.tail);
+    }
+}
+
+
 /// The `WriteRLP` trait is used to specify functionality of serializing data to RLP bytes
 pub trait WriteRLP {
     /// Writes itself as RLP bytes into specified buffer
@@ -89,41 +62,97 @@ pub trait WriteRLP {
 
 impl WriteRLP for str {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        write_bytes(&self.as_bytes(), buf)
+        self.as_bytes().write_rlp(buf)
     }
 }
 
 impl WriteRLP for String {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        write_bytes(&self.as_bytes(), buf)
+        self.as_bytes().write_rlp(buf)
     }
 }
 
 impl WriteRLP for u8 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        write_bytes(&to_bytes(&(*self as usize), 1).as_slice(), buf)
+        to_bytes(&(*self as usize), 1).as_slice().write_rlp(buf)
     }
 }
 impl WriteRLP for u16 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        write_bytes(&to_bytes(&(*self as usize), 2).as_slice(), buf)
+        to_bytes(&(*self as usize), 2).as_slice().write_rlp(buf)
     }
 }
 impl WriteRLP for u32 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        write_bytes(&to_bytes(&(*self as usize), 4).as_slice(), buf)
+        to_bytes(&(*self as usize), 4).as_slice().write_rlp(buf)
     }
 }
 
 impl WriteRLP for u64 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        write_bytes(&to_bytes(&(*self as usize), 8).as_slice(), buf)
+        //        write_bytes(&to_bytes(&(*self as usize), 8).as_slice(), buf)
+        to_bytes(&(*self as usize), 8).as_slice().write_rlp(buf)
     }
 }
 
 impl<T: WriteRLP> WriteRLP for Vec<T> {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        write_list(&self, buf);
+        RLPList::from_vec(self).write_rlp(buf);
+    }
+}
+
+impl WriteRLP for [u8] {
+    fn write_rlp(&self, buf: &mut Vec<u8>) {
+        let len = self.len();
+
+        // For a single byte whose value is in the [0x00, 0x7f] range,
+        // that byte is its own RLP encoding.
+        if len == 1 && self[0] < 0x7f {
+            buf.push(self[0])
+        } else if len <= 55 {
+            // Otherwise, if a string is 0-55 bytes long, the RLP encoding consists of a single byte
+            // with value 0x80 plus the length of the string followed by the string. The range of
+            // the first byte is thus [0x80, 0xb7].
+            buf.push(0x80 + len as u8);
+            buf.extend_from_slice(self);
+        } else {
+            // If a string is more than 55 bytes long, the RLP encoding consists of a single byte
+            // with value 0xb7 plus the length in bytes of the length of the string in binary form,
+            // followed by the length of the string, followed by the string. For example, a
+            // length-1024 string would be encoded as \xb9\x04\x00 followed by the string. The
+            // range of the first byte is thus [0xb8, 0xbf].
+            let len_bytes = bytes_count(len);
+            buf.push(0xb7 + len_bytes);
+            for x in 0..len_bytes {
+                buf.push((0xff & (len >> (8 * x))) as u8);
+            }
+            buf.extend_from_slice(self);
+        }
+    }
+}
+
+
+impl WriteRLP for RLPList {
+    fn write_rlp(&self, buf: &mut Vec<u8>) {
+        let len = self.tail.len();
+        if len <= 55 {
+            // If the total payload of a list (i.e. the combined length of all its items) is 0-55
+            // bytes long, the RLP encoding consists of a single byte with value 0xc0 plus the
+            // length of the list followed by the concatenation of the RLP encodings of the items.
+            // The range of the first byte is thus [0xc0, 0xf7].
+            buf.push((0xc0 + len) as u8);
+        } else {
+            // If the total payload of a list is more than 55 bytes long, the RLP encoding consists
+            // of a single byte with value 0xf7 plus the length in bytes of the length of the
+            // payload in binary form, followed by the length of the payload, followed by the
+            // concatenation of the RLP encodings of the items. The range of the first byte is
+            // thus [0xf8, 0xff].
+            let len_bytes = bytes_count(len);
+            buf.push(0xf7 + len_bytes);
+            let len_data = to_bytes(&len, len_bytes);
+            buf.extend_from_slice(len_data.as_slice());
+        }
+        buf.extend_from_slice(self.tail.as_slice());
     }
 }
 
@@ -131,7 +160,7 @@ impl<T: WriteRLP> WriteRLP for Option<T> {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         match self {
             &Some(ref x) => x.write_rlp(buf),
-            &None => write_bytes(&[], buf),
+            &None => [].write_rlp(buf),
         }
     }
 }
@@ -139,7 +168,7 @@ impl<T: WriteRLP> WriteRLP for Option<T> {
 #[cfg(test)]
 mod tests {
 
-    use super::{WriteRLP, to_bytes};
+    use super::{RLPList, WriteRLP, to_bytes};
 
     #[test]
     fn u8_to_bytes() {
@@ -237,6 +266,23 @@ mod tests {
             let list: Vec<u8> = vec![];
             list.write_rlp(&mut buf);
             assert_eq!([0xc0], buf.as_slice());
+        }
+        {
+            let mut buf = Vec::new();
+            let mut list = RLPList::new();
+            list.push(&RLPList::new());
+            let mut item1 = RLPList::new();
+            item1.push(&RLPList::new());
+            list.push(&item1);
+            let mut item2 = RLPList::new();
+            item2.push(&RLPList::new());
+            let mut item21 = RLPList::new();
+            item21.push(&RLPList::new());
+            item2.push(&item21);
+            list.push(&item2);
+            list.write_rlp(&mut buf);
+            assert_eq!([0xc7, 0xc0, 0xc1, 0xc0, 0xc3, 0xc0, 0xc1, 0xc0],
+                       buf.as_slice());
         }
     }
 
