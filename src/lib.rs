@@ -70,14 +70,14 @@ pub enum Method {
     /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
     EthCall,
 
-    ///
+    /// `trace_call`
     TraceCall,
 
-    /// eth_getTransactionByHash
+    /// `eth_getTransactionByHash`
     /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash
     GetTxByHash,
 
-    /// eth_getTransactionReceipt
+    /// `eth_getTransactionReceipt`
     /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionreceipt
     GetTxReceipt,
 }

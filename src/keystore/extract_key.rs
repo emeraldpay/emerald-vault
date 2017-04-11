@@ -1,5 +1,6 @@
-//! Extract keystore file private key
+//! # Extract keystore file private key
 
+use super::{KECCAK256_BYTES, Kdf, KeyFile, KeyFileError, Result};
 use crypto::aes::{KeySize, ctr};
 use crypto::digest::Digest;
 use crypto::hmac::Hmac;
@@ -7,22 +8,21 @@ use crypto::pbkdf2::pbkdf2;
 use crypto::scrypt::{ScryptParams, scrypt};
 use crypto::sha2::Sha256;
 use crypto::sha3::{Sha3, Sha3Mode};
-use keystore::{KECCAK256_BYTES, Kdf, KeyFile};
-use std::{error, fmt};
 
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;
 
+/// Private key type
+pub type PrivateKey = [u8; PRIVATE_KEY_BYTES];
+
 impl KeyFile {
     /// Extract keystore file private key by passphrase
-    pub fn extract_key(&self,
-                       passphrase: &str)
-                       -> Result<[u8; PRIVATE_KEY_BYTES], ExtractKeyError> {
+    pub fn extract_key(&self, passphrase: &str) -> Result<PrivateKey> {
         let derived = self.derive_key(passphrase);
         let mac = self.calculate_mac(&derived);
 
         if mac != self.keccak256_mac {
-            return Err(ExtractKeyError::WrongPassphrase);
+            return Err(KeyFileError::FailedMacValidation);
         }
 
         let mut pkey = [0u8; PRIVATE_KEY_BYTES];
@@ -62,32 +62,5 @@ impl KeyFile {
         sha3.result(&mut mac);
 
         mac
-    }
-}
-
-/// Private key extraction errors
-#[derive(Debug)]
-pub enum ExtractKeyError {
-    /// Wrong passphrase, `keccak256_mac` validation failed
-    WrongPassphrase,
-}
-
-impl fmt::Display for ExtractKeyError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ExtractKeyError::WrongPassphrase => f.write_str("Wrong passphrase"),
-        }
-    }
-}
-
-impl error::Error for ExtractKeyError {
-    fn description(&self) -> &str {
-        "Private key extraction error"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            _ => None,
-        }
     }
 }
