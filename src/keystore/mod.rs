@@ -8,6 +8,7 @@ pub mod extract_key;
 pub mod kdf;
 pub mod prf;
 pub mod serialize;
+pub mod sign;
 
 pub use self::cipher::Cipher;
 pub use self::extract_key::PRIVATE_KEY_BYTES;
