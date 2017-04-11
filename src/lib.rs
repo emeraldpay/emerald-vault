@@ -36,6 +36,8 @@ mod serialize;
 pub mod contracts;
 mod storage;
 mod key_generator;
+pub mod rlp;
+pub mod transaction;
 
 use self::serde_json::Value;
 pub use address::{ADDRESS_BYTES, Address};
@@ -71,14 +73,14 @@ pub enum Method {
     /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
     EthCall,
 
-    ///
+    /// `trace_call`
     TraceCall,
 
-    /// eth_getTransactionByHash
+    /// `eth_getTransactionByHash`
     /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash
     GetTxByHash,
 
-    /// eth_getTransactionReceipt
+    /// `eth_getTransactionReceipt`
     /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionreceipt
     GetTxReceipt,
 }
