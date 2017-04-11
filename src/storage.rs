@@ -7,7 +7,7 @@ use std::io::Error;
 use std::path::PathBuf;
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone)] 
 pub struct Storages {
     /// base dir
     base_dir: PathBuf,

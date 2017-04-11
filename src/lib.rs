@@ -26,7 +26,6 @@ extern crate regex;
 extern crate reqwest;
 extern crate rustc_serialize;
 extern crate uuid;
-extern crate xdg;
 
 mod address;
 pub mod keystore;
