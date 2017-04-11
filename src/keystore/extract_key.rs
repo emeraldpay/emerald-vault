@@ -63,7 +63,7 @@ fn calculate_mac(key: &[u8], data: &[u8]) -> [u8; KECCAK256_BYTES] {
     mac
 }
 
-fn decrypt_pkey(cipher: Cipher, text: &[u8], key: &[u8], iv: &[u8]) -> PrivateKey {
+fn decrypt_pkey(_cipher: Cipher, text: &[u8], key: &[u8], iv: &[u8]) -> PrivateKey {
     let mut pkey = [0u8; PRIVATE_KEY_BYTES];
     let mut ctr = ctr(KeySize::KeySize128, key, iv);
 
@@ -76,10 +76,8 @@ fn decrypt_pkey(cipher: Cipher, text: &[u8], key: &[u8], iv: &[u8]) -> PrivateKe
 #[cfg(test)]
 pub mod tests {
     use super::{calculate_mac, decrypt_pkey, derive_key};
-    use keystore::{Cipher, Kdf, KeyFile, Prf};
+    use keystore::{Cipher, Kdf};
     use rustc_serialize::hex::{FromHex, ToHex};
-    use std::str::FromStr;
-    use uuid::Uuid;
 
     #[test]
     fn should_derive_key_via_pbkdf2() {
