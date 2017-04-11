@@ -3,19 +3,22 @@
 //! (Web3 Secret Storage Definition)
 //! [https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition]
 
+pub mod error;
 pub mod cipher;
 pub mod extract_key;
 pub mod kdf;
 pub mod prf;
 pub mod serialize;
+pub mod sign;
 
 pub use self::cipher::Cipher;
-pub use self::extract_key::PRIVATE_KEY_BYTES;
+pub use self::error::KeyFileError;
+pub use self::extract_key::PrivateKey;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;
 use address::Address;
-use std::{cmp, fmt, fs};
+use std::{cmp, fmt, fs, result};
 use std::io::Read;
 use std::path::Path;
 use uuid::Uuid;
@@ -31,6 +34,9 @@ pub const KECCAK256_BYTES: usize = 32;
 
 /// Cipher initialization vector length in bytes
 pub const CIPHER_IV_BYTES: usize = 16;
+
+/// A keystore file related result
+pub type Result<T> = result::Result<T, KeyFileError>;
 
 /// A keystore file (account private key encrypted with a passphrase)
 #[derive(Clone, Debug, Eq)]
@@ -64,14 +70,10 @@ pub struct KeyFile {
 }
 
 impl KeyFile {
-    // FIXME
-    #[allow(dead_code)]
     fn new() -> Self {
         Self::from(Uuid::new_v4())
     }
 
-    // FIXME
-    #[allow(dead_code)]
     fn with_address(&mut self, addr: &Address) {
         self.address = Some(*addr);
     }
