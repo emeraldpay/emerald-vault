@@ -1,5 +1,6 @@
-//! Extract keystore file private key
+//! # Extract keystore file private key
 
+use super::{KECCAK256_BYTES, Kdf, KeyFile, KeyFileError, Result};
 use crypto::aes::{KeySize, ctr};
 use crypto::digest::Digest;
 use crypto::hmac::Hmac;
@@ -7,22 +8,21 @@ use crypto::pbkdf2::pbkdf2;
 use crypto::scrypt::{ScryptParams, scrypt};
 use crypto::sha2::Sha256;
 use crypto::sha3::{Sha3, Sha3Mode};
-use keystore::{KECCAK256_BYTES, Kdf, KeyFile};
-use std::{error, fmt};
 
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;
 
+/// Private key type
+pub type PrivateKey = [u8; PRIVATE_KEY_BYTES];
+
 impl KeyFile {
     /// Extract keystore file private key by passphrase
-    pub fn extract_key(&self,
-                       passphrase: &str)
-                       -> Result<[u8; PRIVATE_KEY_BYTES], ExtractKeyError> {
+    pub fn extract_key(&self, passphrase: &str) -> Result<PrivateKey> {
         let derived = self.derive_key(passphrase);
         let mac = self.calculate_mac(&derived);
 
         if mac != self.keccak256_mac {
-            return Err(ExtractKeyError::WrongPassphrase);
+            return Err(KeyFileError::FailedMacValidation);
         }
 
         let mut pkey = [0u8; PRIVATE_KEY_BYTES];
@@ -65,33 +65,6 @@ impl KeyFile {
     }
 }
 
-/// Private key extraction errors
-#[derive(Debug)]
-pub enum ExtractKeyError {
-    /// Wrong passphrase, `keccak256_mac` validation failed
-    WrongPassphrase,
-}
-
-impl fmt::Display for ExtractKeyError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            ExtractKeyError::WrongPassphrase => f.write_str("Wrong passphrase"),
-        }
-    }
-}
-
-impl error::Error for ExtractKeyError {
-    fn description(&self) -> &str {
-        "Private key extraction error"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            _ => None,
-        }
-    }
-}
-
 #[cfg(test)]
 pub mod tests {
     use keystore::{Cipher, Kdf, KeyFile, Prf};
@@ -127,9 +100,9 @@ pub mod tests {
                 c: 262144,
             },
             kdf_salt:
-                as_32bytes("ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd"),
+            as_32bytes("ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd"),
             keccak256_mac:
-                as_32bytes("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2"),
+            as_32bytes("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2"),
             dk_length: 32,
         }
     }
@@ -138,8 +111,8 @@ pub mod tests {
         KeyFile {
             uuid: Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap(),
             address: Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc"
-                              .parse()
-                              .unwrap()),
+                .parse()
+                .unwrap()),
             cipher: Cipher::default(),
             cipher_iv: as_16bytes("9df1649dd1c50f2153917e3b9e7164e9"),
             cipher_text: "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
@@ -151,9 +124,9 @@ pub mod tests {
                 p: 1,
             },
             kdf_salt:
-                as_32bytes("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"),
+            as_32bytes("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"),
             keccak256_mac:
-                as_32bytes("9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"),
+            as_32bytes("9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"),
             dk_length: 32,
         }
     }
@@ -161,7 +134,7 @@ pub mod tests {
     #[test]
     fn should_derive_key_tv1() {
         assert_eq!(test_vector_1().derive_key("testpassword").to_hex(),
-                   "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551")
+        "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551")
     }
 
     #[test]
@@ -170,22 +143,22 @@ pub mod tests {
             as_32bytes("f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551");
 
         assert_eq!(test_vector_1().calculate_mac(&derived_key).to_hex(),
-                   "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
+        "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
     }
 
     #[test]
     fn should_get_pk_tv1() {
         assert_eq!(test_vector_1()
-                       .extract_key("testpassword")
-                       .unwrap()
-                       .to_hex(),
-                   "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d");
+            .extract_key("testpassword")
+            .unwrap()
+            .to_hex(),
+        "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d");
     }
 
     #[test]
     fn should_derive_key_tv2() {
         assert_eq!(test_vector_2().derive_key("1234567890").to_hex(),
-                   "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273")
+        "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273")
     }
 
     #[test]
@@ -194,15 +167,15 @@ pub mod tests {
             as_32bytes("b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273");
 
         assert_eq!(test_vector_2().calculate_mac(&derived_key).to_hex(),
-                   "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5")
+        "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5")
     }
 
     #[test]
     fn should_get_pk_tv2() {
         assert_eq!(test_vector_2()
-                       .extract_key("1234567890")
-                       .unwrap()
-                       .to_hex(),
-                   "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f");
+            .extract_key("1234567890")
+            .unwrap()
+            .to_hex(),
+        "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f");
     }
 }

@@ -33,7 +33,7 @@ pub struct Transaction<'a> {
 
 impl<'a> Transaction<'a> {
     fn data_to_rlp(&self) -> RLPList {
-        let mut data = RLPList::new();
+        let mut data = RLPList::default();
         data.push(&self.nonce);
         data.push(&self.gas_price.to_vec());
         data.push(&self.gas_limit);
@@ -57,7 +57,7 @@ impl<'a> Transaction<'a> {
     }
 
     fn sign(&self, passphrase: &str, key: &KeyFile) -> Result<Vec<u8>, ()> {
-        match key.sign(&self.hash(), &passphrase) {
+        match key.sign(&self.hash(), passphrase) {
             Ok(sign) => {
                 let mut rlp = Vec::new();
                 let mut data = self.data_to_rlp();
@@ -79,8 +79,8 @@ impl<'a> Transaction<'a> {
     }
 }
 
+#[cfg(test)]
 mod tests {
-
     use super::Transaction;
     use keystore::{Cipher, Kdf, KeyFile, Prf};
     use rustc_serialize::hex::FromHex;
@@ -92,7 +92,6 @@ mod tests {
         buf.copy_from_slice(hex.from_hex().unwrap().as_slice());
         buf
     }
-
 
     fn as_32bytes(hex: &str) -> [u8; 32] {
         let mut buf = [0u8; 32];

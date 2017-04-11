@@ -43,7 +43,7 @@ impl KeyFile {
     /// Sign message using the key
     pub fn sign(&self, hash: &[u8; 32], passphrase: &str) -> Result<[u8; 64], SignError> {
         match self.extract_key(passphrase) {
-            Ok(pk) => sign(&pk, &hash),
+            Ok(pk) => sign(&pk, hash),
             Err(_) => Err(SignError::UnableToGetPk),
         }
     }

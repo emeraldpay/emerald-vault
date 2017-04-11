@@ -1,9 +1,16 @@
-//! Chain-related storage
+//! # Chain-related storage
 
 use log::LogLevel;
 use std::fs;
 use std::io::Error;
 use std::path::{Path, PathBuf};
+
+#[cfg(target_os = "linux")]
+static DEFAULT_PATH: &'static str = "~/.emerald";
+#[cfg(target_os = "macos")]
+static DEFAULT_PATH: &'static str = "~/Library/Emerald";
+#[cfg(target_os = "windows")]
+static DEFAULT_PATH: &'static str = "%APPDATA%\\.emerald";
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
 #[derive(Debug, Clone)]
@@ -11,13 +18,6 @@ pub struct Storages<'a> {
     /// base dir
     base_dir: &'a Path,
 }
-
-#[cfg(target_os="macos")]
-static DEFAULT_PATH: &'static str = "~/Library/Emerald";
-#[cfg(target_os="linux")]
-static DEFAULT_PATH: &'static str = "~/.emerald";
-#[cfg(target_os="windows")]
-static DEFAULT_PATH: &'static str = "%USERDIR%\\.emerald";
 
 impl<'a> Storages<'a> {
     /// Create storage using user directory if specified,
@@ -53,8 +53,9 @@ impl<'a> ChainStorage<'a> {
     pub fn new(base: &'a Storages, id: String) -> ChainStorage<'a> {
         ChainStorage { id: id, base: base }
     }
+
     pub fn init(&self) -> Result<(), Error> {
-        let mut p: PathBuf = self.base.base_dir.to_path_buf().clone();
+        let mut p: PathBuf = self.base.base_dir.to_path_buf();
         p.push(self.id.clone());
         if !p.exists() {
             if log_enabled!(LogLevel::Info) {
@@ -92,8 +93,7 @@ mod test {
     #[test]
     fn should_use_user_path() {
         let user_path = Path::new("../some/path");
-        let st = Storages::new(Some(&user_path));
-
+        let st = Storages::new(Some(user_path));
         assert_eq!(st.base_dir.as_os_str(), user_path.as_os_str());
     }
 }
