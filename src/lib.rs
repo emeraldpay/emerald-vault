@@ -33,6 +33,8 @@ mod request;
 mod serialize;
 pub mod contracts;
 mod storage;
+pub mod rlp;
+pub mod transaction;
 
 use self::serde_json::Value;
 pub use address::{ADDRESS_BYTES, Address};
