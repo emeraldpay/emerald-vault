@@ -145,7 +145,10 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
                             move |p| url.request(&MethodParams(Method::TraceCall, &p)));
     }
 
-    let storage = Storages::new(base_path);
+    let storage = match base_path {
+        Some(p) => Storages::new(p),
+        None => Storages::default(),
+    };
 
     if storage.init().is_err() {
         panic!("Unable to initialize storage");

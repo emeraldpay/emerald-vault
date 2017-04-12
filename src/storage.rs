@@ -7,7 +7,7 @@ use std::io::Error;
 use std::path::PathBuf;
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
-#[derive(Debug, Clone)] 
+#[derive(Debug, Clone)]
 pub struct Storages {
     /// base dir
     base_dir: PathBuf,
@@ -15,14 +15,14 @@ pub struct Storages {
 
 #[cfg(all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android")))]
 pub fn default_path() -> PathBuf {
-    let mut config_dir = env::home_dir().unwrap();
+    let mut config_dir = env::home_dir().expect("Expect path to home dir");
     config_dir.push(".emerald");
     config_dir
 }
 
 #[cfg(target_os = "macos")]
 pub fn default_path() -> PathBuf {
-    let mut config_dir = env::home_dir().unwrap();
+    let mut config_dir = env::home_dir().expect("Expect path to home dir");
     config_dir.push("Library");
     config_dir.push("Emerald");
     config_dir
@@ -30,19 +30,16 @@ pub fn default_path() -> PathBuf {
 
 #[cfg(target_os = "windows")]
 pub fn default_path() -> PathBuf {
-    let mut config_dir = env::var("APPDATA").unwrap();
+    let mut config_dir = env::var("APPDATA").expect("Expect 'APPDATA' environment variable");
     config_dir.push(".emerald");
     config_dir
 }
 
 impl Storages {
-    /// Create storage using user directory if specifunwrapied,
+    /// Create storage using user directory if specified,
     /// or default path in other case.
-    pub fn new(path: Option<PathBuf>) -> Storages {
-        match path {
-            Some(p) => Storages { base_dir: p },
-            _ => Storages { base_dir: default_path() },
-        }
+    pub fn new(path: PathBuf) -> Storages {
+        Storages { base_dir: path }
     }
 
     pub fn init(&self) -> Result<(), Error> {
@@ -53,6 +50,12 @@ impl Storages {
             fs::create_dir(self.base_dir.as_path())?
         }
         Ok(())
+    }
+}
+
+impl Default for Storages {
+    fn default() -> Self {
+        Storages { base_dir: default_path() }
     }
 }
 
@@ -101,14 +104,14 @@ mod test {
 
     #[test]
     fn should_use_default_path() {
-        let st = Storages::new(None);
+        let st = Storages::default();
         assert_eq!(st.base_dir, default_path());
     }
 
     #[test]
     fn should_use_user_path() {
         let user_path: &str = "/tmp/some";
-        let st = Storages::new(Some(PathBuf::from(user_path)));
+        let st = Storages::new(PathBuf::from(user_path));
 
         assert_eq!(st.base_dir, PathBuf::from(user_path));
     }

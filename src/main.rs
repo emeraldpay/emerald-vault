@@ -72,7 +72,7 @@ fn main() {
         .parse::<String>()
         .expect("Expect to parse base path");
     let base_path = if !base_path_str.is_empty() {
-        Some(PathBuf::from(base_path_str))
+        Some(PathBuf::from(&base_path_str))
     } else {
         None
     };
