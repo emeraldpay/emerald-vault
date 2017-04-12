@@ -67,7 +67,8 @@ pub enum Method {
     /// [eth_getBalance](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getbalance)
     EthGetBalance,
 
-    /// [eth_getTransactionCount](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactioncount)
+    /// `eth_getTransactionCount`
+    /// (https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactioncount)
     EthGetTxCount,
 
     /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
@@ -134,7 +135,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 
         io.add_async_method("eth_getTransactionCount",
                             move |p| url.request(&MethodParams(Method::EthGetTxCount, &p)));
-    }    
+    }
 
     {
         let url = url.clone();
