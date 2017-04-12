@@ -6,13 +6,6 @@ use std::fs;
 use std::io::Error;
 use std::path::PathBuf;
 
-#[cfg(target_os = "linux")]
-static DEFAULT_PATH: &'static str = "~/.emerald";
-#[cfg(target_os = "macos")]
-static DEFAULT_PATH: &'static str = "~/Library/Emerald";
-#[cfg(target_os = "windows")]
-static DEFAULT_PATH: &'static str = "%APPDATA%\\.emerald";
-
 /// Base dir for internal data, all chain-related should be store in subdirectories
 #[derive(Debug, Clone)]
 pub struct Storages {
