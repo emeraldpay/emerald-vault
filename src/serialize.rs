@@ -24,6 +24,9 @@ impl<'a> Serialize for ::MethodParams<'a> {
             ::Method::EthGetBalance => {
                 serializer.serialize_some(&method_params("eth_getBalance", self.1))
             }
+            ::Method::EthGetTxCount => {
+                serializer.serialize_some(&method_params("eth_getTransactionCount", self.1))
+            }
             ::Method::EthCall => serializer.serialize_some(&method_params("eth_call", self.1)),
             ::Method::TraceCall => serializer.serialize_some(&method_params("trace_call", self.1)),
             ::Method::GetTxByHash => {
