@@ -30,7 +30,8 @@ pub fn default_path() -> PathBuf {
 
 #[cfg(target_os = "windows")]
 pub fn default_path() -> PathBuf {
-    let mut config_dir = env::var("APPDATA").expect("Expect 'APPDATA' environment variable");
+    let app_data_var = env::var("APPDATA").expect("Expect 'APPDATA' environment variable");
+    let mut config_dir = PathBuf::from(app_data_var);
     config_dir.push(".emerald");
     config_dir
 }
