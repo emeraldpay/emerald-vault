@@ -37,7 +37,7 @@ pub enum Kdf {
 }
 
 impl Default for Kdf {
-    fn default() -> Kdf {
+    fn default() -> Self {
         Kdf::Scrypt {
             n: 262144,
             r: 8,

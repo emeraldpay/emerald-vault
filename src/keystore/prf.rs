@@ -15,7 +15,7 @@ pub enum Prf {
 }
 
 impl Default for Prf {
-    fn default() -> Prf {
+    fn default() -> Self {
         Prf::HmacSha256
     }
 }

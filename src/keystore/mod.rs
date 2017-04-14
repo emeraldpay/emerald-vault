@@ -80,7 +80,7 @@ impl KeyFile {
 }
 
 impl Default for KeyFile {
-    fn default() -> KeyFile {
+    fn default() -> Self {
         KeyFile {
             uuid: Uuid::default(),
             address: None,

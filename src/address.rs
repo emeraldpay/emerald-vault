@@ -100,6 +100,12 @@ pub enum AddressParserError {
     UnexpectedEncoding(hex::FromHexError),
 }
 
+impl From<hex::FromHexError> for AddressParserError {
+    fn from(err: hex::FromHexError) -> Self {
+        AddressParserError::UnexpectedEncoding(err)
+    }
+}
+
 impl fmt::Display for AddressParserError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {

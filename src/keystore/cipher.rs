@@ -15,7 +15,7 @@ pub enum Cipher {
 }
 
 impl Default for Cipher {
-    fn default() -> Cipher {
+    fn default() -> Self {
         Cipher::Aes256Ctr
     }
 }

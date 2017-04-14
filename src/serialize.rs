@@ -1,45 +1,18 @@
 //! # Serialize RPC parameters in JSON
 
+use super::Method;
+use super::transaction::Transaction;
 use jsonrpc_core::Params;
-
 use serde::ser::{Serialize, Serializer};
+use std::{error, fmt};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-
-static NONE: Params = Params::None;
 
 lazy_static! {
     static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
 }
 
-impl<'a> Serialize for ::MethodParams<'a> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
-    {
-        match self.0 {
-            ::Method::ClientVersion => serializer.serialize_some(&method("web3_clientVersion")),
-            ::Method::EthSyncing => serializer.serialize_some(&method("eth_syncing")),
-            ::Method::EthBlockNumber => serializer.serialize_some(&method("eth_blockNumber")),
-            ::Method::EthAccounts => serializer.serialize_some(&method("eth_accounts")),
-            ::Method::EthGetBalance => {
-                serializer.serialize_some(&method_params("eth_getBalance", self.1))
-            }
-            ::Method::EthGetTxCount => {
-                serializer.serialize_some(&method_params("eth_getTransactionCount", self.1))
-            }
-            ::Method::EthCall => serializer.serialize_some(&method_params("eth_call", self.1)),
-            ::Method::TraceCall => serializer.serialize_some(&method_params("trace_call", self.1)),
-            ::Method::GetTxByHash => {
-                serializer.serialize_some(&method_params("eth_getTransactionByHash", self.1))
-            }
-            ::Method::GetTxReceipt => {
-                serializer.serialize_some(&method_params("eth_getTransactionReceipt", self.1))
-            }
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 struct JsonData<'a> {
     jsonrpc: &'static str,
     method: &'static str,
@@ -47,11 +20,54 @@ struct JsonData<'a> {
     id: usize,
 }
 
-fn method(method: &'static str) -> JsonData {
-    method_params(method, &NONE)
+const EMPTY_DATA: &'static [u8; 1] = &[0; 1];
+
+impl<'a> Transaction<'a> {
+    /// Try to convert a request parameters to `Transaction`.
+    ///
+    /// # Arguments
+    ///
+    /// * `p` - A request parameters (structure mapping directly to JSON)
+    pub fn try_from(_p: &Params) -> Result<Transaction, SerializeError> {
+        Ok(Transaction {
+               nonce: 0u64,
+               gas_price: [0u8; 32],
+               gas_limit: 0u64,
+               to: Option::None,
+               value: [0u8; 32],
+               data: EMPTY_DATA,
+           })
+    }
 }
 
-fn method_params<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
+impl<'a> Serialize for ::MethodParams<'a> {
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        match self.0 {
+            Method::ClientVersion => serialize("web3_clientVersion", self.1, s),
+            Method::EthSyncing => serialize("eth_syncing", self.1, s),
+            Method::EthBlockNumber => serialize("eth_blockNumber", self.1, s),
+            Method::EthAccounts => serialize("eth_accounts", self.1, s),
+            Method::EthGetBalance => serialize("eth_getBalance", self.1, s),
+            Method::EthGetTxCount => serialize("eth_getTransactionCount", self.1, s),
+            Method::EthSendTransaction => serialize("eth_sendTransaction", self.1, s),
+            Method::EthSendRawTransaction => serialize("eth_sendRawTransaction", self.1, s),
+            Method::EthCall => serialize("eth_call", self.1, s),
+            Method::TraceCall => serialize("trace_call", self.1, s),
+            Method::GetTxByHash => serialize("eth_getTransactionByHash", self.1, s),
+            Method::GetTxReceipt => serialize("eth_getTransactionReceipt", self.1, s),
+        }
+    }
+}
+
+fn serialize<S>(method: &'static str, params: &Params, serializer: S) -> Result<S::Ok, S::Error>
+    where S: Serializer
+{
+    to_json_data(method, params).serialize(serializer)
+}
+
+fn to_json_data<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
     let id = REQ_ID.fetch_add(1, Ordering::SeqCst);
 
     JsonData {
@@ -62,15 +78,39 @@ fn method_params<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
     }
 }
 
+/// RPC parameters JSON serialize errors
+#[derive(Debug)]
+pub enum SerializeError {
+}
+
+impl fmt::Display for SerializeError {
+    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+        }
+    }
+}
+
+impl error::Error for SerializeError {
+    fn description(&self) -> &str {
+        "RPC parameters JSON serialize errors"
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match *self {
+            _ => None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-
-    use super::method;
+    use super::to_json_data;
+    use jsonrpc_core::Params;
 
     #[test]
     fn should_increase_request_ids() {
-        assert_eq!(method("").id, 1);
-        assert_eq!(method("").id, 2);
-        assert_eq!(method("").id, 3);
+        assert_eq!(to_json_data("", &Params::None).id, 1);
+        assert_eq!(to_json_data("", &Params::None).id, 2);
+        assert_eq!(to_json_data("", &Params::None).id, 3);
     }
 }

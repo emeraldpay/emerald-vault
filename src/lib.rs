@@ -36,21 +36,24 @@ mod storage;
 pub mod rlp;
 pub mod transaction;
 
-use self::serde_json::Value;
 pub use address::{ADDRESS_BYTES, Address};
 use contracts::Contracts;
-use jsonrpc_core::{Error, ErrorCode, IoHandler, Params};
+use jsonrpc_core::{Error, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
-use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
+use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
 pub use keystore::{KeyFile, address_exists};
 
 use log::LogLevel;
+use rustc_serialize::hex::ToHex;
+use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 use storage::{ChainStorage, Storages};
+use transaction::Transaction;
 
 /// RPC methods
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum Method {
     /// [web3_clientVersion](https://github.com/ethereum/wiki/wiki/JSON-RPC#web3_clientversion)
     ClientVersion,
@@ -67,9 +70,17 @@ pub enum Method {
     /// [eth_getBalance](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getbalance)
     EthGetBalance,
 
-    /// `eth_getTransactionCount`
-    /// (https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactioncount)
+    /// [eth_getTransactionCount](
+    /// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactioncount)
     EthGetTxCount,
+
+    /// [eth_sendTransaction](
+    /// https://github.com/paritytech/parity/wiki/JSONRPC-eth-module#eth_sendtransaction)
+    EthSendTransaction,
+
+    /// [eth_sendRawTransaction](
+    /// https://github.com/paritytech/parity/wiki/JSONRPC-eth-module#eth_sendrawtransaction)
+    EthSendRawTransaction,
 
     /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
     EthCall,
@@ -77,21 +88,46 @@ pub enum Method {
     /// `trace_call`
     TraceCall,
 
-    /// `eth_getTransactionByHash`
-    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash
+    /// [eth_getTransactionByHash](
+    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash)
     GetTxByHash,
 
-    /// `eth_getTransactionReceipt`
-    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionreceipt
+    /// [eth_getTransactionReceipt](
+    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionreceipt)
     GetTxReceipt,
 }
 
+/// RPC method's request metadata
+#[derive(Clone, Debug)]
+enum MethodMetadata {
+    /// Nothing special
+    None,
+
+    /// Given account passphrase
+    Passphrase(String),
+}
+
+impl MethodMetadata {
+    fn with_passphrase(str: &str) -> MethodMetadata {
+        MethodMetadata::Passphrase(str.to_string())
+    }
+}
+
+impl Default for MethodMetadata {
+    fn default() -> Self {
+        MethodMetadata::None
+    }
+}
+
+impl Metadata for MethodMetadata {}
+
 /// PRC method's parameters
+#[derive(Clone, Debug, PartialEq)]
 pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<PathBuf>) {
-    let mut io = IoHandler::default();
+    let mut io = MetaIoHandler::default();
 
     let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));
 
@@ -142,6 +178,35 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 
         io.add_async_method("eth_getTransactionByHash",
                             move |p| url.request(&MethodParams(Method::GetTxByHash, &p)));
+    }
+
+    {
+        let url = url.clone();
+
+        io.add_method_with_meta("eth_sendTransaction", move |p, m| {
+            if let MethodMetadata::Passphrase(ref passphrase) = m {
+                match Transaction::try_from(&p) {
+                    Ok(tr) => {
+                        let p: Params = tr.sign(passphrase, &KeyFile::default())
+                            .map(|v| format!("0x{}", v.to_hex()))
+                            .map(|s| Params::Array(vec![Value::String(s)]))
+                            .expect("Expect to sign a transaction");
+
+                        url.request(&MethodParams(Method::EthSendRawTransaction, &p))
+                    }
+                    Err(err) => futures::done(Err(Error::invalid_params(err.to_string()))).boxed(),
+                }
+            } else {
+                futures::done(Err(Error::invalid_request())).boxed()
+            }
+        });
+    }
+
+    {
+        let url = url.clone();
+
+        io.add_async_method("eth_sendRawTransaction",
+                            move |p| url.request(&MethodParams(Method::EthSendRawTransaction, &p)));
     }
 
     {
@@ -205,6 +270,11 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
     }
 
     let server = ServerBuilder::new(io)
+        .meta_extractor(|req: &Req| {
+                            req.header("X-Passphrase")
+                                .map(MethodMetadata::with_passphrase)
+                                .unwrap_or_default()
+                        })
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
                                                 cors::AccessControlAllowOrigin::Null]))
         .start_http(addr)

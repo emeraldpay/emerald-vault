@@ -1,6 +1,4 @@
-//!
-//! Transaction structure
-//!
+//! # Transaction processing
 
 use address::Address;
 use crypto::digest::Digest;
@@ -8,30 +6,51 @@ use crypto::sha3::{Sha3, Sha3Mode};
 use keystore::KeyFile;
 use rlp::{RLPList, WriteRLP};
 
-type U256 = [u8; 32];
-
 /// Transaction data
 pub struct Transaction<'a> {
     /// Nonce
-    nonce: u64,
+    pub nonce: u64,
 
     /// Gas Price
-    gas_price: U256,
+    pub gas_price: [u8; 32],
 
     /// Gas Limit
-    gas_limit: u64,
+    pub gas_limit: u64,
 
     /// Target address, or None to create contract
-    to: Option<Address>,
+    pub to: Option<Address>,
 
     /// Value transferred with transaction
-    value: U256,
+    pub value: [u8; 32],
 
     /// Data transferred with transaction
-    data: &'a [u8],
+    pub data: &'a [u8],
 }
 
 impl<'a> Transaction<'a> {
+    /// Sign transaction
+    pub fn sign(&self, passphrase: &str, key: &KeyFile) -> Result<Vec<u8>, ()> {
+        match key.sign(&self.hash(), passphrase) {
+            Ok(sign) => {
+                let mut rlp = Vec::new();
+                let mut data = self.data_to_rlp();
+
+                let mut r = Vec::with_capacity(32);
+                r.extend_from_slice(&sign[0..33]);
+                data.push(&r);
+                let mut s = Vec::with_capacity(32);
+                s.extend_from_slice(&sign[32..64]);
+                data.push(&s);
+                let v = sign[63] + 27;
+                data.push(&v);
+
+                data.write_rlp(&mut rlp);
+                Ok(rlp)
+            }
+            Err(_) => Err(()),
+        }
+    }
+
     fn data_to_rlp(&self) -> RLPList {
         let mut data = RLPList::default();
         data.push(&self.nonce);
@@ -54,28 +73,6 @@ impl<'a> Transaction<'a> {
         sha3.input(rlp.as_slice());
         sha3.result(&mut hash);
         hash
-    }
-
-    fn sign(&self, passphrase: &str, key: &KeyFile) -> Result<Vec<u8>, ()> {
-        match key.sign(&self.hash(), passphrase) {
-            Ok(sign) => {
-                let mut rlp = Vec::new();
-                let mut data = self.data_to_rlp();
-
-                let mut r = Vec::with_capacity(32);
-                r.extend_from_slice(&sign[0..33]);
-                data.push(&r);
-                let mut s = Vec::with_capacity(32);
-                s.extend_from_slice(&sign[32..64]);
-                data.push(&s);
-                let v = sign[63] + 27;
-                data.push(&v);
-
-                data.write_rlp(&mut rlp);
-                Ok(rlp)
-            }
-            Err(_) => Err(()),
-        }
     }
 }
 
