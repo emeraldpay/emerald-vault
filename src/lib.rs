@@ -44,7 +44,6 @@ use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
 pub use keystore::{KeyFile, address_exists};
 
 use log::LogLevel;
-use rustc_serialize::hex::ToHex;
 use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -187,17 +186,14 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             if let MethodMetadata::Passphrase(ref passphrase) = m {
                 match Transaction::try_from(&p) {
                     Ok(tr) => {
-                        let p: Params = tr.sign(passphrase, &KeyFile::default())
-                            .map(|v| format!("0x{}", v.to_hex()))
-                            .map(|s| Params::Array(vec![Value::String(s)]))
-                            .expect("Expect to sign a transaction");
-
-                        url.request(&MethodParams(Method::EthSendRawTransaction, &p))
+                        url.request(&MethodParams(
+                            Method::EthSendRawTransaction,
+                            &tr.to_raw(&KeyFile::default(), passphrase)))
                     }
                     Err(err) => futures::done(Err(Error::invalid_params(err.to_string()))).boxed(),
                 }
             } else {
-                futures::done(Err(Error::invalid_request())).boxed()
+                futures::failed(Error::invalid_request()).boxed()
             }
         });
     }
@@ -254,18 +250,14 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
     {
         let contracts = contracts.clone();
 
-        io.add_async_method("emerald_addContract", move |p: Params| {
-            let res = match p {
-                Params::Array(ref vec) => {
-                    match contracts.add(&vec[0]) {
-                        Ok(_) => Ok(Value::Bool(true)),
-                        Err(_) => Err(Error::new(ErrorCode::InternalError)),
-                    }
+        io.add_async_method("emerald_addContract", move |p| match p {
+            Params::Array(ref vec) => {
+                match contracts.add(&vec[0]) {
+                    Ok(_) => futures::finished(Value::Bool(true)).boxed(),
+                    Err(_) => futures::failed(Error::new(ErrorCode::InternalError)).boxed(),
                 }
-                _ => Err(Error::new(ErrorCode::InvalidParams)),
-            };
-
-            futures::done(res).boxed()
+            }
+            _ => futures::failed(Error::new(ErrorCode::InvalidParams)).boxed(),
         });
     }
 

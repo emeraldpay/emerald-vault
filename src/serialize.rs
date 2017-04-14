@@ -1,9 +1,11 @@
 //! # Serialize RPC parameters in JSON
 
-use super::Method;
+use super::{KeyFile, Method};
 use super::transaction::Transaction;
 use jsonrpc_core::Params;
+use rustc_serialize::hex::ToHex;
 use serde::ser::{Serialize, Serializer};
+use serde_json::Value;
 use std::{error, fmt};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -37,6 +39,14 @@ impl<'a> Transaction<'a> {
                value: [0u8; 32],
                data: EMPTY_DATA,
            })
+    }
+
+    /// Sign transaction and return as raw data
+    pub fn to_raw(&self, key: &KeyFile, passphrase: &str) -> Params {
+        self.sign(passphrase, key)
+            .map(|v| format!("0x{}", v.to_hex()))
+            .map(|s| Params::Array(vec![Value::String(s)]))
+            .expect("Expect to sign a transaction")
     }
 }
 
