@@ -70,11 +70,13 @@ pub struct KeyFile {
 }
 
 impl KeyFile {
-    fn new() -> Self {
+    ///
+    pub fn new() -> Self {
         Self::from(Uuid::new_v4())
     }
 
-    fn with_address(&mut self, addr: &Address) {
+    ///
+    pub fn with_address(&mut self, addr: &Address) {
         self.address = Some(*addr);
     }
 }
