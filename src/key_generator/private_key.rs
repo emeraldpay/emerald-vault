@@ -11,6 +11,7 @@ use std::slice;
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;
 
+/// Private key object for use in `KeyFile`
 pub struct PrivateKey {
     skey: SecretKey,
 }

@@ -1,6 +1,10 @@
 //! # Private key generator
+//!
 
+///
 pub mod serialize;
+
+///
 pub mod private_key;
 
 use self::private_key::PrivateKey;
@@ -37,12 +41,12 @@ impl Generator {
     ///
     /// * `r` - random number generator
     ///
-    fn new(r: OsRng) -> Self {
+    pub fn new(r: OsRng) -> Self {
         Generator { rng: r }
     }
 
     /// Generate new `PrivateKey`
-    fn get(&mut self) -> PrivateKey {
+    pub fn get(&mut self) -> PrivateKey {
         let sk = SecretKey::new(&SECP256K1, &mut self.rng);
         PrivateKey::new(sk)
     }

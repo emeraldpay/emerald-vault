@@ -29,7 +29,6 @@ impl KeyFile {
     /// Create keystore file from private key with a passphrase
     pub fn insert_key(&mut self, pk: &[u8], passphrase: &str) -> Result<()> {
         let derived = derive_key(self.dk_length, self.kdf, &self.kdf_salt, passphrase);
-
         let c_text: [u8; 32] = decrypt_pkey(self.cipher, pk, &derived[0..16], &self.cipher_iv)
             .into();
 
@@ -142,19 +141,35 @@ pub mod tests {
 
     #[test]
     fn should_insert_key() {
-        let pkey = "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
+        let pkey = "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f"
             .from_hex()
             .unwrap();
-        let password = "testpassword";
+        let password = "1234567890";
 
         let mut kf = KeyFile::default();
-        kf.cipher_iv = clone_into_array(&"83dbcc02d8ccb40e466191a123791e0e".from_hex().unwrap());
-        kf.kdf_salt =
-            clone_into_array(&"ab0c7876052600dd703518d6fc3fe8984592145b591fc8fb5c6d43190334ba19"
-                                  .from_hex()
-                                  .unwrap());
+        kf.kdf = Kdf::Scrypt {
+            n: 1024,
+            r: 8,
+            p: 1,
+        };
+        kf.cipher_iv = clone_into_array(&"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap());
+        kf.kdf_salt = clone_into_array(&"fd4acb81182a2c8fa959d180967b3\
+            74277f2ccf2f7f401cb08d042cc785464b4"
+                                                .from_hex()
+                                                .unwrap());
 
         let res = kf.insert_key(&pkey, &password);
         assert!(res.is_ok());
+
+        assert_eq!(kf.cipher_text,
+                   "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
+                       .from_hex()
+                       .unwrap());
+
+        let mac: [u8; 32] = clone_into_array(&"9f8a85347fd1a81f14b99f69e2b401d\
+            68fb48904efe6a66b357d8d1d61ab14e5"
+                                                      .from_hex()
+                                                      .unwrap());
+        assert_eq!(kf.keccak256_mac, mac);
     }
 }

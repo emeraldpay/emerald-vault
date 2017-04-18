@@ -2,11 +2,15 @@ extern crate emerald;
 
 extern crate rustc_serialize;
 extern crate uuid;
+extern crate rand;
 
+use emerald::key_generator::Generator;
+use emerald::key_generator::serialize::{create_keyfile, get_timestamp, to_file};
 use emerald::keystore::*;
+use rand::OsRng;
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
-use std::fs;
+use std::{env, fs};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
@@ -155,6 +159,32 @@ fn should_ignore_unavailable_addresses() {
                                      &"0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
                                           .parse::<emerald::Address>()
                                           .unwrap()));
+}
+
+#[test]
+fn should_create_keyfile() {
+    let temp_dir = temp_dir();
+    let rng = OsRng::new().unwrap();
+    let mut gen = emerald::key_generator::Generator::new(rng);
+    let sk = gen.get();
+
+    let file = sk.to_address()
+        .and_then(|a| create_keyfile(sk, &"1234567890", Some(a)))
+        .and_then(|k| to_file(k, Some(&temp_dir)));
+
+    assert!(file.is_ok());
+
+    fs::remove_file(&temp_dir);
+}
+
+#[test]
+fn should_use_correct_filename() {}
+
+fn temp_dir() -> PathBuf {
+    let p = env::temp_dir();
+    let dir = p.join(get_timestamp());
+    fs::create_dir(&dir).unwrap();
+    dir
 }
 
 fn file_content<P: AsRef<Path>>(path: P) -> String {

@@ -1,7 +1,8 @@
-///! #functionality for `KeyFile` packing
+///! # Functionality for `KeyFile` packing
 
 use address::Address;
 use chrono::prelude::*;
+use key_generator::private_key::{PRIVATE_KEY_BYTES, PrivateKey};
 use keystore::KeyFile;
 use rustc_serialize::json;
 use secp256k1::Error as SecpError;
@@ -12,9 +13,26 @@ use uuid::Uuid;
 
 
 /// Creates a new `KeyFile` with a specified `Address`
-pub fn create_keyfile(addr: Address) -> Result<KeyFile, SecpError> {
+///
+/// # Arguments
+///
+/// * `pk` - private key for inserting in a `KeyFile`
+/// * `passphrase` - password for encryption of private key
+/// * `addr` - optional address to be included in `KeyFile`
+///
+pub fn create_keyfile(pk: PrivateKey,
+                      passphrase: &str,
+                      addr: Option<Address>)
+                      -> Result<KeyFile, SecpError> {
     let mut kf = KeyFile::default();
-    kf.with_address(&addr);
+    let pk_data: [u8; PRIVATE_KEY_BYTES] = pk.into();
+
+    match addr {
+        Some(a) => kf.with_address(&a),
+        _ => {}
+    }
+    kf.init_crypto();
+    kf.insert_key(&pk_data, passphrase);
 
     Ok(kf)
 }
@@ -41,49 +59,17 @@ pub fn to_file(kf: KeyFile, dir: Option<&Path>) -> Result<File, SecpError> {
         None => Path::new(&name),
     };
 
-    let mut file = File::create(&path).expect("Expect to create key file");
+    let mut file = File::create(&path).expect("Expect to create file for KeyFile");
     let data = json::encode(&kf).expect("Expect to encode KeyFile");
     file.write_all(data.as_ref());
 
     Ok(file)
 }
 
-fn get_timestamp() -> String {
-    let stamp = UTC::now();
-    stamp.to_rfc3339()
-}
+/// Time stamp for key file in format `<timestamp>Z`
+pub fn get_timestamp() -> String {
+    let mut stamp = UTC::now().to_rfc3339();
+    stamp.push_str("Z");
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use key_generator::Generator;
-    use rand::OsRng;
-    use std::{env, fs};
-    use std::path::{Path, PathBuf};
-
-    fn _temp_dir() -> PathBuf {
-        let p = env::temp_dir();
-        let dir = p.join(get_timestamp());
-        fs::create_dir(&dir).unwrap();
-        dir
-    }
-
-    #[test]
-    fn should_create_keyfile() {
-        let temp_dir = _temp_dir();
-        let rng = OsRng::new().unwrap();
-        let mut gen = Generator::new(rng);
-        let sk = gen.get();
-
-        let file = sk.to_address()
-            .and_then(create_keyfile)
-            .and_then(|k| to_file(k, Some(&temp_dir)));
-
-        assert!(file.is_ok());
-
-        fs::remove_file(&temp_dir);
-    }
-
-    #[test]
-    fn should_use_correct_filename() {}
+    stamp
 }

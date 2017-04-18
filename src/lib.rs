@@ -36,7 +36,7 @@ mod request;
 mod serialize;
 pub mod contracts;
 mod storage;
-mod key_generator;
+pub mod key_generator;
 pub mod rlp;
 pub mod transaction;
 
