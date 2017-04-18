@@ -13,11 +13,11 @@ pub mod sign;
 
 pub use self::cipher::Cipher;
 pub use self::error::KeyFileError;
-pub use self::extract_key::PrivateKey;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;
 use address::Address;
+use rand::{OsRng, Rng};
 use std::{cmp, fmt, fs, result};
 use std::io::Read;
 use std::path::Path;
@@ -70,12 +70,28 @@ pub struct KeyFile {
 }
 
 impl KeyFile {
-    fn new() -> Self {
+    ///
+    pub fn new() -> Self {
         Self::from(Uuid::new_v4())
     }
 
-    fn with_address(&mut self, addr: &Address) {
+    ///
+    pub fn with_address(&mut self, addr: &Address) {
         self.address = Some(*addr);
+    }
+
+
+    /// Initialization for kdf salt and cipher iv (init vector)
+    pub fn init_crypto(&mut self) {
+        let mut salt: [u8; KDF_SALT_BYTES] = [0; 32];
+        let mut iv: [u8; CIPHER_IV_BYTES] = [0; 16];
+
+        let mut rng = OsRng::new().ok().unwrap();
+        rng.fill_bytes(&mut salt);
+        rng.fill_bytes(&mut iv);
+
+        self.kdf_salt = salt;
+        self.cipher_iv = iv;
     }
 }
 
