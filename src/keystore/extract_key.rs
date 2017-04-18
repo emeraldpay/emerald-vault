@@ -30,9 +30,6 @@ impl KeyFile {
     pub fn insert_key(&mut self, pk: &[u8], passphrase: &str) -> Result<()> {
         let derived = derive_key(self.dk_length, self.kdf, &self.kdf_salt, passphrase);
 
-        use rustc_serialize::hex::{FromHex, ToHex};
-        println!("DEBUG derived key: {:?}", derived.to_hex());
-
         let c_text: [u8; 32] = decrypt_pkey(self.cipher, pk, &derived[0..16], &self.cipher_iv)
             .into();
 
