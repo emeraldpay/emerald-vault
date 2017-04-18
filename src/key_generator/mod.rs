@@ -1,10 +1,12 @@
-//! # Secret key generator
+//! # Private key generator
 
-pub mod util;
+pub mod serialize;
+pub mod private_key;
 
+use self::private_key::PrivateKey;
 use rand::OsRng;
 use secp256k1::{Error as SecpError, Secp256k1};
-use secp256k1::key::{PublicKey, SecretKey};
+use secp256k1::key::SecretKey;
 
 
 lazy_static! {
@@ -39,9 +41,10 @@ impl Generator {
         Generator { rng: r }
     }
 
-    /// Generate new `SecretKey`
-    fn get(&mut self) -> SecretKey {
-        SecretKey::new(&SECP256K1, &mut self.rng)
+    /// Generate new `PrivateKey`
+    fn get(&mut self) -> PrivateKey {
+        let sk = SecretKey::new(&SECP256K1, &mut self.rng);
+        PrivateKey::new(sk)
     }
 }
 

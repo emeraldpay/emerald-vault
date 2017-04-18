@@ -29,10 +29,11 @@ fn should_extract_scrypt_based_kdf_private_key() {
     let path = keyfile_path("UTC--2017-03-17T10-52-08.\
                              229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
-    let key = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
+    let keyfile = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
+    let pkey_val: [u8; 32] = keyfile.extract_key("1234567890").unwrap().into();
 
-    assert!(key.extract_key("_").is_err());
-    assert_eq!(key.extract_key("1234567890").unwrap().to_hex(),
+    assert!(keyfile.extract_key("_").is_err());
+    assert_eq!(pkey_val.to_hex(),
                "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f");
 }
 
@@ -40,10 +41,11 @@ fn should_extract_scrypt_based_kdf_private_key() {
 fn should_extract_pbkdf2_based_kdf_private_key() {
     let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
 
-    let key = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
+    let keyfile = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
+    let pkey_val: [u8; 32] = keyfile.extract_key("1234567890").unwrap().into();
 
-    assert!(key.extract_key("_").is_err());
-    assert_eq!(key.extract_key("1234567890").unwrap().to_hex(),
+    assert!(keyfile.extract_key("_").is_err());
+    assert_eq!(pkey_val.to_hex(),
                "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf");
 }
 

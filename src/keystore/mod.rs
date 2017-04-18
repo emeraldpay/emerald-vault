@@ -13,7 +13,6 @@ pub mod sign;
 
 pub use self::cipher::Cipher;
 pub use self::error::KeyFileError;
-pub use self::extract_key::PrivateKey;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;

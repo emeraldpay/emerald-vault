@@ -8,12 +8,7 @@ use crypto::pbkdf2::pbkdf2;
 use crypto::scrypt::{ScryptParams, scrypt};
 use crypto::sha2::Sha256;
 use crypto::sha3::{Sha3, Sha3Mode};
-
-/// Private key length in bytes
-pub const PRIVATE_KEY_BYTES: usize = 32;
-
-/// Private key type
-pub type PrivateKey = [u8; PRIVATE_KEY_BYTES];
+use key_generator::private_key::{PRIVATE_KEY_BYTES, PrivateKey};
 
 impl KeyFile {
     /// Extract keystore file private key by passphrase
@@ -29,6 +24,18 @@ impl KeyFile {
                         &self.cipher_text,
                         &derived[0..16],
                         &self.cipher_iv))
+    }
+
+    /// Create keystore file from private key with a passphrase
+    pub fn insert_key(&mut self, pk: &[u8], passphrase: &str) -> Result<()> {
+        let derived = derive_key(self.dk_length, self.kdf, &self.kdf_salt, passphrase);
+        let c_text: [u8; 32] = decrypt_pkey(self.cipher, pk, &derived[0..16], &self.cipher_iv)
+            .into();
+
+        self.cipher_text = c_text.to_vec();
+        self.keccak256_mac = calculate_mac(&derived[16..32], &self.cipher_text);
+
+        Ok(())
     }
 }
 
@@ -69,15 +76,16 @@ fn decrypt_pkey(_cipher: Cipher, text: &[u8], key: &[u8], iv: &[u8]) -> PrivateK
 
     ctr.process(text, &mut pkey);
 
-    pkey
+    PrivateKey::from_slice(&pkey)
 }
 
 /// Test Vectors from https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
 #[cfg(test)]
 pub mod tests {
     use super::{calculate_mac, decrypt_pkey, derive_key};
-    use keystore::{Cipher, Kdf};
+    use keystore::{Cipher, Kdf, KeyFile};
     use rustc_serialize::hex::{FromHex, ToHex};
+    use std::convert::AsMut;
 
     #[test]
     fn should_derive_key_via_pbkdf2() {
@@ -118,7 +126,44 @@ pub mod tests {
         let key = "f06d69cdc7da0faffb1008270bca38f5".from_hex().unwrap();
         let iv = "6087dab2f9fdbbfaddc31a909735c1e6".from_hex().unwrap();
 
-        assert_eq!(decrypt_pkey(Cipher::Aes256Ctr, &text, &key, &iv).to_hex(),
+        let pkey_val: [u8; 32] = decrypt_pkey(Cipher::Aes256Ctr, &text, &key, &iv).into();
+
+        assert_eq!(pkey_val.to_hex(),
                    "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d");
+    }
+
+    fn clone_into_array<A, T>(slice: &[T]) -> A
+        where A: Sized + Default + AsMut<[T]>,
+              T: Clone
+    {
+        let mut arr = Default::default();
+        <A as AsMut<[T]>>::as_mut(&mut arr).clone_from_slice(slice);
+        arr
+    }
+
+    #[test]
+    fn should_insert_key() {
+        let pkey = "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
+            .from_hex()
+            .unwrap();
+        let password = "testpassword";
+
+        let mut kf = KeyFile::default();
+        kf.cipher_iv = clone_into_array(&"83dbcc02d8ccb40e466191a123791e0e".from_hex().unwrap());
+        kf.kdf_salt =
+            clone_into_array(&"ab0c7876052600dd703518d6fc3fe8984592145b591fc8fb5c6d43190334ba19"
+                                  .from_hex()
+                                  .unwrap());
+
+        let res = kf.insert_key(&pkey, &password);
+        assert!(res.is_ok());
+//        assert_eq!(kf.keccak256_mac.to_vec(),
+//                   "d172bf743a674da9cdad04534d56926ef8358534d458fffccd4e6ad2fbde479c"
+//                       .from_hex()
+//                       .unwrap());
+//        assert_eq!(kf.keccak256_mac.to_vec(),
+//                   "2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097"
+//                       .from_hex()
+//                       .unwrap());
     }
 }
