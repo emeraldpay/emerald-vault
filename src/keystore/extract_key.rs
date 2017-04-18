@@ -29,6 +29,10 @@ impl KeyFile {
     /// Create keystore file from private key with a passphrase
     pub fn insert_key(&mut self, pk: &[u8], passphrase: &str) -> Result<()> {
         let derived = derive_key(self.dk_length, self.kdf, &self.kdf_salt, passphrase);
+
+        use rustc_serialize::hex::{FromHex, ToHex};
+        println!("DEBUG derived key: {:?}", derived.to_hex());
+
         let c_text: [u8; 32] = decrypt_pkey(self.cipher, pk, &derived[0..16], &self.cipher_iv)
             .into();
 
@@ -45,13 +49,11 @@ fn derive_key(len: usize, kdf: Kdf, kdf_salt: &[u8], passphrase: &str) -> Vec<u8
     match kdf {
         Kdf::Pbkdf2 { prf: _prf, c } => {
             let mut hmac = Hmac::new(Sha256::new(), passphrase.as_bytes());
-
             pbkdf2(&mut hmac, kdf_salt, c, &mut key);
         }
         Kdf::Scrypt { n, r, p } => {
             let log_n = (n as f64).log2().round() as u8;
             let params = ScryptParams::new(log_n, r, p);
-
             scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key);
         }
     }
@@ -157,13 +159,5 @@ pub mod tests {
 
         let res = kf.insert_key(&pkey, &password);
         assert!(res.is_ok());
-//        assert_eq!(kf.keccak256_mac.to_vec(),
-//                   "d172bf743a674da9cdad04534d56926ef8358534d458fffccd4e6ad2fbde479c"
-//                       .from_hex()
-//                       .unwrap());
-//        assert_eq!(kf.keccak256_mac.to_vec(),
-//                   "2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097"
-//                       .from_hex()
-//                       .unwrap());
     }
 }
