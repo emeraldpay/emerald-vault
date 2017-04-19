@@ -172,6 +172,12 @@ pub fn address_exists<P: AsRef<Path>>(path: P, addr: &Address) -> bool {
     false
 }
 
+/// Search of `KeyFile` by specified `Address`
+///
+/// # Arguments
+///
+/// * `path` - path with keystore files
+/// * `addr` - target address
 ///
 pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyFile> {
     let entries = fs::read_dir(path).expect("Expect to read a keystore directory content");
