@@ -180,6 +180,20 @@ fn should_create_keyfile() {
 #[test]
 fn should_use_correct_filename() {}
 
+#[test]
+fn should_search_by_address() {
+    let addr = "0x0047201aed0b69875b24b614dda0270bcd9f11cc"
+        .parse::<emerald::Address>()
+        .unwrap();
+
+    let res = search_by_address(&keystore_path(), &addr);
+    assert!(res.is_some());
+
+    let kf = res.unwrap();
+    assert_eq!(kf.uuid,
+               Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap());
+}
+
 fn temp_dir() -> PathBuf {
     let p = env::temp_dir();
     let dir = p.join(get_timestamp());
