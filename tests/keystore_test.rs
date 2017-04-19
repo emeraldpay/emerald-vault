@@ -190,7 +190,8 @@ fn should_search_by_address() {
     assert!(res.is_some());
 
     let kf = res.unwrap();
-    assert_eq!(kf.uuid, Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap());
+    assert_eq!(kf.uuid,
+               Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap());
 }
 
 fn temp_dir() -> PathBuf {
