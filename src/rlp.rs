@@ -97,6 +97,12 @@ impl<T: WriteRLP> WriteRLP for Vec<T> {
     }
 }
 
+impl WriteRLP for [u8; 32] {
+    fn write_rlp(&self, buf: &mut Vec<u8>) {
+        RLPList::from_slice(self).write_rlp(buf);
+    }
+}
+
 impl WriteRLP for [u8] {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         let len = self.len();

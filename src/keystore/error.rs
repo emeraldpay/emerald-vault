@@ -7,10 +7,13 @@ use std::{error, fmt};
 pub enum KeyFileError {
     /// An unsupported cipher
     UnsupportedCipher(String),
+
     /// An unsupported key derivation function
     UnsupportedKdf(String),
+
     /// An unsupported pseudo-random function
     UnsupportedPrf(String),
+
     /// `keccak256_mac` validation failed
     FailedMacValidation,
 }

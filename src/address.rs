@@ -47,7 +47,7 @@ impl Address {
 
         let mut bytes = [0u8; ADDRESS_BYTES];
 
-        bytes.clone_from_slice(data);
+        bytes.copy_from_slice(data);
 
         Ok(Address(bytes))
     }

@@ -35,7 +35,7 @@ impl From<Crypto> for KeyFile {
             cipher: crypto.cipher,
             cipher_text: crypto.cipher_text.clone(),
             cipher_iv: crypto.cipher_params.iv.into(),
-            ..KeyFile::default()
+            ..Default::default()
         }
     }
 }

@@ -1,7 +1,7 @@
 //! # Keystore files (UTC / JSON) encrypted with a passphrase
 //!
-//! (Web3 Secret Storage Definition)
-//! [https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition]
+//! [Web3 Secret Storage Definition](
+//! https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition)
 
 pub mod error;
 pub mod cipher;
@@ -9,7 +9,6 @@ pub mod extract_key;
 pub mod kdf;
 pub mod prf;
 pub mod serialize;
-pub mod sign;
 
 pub use self::cipher::Cipher;
 pub use self::error::KeyFileError;
@@ -99,7 +98,7 @@ impl From<Uuid> for KeyFile {
     fn from(uuid: Uuid) -> Self {
         KeyFile {
             uuid: uuid,
-            ..KeyFile::default()
+            ..Default::default()
         }
     }
 }

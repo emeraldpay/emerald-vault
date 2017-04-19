@@ -18,7 +18,7 @@ macro_rules! arr {
     ($bytes: expr, $num: expr) => ({
         let mut arr = [0u8; $num];
 
-        arr.clone_from_slice($bytes);
+        arr.copy_from_slice($bytes);
 
         arr
     })

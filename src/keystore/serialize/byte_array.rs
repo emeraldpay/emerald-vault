@@ -37,7 +37,7 @@ macro_rules! byte_array_struct {
 
                 let mut bytes = [0u8; $num];
 
-                bytes.clone_from_slice(&v);
+                bytes.copy_from_slice(&v);
 
                 Ok($name(bytes))
             }

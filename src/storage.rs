@@ -1,8 +1,7 @@
 //! # Chain-related storage
 
 use log::LogLevel;
-use std::env;
-use std::fs;
+use std::{env, fs};
 use std::io::Error;
 use std::path::PathBuf;
 

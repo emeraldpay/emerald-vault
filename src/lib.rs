@@ -25,6 +25,7 @@ extern crate hyper;
 extern crate regex;
 extern crate reqwest;
 extern crate rustc_serialize;
+extern crate secp256k1;
 extern crate uuid;
 
 mod address;
@@ -41,7 +42,7 @@ use contracts::Contracts;
 use jsonrpc_core::{Error, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
-pub use keystore::{KeyFile, address_exists};
+pub use keystore::{KeyFile, PrivateKey, address_exists};
 
 use log::LogLevel;
 use serde_json::Value;
@@ -183,12 +184,12 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
         let url = url.clone();
 
         io.add_method_with_meta("eth_sendTransaction", move |p, m| {
-            if let MethodMetadata::Passphrase(ref passphrase) = m {
+            if let MethodMetadata::Passphrase(ref _passphrase) = m {
                 match Transaction::try_from(&p) {
                     Ok(tr) => {
                         url.request(&MethodParams(
                             Method::EthSendRawTransaction,
-                            &tr.to_raw(&KeyFile::default(), passphrase)))
+                            &tr.to_raw(&Default::default())))
                     }
                     Err(err) => futures::done(Err(Error::invalid_params(err.to_string()))).boxed(),
                 }
@@ -263,7 +264,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 
     let server = ServerBuilder::new(io)
         .meta_extractor(|req: &Req| {
-                            req.header("X-Passphrase")
+                            req.header("Authorization")
                                 .map(MethodMetadata::with_passphrase)
                                 .unwrap_or_default()
                         })
