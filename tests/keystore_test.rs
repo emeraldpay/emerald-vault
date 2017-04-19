@@ -180,6 +180,38 @@ fn should_create_keyfile() {
 #[test]
 fn should_use_correct_filename() {}
 
+#[test]
+fn should_search_by_address() {
+    let addr = "0x0047201aed0b69875b24b614dda0270bcd9f11cc"
+        .parse::<emerald::Address>()
+        .unwrap();
+
+    let res = search_by_address(&keystore_path(), &addr);
+    assert!(res.is_some());
+
+    let kf = res.unwrap();
+    assert_eq!(kf.cipher_text,
+               "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
+                   .from_hex()
+                   .unwrap());
+
+    assert_eq!(kf.cipher_iv,
+               arr!(&"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap(),
+                    CIPHER_IV_BYTES));
+
+    assert_eq!(kf.kdf_salt,
+               arr!(&"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
+                         .from_hex()
+                         .unwrap(),
+                    KDF_SALT_BYTES));
+
+    assert_eq!(kf.keccak256_mac,
+               arr!(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
+                         .from_hex()
+                         .unwrap(),
+                    KECCAK256_BYTES));
+}
+
 fn temp_dir() -> PathBuf {
     let p = env::temp_dir();
     let dir = p.join(get_timestamp());
