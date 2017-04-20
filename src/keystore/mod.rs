@@ -12,11 +12,12 @@ pub mod serialize;
 
 pub use self::cipher::Cipher;
 pub use self::error::KeyFileError;
-pub use self::extract_key::PrivateKey;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;
 use address::Address;
+use rand::{OsRng, Rng};
+use rustc_serialize::json;
 use std::{cmp, fmt, fs, result};
 use std::io::Read;
 use std::path::Path;
@@ -69,12 +70,28 @@ pub struct KeyFile {
 }
 
 impl KeyFile {
-    fn new() -> Self {
+    ///
+    pub fn new() -> Self {
         Self::from(Uuid::new_v4())
     }
 
-    fn with_address(&mut self, addr: &Address) {
+    ///
+    pub fn with_address(&mut self, addr: &Address) {
         self.address = Some(*addr);
+    }
+
+
+    /// Initialization for kdf salt and cipher iv (init vector)
+    pub fn init_crypto(&mut self) {
+        let mut salt: [u8; KDF_SALT_BYTES] = [0; 32];
+        let mut iv: [u8; CIPHER_IV_BYTES] = [0; 16];
+
+        let mut rng = OsRng::new().ok().unwrap();
+        rng.fill_bytes(&mut salt);
+        rng.fill_bytes(&mut iv);
+
+        self.kdf_salt = salt;
+        self.cipher_iv = iv;
     }
 }
 
@@ -152,6 +169,42 @@ pub fn address_exists<P: AsRef<Path>>(path: P, addr: &Address) -> bool {
     }
 
     false
+}
+
+/// Search of `KeyFile` by specified `Address`
+///
+/// # Arguments
+///
+/// * `path` - path with keystore files
+/// * `addr` - target address
+///
+pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyFile> {
+    let entries = fs::read_dir(path).expect("Expect to read a keystore directory content");
+
+    for entry in entries {
+        let path = entry.expect("Expect keystore directory entry").path();
+
+        if path.is_dir() {
+            continue;
+        }
+
+        let mut file = fs::File::open(path).expect("Expect to open a keystore file");
+        let mut content = String::new();
+
+        if file.read_to_string(&mut content).is_err() {
+            continue;
+        }
+
+        match try_extract_address(&content) {
+            Some(a) if a == *addr => {
+                let kf = json::decode::<KeyFile>(&content).expect("Expect to decode keystore file");
+                return Some(kf);
+            }
+            _ => continue,
+        }
+    }
+
+    None
 }
 
 #[cfg(test)]
