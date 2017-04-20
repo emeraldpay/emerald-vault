@@ -208,6 +208,26 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
     None
 }
 
+///
+pub fn import(path: &Path) -> Result<KeyFile>{
+    let file = fs::File::open(path);
+
+    match file {
+        Ok(mut f) => {
+            let mut content = String::new();
+
+            if f.read_to_string(&mut content).is_err() {
+                return Err(KeyFileError::InvalidImport);
+            }
+
+            let kf = json::decode::<KeyFile>(&content).expect("Expect to decode keystore file");
+            Ok(kf)
+        },
+
+        Err(_) => Err(KeyFileError::InvalidImport)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::KeyFile;

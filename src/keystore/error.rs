@@ -13,6 +13,8 @@ pub enum KeyFileError {
     UnsupportedPrf(String),
     /// `keccak256_mac` validation failed
     FailedMacValidation,
+    ///
+    InvalidImport,
 }
 
 impl fmt::Display for KeyFileError {
@@ -26,6 +28,7 @@ impl fmt::Display for KeyFileError {
                 write!(f, "Unsupported pseudo-random function: {}", str)
             }
             KeyFileError::FailedMacValidation => f.write_str("Message authentication code failed"),
+            KeyFileError::InvalidImport => f.write_str("Can not import keystore file"),
         }
     }
 }

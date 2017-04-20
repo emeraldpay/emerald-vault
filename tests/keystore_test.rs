@@ -194,6 +194,43 @@ fn should_search_by_address() {
                Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap());
 }
 
+#[test]
+fn should_import_from_geth() {
+    let mut geth_dir = keystore_path();
+    geth_dir.push("from_geth");
+
+    let mut entries = fs::read_dir(geth_dir).expect("Expect to read a keystore directory content");
+
+    let path = entries.next()
+        .expect("Expect keystore directory entry").unwrap()
+        .path();
+    let mut file = fs::File::open(path).expect("Expect to open a keystore file");
+    let mut content = String::new();
+
+    assert!(file.read_to_string(&mut content).is_ok());
+
+    let kf = json::decode::<KeyFile>(&content).expect("Expect to decode keystore file");
+}
+
+
+#[test]
+fn should_import_from_parity() {
+    let mut parity_dir = keystore_path();
+    parity_dir.push("from_parity");
+
+    let mut entries = fs::read_dir(parity_dir).expect("Expect to read a keystore directory content");
+
+    let path = entries.next()
+        .expect("Expect keystore directory entry").unwrap()
+        .path();
+    let mut file = fs::File::open(path).expect("Expect to open a keystore file");
+    let mut content = String::new();
+
+    assert!(file.read_to_string(&mut content).is_ok());
+
+    let kf = json::decode::<KeyFile>(&content).expect("Expect to decode keystore file");
+}
+
 fn temp_dir() -> PathBuf {
     let p = env::temp_dir();
     let dir = p.join(get_timestamp());
