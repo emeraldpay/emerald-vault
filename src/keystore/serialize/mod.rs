@@ -5,12 +5,14 @@ mod address;
 mod byte_array;
 mod crypto;
 mod error;
+mod meta;
 
 pub use self::address::try_extract_address;
 use self::crypto::Crypto;
 use self::error::SerializeError;
 use address::Address;
 use keystore::KeyFile;
+use keystore::meta::MetaInfo;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use uuid::Uuid;
 
@@ -45,6 +47,7 @@ struct SerializableKeyFile {
     id: Uuid,
     address: Option<Address>,
     crypto: Crypto,
+    meta: Option<MetaInfo>,
 }
 
 impl From<KeyFile> for SerializableKeyFile {
@@ -53,18 +56,27 @@ impl From<KeyFile> for SerializableKeyFile {
             version: CURRENT_VERSION,
             id: key_file.uuid,
             address: key_file.address,
-            crypto: Crypto::from(key_file),
+            crypto: Crypto::from(key_file.clone()),
+            meta: Some(MetaInfo::from(key_file)),
         }
     }
 }
 
 impl From<SerializableKeyFile> for KeyFile {
     fn from(ser: SerializableKeyFile) -> KeyFile {
-        KeyFile {
+        let mut kf = KeyFile {
             uuid: ser.id,
             address: ser.address,
+            meta: None,
             ..KeyFile::from(ser.crypto)
+        };
+
+        match ser.meta {
+            Some(m) => kf.with_meta(&m),
+            _ => {}
         }
+
+        kf
     }
 }
 

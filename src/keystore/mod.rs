@@ -10,10 +10,12 @@ pub mod kdf;
 pub mod prf;
 pub mod serialize;
 pub mod sign;
+pub mod meta;
 
 pub use self::cipher::Cipher;
 pub use self::error::KeyFileError;
 pub use self::kdf::Kdf;
+use self::meta::MetaInfo;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;
 use address::Address;
@@ -68,6 +70,9 @@ pub struct KeyFile {
 
     /// Cipher initialization vector
     pub cipher_iv: [u8; CIPHER_IV_BYTES],
+
+    /// Meta info (optional)
+    pub meta: Option<String>,
 }
 
 impl KeyFile {
@@ -81,6 +86,10 @@ impl KeyFile {
         self.address = Some(*addr);
     }
 
+    ///
+    pub fn with_meta(&mut self, meta: &MetaInfo) {
+        self.meta = Some((*meta).data.clone());
+    }
 
     /// Initialization for kdf salt and cipher iv (init vector)
     pub fn init_crypto(&mut self) {
@@ -108,6 +117,7 @@ impl Default for KeyFile {
             cipher: Cipher::default(),
             cipher_text: vec![],
             cipher_iv: [0u8; CIPHER_IV_BYTES],
+            meta: None,
         }
     }
 }
@@ -208,8 +218,12 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
     None
 }
 
+/// Import keystore file from external nodes.
+/// # Arguments
 ///
-pub fn import(path: &Path) -> Result<KeyFile>{
+/// * `path` - path to keystore files
+///
+pub fn import(path: &Path) -> Result<KeyFile> {
     let file = fs::File::open(path);
 
     match file {
@@ -222,9 +236,9 @@ pub fn import(path: &Path) -> Result<KeyFile>{
 
             let kf = json::decode::<KeyFile>(&content).expect("Expect to decode keystore file");
             Ok(kf)
-        },
+        }
 
-        Err(_) => Err(KeyFileError::InvalidImport)
+        Err(_) => Err(KeyFileError::InvalidImport),
     }
 }
 

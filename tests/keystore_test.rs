@@ -201,15 +201,14 @@ fn should_import_from_geth() {
 
     let mut entries = fs::read_dir(geth_dir).expect("Expect to read a keystore directory content");
 
-    let path = entries.next()
-        .expect("Expect keystore directory entry").unwrap()
+    let path = entries
+        .next()
+        .expect("Expect keystore directory entry")
+        .unwrap()
         .path();
-    let mut file = fs::File::open(path).expect("Expect to open a keystore file");
-    let mut content = String::new();
 
-    assert!(file.read_to_string(&mut content).is_ok());
-
-    let kf = json::decode::<KeyFile>(&content).expect("Expect to decode keystore file");
+    let kf = import(path);
+    assert!(kf.is_ok());
 }
 
 
@@ -218,17 +217,17 @@ fn should_import_from_parity() {
     let mut parity_dir = keystore_path();
     parity_dir.push("from_parity");
 
-    let mut entries = fs::read_dir(parity_dir).expect("Expect to read a keystore directory content");
+    let mut entries = fs::read_dir(parity_dir).expect("Expect to read a keystore directory \
+                                                       content");
 
-    let path = entries.next()
-        .expect("Expect keystore directory entry").unwrap()
+    let path = entries
+        .next()
+        .expect("Expect keystore directory entry")
+        .unwrap()
         .path();
-    let mut file = fs::File::open(path).expect("Expect to open a keystore file");
-    let mut content = String::new();
 
-    assert!(file.read_to_string(&mut content).is_ok());
-
-    let kf = json::decode::<KeyFile>(&content).expect("Expect to decode keystore file");
+    let kf = import(path);
+    assert!(kf.is_ok());
 }
 
 fn temp_dir() -> PathBuf {
