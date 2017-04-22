@@ -127,8 +127,8 @@ mod tests {
                 as_32bytes("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2"),
             dk_length: 32,
             cipher: Cipher::Aes256Ctr,
-            name:None,
-            meta:None,
+            name: None,
+            meta: None,
         };
 
         let act = tx.sign("testpassword", &key);
