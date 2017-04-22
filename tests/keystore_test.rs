@@ -7,6 +7,7 @@ extern crate rand;
 use emerald::key_generator::Generator;
 use emerald::key_generator::serialize::{create_keyfile, get_timestamp, to_file};
 use emerald::keystore::*;
+use emerald::keystore::meta::MetaInfo;
 use rand::OsRng;
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
@@ -83,6 +84,8 @@ fn should_work_with_keyfile_with_address() {
             .unwrap(),
         cipher_iv: arr!(&"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap(),
                         CIPHER_IV_BYTES),
+        name: None,
+        meta: None,
     };
 
     // just first encoding
@@ -127,6 +130,8 @@ fn should_work_with_keyfile_without_address() {
             .unwrap(),
         cipher_iv: arr!(&"58d54158c3e27131b0a0f2b91201aedc".from_hex().unwrap(),
                         CIPHER_IV_BYTES),
+        name: None,
+        meta: None,
     };
 
     // just first encoding
@@ -196,24 +201,89 @@ fn should_search_by_address() {
 
 #[test]
 fn should_import_from_geth() {
+    let exp = emerald::KeyFile {
+        uuid: Uuid::from_str("63cd0211-819e-439c-b032-d4d58bce82ee").unwrap(),
+        address: Some("0xf0eb6c4578d1890c76d335406bc3e1edebe19bc2"
+                          .parse()
+                          .unwrap()),
+        dk_length: 32,
+        kdf: Kdf::Scrypt {
+            n: 262144,
+            r: 8,
+            p: 1,
+        },
+        kdf_salt: arr!(&"8037fdf7036e68a1fce61af3c9af3f9d9936be730d2b1139ad85015a7e142b2d"
+                            .from_hex()
+                            .unwrap(),
+                       KDF_SALT_BYTES),
+        keccak256_mac: arr!(&"efb4d0309765095ef5ff6cb6d1a27dca11b40c8437e806d3d336434b380d3ffc"
+                                 .from_hex()
+                                 .unwrap(),
+                            KECCAK256_BYTES),
+        cipher: Cipher::default(),
+        cipher_text: "f0214d9a134a7cae22f3365f0cb8f84dce56d7e66a2904b03c2feb7454aa63dd"
+            .from_hex()
+            .unwrap(),
+        cipher_iv: arr!(&"9b9bbcfcf8efc6ca67bd5ecb6edc22d7".from_hex().unwrap(),
+                        CIPHER_IV_BYTES),
+        name: None,
+        meta: None,
+    };
+
     let mut geth_dir = keystore_path();
     geth_dir.push("from_geth");
 
     let mut entries = fs::read_dir(geth_dir).expect("Expect to read a keystore directory content");
-
     let path = entries
         .next()
         .expect("Expect keystore directory entry")
         .unwrap()
         .path();
 
-    let kf = import(path);
-    assert!(kf.is_ok());
-}
+    let res = import(&path);
+    assert!(res.is_ok());
 
+    let key = res.unwrap();
+    assert_eq!(key, exp);
+    assert_eq!(key.address, exp.address);
+    assert_eq!(key.dk_length, exp.dk_length);
+    assert_eq!(key.kdf, exp.kdf);
+    assert_eq!(key.kdf_salt, exp.kdf_salt);
+    assert_eq!(key.keccak256_mac, exp.keccak256_mac);
+    assert_eq!(key.cipher_text, exp.cipher_text);
+    assert_eq!(key.cipher_iv, exp.cipher_iv);
+}
 
 #[test]
 fn should_import_from_parity() {
+    let exp = emerald::KeyFile {
+        uuid: Uuid::from_str("1491e175-352c-f775-6602-ddc4ba448a25").unwrap(),
+        address: Some("0x04c074b5e89e35188a602194a2e6d8c99d6af6b7"
+                          .parse()
+                          .unwrap()),
+        dk_length: 32,
+        kdf: Kdf::Pbkdf2 {
+            prf: Prf::default(),
+            c: 10240,
+        },
+        kdf_salt: arr!(&"f1426f55d6010cb43a11896be8a013044b340afd7cae4aa07fef1ea3487c0b27"
+                            .from_hex()
+                            .unwrap(),
+                       KDF_SALT_BYTES),
+        keccak256_mac: arr!(&"a13b48faa8b5732dde0a9821867f68f1e46e4b68b3441113addc2acb62a9b451"
+                                 .from_hex()
+                                 .unwrap(),
+                            KECCAK256_BYTES),
+        cipher: Cipher::default(),
+        cipher_text: "08eb9e9121edc69b597420ce60b6fb43ebf4d0c3eace28977dcb80785790cc41"
+            .from_hex()
+            .unwrap(),
+        cipher_iv: arr!(&"1654e558f82fe0eeb177ae9cef3ff592".from_hex().unwrap(),
+                        CIPHER_IV_BYTES),
+        name: Some("".to_string()),
+        meta: Some(emerald::keystore::meta::MetaInfo),
+    };
+
     let mut parity_dir = keystore_path();
     parity_dir.push("from_parity");
 
@@ -226,8 +296,20 @@ fn should_import_from_parity() {
         .unwrap()
         .path();
 
-    let kf = import(path);
-    assert!(kf.is_ok());
+    let res = import(&path);
+    assert!(res.is_ok());
+
+    let key = res.unwrap();
+    assert_eq!(key, exp);
+    assert_eq!(key.address, exp.address);
+    assert_eq!(key.dk_length, exp.dk_length);
+    assert_eq!(key.kdf, exp.kdf);
+    assert_eq!(key.kdf_salt, exp.kdf_salt);
+    assert_eq!(key.keccak256_mac, exp.keccak256_mac);
+    assert_eq!(key.cipher_text, exp.cipher_text);
+    assert_eq!(key.cipher_iv, exp.cipher_iv);
+    assert_eq!(key.name, exp.name);
+    assert_eq!(key.meta, exp.meta);
 }
 
 fn temp_dir() -> PathBuf {

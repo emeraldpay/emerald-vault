@@ -71,8 +71,11 @@ pub struct KeyFile {
     /// Cipher initialization vector
     pub cipher_iv: [u8; CIPHER_IV_BYTES],
 
+    /// Name (optional)
+    pub name: Option<String>,
+
     /// Meta info (optional)
-    pub meta: Option<String>,
+    pub meta: Option<MetaInfo>,
 }
 
 impl KeyFile {
@@ -87,8 +90,8 @@ impl KeyFile {
     }
 
     ///
-    pub fn with_meta(&mut self, meta: &MetaInfo) {
-        self.meta = Some((*meta).data.clone());
+    pub fn with_meta(&mut self, meta: MetaInfo) {
+        self.meta = Some(meta);
     }
 
     /// Initialization for kdf salt and cipher iv (init vector)
@@ -117,6 +120,7 @@ impl Default for KeyFile {
             cipher: Cipher::default(),
             cipher_text: vec![],
             cipher_iv: [0u8; CIPHER_IV_BYTES],
+            name: None,
             meta: None,
         }
     }
@@ -218,7 +222,7 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
     None
 }
 
-/// Import keystore file from external nodes.
+/// Import keystore file from external nodes
 /// # Arguments
 ///
 /// * `path` - path to keystore files

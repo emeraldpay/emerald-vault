@@ -1,10 +1,5 @@
-//! # JSON serialize for meta info field (UTC / JSON)
-
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+//! # JSON serialize for meta info field in keystore (UTC / JSON)
 
 ///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct MetaInfo {
-    ///
-    pub data: String,
-}
+pub struct MetaInfo;

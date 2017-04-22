@@ -47,6 +47,7 @@ struct SerializableKeyFile {
     id: Uuid,
     address: Option<Address>,
     crypto: Crypto,
+    name: Option<String>,
     meta: Option<MetaInfo>,
 }
 
@@ -57,7 +58,8 @@ impl From<KeyFile> for SerializableKeyFile {
             id: key_file.uuid,
             address: key_file.address,
             crypto: Crypto::from(key_file.clone()),
-            meta: Some(MetaInfo::from(key_file)),
+            name: key_file.name,
+            meta: key_file.meta,
         }
     }
 }
@@ -67,12 +69,13 @@ impl From<SerializableKeyFile> for KeyFile {
         let mut kf = KeyFile {
             uuid: ser.id,
             address: ser.address,
+            name: ser.name,
             meta: None,
             ..KeyFile::from(ser.crypto)
         };
 
         match ser.meta {
-            Some(m) => kf.with_meta(&m),
+            Some(m) => kf.with_meta(m),
             _ => {}
         }
 
