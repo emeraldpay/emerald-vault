@@ -1,6 +1,6 @@
 //! # JSON serialize format for hex encoded account addresses (without '0x' prefix)
 
-use address::Address;
+use super::core::Address;
 use regex::Regex;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use std::str::FromStr;
@@ -33,8 +33,8 @@ pub fn try_extract_address(text: &str) -> Option<Address> {
 
 #[cfg(test)]
 mod tests {
-    use super::try_extract_address;
-    use address::Address;
+    use super::*;
+    use super::tests::*;
     use rustc_serialize::json;
 
     #[test]
@@ -52,8 +52,8 @@ mod tests {
 
     #[test]
     fn should_encode_real_address() {
-        let addr = Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
-                                 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
+        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
+                           0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
         assert_eq!(json::encode(&addr).unwrap(),
                    "\"0e7c045110b8dbf29765047380898919c5cb56f4\"");
@@ -61,8 +61,8 @@ mod tests {
 
     #[test]
     fn should_decode_real_address() {
-        let addr = Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
-                                 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
+        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
+                           0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
         assert_eq!(json::decode::<Address>("\"0e7c045110b8dbf29765047380898919c5cb56f4\"")
                        .unwrap(),

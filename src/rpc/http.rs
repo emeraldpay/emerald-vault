@@ -1,4 +1,4 @@
-//! # Send HTTP RPC requests
+//! # Send JSON encoded HTTP requests
 
 use hyper::Url;
 use hyper::client::IntoUrl;

@@ -11,13 +11,12 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
-
 /// Creates a new `KeyFile` with a specified `Address`
 ///
 /// # Arguments
 ///
-/// * `pk` - private key for inserting in a `KeyFile`
-/// * `passphrase` - password for encryption of private key
+/// * `pk` - private core for inserting in a `KeyFile`
+/// * `passphrase` - password for encryption of private core
 /// * `addr` - optional address to be included in `KeyFile`
 ///
 pub fn create_keyfile(pk: PrivateKey,
@@ -31,7 +30,17 @@ pub fn create_keyfile(pk: PrivateKey,
         Some(a) => kf.with_address(&a),
         _ => {}
     }
-    kf.init_crypto();
+
+    let mut salt: [u8; KDF_SALT_BYTES] = [0; 32];
+    let mut iv: [u8; CIPHER_IV_BYTES] = [0; 16];
+
+    let mut rng = OsRng::new().ok().unwrap();
+    rng.fill_bytes(&mut salt);
+    rng.fill_bytes(&mut iv);
+
+    kf.kdf_salt = salt;
+    kf.cipher_iv = iv;
+
     kf.insert_key(&pk_data, passphrase);
 
     Ok(kf)
@@ -66,7 +75,7 @@ pub fn to_file(kf: KeyFile, dir: Option<&Path>) -> Result<File, SecpError> {
     Ok(file)
 }
 
-/// Time stamp for key file in format `<timestamp>Z`
+/// Time stamp for core file in format `<timestamp>Z`
 pub fn get_timestamp() -> String {
     let mut stamp = UTC::now().to_rfc3339();
     stamp.push_str("Z");

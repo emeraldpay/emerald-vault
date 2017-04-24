@@ -21,9 +21,7 @@ const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 macro_rules! arr {
     ($bytes: expr, $num: expr) => ({
         let mut arr = [0u8; $num];
-
         arr.copy_from_slice($bytes);
-
         arr
     })
 }
@@ -195,8 +193,7 @@ fn should_search_by_address() {
 }
 
 fn temp_dir() -> PathBuf {
-    let p = env::temp_dir();
-    let dir = p.join(get_timestamp());
+    let dir = env::temp_dir().join(get_timestamp());
     fs::create_dir(&dir).unwrap();
     dir
 }
@@ -214,16 +211,12 @@ fn file_content<P: AsRef<Path>>(path: P) -> String {
 
 fn keyfile_path(name: &str) -> PathBuf {
     let mut path = keystore_path();
-
     path.push(name);
-
     path
 }
 
 fn keystore_path() -> PathBuf {
     let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
-
     buf.push("tests/keystore");
-
     buf
 }

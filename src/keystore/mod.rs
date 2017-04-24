@@ -1,21 +1,21 @@
-//! # Keystore files (UTC / JSON) encrypted with a passphrase
+//! # Keystore files (UTC / JSON) encrypted with a passphrase module
 //!
 //! [Web3 Secret Storage Definition](
 //! https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition)
 
-pub mod error;
-pub mod cipher;
-pub mod extract_key;
-pub mod kdf;
-pub mod prf;
-pub mod serialize;
+mod error;
+mod cipher;
+mod kdf;
+mod prf;
+mod serialize;
 
 pub use self::cipher::Cipher;
-pub use self::error::KeyFileError;
+pub use self::error::Error;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;
-use address::Address;
+use super::core::{self, Address};
+use super::util::{self, KECCAK256_BYTES};
 use rand::{OsRng, Rng};
 use rustc_serialize::json;
 use std::{cmp, fmt, fs, result};
@@ -23,22 +23,16 @@ use std::io::Read;
 use std::path::Path;
 use uuid::Uuid;
 
-/// Derived key length in bytes (by default)
+/// Derived core length in bytes (by default)
 pub const DEFAULT_DK_LENGTH: usize = 32;
 
 /// Key derivation function salt length in bytes
 pub const KDF_SALT_BYTES: usize = 32;
 
-/// Keccak-256 hash length in bytes
-pub const KECCAK256_BYTES: usize = 32;
-
 /// Cipher initialization vector length in bytes
 pub const CIPHER_IV_BYTES: usize = 16;
 
-/// A keystore file related result
-pub type Result<T> = result::Result<T, KeyFileError>;
-
-/// A keystore file (account private key encrypted with a passphrase)
+/// A keystore file (account private core encrypted with a passphrase)
 #[derive(Clone, Debug, Eq)]
 pub struct KeyFile {
     /// UUID v4
@@ -47,7 +41,7 @@ pub struct KeyFile {
     /// Public address (optional)
     pub address: Option<Address>,
 
-    /// Derived key length
+    /// Derived core length
     pub dk_length: usize,
 
     /// Key derivation function
@@ -70,28 +64,14 @@ pub struct KeyFile {
 }
 
 impl KeyFile {
-    ///
+    /// Generate a wallet with unique `uuid`
     pub fn new() -> Self {
         Self::from(Uuid::new_v4())
     }
 
-    ///
+    /// Append `Address` to current wallet
     pub fn with_address(&mut self, addr: &Address) {
         self.address = Some(*addr);
-    }
-
-
-    /// Initialization for kdf salt and cipher iv (init vector)
-    pub fn init_crypto(&mut self) {
-        let mut salt: [u8; KDF_SALT_BYTES] = [0; 32];
-        let mut iv: [u8; CIPHER_IV_BYTES] = [0; 16];
-
-        let mut rng = OsRng::new().ok().unwrap();
-        rng.fill_bytes(&mut salt);
-        rng.fill_bytes(&mut iv);
-
-        self.kdf_salt = salt;
-        self.cipher_iv = iv;
     }
 }
 
@@ -144,33 +124,6 @@ impl fmt::Display for KeyFile {
     }
 }
 
-/// If we have specified address in out keystore return `true`, `false` otherwise
-pub fn address_exists<P: AsRef<Path>>(path: P, addr: &Address) -> bool {
-    let entries = fs::read_dir(path).expect("Expect to read a keystore directory content");
-
-    for entry in entries {
-        let path = entry.expect("Expect keystore directory entry").path();
-
-        if path.is_dir() {
-            continue;
-        }
-
-        let mut file = fs::File::open(path).expect("Expect to open a keystore file");
-        let mut text = String::new();
-
-        if file.read_to_string(&mut text).is_err() {
-            continue;
-        }
-
-        match try_extract_address(&text) {
-            Some(a) if a == *addr => return true,
-            _ => continue,
-        }
-    }
-
-    false
-}
-
 /// Search of `KeyFile` by specified `Address`
 ///
 /// # Arguments
@@ -197,8 +150,8 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
 
         match try_extract_address(&content) {
             Some(a) if a == *addr => {
-                let kf = json::decode::<KeyFile>(&content).expect("Expect to decode keystore file");
-                return Some(kf);
+                return Some(
+                    json::decode::<KeyFile>(&content).expect("Expect to decode keystore file"));
             }
             _ => continue,
         }
@@ -209,19 +162,19 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
 
 #[cfg(test)]
 mod tests {
-    use super::KeyFile;
-    use address::Address;
+    pub use super::*;
+    pub use super::tests::*;
 
     #[test]
-    fn should_eq() {
-        let key1 = KeyFile::new();
+    fn should_eq_regardless_of_address() {
+        let key_without_address = KeyFile::new();
 
-        let mut key2 = key1.clone();
+        let mut key_with_address = key_without_address.clone();
 
-        key2.with_address(&"0x0e7c045110b8dbf29765047380898919c5cb56f4"
-                               .parse::<Address>()
-                               .unwrap());
+        key_with_address.with_address(&"0x0e7c045110b8dbf29765047380898919c5cb56f4"
+                                        .parse::<Address>()
+                                        .unwrap());
 
-        assert_eq!(key1, key2);
+        assert_eq!(key_without_address, key_with_address);
     }
 }

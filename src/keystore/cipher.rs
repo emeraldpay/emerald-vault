@@ -1,6 +1,6 @@
 //! # Advanced encryption standard (AES) cipher
 
-use super::KeyFileError;
+use super::Error;
 use std::fmt;
 use std::str::FromStr;
 

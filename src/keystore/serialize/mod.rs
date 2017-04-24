@@ -1,4 +1,4 @@
-//! # Serialize keystore files (UTC / JSON) encrypted with a passphrase
+//! # Serialize keystore files (UTC / JSON) encrypted with a passphrase module
 
 mod address;
 #[macro_use]
@@ -8,9 +8,9 @@ mod error;
 
 pub use self::address::try_extract_address;
 use self::crypto::Crypto;
-use self::error::SerializeError;
-use address::Address;
-use keystore::KeyFile;
+use self::error::Error;
+use super::KeyFile;
+use super::core::Address;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use uuid::Uuid;
 
@@ -22,10 +22,10 @@ pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
 
 impl Decodable for KeyFile {
     fn decode<D: Decoder>(d: &mut D) -> Result<KeyFile, D::Error> {
-        let ser = (SerializableKeyFile::decode(d))?;
+        let ser = SerializableKeyFile::decode(d)?;
 
         if !SUPPORTED_VERSIONS.contains(&ser.version) {
-            return Err(d.error(&SerializeError::UnsupportedVersion(ser.version).to_string()));
+            return Err(d.error(&Error::UnsupportedVersion(ser.version).to_string()));
         }
 
         Ok(KeyFile::from(ser))
@@ -70,7 +70,8 @@ impl From<SerializableKeyFile> for KeyFile {
 
 #[cfg(test)]
 mod tests {
-    use keystore::KeyFile;
+    pub use super::*;
+    pub use super::tests::*;
     use rustc_serialize::json;
 
     #[test]

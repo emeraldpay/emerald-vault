@@ -1,7 +1,9 @@
 //! # Account address (20 bytes)
 
+use super::Error;
+use super::util::to_arr;
 use rustc_serialize::hex::{self, FromHex, ToHex};
-use std::{error, fmt, ops};
+use std::{fmt, ops};
 use std::str::FromStr;
 
 /// Fixed bytes number to represent `Address`
@@ -12,22 +14,6 @@ pub const ADDRESS_BYTES: usize = 20;
 pub struct Address([u8; ADDRESS_BYTES]);
 
 impl Address {
-    /// Create a new `Address` from given 20 bytes.
-    ///
-    /// # Arguments
-    ///
-    /// * `data` - An fixed byte array with `ADDRESS_BYTES` length
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// assert_eq!(emerald::Address::default().to_string(),
-    ///            "0x0000000000000000000000000000000000000000");
-    /// ```
-    pub fn new(data: [u8; ADDRESS_BYTES]) -> Self {
-        Address(data)
-    }
-
     /// Try to convert a byte vector to `Address`.
     ///
     /// # Arguments
@@ -40,16 +26,12 @@ impl Address {
     /// let addr = emerald::Address::try_from(&vec![0u8; emerald::ADDRESS_BYTES]).unwrap();
     /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
     /// ```
-    pub fn try_from(data: &[u8]) -> Result<Self, AddressParserError> {
+    pub fn try_from(data: &[u8]) -> Result<Self, Error> {
         if data.len() != ADDRESS_BYTES {
-            return Err(AddressParserError::InvalidLength(data.len()));
+            return Err(Error::InvalidLength(data.len()));
         }
 
-        let mut bytes = [0u8; ADDRESS_BYTES];
-
-        bytes.copy_from_slice(data);
-
-        Ok(Address(bytes))
+        Ok(Address(to_arr(data)))
     }
 }
 
@@ -63,23 +45,21 @@ impl ops::Deref for Address {
 
 impl From<[u8; ADDRESS_BYTES]> for Address {
     fn from(bytes: [u8; ADDRESS_BYTES]) -> Self {
-        Address::new(bytes)
+        Address(bytes)
     }
 }
 
 impl FromStr for Address {
-    type Err = AddressParserError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with("0x") {
-            return Err(AddressParserError::UnexpectedPrefix(s.to_string()));
+            return Err(Error::UnexpectedPrefix(s.to_string()));
         }
 
         let (_, s) = s.split_at(2);
 
-        s.from_hex()
-            .map_err(AddressParserError::UnexpectedEncoding)
-            .and_then(|v| Address::try_from(&v))
+        s.from_hex().and_then(|v| Address::try_from(&v))
     }
 }
 
@@ -89,55 +69,10 @@ impl fmt::Display for Address {
     }
 }
 
-/// `Address` struct parser errors
-#[derive(Debug)]
-pub enum AddressParserError {
-    /// An invalid given length, not `ADDRESS_BYTES`.
-    InvalidLength(usize),
-    /// An unexpected hexadecimal prefix (should be '0x')
-    UnexpectedPrefix(String),
-    /// An unexpected hexadecimal encoding error
-    UnexpectedEncoding(hex::FromHexError),
-}
-
-impl From<hex::FromHexError> for AddressParserError {
-    fn from(err: hex::FromHexError) -> Self {
-        AddressParserError::UnexpectedEncoding(err)
-    }
-}
-
-impl fmt::Display for AddressParserError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            AddressParserError::InvalidLength(len) => {
-                write!(f, "Address invalid given length: {}", len)
-            }
-            AddressParserError::UnexpectedPrefix(ref str) => {
-                write!(f, "Unexpected address hexadecimal prefix: {}", str)
-            }
-            AddressParserError::UnexpectedEncoding(ref err) => {
-                write!(f, "Unexpected address hexadecimal encoding: {}", err)
-            }
-        }
-    }
-}
-
-impl error::Error for AddressParserError {
-    fn description(&self) -> &str {
-        "Address parser error"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            AddressParserError::UnexpectedEncoding(ref err) => Some(err),
-            _ => None,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::Address;
+    use super::*;
+    use super::tests::*;
 
     #[test]
     fn should_display_zero_address() {
@@ -147,8 +82,8 @@ mod tests {
 
     #[test]
     fn should_display_real_address() {
-        let addr = Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
-                                 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
+        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
+                           0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
         assert_eq!(addr.to_string(),
                    "0x0e7c045110b8dbf29765047380898919c5cb56f4");
@@ -156,8 +91,8 @@ mod tests {
 
     #[test]
     fn should_parse_real_address() {
-        let addr = Address::new([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
-                                 0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
+        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
+                           0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
         assert_eq!("0x0e7c045110b8dbf29765047380898919c5cb56f4"
                        .parse::<Address>()

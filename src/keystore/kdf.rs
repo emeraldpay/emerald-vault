@@ -1,6 +1,6 @@
 //! # Keystore files key derivation function
 
-use super::KeyFileError;
+use super::Error;
 use super::prf::Prf;
 use std::fmt;
 use std::str::FromStr;

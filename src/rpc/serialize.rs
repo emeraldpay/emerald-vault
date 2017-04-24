@@ -1,7 +1,7 @@
-//! # Serialize RPC parameters in JSON
+//! # Serialize JSON RPC parameters
 
-use super::{Address, Method, PrivateKey};
-use super::transaction::Transaction;
+use super::{Error, Method, MethodParams};
+use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::Params;
 use rustc_serialize::hex::ToHex;
 use serde::ser::{Serialize, Serializer};
@@ -30,7 +30,7 @@ impl<'a> Transaction<'a> {
     /// # Arguments
     ///
     /// * `p` - A request parameters (structure mapping directly to JSON)
-    pub fn try_from(_p: &Params) -> Result<Transaction, SerializeError> {
+    pub fn try_from(_p: &Params) -> Result<Transaction, Error> {
         Ok(Transaction {
                nonce: 0u64,
                gas_price: [0u8; 32],
@@ -51,7 +51,7 @@ impl<'a> Transaction<'a> {
     }
 }
 
-impl<'a> Serialize for ::MethodParams<'a> {
+impl<'a> Serialize for MethodParams<'a> {
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
         where S: Serializer
     {
@@ -89,33 +89,10 @@ fn to_json_data<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
     }
 }
 
-/// RPC parameters JSON serialize errors
-#[derive(Debug)]
-pub enum SerializeError {
-}
-
-impl fmt::Display for SerializeError {
-    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-        }
-    }
-}
-
-impl error::Error for SerializeError {
-    fn description(&self) -> &str {
-        "RPC parameters JSON serialize errors"
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match *self {
-            _ => None,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::to_json_data;
+    use super::*;
+    use super::tests::*;
     use jsonrpc_core::Params;
 
     #[test]

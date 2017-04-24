@@ -1,6 +1,6 @@
 //! # Contracts utils
 
-use address::Address;
+use super::address::Address;
 use glob::glob;
 use serde_json::{self, Value};
 use std::fs::File;
@@ -37,6 +37,7 @@ impl Contracts {
     /// List all available contracts
     pub fn list(&self) -> Vec<Value> {
         let files = glob(&format!("{}/*.json", &self.dir.to_str().unwrap())).unwrap();
+
         files
             .filter(|x| x.is_ok())
             .map(|x| Contracts::read_json(x.unwrap().as_path()))
