@@ -73,6 +73,36 @@ impl KeyFile {
     pub fn with_address(&mut self, addr: &Address) {
         self.address = Some(*addr);
     }
+
+    /// Decrypt private key from keystore file by a passphrase
+    pub fn decrypt_key(&self, passphrase: &str) -> Result<PrivateKey, Error> {
+        let derived = self.kdf.derive_key(self.dk_length, &self.kdf_salt, passphrase);
+
+        let mut v = vec![0u8; 32];
+        v.extend_from_slice(&derived[0..16]);
+        v.extend_from_slice(&self.cipher_text);
+
+        let mac = keccak256(&v);
+
+        if mac != self.keccak256_mac {
+            return Err(Error::FailedMacValidation);
+        }
+
+        Ok(self.cipher.process(&self.cipher_text, &derived[0..16], &self.cipher_iv))
+    }
+
+    /// Encrypt a new private key for keystore file with a passphrase
+    pub fn encrypt_key(&mut self, pk: &[u8], passphrase: &str) {
+        let derived = self.kdf.derive_key(self.dk_length, &self.kdf_salt, passphrase);
+
+        self.cipher_text = self.cipher.process(pk, &derived[0..16], &self.cipher_iv);
+
+        let mut v = vec![0u8; 32];
+        v.extend_from_slice(&derived[0..16]);
+        v.extend_from_slice(&self.cipher_text);
+
+        self.keccak256_mac = keccak256(&derived[16..32], &self.cipher_text);
+    }
 }
 
 impl Default for KeyFile {
@@ -164,6 +194,8 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
 mod tests {
     pub use super::*;
     pub use super::tests::*;
+    use rustc_serialize::hex::{FromHex, ToHex};
+    use std::convert::AsMut;
 
     #[test]
     fn should_eq_regardless_of_address() {
@@ -176,5 +208,71 @@ mod tests {
                                         .unwrap());
 
         assert_eq!(key_without_address, key_with_address);
+    }
+
+    #[test]
+    fn should_derive_key_via_pbkdf2() {
+        let kdf_salt = "ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd"
+            .from_hex()
+            .unwrap();
+
+        assert_eq!(derive_key(32, Kdf::from(262144), &kdf_salt, "testpassword").to_hex(),
+        "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551");
+    }
+
+    #[test]
+    fn should_derive_key_via_scrypt() {
+        let kdf_salt = "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
+            .from_hex()
+            .unwrap();
+
+        assert_eq!(derive_key(32, Kdf::from((1024, 8, 1)), &kdf_salt, "1234567890").to_hex(),
+        "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273");
+    }
+
+    #[test]
+    fn should_decrypt_key() {
+        let text = "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46"
+            .from_hex()
+            .unwrap();
+        let key = "f06d69cdc7da0faffb1008270bca38f5".from_hex().unwrap();
+        let iv = "6087dab2f9fdbbfaddc31a909735c1e6".from_hex().unwrap();
+
+        let pkey_val: [u8; 32] = decrypt_key(Cipher::Aes256Ctr, &text, &key, &iv).into();
+
+        assert_eq!(pkey_val.to_hex(),
+        "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d");
+    }
+
+    #[test]
+    fn should_insert_key() {
+        let key = "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f"
+            .from_hex()
+            .unwrap();
+        let password = "1234567890";
+
+        let mut kf = KeyFile::default();
+        kf.kdf = Kdf::Scrypt {
+            n: 1024,
+            r: 8,
+            p: 1,
+        };
+        kf.cipher_iv = to_arr(&"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap());
+        kf.kdf_salt = to_arr(&"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
+            .from_hex()
+            .unwrap());
+
+        let res = kf.insert_key(&key, &password);
+        assert!(res.is_ok());
+
+        assert_eq!(kf.cipher_text,
+        "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
+            .from_hex()
+            .unwrap());
+
+        let mac: [u8; 32] = to_arr(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
+            .from_hex()
+            .unwrap());
+        assert_eq!(kf.keccak256_mac, mac);
     }
 }

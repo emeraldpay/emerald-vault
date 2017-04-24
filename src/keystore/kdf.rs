@@ -2,6 +2,10 @@
 
 use super::Error;
 use super::prf::Prf;
+use crypto::hmac::Hmac;
+use crypto::pbkdf2::pbkdf2;
+use crypto::scrypt::{ScryptParams, scrypt};
+use crypto::sha2::Sha256;
 use std::fmt;
 use std::str::FromStr;
 
@@ -34,6 +38,27 @@ pub enum Kdf {
         /// Parallelization factor (`1` by default)
         p: u32,
     },
+}
+
+impl Kdf {
+    /// Derive fixed size key for given salt and passphrase
+    pub fn derive_key(&self, len: usize, kdf_salt: &[u8], passphrase: &str) -> Vec<u8> {
+        let mut key = vec![0u8; len];
+
+        match kdf {
+            Kdf::Pbkdf2 { prf: _prf, c } => {
+                let mut hmac = Hmac::new(Sha256::new(), passphrase.as_bytes());
+                pbkdf2(&mut hmac, kdf_salt, c, &mut key);
+            }
+            Kdf::Scrypt { n, r, p } => {
+                let log_n = (n as f64).log2().round() as u8;
+                let params = ScryptParams::new(log_n, r, p);
+                scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key);
+            }
+        }
+
+        key
+    }
 }
 
 impl Default for Kdf {
@@ -88,5 +113,32 @@ impl fmt::Display for Kdf {
             Kdf::Pbkdf2 { .. } => f.write_str(PBKDF2_KDF_NAME),
             Kdf::Scrypt { .. } => f.write_str(SCRYPT_KDF_NAME),
         }
+    }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use super::tests::*;
+    use rustc_serialize::hex::{FromHex, ToHex};
+
+    #[test]
+    fn should_derive_key_via_pbkdf2() {
+        let kdf_salt = "ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd"
+            .from_hex()
+            .unwrap();
+
+        assert_eq!(derive_key(32, Kdf::from(262144), &kdf_salt, "testpassword").to_hex(),
+                   "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551");
+    }
+
+    #[test]
+    fn should_derive_key_via_scrypt() {
+        let kdf_salt = "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
+            .from_hex()
+            .unwrap();
+
+        assert_eq!(derive_key(32, Kdf::from((1024, 8, 1)), &kdf_salt, "1234567890").to_hex(),
+                   "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273");
     }
 }
