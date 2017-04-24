@@ -1,6 +1,6 @@
 //! # Extract private key from keystore file
 
-use super::{Cipher, Kdf, KeyFile, Error};
+use super::{Cipher, Error, Kdf, KeyFile};
 use super::util::KECCAK256_BYTES;
 use crypto::aes::{KeySize, ctr};
 use crypto::digest::Digest;
@@ -61,13 +61,13 @@ fn derive_key(len: usize, kdf: Kdf, kdf_salt: &[u8], passphrase: &str) -> Vec<u8
     key
 }
 
-fn encrypt_text(_cipher: Cipher, text: &[u8], key: &[u8], iv: &[u8]) -> [u8; ] {
+fn encrypt_text(_cipher: Cipher, text: &[u8], key: &[u8], iv: &[u8]) -> [u8; 32] {
     let mut key = [0u8; PRIVATE_KEY_BYTES];
     let mut ctr = ctr(KeySize::KeySize128, key, iv);
 
-    ctr.process(text, &mut pkey);
+    ctr.process(text, &mut key);
 
-    PrivateKey::from_slice(&pkey)
+    PrivateKey::from_slice(&key)
 }
 
 fn calculate_mac(key: &[u8], data: &[u8]) -> [u8; KECCAK256_BYTES] {
@@ -79,6 +79,15 @@ fn calculate_mac(key: &[u8], data: &[u8]) -> [u8; KECCAK256_BYTES] {
     sha3.result(&mut mac);
 
     mac
+}
+
+fn decrypt_key(_cipher: Cipher, text: &[u8], key: &[u8], iv: &[u8]) -> PrivateKey {
+    let mut pkey = [0u8; PRIVATE_KEY_BYTES];
+    let mut ctr = ctr(KeySize::KeySize128, key, iv);
+
+    ctr.process(text, &mut pkey);
+
+    PrivateKey::from_slice(&pkey)
 }
 
 /// Test Vectors from https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
@@ -138,20 +147,21 @@ pub mod tests {
         };
         kf.cipher_iv = to_arr(&"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap());
         kf.kdf_salt = to_arr(&"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
-            .from_hex()
-            .unwrap());
+                                  .from_hex()
+                                  .unwrap());
 
         let res = kf.insert_key(&key, &password);
         assert!(res.is_ok());
 
         assert_eq!(kf.cipher_text,
-        "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
-            .from_hex()
-            .unwrap());
+                   "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
+                       .from_hex()
+                       .unwrap());
 
-        let mac: [u8; 32] = to_arr(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
-            .from_hex()
-            .unwrap());
+        let mac: [u8; 32] =
+            to_arr(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
+                        .from_hex()
+                        .unwrap());
         assert_eq!(kf.keccak256_mac, mac);
     }
 
@@ -163,6 +173,6 @@ pub mod tests {
             .unwrap();
 
         assert_eq!(calculate_mac(&key, &data).to_hex(),
-        "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
+                   "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
     }
 }

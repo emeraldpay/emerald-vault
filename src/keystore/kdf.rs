@@ -66,7 +66,7 @@ impl From<(u32, u32, u32)> for Kdf {
 }
 
 impl FromStr for Kdf {
-    type Err = KeyFileError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -77,7 +77,7 @@ impl FromStr for Kdf {
                    })
             }
             _ if s == SCRYPT_KDF_NAME => Ok(Kdf::default()),
-            _ => Err(KeyFileError::UnsupportedKdf(s.to_string())),
+            _ => Err(Error::UnsupportedKdf(s.to_string())),
         }
     }
 }

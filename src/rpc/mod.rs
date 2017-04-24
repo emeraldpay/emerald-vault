@@ -1,5 +1,12 @@
 //! # JSON RPC module
 
+mod http;
+mod serialize;
+mod error;
+
+use super::storage::{Storages, ChainStorage};
+use super::Contracts;
+use super::core::Transaction;
 use jsonrpc_core::{Error, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
@@ -8,6 +15,7 @@ use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use futures;
 
 /// RPC methods
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -209,10 +217,10 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 
     let server = ServerBuilder::new(io)
         .meta_extractor(|req: &Req| {
-            req.header("Authorization")
-                .map(MethodMetadata::with_authorization)
-                .unwrap_or_default()
-        })
+                            req.header("Authorization")
+                                .map(MethodMetadata::with_authorization)
+                                .unwrap_or_default()
+                        })
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
                                                 cors::AccessControlAllowOrigin::Null]))
         .start_http(addr)

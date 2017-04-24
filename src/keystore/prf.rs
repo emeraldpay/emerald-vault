@@ -21,12 +21,12 @@ impl Default for Prf {
 }
 
 impl FromStr for Prf {
-    type Err = KeyFileError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             _ if s == HMAC_SHA256_PRF_NAME => Ok(Prf::HmacSha256),
-            _ => Err(KeyFileError::UnsupportedPrf(s.to_string())),
+            _ => Err(Error::UnsupportedPrf(s.to_string())),
         }
     }
 }

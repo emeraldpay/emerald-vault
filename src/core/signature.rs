@@ -1,10 +1,12 @@
 //! # Account ECDSA signatures using the SECG curve secp256k1
 
 use super::Address;
-use super::util::to_arr;
+use super::util::{to_arr, keccak256, KECCAK256_BYTES};
+use super::Error;
 use rand::{OsRng, Rng};
-use secp256k1::Secp256k1;
+use secp256k1::{Secp256k1, ContextFlag, Message};
 use secp256k1::key::{PublicKey, SecretKey};
+use std::{fmt, str, ops};
 
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;
@@ -56,20 +58,20 @@ impl PrivateKey {
 
     /// Extract `Address` from current private key.
     pub fn to_address(&self) -> Result<Address, Error> {
-        let key = PublicKey::from_secret_key(&ECDSA, SecretKey::from(self)?;
+        let key = PublicKey::from_secret_key(&ECDSA, SecretKey::from(self))?;
         let hash = keccak256(&key.serialize_vec(&ECDSA, false)[1..] /* cut '04' */);
         Address(to_arr(&hash[12..]))
     }
 
     /// Sign hashed message encoded with bytes
     pub fn sign_data(&self, data: &[u8]) -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
-        sign_hash(keccak256(data), pk)
+        self.sign_hash(keccak256(data))
     }
 
     /// Sign hash from message (Keccak-256)
-    pub fn sign_hash(&self, hash: [u8; KECCAK_256]) -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
+    pub fn sign_hash(&self, hash: [u8; KECCAK256_BYTES]) -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
         let msg = Message::from_slice(&hash)?;
-        let key = SecretKey::from_slice(&ECDSA, pk)?;
+        let key = SecretKey::from_slice(&ECDSA, SecretKey::from(self))?;
         let sign = ECDSA.sign_schnorr(&msg, &key)?;
 
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
@@ -104,7 +106,7 @@ impl From<PrivateKey> for SecretKey {
     }
 }
 
-impl FromStr for PrivateKey {
+impl str::FromStr for PrivateKey {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

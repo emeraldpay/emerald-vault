@@ -1,5 +1,6 @@
 //! # Send JSON encoded HTTP requests
 
+use super::MethodParams;
 use hyper::Url;
 use hyper::client::IntoUrl;
 use jsonrpc_core::{Error, Value};
@@ -15,7 +16,7 @@ impl AsyncWrapper {
         AsyncWrapper { url: url.into_url().expect("Expect to encode request url") }
     }
 
-    pub fn request(&self, params: &::MethodParams) -> BoxFuture<Value, Error> {
+    pub fn request(&self, params: &MethodParams) -> BoxFuture<Value, Error> {
         let client = Client::new().expect("Expect to create a request client");
 
         let mut res = client

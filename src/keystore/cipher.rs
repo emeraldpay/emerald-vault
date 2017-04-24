@@ -21,12 +21,12 @@ impl Default for Cipher {
 }
 
 impl FromStr for Cipher {
-    type Err = KeyFileError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             _ if s == AES256_CTR_CIPHER_NAME => Ok(Cipher::Aes256Ctr),
-            _ => Err(KeyFileError::UnsupportedCipher(s.to_string())),
+            _ => Err(Error::UnsupportedCipher(s.to_string())),
         }
     }
 }

@@ -1,6 +1,6 @@
 //! # Contracts utils
 
-use super::address::Address;
+use super::Address;
 use glob::glob;
 use serde_json::{self, Value};
 use std::fs::File;

@@ -1,7 +1,7 @@
 //! # Account transaction
 
 use super::{Address, Error, PrivateKey};
-use super::util::{keccak256, RLPList};
+use super::util::{RLPList, keccak256, KECCAK256_BYTES};
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -77,9 +77,9 @@ pub struct Signature {
     pub s: [u8; 32],
 }
 
-impl From<[u8; 64]> for TransactionSignature {
+impl From<[u8; 64]> for Signature {
     fn from(data: [u8; 64]) -> Self {
-        let mut sign = TransactionSignature::default();
+        let mut sign = Signature::default();
 
         sign.v = data[63] /* parity */ + 27;
         sign.r.copy_from_slice(&data[0..32]);
@@ -108,8 +108,8 @@ mod tests {
             ..Default::default()
         };
 
-        let res = tx.sign(
-            &as_bytes("7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"));
+        let res =
+            tx.sign(&as_bytes("7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"));
 
         assert!(res.is_ok());
         assert!(res.unwrap().len() > 32);
