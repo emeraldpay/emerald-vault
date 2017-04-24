@@ -19,8 +19,8 @@ impl Cipher {
     pub fn process(&self, text: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
         // TODO: Reimplement with [aessafe](
         // https://github.com/DaGenix/rust-crypto/blob/cc1a5fde1ce957bd1a8a2e30169443cdb4780111/src/aessafe.rs)
+        let mut buf = [0u8; 32];
         let mut ctr = ctr(KeySize::KeySize128, key, iv);
-        let mut buf = Vec::new();
         ctr.process(text, &buf);
         buf
     }

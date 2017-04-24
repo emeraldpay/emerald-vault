@@ -23,6 +23,6 @@ mod tests {
     #[test]
     fn should_calculate_keccak256() {
         assert_eq!(keccak256(b"hello world!"),
-            &as_bytes("57caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd6"));
+            as_bytes("57caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd6"));
     }
 }

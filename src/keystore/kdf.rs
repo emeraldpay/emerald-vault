@@ -2,10 +2,8 @@
 
 use super::Error;
 use super::prf::Prf;
-use crypto::hmac::Hmac;
 use crypto::pbkdf2::pbkdf2;
 use crypto::scrypt::{ScryptParams, scrypt};
-use crypto::sha2::Sha256;
 use std::fmt;
 use std::str::FromStr;
 
@@ -42,12 +40,12 @@ pub enum Kdf {
 
 impl Kdf {
     /// Derive fixed size key for given salt and passphrase
-    pub fn derive_key(&self, len: usize, kdf_salt: &[u8], passphrase: &str) -> Vec<u8> {
+    pub fn derive(&self, len: usize, kdf_salt: &[u8], passphrase: &str) -> Vec<u8> {
         let mut key = vec![0u8; len];
 
         match kdf {
-            Kdf::Pbkdf2 { prf: _prf, c } => {
-                let mut hmac = Hmac::new(Sha256::new(), passphrase.as_bytes());
+            Kdf::Pbkdf2 { prf, c } => {
+                let mut hmac = prf.hmac(passphrase);
                 pbkdf2(&mut hmac, kdf_salt, c, &mut key);
             }
             Kdf::Scrypt { n, r, p } => {
@@ -128,7 +126,7 @@ pub mod tests {
             .from_hex()
             .unwrap();
 
-        assert_eq!(derive_key(32, Kdf::from(262144), &kdf_salt, "testpassword").to_hex(),
+        assert_eq!(Kdf::from(262144).derive(32, &kdf_salt, "testpassword").to_hex(),
                    "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551");
     }
 
@@ -138,7 +136,7 @@ pub mod tests {
             .from_hex()
             .unwrap();
 
-        assert_eq!(derive_key(32, Kdf::from((1024, 8, 1)), &kdf_salt, "1234567890").to_hex(),
+        assert_eq!(Kdf::from((1024, 8, 1).derive(32, &kdf_salt, "1234567890").to_hex(),
                    "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273");
     }
 }

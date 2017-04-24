@@ -76,32 +76,31 @@ impl KeyFile {
 
     /// Decrypt private key from keystore file by a passphrase
     pub fn decrypt_key(&self, passphrase: &str) -> Result<PrivateKey, Error> {
-        let derived = self.kdf.derive_key(self.dk_length, &self.kdf_salt, passphrase);
+        let derived = self.kdf.derive(self.dk_length, &self.kdf_salt, passphrase);
 
         let mut v = vec![0u8; 32];
-        v.extend_from_slice(&derived[0..16]);
+        v.extend_from_slice(&derived[16..32]);
         v.extend_from_slice(&self.cipher_text);
 
-        let mac = keccak256(&v);
-
-        if mac != self.keccak256_mac {
+        if keccak256(&v) != self.keccak256_mac {
             return Err(Error::FailedMacValidation);
         }
 
-        Ok(self.cipher.process(&self.cipher_text, &derived[0..16], &self.cipher_iv))
+        Ok(PrivateKey(
+            to_arr(&self.cipher.process(&self.cipher_text, &derived[0..16], &self.cipher_iv))))
     }
 
     /// Encrypt a new private key for keystore file with a passphrase
     pub fn encrypt_key(&mut self, pk: &[u8], passphrase: &str) {
-        let derived = self.kdf.derive_key(self.dk_length, &self.kdf_salt, passphrase);
+        let derived = self.kdf.derive(self.dk_length, &self.kdf_salt, passphrase);
 
         self.cipher_text = self.cipher.process(pk, &derived[0..16], &self.cipher_iv);
 
         let mut v = vec![0u8; 32];
-        v.extend_from_slice(&derived[0..16]);
+        v.extend_from_slice(&derived[16..32]);
         v.extend_from_slice(&self.cipher_text);
 
-        self.keccak256_mac = keccak256(&derived[16..32], &self.cipher_text);
+        self.keccak256_mac = keccak256(&v);
     }
 }
 

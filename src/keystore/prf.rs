@@ -1,6 +1,8 @@
 //! # Keystore files pseudo-random functions
 
 use super::Error;
+use crypto::hmac::Hmac;
+use crypto::sha2::Sha256;
 use std::fmt;
 use std::str::FromStr;
 
@@ -12,6 +14,13 @@ pub const HMAC_SHA256_PRF_NAME: &'static str = "hmac-sha256";
 pub enum Prf {
     /// HMAC-SHA-256 (specified in (RFC 4868)[https://tools.ietf.org/html/rfc4868])
     HmacSha256,
+}
+
+impl Kdf {
+    /// Calculate hashed message authentication code using SHA-256 digest
+    pub fn hmac(&self, passphrase: &str) -> Hmac<Sha256> {
+        Hmac::new(Sha256::new(), passphrase.as_bytes())
+    }
 }
 
 impl Default for Prf {
