@@ -1,8 +1,7 @@
 //! # Chain-related storage
 
 use log::LogLevel;
-use std::env;
-use std::fs;
+use std::{env, fs};
 use std::io::Error;
 use std::path::PathBuf;
 
@@ -13,6 +12,7 @@ pub struct Storages {
     base_dir: PathBuf,
 }
 
+/// Default path (*nix)
 #[cfg(all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android")))]
 pub fn default_path() -> PathBuf {
     let mut config_dir = env::home_dir().expect("Expect path to home dir");
@@ -20,6 +20,7 @@ pub fn default_path() -> PathBuf {
     config_dir
 }
 
+/// Default path (Mac OS X)
 #[cfg(target_os = "macos")]
 pub fn default_path() -> PathBuf {
     let mut config_dir = env::home_dir().expect("Expect path to home dir");
@@ -28,20 +29,22 @@ pub fn default_path() -> PathBuf {
     config_dir
 }
 
+/// Default path (Windows OS)
 #[cfg(target_os = "windows")]
 pub fn default_path() -> PathBuf {
-    let mut config_dir = env::var("APPDATA").expect("Expect 'APPDATA' environment variable");
+    let app_data_var = env::var("APPDATA").expect("Expect 'APPDATA' environment variable");
+    let mut config_dir = PathBuf::from(app_data_var);
     config_dir.push(".emerald");
     config_dir
 }
 
 impl Storages {
-    /// Create storage using user directory if specified,
-    /// or default path in other case.
+    /// Create storage using user directory if specified, or default path in other case.
     pub fn new(path: PathBuf) -> Storages {
         Storages { base_dir: path }
     }
 
+    /// Initialize new storage
     pub fn init(&self) -> Result<(), Error> {
         if !&self.base_dir.exists() {
             if log_enabled!(LogLevel::Info) {
@@ -69,10 +72,12 @@ pub struct ChainStorage<'a> {
 }
 
 impl<'a> ChainStorage<'a> {
+    /// Crate a new chain
     pub fn new(base: &'a Storages, id: String) -> ChainStorage<'a> {
         ChainStorage { id: id, base: base }
     }
 
+    /// Initialize a new chain
     pub fn init(&self) -> Result<(), Error> {
         let mut p: PathBuf = self.base.base_dir.to_path_buf();
         p.push(self.id.clone());
@@ -85,6 +90,7 @@ impl<'a> ChainStorage<'a> {
         Ok(())
     }
 
+    /// Get chain path
     pub fn get_path(&self, id: String) -> Result<PathBuf, Error> {
         let mut p: PathBuf = self.base.base_dir.to_path_buf().clone();
         p.push(self.id.clone());

@@ -1,6 +1,8 @@
 //! # Keystore files pseudo-random functions
 
-use super::KeyFileError;
+use super::Error;
+use crypto::hmac::Hmac;
+use crypto::sha2::Sha256;
 use std::fmt;
 use std::str::FromStr;
 
@@ -14,19 +16,26 @@ pub enum Prf {
     HmacSha256,
 }
 
+impl Prf {
+    /// Calculate hashed message authentication code using SHA-256 digest
+    pub fn hmac(&self, passphrase: &str) -> Hmac<Sha256> {
+        Hmac::new(Sha256::new(), passphrase.as_bytes())
+    }
+}
+
 impl Default for Prf {
-    fn default() -> Prf {
+    fn default() -> Self {
         Prf::HmacSha256
     }
 }
 
 impl FromStr for Prf {
-    type Err = KeyFileError;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             _ if s == HMAC_SHA256_PRF_NAME => Ok(Prf::HmacSha256),
-            _ => Err(KeyFileError::UnsupportedPrf(s.to_string())),
+            _ => Err(Error::UnsupportedPrf(s.to_string())),
         }
     }
 }

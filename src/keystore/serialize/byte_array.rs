@@ -29,7 +29,7 @@ macro_rules! byte_array_struct {
         impl ::rustc_serialize::Decodable for $name {
             fn decode<D: ::rustc_serialize::Decoder>(d: &mut D) -> Result<$name, D::Error> {
                 let v =
-                    (d.read_str().and_then(|s| s.from_hex().map_err(|e| d.error(&e.to_string()))))?;
+                    d.read_str().and_then(|s| s.from_hex().map_err(|e| d.error(&e.to_string())))?;
 
                 if v.len() != $num {
                     return Err(d.error(&format!("Byte array invalid length: {}", v.len())));
@@ -37,7 +37,7 @@ macro_rules! byte_array_struct {
 
                 let mut bytes = [0u8; $num];
 
-                bytes.clone_from_slice(&v);
+                bytes.copy_from_slice(&v);
 
                 Ok($name(bytes))
             }

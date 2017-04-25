@@ -1,4 +1,4 @@
-//! # CLI wrapper for ethereum classic web3 like connector.
+//! # CLI wrapper for ethereum classic web3 like connector
 
 #![cfg(feature = "cli")]
 
@@ -10,9 +10,8 @@ extern crate log;
 extern crate env_logger;
 
 extern crate docopt;
-extern crate rustc_serialize;
-
 extern crate emerald;
+extern crate rustc_serialize;
 
 use docopt::Docopt;
 use env_logger::LogBuilder;
@@ -71,6 +70,7 @@ fn main() {
     let base_path_str = args.flag_base_path
         .parse::<String>()
         .expect("Expect to parse base path");
+
     let base_path = if !base_path_str.is_empty() {
         Some(PathBuf::from(&base_path_str))
     } else {
@@ -82,5 +82,5 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
-    emerald::start(&addr, &client_addr, base_path);
+    emerald::rpc::start(&addr, &client_addr, base_path);
 }

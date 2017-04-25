@@ -1,19 +1,20 @@
 extern crate emerald;
 
-extern crate rustc_serialize;
-extern crate uuid;
 extern crate rand;
+extern crate rustc_serialize;
+extern crate tempdir;
+extern crate uuid;
 
-use emerald::key_generator::Generator;
-use emerald::key_generator::serialize::{create_keyfile, get_timestamp, to_file};
-use emerald::keystore::*;
-use rand::OsRng;
+use emerald::{Address, KECCAK256_BYTES, PrivateKey};
+use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile, Prf,
+                        create_keyfile, search_by_address, to_file};
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
-use std::{env, fs};
+use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use tempdir::TempDir;
 use uuid::Uuid;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
@@ -21,35 +22,31 @@ const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 macro_rules! arr {
     ($bytes: expr, $num: expr) => ({
         let mut arr = [0u8; $num];
-
-        arr.clone_from_slice($bytes);
-
+        arr.copy_from_slice($bytes);
         arr
     })
 }
 
 #[test]
-fn should_extract_scrypt_based_kdf_private_key() {
+fn should_decrypt_scrypt_based_kdf_private_key() {
     let path = keyfile_path("UTC--2017-03-17T10-52-08.\
                              229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
-    let keyfile = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
-    let pkey_val: [u8; 32] = keyfile.extract_key("1234567890").unwrap().into();
+    let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
 
-    assert!(keyfile.extract_key("_").is_err());
-    assert_eq!(pkey_val.to_hex(),
+    assert!(keyfile.decrypt_key("_").is_err());
+    assert_eq!(keyfile.decrypt_key("1234567890").unwrap().to_hex(),
                "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f");
 }
 
 #[test]
-fn should_extract_pbkdf2_based_kdf_private_key() {
+fn should_decrypt_pbkdf2_based_kdf_private_key() {
     let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
 
-    let keyfile = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
-    let pkey_val: [u8; 32] = keyfile.extract_key("1234567890").unwrap().into();
+    let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
 
-    assert!(keyfile.extract_key("_").is_err());
-    assert_eq!(pkey_val.to_hex(),
+    assert!(keyfile.decrypt_key("_").is_err());
+    assert_eq!(keyfile.decrypt_key("1234567890").unwrap().to_hex(),
                "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf");
 }
 
@@ -58,7 +55,7 @@ fn should_work_with_keyfile_with_address() {
     let path = keyfile_path("UTC--2017-03-17T10-52-08.\
                              229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
-    let exp = emerald::KeyFile {
+    let exp = KeyFile {
         uuid: Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap(),
         address: Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc"
                           .parse()
@@ -86,10 +83,10 @@ fn should_work_with_keyfile_with_address() {
     };
 
     // just first encoding
-    let key = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
+    let key = json::decode::<KeyFile>(&file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = json::decode::<emerald::KeyFile>(&json::encode(&key).unwrap()).unwrap();
+    let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
 
     assert_eq!(key, exp);
     assert_eq!(key.address, exp.address);
@@ -105,7 +102,7 @@ fn should_work_with_keyfile_with_address() {
 fn should_work_with_keyfile_without_address() {
     let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
 
-    let exp = emerald::KeyFile {
+    let exp = KeyFile {
         uuid: Uuid::from_str("37e0d14f-7269-7ca0-4419-d7b13abfeea9").unwrap(),
         address: None,
         dk_length: 32,
@@ -130,10 +127,10 @@ fn should_work_with_keyfile_without_address() {
     };
 
     // just first encoding
-    let key = json::decode::<emerald::KeyFile>(&file_content(path)).unwrap();
+    let key = json::decode::<KeyFile>(&file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = json::decode::<emerald::KeyFile>(&json::encode(&key).unwrap()).unwrap();
+    let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
 
     assert_eq!(key, exp);
     assert_eq!(key.address, exp.address);
@@ -146,44 +143,22 @@ fn should_work_with_keyfile_without_address() {
 }
 
 #[test]
-fn should_find_available_addresses() {
-    assert!(emerald::address_exists(&keystore_path(),
-                                    &"0x0047201aed0b69875b24b614dda0270bcd9f11cc"
-                                         .parse::<emerald::Address>()
-                                         .unwrap()));
-}
-
-#[test]
-fn should_ignore_unavailable_addresses() {
-    assert!(!emerald::address_exists(&keystore_path(),
-                                     &"0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
-                                          .parse::<emerald::Address>()
-                                          .unwrap()));
-}
-
-#[test]
 fn should_create_keyfile() {
     let temp_dir = temp_dir();
-    let rng = OsRng::new().unwrap();
-    let mut gen = emerald::key_generator::Generator::new(rng);
-    let sk = gen.get();
+    let pk = PrivateKey::gen();
 
-    let file = sk.to_address()
-        .and_then(|a| create_keyfile(sk, &"1234567890", Some(a)))
-        .and_then(|k| to_file(k, Some(&temp_dir)));
+    let addr = pk.to_address().unwrap();
+    let file = create_keyfile(pk, &"1234567890", Some(addr));
 
-    assert!(file.is_ok());
+    to_file(&file, Some(&temp_dir)).ok();
 
-    fs::remove_file(&temp_dir);
+    assert_eq!(file.address, Some(addr));
 }
-
-#[test]
-fn should_use_correct_filename() {}
 
 #[test]
 fn should_search_by_address() {
     let addr = "0x0047201aed0b69875b24b614dda0270bcd9f11cc"
-        .parse::<emerald::Address>()
+        .parse::<Address>()
         .unwrap();
 
     let res = search_by_address(&keystore_path(), &addr);
@@ -195,16 +170,15 @@ fn should_search_by_address() {
 }
 
 fn temp_dir() -> PathBuf {
-    let p = env::temp_dir();
-    let dir = p.join(get_timestamp());
-    fs::create_dir(&dir).unwrap();
-    dir
+    let dir = TempDir::new("emerald").unwrap();
+    File::create(dir.path()).ok();
+    dir.into_path()
 }
 
 fn file_content<P: AsRef<Path>>(path: P) -> String {
     let mut text = String::new();
 
-    fs::File::open(path)
+    File::open(path)
         .expect("Expect read file content")
         .read_to_string(&mut text)
         .ok();
@@ -214,16 +188,12 @@ fn file_content<P: AsRef<Path>>(path: P) -> String {
 
 fn keyfile_path(name: &str) -> PathBuf {
     let mut path = keystore_path();
-
     path.push(name);
-
     path
 }
 
 fn keystore_path() -> PathBuf {
     let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
-
     buf.push("tests/keystore");
-
     buf
 }

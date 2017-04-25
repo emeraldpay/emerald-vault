@@ -18,6 +18,7 @@ appveyor = { repository = "ethereumproject/emerald-rs" }
 [lib]
 name = "emerald"
 path = "src/lib.rs"
+#crate-type = ["dylib"]
 
 [[bin]]
 name = "emerald-cli"
@@ -25,8 +26,10 @@ path = "src/main.rs"
 
 [dependencies]
 futures = "0.1"
-jsonrpc-core = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
-jsonrpc-minihttp-server = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
+jsonrpc-core = { git = "https://github.com/dulanov/jsonrpc.git", branch="master" }
+jsonrpc-minihttp-server = { git = "https://github.com/dulanov/jsonrpc.git", branch="master" }
+#jsonrpc-core = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
+#jsonrpc-minihttp-server = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
 lazy_static = "0.2"
 log = "0.3"
 regex = "0.2"
@@ -35,11 +38,10 @@ serde = "0.9"
 serde_json = "0.9"
 serde_derive = "0.9"
 glob = "0.2"
-tempdir = "0.3"
-uuid = { version = "0.4", features = ["rustc-serialize", "v4"] }
+uuid = { version = "0.5", features = ["rustc-serialize", "v4"] }
 rust-crypto = "0.2"
 secp256k1 = "0.6"
-rand = "0.3.15"
+rand = "0.3"
 # optional dependencies
 docopt = { version = "0.7", optional = true }
 env_logger = { version = "0.4", optional = true }
@@ -49,6 +51,7 @@ clippy = {version = "0.0", optional = true}
 chrono = "0.3"
 
 [dev-dependencies]
+tempdir = "0.3"
 quickcheck = "0.4"
 # quickcheck_macros = "0.4"
 

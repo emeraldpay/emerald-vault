@@ -5,24 +5,7 @@
 //! endian binary form with no leading zeroes (thus making the integer value zero be equivalent to
 //! the empty byte array).
 //!
-//! See RLP spec https://github.com/ethereumproject/wiki/wiki/RLP
-
-fn bytes_count(x: usize) -> u8 {
-    match x {
-        _ if x > 0xff => 1 + bytes_count(x >> 8),
-        _ if x > 0 => 1,
-        _ => 0,
-    }
-}
-
-fn to_bytes(x: usize, b_len: u8) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::with_capacity(b_len as usize);
-    for i in 0..b_len {
-        let u = (x >> ((b_len - i - 1) * 8)) & 0xff;
-        buf.push(u as u8);
-    }
-    buf
-}
+//! See [RLP spec](https://github.com/ethereumproject/wiki/wiki/RLP)
 
 /// A list serializable to RLP
 pub struct RLPList {
@@ -74,11 +57,13 @@ impl WriteRLP for u8 {
         to_bytes(*self as usize, 1).as_slice().write_rlp(buf)
     }
 }
+
 impl WriteRLP for u16 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         to_bytes(*self as usize, 2).as_slice().write_rlp(buf)
     }
 }
+
 impl WriteRLP for u32 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         to_bytes(*self as usize, 4).as_slice().write_rlp(buf)
@@ -92,6 +77,12 @@ impl WriteRLP for u64 {
 }
 
 impl<T: WriteRLP> WriteRLP for Vec<T> {
+    fn write_rlp(&self, buf: &mut Vec<u8>) {
+        RLPList::from_slice(self).write_rlp(buf);
+    }
+}
+
+impl WriteRLP for [u8; 32] {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         RLPList::from_slice(self).write_rlp(buf);
     }
@@ -127,7 +118,6 @@ impl WriteRLP for [u8] {
     }
 }
 
-
 impl WriteRLP for RLPList {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         let len = self.tail.len();
@@ -161,10 +151,26 @@ impl<T: WriteRLP> WriteRLP for Option<T> {
     }
 }
 
+fn bytes_count(x: usize) -> u8 {
+    match x {
+        _ if x > 0xff => 1 + bytes_count(x >> 8),
+        _ if x > 0 => 1,
+        _ => 0,
+    }
+}
+
+fn to_bytes(x: usize, b_len: u8) -> Vec<u8> {
+    let mut buf: Vec<u8> = Vec::with_capacity(b_len as usize);
+    for i in 0..b_len {
+        let u = (x >> ((b_len - i - 1) * 8)) & 0xff;
+        buf.push(u as u8);
+    }
+    buf
+}
+
 #[cfg(test)]
 mod tests {
-
-    use super::{RLPList, WriteRLP, to_bytes};
+    use super::*;
 
     #[test]
     fn u8_to_bytes() {
@@ -209,12 +215,14 @@ mod tests {
             assert_eq!([0xc8, 0x83, b'c', b'a', b't', 0x83, b'd', b'o', b'g'],
                        buf.as_slice());
         }
+
         {
             let mut buf = Vec::new();
             let list: Vec<u8> = vec![];
             list.write_rlp(&mut buf);
             assert_eq!([0xc0], buf.as_slice());
         }
+
         {
             let mut buf = Vec::new();
             let mut list = RLPList::default();
@@ -250,6 +258,7 @@ mod tests {
             val.write_rlp(&mut buf);
             assert_eq!([0x0f], buf.as_slice())
         }
+
         {
             let mut buf = Vec::new();
             let val = 0x0400 as u16;
