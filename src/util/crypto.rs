@@ -1,6 +1,7 @@
 //! # Crypto util functions
 
 use crypto::sha3::{Sha3, Sha3Mode};
+use crypto::digest::Digest;
 
 /// Keccak-256 crypto hash length in bytes
 pub const KECCAK256_BYTES: usize = 32;

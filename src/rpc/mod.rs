@@ -4,9 +4,9 @@ mod http;
 mod serialize;
 mod error;
 
+use super::core::{Address, PrivateKey, Transaction};
 use super::storage::{Storages, ChainStorage};
 use super::Contracts;
-use super::core::Transaction;
 use jsonrpc_core::{Error, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
@@ -82,7 +82,7 @@ pub struct MethodParams<'a>(pub Method, pub &'a Params);
 pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<PathBuf>) {
     let mut io = MetaIoHandler::default();
 
-    let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));
+    let url = Arc::new(http::AsyncWrapper::new(&format!("http://{}", client_addr)));
 
     {
         let url = url.clone();

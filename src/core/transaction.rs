@@ -1,7 +1,7 @@
 //! # Account transaction
 
 use super::{Address, Error, PrivateKey};
-use super::util::{RLPList, keccak256, KECCAK256_BYTES};
+use super::util::{RLPList, WriteRLP, keccak256, KECCAK256_BYTES};
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -33,11 +33,12 @@ impl<'a> Transaction<'a> {
     pub fn to_raw(&self, pk: &PrivateKey) -> Result<Vec<u8>, Error> {
         let mut rlp = self.to_rlp();
 
-        let s = pk.sign_hash(&self.hash()).and_then(Signature::from)?;
+        let val = pk.sign_hash(self.hash())?;
+        let sig = Signature::from(val);
 
-        rlp.push(&s.r);
-        rlp.push(&s.s);
-        rlp.push(&s.v);
+        rlp.push(&sig.r);
+        rlp.push(&sig.s);
+        rlp.push(&sig.v);
 
         let mut vec = Vec::new();
         rlp.write_rlp(&mut vec);

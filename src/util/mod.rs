@@ -4,7 +4,7 @@ mod crypto;
 mod rlp;
 
 pub use self::crypto::{KECCAK256_BYTES, keccak256};
-pub use self::rlp::RLPList;
+pub use self::rlp::{RLPList, WriteRLP};
 
 /// Convert a slice into array
 pub fn to_arr<A, T>(slice: &[T]) -> A

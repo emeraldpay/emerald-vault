@@ -25,7 +25,7 @@ impl From<hex::FromHexError> for Error {
 
 impl From<secp256k1::Error> for Error {
     fn from(err: secp256k1::Error) -> Self {
-        Error::Crypto(err)
+        Error::EcdsaCrypto(err)
     }
 }
 

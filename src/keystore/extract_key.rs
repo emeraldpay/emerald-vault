@@ -63,11 +63,11 @@ fn derive_key(len: usize, kdf: Kdf, kdf_salt: &[u8], passphrase: &str) -> Vec<u8
 
 fn encrypt_text(_cipher: Cipher, text: &[u8], key: &[u8], iv: &[u8]) -> [u8; 32] {
     let mut key = [0u8; PRIVATE_KEY_BYTES];
-    let mut ctr = ctr(KeySize::KeySize128, key, iv);
+    let mut ctr = ctr(KeySize::KeySize128, &key, iv);
 
     ctr.process(text, &mut key);
 
-    PrivateKey::from_slice(&key)
+    PrivateKey::from(key)
 }
 
 fn calculate_mac(key: &[u8], data: &[u8]) -> [u8; KECCAK256_BYTES] {
@@ -87,7 +87,7 @@ fn decrypt_key(_cipher: Cipher, text: &[u8], key: &[u8], iv: &[u8]) -> PrivateKe
 
     ctr.process(text, &mut pkey);
 
-    PrivateKey::from_slice(&pkey)
+    PrivateKey::from(pkey)
 }
 
 /// Test Vectors from https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition

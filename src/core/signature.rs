@@ -7,6 +7,7 @@ use rand::{OsRng, Rng};
 use secp256k1::{Secp256k1, ContextFlag, Message};
 use secp256k1::key::{PublicKey, SecretKey};
 use std::{fmt, str, ops};
+use rustc_serialize::hex::{FromHex, ToHex};
 
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;
@@ -58,9 +59,9 @@ impl PrivateKey {
 
     /// Extract `Address` from current private key.
     pub fn to_address(&self) -> Result<Address, Error> {
-        let key = PublicKey::from_secret_key(&ECDSA, SecretKey::from(self))?;
+        let key = PublicKey::from_secret_key(&ECDSA, &SecretKey::from(*self))?;
         let hash = keccak256(&key.serialize_vec(&ECDSA, false)[1..] /* cut '04' */);
-        Address(to_arr(&hash[12..]))
+        Ok(Address(to_arr(&hash[12..])))
     }
 
     /// Sign hashed message encoded with bytes
@@ -71,7 +72,7 @@ impl PrivateKey {
     /// Sign hash from message (Keccak-256)
     pub fn sign_hash(&self, hash: [u8; KECCAK256_BYTES]) -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
         let msg = Message::from_slice(&hash)?;
-        let key = SecretKey::from_slice(&ECDSA, SecretKey::from(self))?;
+        let key = SecretKey::from_slice(&ECDSA, &self)?;
         let sign = ECDSA.sign_schnorr(&msg, &key)?;
 
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
@@ -111,12 +112,13 @@ impl str::FromStr for PrivateKey {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with("0x") {
-            return Err(Error::UnexpectedPrefix(s.to_string()));
+            return Err(Error::UnexpectedHexPrefix(s.to_string()));
         }
 
         let (_, s) = s.split_at(2);
+        let val = s.from_hex()?;
 
-        s.from_hex().and_then(|v| PrivateKey::try_from(&v))
+        PrivateKey::try_from(&val)
     }
 }
 
