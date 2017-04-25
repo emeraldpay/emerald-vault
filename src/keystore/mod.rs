@@ -8,7 +8,6 @@ mod cipher;
 mod kdf;
 mod prf;
 mod serialize;
-mod extract_key;
 
 pub use self::cipher::Cipher;
 pub use self::error::Error;
@@ -16,7 +15,7 @@ pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;
 use super::core::{self, Address, PRIVATE_KEY_BYTES, PrivateKey};
-use super::util::{self, KECCAK256_BYTES};
+use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
 use chrono::prelude::*;
 use rand::{OsRng, Rng};
 use rustc_serialize::json;
@@ -220,7 +219,7 @@ pub fn create_keyfile(pk: PrivateKey,
     kf.kdf_salt = salt;
     kf.cipher_iv = iv;
 
-    kf.insert_key(&pk, passphrase);
+    kf.encrypt_key(&pk, passphrase);
 
     Ok(kf)
 }

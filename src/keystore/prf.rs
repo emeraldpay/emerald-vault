@@ -16,7 +16,7 @@ pub enum Prf {
     HmacSha256,
 }
 
-impl Kdf {
+impl Prf {
     /// Calculate hashed message authentication code using SHA-256 digest
     pub fn hmac(&self, passphrase: &str) -> Hmac<Sha256> {
         Hmac::new(Sha256::new(), passphrase.as_bytes())

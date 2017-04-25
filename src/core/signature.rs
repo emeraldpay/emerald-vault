@@ -21,7 +21,7 @@ lazy_static! {
 
 /// Private key used as x in an ECDSA signature
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct PrivateKey([u8; PRIVATE_KEY_BYTES]);
+pub struct PrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
 
 impl PrivateKey {
     /// Generate a new `PrivateKey` at random (`rand::OsRng`).

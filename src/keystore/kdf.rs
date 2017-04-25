@@ -2,6 +2,7 @@
 
 use super::Error;
 use super::prf::Prf;
+use super::kdf;
 use crypto::pbkdf2::pbkdf2;
 use crypto::scrypt::{ScryptParams, scrypt};
 use std::fmt;
@@ -43,7 +44,7 @@ impl Kdf {
     pub fn derive(&self, len: usize, kdf_salt: &[u8], passphrase: &str) -> Vec<u8> {
         let mut key = vec![0u8; len];
 
-        match kdf {
+        match *self {
             Kdf::Pbkdf2 { prf, c } => {
                 let mut hmac = prf.hmac(passphrase);
                 pbkdf2(&mut hmac, kdf_salt, c, &mut key);
@@ -136,7 +137,7 @@ pub mod tests {
             .from_hex()
             .unwrap();
 
-        assert_eq!(Kdf::from((1024, 8, 1).derive(32, &kdf_salt, "1234567890").to_hex(),
+        assert_eq!(Kdf::from((1024, 8, 1).derive(32, &kdf_salt, "1234567890").to_hex()),
                    "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273");
     }
 }

@@ -140,10 +140,9 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             if let MethodMetadata::Passphrase(ref _passphrase) = m {
                 match Transaction::try_from(&p) {
                     Ok(tr) => {
-                        let params = Params::Array(tr.to_raw(&Default::default())?);
                         url.request(&MethodParams(
                             Method::EthSendRawTransaction,
-                            &params))
+                            &Params::Array(tr.to_raw(&Default::default())?)))
                     }
                     Err(err) => futures::done(Err(Error::invalid_params(err.to_string()))).boxed(),
                 }
