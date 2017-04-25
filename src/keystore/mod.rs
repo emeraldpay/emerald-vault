@@ -251,7 +251,6 @@ pub fn to_file(kf: &KeyFile, dir: Option<&Path>) -> Result<File, Error> {
     let mut file = File::create(&path).expect("Expect to create file for KeyFile");
     let data = json::encode(&kf).expect("Expect to encode KeyFile");
     file.write_all(data.as_ref()).ok();
-
     Ok(file)
 }
 
@@ -259,10 +258,8 @@ pub fn to_file(kf: &KeyFile, dir: Option<&Path>) -> Result<File, Error> {
 pub fn get_timestamp() -> String {
     let mut stamp = UTC::now().to_rfc3339();
     stamp.push_str("Z");
-
     stamp
 }
-
 
 #[cfg(test)]
 mod tests {

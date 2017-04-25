@@ -29,7 +29,7 @@ impl PrivateKey {
     /// # Example
     ///
     /// ```
-    /// assert_eq!(emerald::PrivateKey::gen(), emerald::PrivateKey::gen());
+    /// assert_ne!(emerald::PrivateKey::gen(), emerald::PrivateKey::gen());
     /// ```
     pub fn gen() -> Self {
         let mut rng = OsRng::new().expect("Expect OS specific random number generator");

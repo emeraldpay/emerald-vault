@@ -1,4 +1,5 @@
-# (config.rs)[https://github.com/rust-lang-nursery/rustfmt/blob/master/src/config.rs]
+# [config.rs](https://github.com/rust-lang-nursery/rustfmt/blob/master/src/config.rs)
+# [rustfmt-configs-guide](https://github.com/regexident/rustfmt-configs-guide)
 format_strings = true
 newline_style = "Unix"
 reorder_imports = true
