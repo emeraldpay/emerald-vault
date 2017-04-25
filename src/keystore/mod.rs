@@ -81,7 +81,7 @@ impl KeyFile {
         let derived = self.kdf
             .derive(self.dk_length, &self.kdf_salt, passphrase);
 
-        let mut v = vec![0u8; 32];
+        let mut v = vec![];
         v.extend_from_slice(&derived[16..32]);
         v.extend_from_slice(&self.cipher_text);
 
@@ -102,7 +102,7 @@ impl KeyFile {
 
         self.cipher_text = self.cipher.encrypt(pk, &derived[0..16], &self.cipher_iv);
 
-        let mut v = vec![0u8; 32];
+        let mut v = vec![];
         v.extend_from_slice(&derived[16..32]);
         v.extend_from_slice(&self.cipher_text);
 
@@ -268,7 +268,6 @@ pub fn get_timestamp() -> String {
 mod tests {
     use super::*;
     use rustc_serialize::hex::{FromHex, ToHex};
-    use std::convert::AsMut;
 
     #[test]
     fn should_eq_regardless_of_address() {

@@ -53,7 +53,6 @@ macro_rules! byte_array_struct {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rustc_serialize::hex::{FromHex, ToHex};
     use rustc_serialize::json;
 

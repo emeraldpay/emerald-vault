@@ -5,7 +5,7 @@ mod serialize;
 mod error;
 
 pub use self::error::Error;
-use super::contracts::Contracts;
+use super::contract::Contracts;
 use super::core::{self, Transaction};
 use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages};

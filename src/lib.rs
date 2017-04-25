@@ -30,9 +30,12 @@ extern crate rustc_serialize;
 extern crate secp256k1;
 extern crate uuid;
 
-pub mod core;
+mod core;
 pub mod keystore;
-pub mod contracts;
+pub mod contract;
 pub mod storage;
 pub mod rpc;
-pub mod util;
+mod util;
+
+pub use self::core::*;
+pub use self::util::*;

@@ -5,7 +5,7 @@ extern crate serde_json;
 extern crate tempdir;
 
 use self::serde_json::Value;
-use emerald::{ContractError, Contracts};
+use emerald::contract::{ContractError, Contracts};
 use std::path::PathBuf;
 use tempdir::TempDir;
 
