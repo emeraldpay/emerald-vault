@@ -7,11 +7,11 @@ mod error;
 use super::core::{Address, PrivateKey, Transaction};
 use super::storage::{Storages, ChainStorage};
 use super::Contracts;
-use jsonrpc_core::{Error, ErrorCode, MetaIoHandler, Metadata, Params};
+use jsonrpc_core::{Error, ErrorCode, MetaIoHandler, Metadata, Params, Value};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
 use log::LogLevel;
-use serde_json::Value;
+//use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -140,9 +140,10 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             if let MethodMetadata::Passphrase(ref _passphrase) = m {
                 match Transaction::try_from(&p) {
                     Ok(tr) => {
+                        let value = tr.to_raw(&Default::default())?;
                         url.request(&MethodParams(
                             Method::EthSendRawTransaction,
-                            &Params::Array(tr.to_raw(&Default::default())?)))
+                            &Params::Array(&value)))
                     }
                     Err(err) => futures::done(Err(Error::invalid_params(err.to_string()))).boxed(),
                 }
