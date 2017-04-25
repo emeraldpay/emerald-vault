@@ -70,7 +70,7 @@ impl From<SerializableKeyFile> for KeyFile {
 
 #[cfg(test)]
 mod tests {
-    pub use super::*;
+    use super::*;
     use rustc_serialize::json;
 
     #[test]

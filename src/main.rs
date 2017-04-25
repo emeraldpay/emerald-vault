@@ -82,5 +82,5 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
-    emerald::start(&addr, &client_addr, base_path);
+    emerald::rpc::start(&addr, &client_addr, base_path);
 }

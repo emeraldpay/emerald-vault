@@ -5,7 +5,7 @@ mod serialize;
 mod error;
 
 pub use self::error::Error;
-use super::Contracts;
+use super::contracts::Contracts;
 use super::core::{self, Transaction};
 use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages};
@@ -35,9 +35,6 @@ pub enum Method {
     /// [eth_getTransactionCount](
     /// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactioncount)
     EthGetTxCount,
-    /// [eth_sendTransaction](
-    /// https://github.com/paritytech/parity/wiki/JSONRPC-eth-module#eth_sendtransaction)
-    EthSendTransaction,
     /// [eth_sendRawTransaction](
     /// https://github.com/paritytech/parity/wiki/JSONRPC-eth-module#eth_sendrawtransaction)
     EthSendRawTransaction,
@@ -48,9 +45,6 @@ pub enum Method {
     /// [eth_getTransactionByHash](
     /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash)
     GetTxByHash,
-    /// [eth_getTransactionReceipt](
-    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionreceipt)
-    GetTxReceipt,
 }
 
 /// RPC method's request metadata
@@ -239,9 +233,4 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
     }
 
     server.wait().expect("Expect to start HTTP RPC server");
-}
-
-#[cfg(test)]
-mod tests {
-    pub use super::*;
 }

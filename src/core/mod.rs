@@ -10,8 +10,3 @@ pub use self::error::Error;
 pub use self::signature::{ECDSA_SIGNATURE_BYTES, PRIVATE_KEY_BYTES, PrivateKey};
 pub use self::transaction::{Signature, Transaction};
 use super::util;
-
-#[cfg(test)]
-mod tests {
-    pub use super::*;
-}

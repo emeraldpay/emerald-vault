@@ -30,21 +30,9 @@ extern crate rustc_serialize;
 extern crate secp256k1;
 extern crate uuid;
 
-mod core;
-mod keystore;
-mod contracts;
-mod storage;
-mod rpc;
-mod util;
-
-pub use self::contracts::{ContractError, Contracts};
-pub use self::core::{Address, PrivateKey};
-pub use self::keystore::{KeyFile, create_keyfile, get_timestamp, to_file};
-pub use self::rpc::start;
-
-#[cfg(test)]
-mod tests {
-    pub use super::*;
-    pub use super::util::*;
-    pub use super::util::tests::*;
-}
+pub mod core;
+pub mod keystore;
+pub mod contracts;
+pub mod storage;
+pub mod rpc;
+pub mod util;

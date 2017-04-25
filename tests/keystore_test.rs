@@ -4,7 +4,7 @@ extern crate rustc_serialize;
 extern crate uuid;
 extern crate rand;
 
-use emerald::{KeyFile, create_keyfile, get_timestamp, to_file};
+use emerald::*;
 use rand::OsRng;
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;

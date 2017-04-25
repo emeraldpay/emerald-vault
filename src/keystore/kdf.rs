@@ -137,7 +137,9 @@ pub mod tests {
             .from_hex()
             .unwrap();
 
-        assert_eq!(Kdf::from((1024, 8, 1).derive(32, &kdf_salt, "1234567890").to_hex()),
+        assert_eq!(Kdf::from((1024, 8, 1))
+                       .derive(32, &kdf_salt, "1234567890")
+                       .to_hex(),
                    "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273");
     }
 }

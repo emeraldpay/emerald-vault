@@ -60,12 +60,10 @@ impl<'a> Serialize for MethodParams<'a> {
             Method::EthAccounts => serialize("eth_accounts", self.1, s),
             Method::EthGetBalance => serialize("eth_getBalance", self.1, s),
             Method::EthGetTxCount => serialize("eth_getTransactionCount", self.1, s),
-            Method::EthSendTransaction => serialize("eth_sendTransaction", self.1, s),
             Method::EthSendRawTransaction => serialize("eth_sendRawTransaction", self.1, s),
             Method::EthCall => serialize("eth_call", self.1, s),
             Method::TraceCall => serialize("trace_call", self.1, s),
             Method::GetTxByHash => serialize("eth_getTransactionByHash", self.1, s),
-            Method::GetTxReceipt => serialize("eth_getTransactionReceipt", self.1, s),
         }
     }
 }

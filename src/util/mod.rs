@@ -18,13 +18,19 @@ pub fn to_arr<A, T>(slice: &[T]) -> A
 
 #[cfg(test)]
 mod tests {
-    pub use super::*;
+    use super::*;
     use rustc_serialize::hex::FromHex;
 
-    /// Convert a string encoded string into array
-    pub fn as_bytes(hex: &str) -> A
-        where A: Box<[u8]>
-    {
-        to_arr(hex.from_hex().unwrap())
+    macro_rules! bytes {
+        ($hex: expr) => ({
+            to_arr(&$hex.from_hex().unwrap())
+        })
+    }
+
+    #[test]
+    fn should_get_bytes_from_string() {
+        let arr: [u8; 8] = bytes!("0102030405060708");
+
+        assert_eq!(arr, [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]);
     }
 }

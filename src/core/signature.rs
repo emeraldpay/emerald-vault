@@ -133,13 +133,20 @@ impl fmt::Display for PrivateKey {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use util::*;
+
+    macro_rules! bytes {
+        ($hex: expr) => ({
+            to_arr(&$hex.from_hex().unwrap())
+        })
+    }
 
     #[test]
     fn should_sign_hash() {
-        let key = PrivateKey::from(
-            as_bytes("dcb2652ce3f3e46a57fd4814f926daefd6082c5cda44d35a6fd0f6da67ca256e"));
+        let key =
+            PrivateKey(bytes!("dcb2652ce3f3e46a57fd4814f926daefd6082c5cda44d35a6fd0f6da67ca256e"));
 
         assert!(key.sign_hash(
-            &as_bytes("1f483adb4a0f8c53d0ff8b6df23bbeae846815e7a52bac234edeaeb082b8d51a")).is_ok());
+            bytes!("1f483adb4a0f8c53d0ff8b6df23bbeae846815e7a52bac234edeaeb082b8d51a")).is_ok());
     }
 }
