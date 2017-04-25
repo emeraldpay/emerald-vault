@@ -38,7 +38,6 @@ serde = "0.9"
 serde_json = "0.9"
 serde_derive = "0.9"
 glob = "0.2"
-tempdir = "0.3"
 uuid = { version = "0.5", features = ["rustc-serialize", "v4"] }
 rust-crypto = "0.2"
 secp256k1 = "0.6"
@@ -52,6 +51,7 @@ clippy = {version = "0.0", optional = true}
 chrono = "0.3"
 
 [dev-dependencies]
+tempdir = "0.3"
 quickcheck = "0.4"
 # quickcheck_macros = "0.4"
 

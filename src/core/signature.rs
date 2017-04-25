@@ -25,12 +25,6 @@ pub struct PrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
 
 impl PrivateKey {
     /// Generate a new `PrivateKey` at random (`rand::OsRng`).
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// assert_ne!(emerald::PrivateKey::gen(), emerald::PrivateKey::gen());
-    /// ```
     pub fn gen() -> Self {
         let mut rng = OsRng::new().expect("Expect OS specific random number generator");
         PrivateKey::from(SecretKey::new(&ECDSA, &mut rng))
@@ -45,8 +39,8 @@ impl PrivateKey {
     /// # Example
     ///
     /// ```
-    /// let pkey = emerald::PrivateKey::try_from(&vec![0u8; emerald::PRIVATE_KEY_BYTES]).unwrap();
-    /// assert_eq!(pkey.to_string(),
+    /// let pk = emerald::PrivateKey::try_from(&vec![0u8; emerald::PRIVATE_KEY_BYTES]).unwrap();
+    /// assert_eq!(pk.to_string(),
     ///            "0x0000000000000000000000000000000000000000000000000000000000000000");
     /// ```
     pub fn try_from(data: &[u8]) -> Result<Self, Error> {

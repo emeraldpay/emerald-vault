@@ -1,18 +1,20 @@
 extern crate emerald;
 
-extern crate rustc_serialize;
-extern crate uuid;
 extern crate rand;
+extern crate rustc_serialize;
+extern crate tempdir;
+extern crate uuid;
 
 use emerald::{Address, KECCAK256_BYTES, PrivateKey};
 use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile, Prf,
-                        create_keyfile, get_timestamp, search_by_address, to_file};
+                        create_keyfile, search_by_address, to_file};
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
-use std::{env, fs};
+use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use tempdir::TempDir;
 use uuid::Uuid;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
@@ -146,12 +148,11 @@ fn should_create_keyfile() {
     let pk = PrivateKey::gen();
 
     let addr = pk.to_address().unwrap();
-    let file =
-        create_keyfile(pk, &"1234567890", Some(addr)).and_then(|kf| to_file(&kf, Some(&temp_dir)));
+    let file = create_keyfile(pk, &"1234567890", Some(addr));
 
-    assert!(file.is_ok());
+    to_file(&file, Some(&temp_dir)).ok();
 
-    fs::remove_file(&temp_dir).ok();
+    assert_eq!(file.address, Some(addr));
 }
 
 #[test]
@@ -169,15 +170,15 @@ fn should_search_by_address() {
 }
 
 fn temp_dir() -> PathBuf {
-    let dir = env::temp_dir().join(get_timestamp());
-    fs::create_dir(&dir).unwrap();
-    dir
+    let dir = TempDir::new("emerald").unwrap();
+    File::create(dir.path()).ok();
+    dir.into_path()
 }
 
 fn file_content<P: AsRef<Path>>(path: P) -> String {
     let mut text = String::new();
 
-    fs::File::open(path)
+    File::open(path)
         .expect("Expect read file content")
         .read_to_string(&mut text)
         .ok();

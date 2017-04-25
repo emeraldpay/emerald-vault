@@ -203,10 +203,7 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
 /// * `passphrase` - password for encryption of private core
 /// * `addr` - optional address to be included in `KeyFile`
 ///
-pub fn create_keyfile(pk: PrivateKey,
-                      passphrase: &str,
-                      addr: Option<Address>)
-                      -> Result<KeyFile, Error> {
+pub fn create_keyfile(pk: PrivateKey, passphrase: &str, addr: Option<Address>) -> KeyFile {
     let mut kf = KeyFile::default();
 
     match addr {
@@ -225,8 +222,7 @@ pub fn create_keyfile(pk: PrivateKey,
     kf.cipher_iv = iv;
 
     kf.encrypt_key(&pk, passphrase);
-
-    Ok(kf)
+    kf
 }
 
 /// Serializes KeyFile into JSON file with name `UTC-<timestamp>Z--<uuid>`
