@@ -4,18 +4,20 @@ mod http;
 mod serialize;
 mod error;
 
-use super::core::{Address, PrivateKey, Transaction};
-use super::storage::{Storages, ChainStorage};
+pub use self::error::Error;
 use super::Contracts;
-use jsonrpc_core::{Error, ErrorCode, MetaIoHandler, Metadata, Params, Value};
+use super::core::{self, Transaction};
+use super::keystore::KeyFile;
+use super::storage::{ChainStorage, Storages};
+use futures;
+use jsonrpc_core::{Error as XError, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
 use log::LogLevel;
-//use serde_json::Value;
+use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
-use futures;
 
 /// RPC methods
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -137,18 +139,23 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
         let url = url.clone();
 
         io.add_method_with_meta("eth_sendTransaction", move |p, m| {
-            if let MethodMetadata::Passphrase(ref _passphrase) = m {
+            if let MethodMetadata::Passphrase(ref passphrase) = m {
+                let pk = KeyFile::default().decrypt_key(passphrase);
+
+                if let Err(err) = pk {
+                    return futures::done(Err(XError::invalid_params(err.to_string()))).boxed();
+                }
+
                 match Transaction::try_from(&p) {
                     Ok(tr) => {
-                        let value = tr.to_raw(&Default::default())?;
                         url.request(&MethodParams(
                             Method::EthSendRawTransaction,
-                            &Params::Array(&value)))
+                            &tr.to_raw_params(&pk.unwrap())))
                     }
-                    Err(err) => futures::done(Err(Error::invalid_params(err.to_string()))).boxed(),
+                    Err(err) => futures::done(Err(XError::invalid_params(err.to_string()))).boxed(),
                 }
             } else {
-                futures::failed(Error::invalid_request()).boxed()
+                futures::failed(XError::invalid_request()).boxed()
             }
         });
     }
@@ -209,10 +216,10 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             Params::Array(ref vec) => {
                 match contracts.add(&vec[0]) {
                     Ok(_) => futures::finished(Value::Bool(true)).boxed(),
-                    Err(_) => futures::failed(Error::new(ErrorCode::InternalError)).boxed(),
+                    Err(_) => futures::failed(XError::new(ErrorCode::InternalError)).boxed(),
                 }
             }
-            _ => futures::failed(Error::new(ErrorCode::InvalidParams)).boxed(),
+            _ => futures::failed(XError::new(ErrorCode::InvalidParams)).boxed(),
         });
     }
 
@@ -237,5 +244,4 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 #[cfg(test)]
 mod tests {
     pub use super::*;
-    pub use super::tests::*;
 }

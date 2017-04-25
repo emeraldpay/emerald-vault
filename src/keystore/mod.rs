@@ -14,12 +14,12 @@ pub use self::error::Error;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;
-use super::core::{self, Address, PRIVATE_KEY_BYTES, PrivateKey};
-use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
+use super::core::{self, Address, PrivateKey};
+use super::util::{KECCAK256_BYTES, keccak256, to_arr};
 use chrono::prelude::*;
 use rand::{OsRng, Rng};
 use rustc_serialize::json;
-use std::{cmp, fmt, fs, result};
+use std::{cmp, fmt, fs};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -78,7 +78,8 @@ impl KeyFile {
 
     /// Decrypt private key from keystore file by a passphrase
     pub fn decrypt_key(&self, passphrase: &str) -> Result<PrivateKey, Error> {
-        let derived = self.kdf.derive(self.dk_length, &self.kdf_salt, passphrase);
+        let derived = self.kdf
+            .derive(self.dk_length, &self.kdf_salt, passphrase);
 
         let mut v = vec![0u8; 32];
         v.extend_from_slice(&derived[16..32]);
@@ -88,13 +89,16 @@ impl KeyFile {
             return Err(Error::FailedMacValidation);
         }
 
-        Ok(PrivateKey(
-            to_arr(&self.cipher.process(&self.cipher_text, &derived[0..16], &self.cipher_iv))))
+        Ok(PrivateKey(to_arr(&self.cipher
+                                  .process(&self.cipher_text,
+                                           &derived[0..16],
+                                           &self.cipher_iv))))
     }
 
     /// Encrypt a new private key for keystore file with a passphrase
     pub fn encrypt_key(&mut self, pk: &[u8], passphrase: &str) {
-        let derived = self.kdf.derive(self.dk_length, &self.kdf_salt, passphrase);
+        let derived = self.kdf
+            .derive(self.dk_length, &self.kdf_salt, passphrase);
 
         self.cipher_text = self.cipher.process(pk, &derived[0..16], &self.cipher_iv);
 
@@ -190,6 +194,7 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
 
     None
 }
+
 /// Creates a new `KeyFile` with a specified `Address`
 ///
 /// # Arguments
@@ -231,13 +236,10 @@ pub fn create_keyfile(pk: PrivateKey,
 /// * `kf` - `KeyFile`
 /// * `dir` - path to destination directory
 ///
-pub fn to_file(kf: KeyFile, dir: Option<&Path>) -> Result<File, Error> {
-    let mut name: String = "UTC-".to_string();
-    name.push_str(&get_timestamp());
-    name.push_str("--");
-    name.push_str(&Uuid::new_v4().to_string());
+pub fn to_file(kf: &KeyFile, dir: Option<&Path>) -> Result<File, Error> {
+    let name = format!("UTC-{}--{}", &get_timestamp(), &Uuid::new_v4());
 
-    let mut p: PathBuf = PathBuf::new();
+    let mut p = PathBuf::new();
     let path = match dir {
         Some(dir) => {
             p = PathBuf::from(dir).with_file_name(name);
@@ -248,7 +250,7 @@ pub fn to_file(kf: KeyFile, dir: Option<&Path>) -> Result<File, Error> {
 
     let mut file = File::create(&path).expect("Expect to create file for KeyFile");
     let data = json::encode(&kf).expect("Expect to encode KeyFile");
-    file.write_all(data.as_ref());
+    file.write_all(data.as_ref()).ok();
 
     Ok(file)
 }
@@ -265,7 +267,6 @@ pub fn get_timestamp() -> String {
 #[cfg(test)]
 mod tests {
     pub use super::*;
-    pub use super::tests::*;
     use rustc_serialize::hex::{FromHex, ToHex};
     use std::convert::AsMut;
 
@@ -289,7 +290,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(derive_key(32, Kdf::from(262144), &kdf_salt, "testpassword").to_hex(),
-        "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551");
+                   "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551");
     }
 
     #[test]
@@ -299,7 +300,7 @@ mod tests {
             .unwrap();
 
         assert_eq!(derive_key(32, Kdf::from((1024, 8, 1)), &kdf_salt, "1234567890").to_hex(),
-        "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273");
+                   "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273");
     }
 
     #[test]
@@ -313,7 +314,7 @@ mod tests {
         let pkey_val: [u8; 32] = decrypt_key(Cipher::Aes256Ctr, &text, &key, &iv).into();
 
         assert_eq!(pkey_val.to_hex(),
-        "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d");
+                   "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d");
     }
 
     #[test]
@@ -331,20 +332,21 @@ mod tests {
         };
         kf.cipher_iv = to_arr(&"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap());
         kf.kdf_salt = to_arr(&"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
-            .from_hex()
-            .unwrap());
+                                  .from_hex()
+                                  .unwrap());
 
         let res = kf.insert_key(&key, &password);
         assert!(res.is_ok());
 
         assert_eq!(kf.cipher_text,
-        "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
-            .from_hex()
-            .unwrap());
+                   "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
+                       .from_hex()
+                       .unwrap());
 
-        let mac: [u8; 32] = to_arr(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
-            .from_hex()
-            .unwrap());
+        let mac: [u8; 32] =
+            to_arr(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
+                        .from_hex()
+                        .unwrap());
         assert_eq!(kf.keccak256_mac, mac);
     }
 }

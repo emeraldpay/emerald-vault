@@ -2,7 +2,6 @@
 
 use super::Error;
 use super::prf::Prf;
-use super::kdf;
 use crypto::pbkdf2::pbkdf2;
 use crypto::scrypt::{ScryptParams, scrypt};
 use std::fmt;
@@ -118,7 +117,6 @@ impl fmt::Display for Kdf {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use super::tests::*;
     use rustc_serialize::hex::{FromHex, ToHex};
 
     #[test]
@@ -127,7 +125,9 @@ pub mod tests {
             .from_hex()
             .unwrap();
 
-        assert_eq!(Kdf::from(262144).derive(32, &kdf_salt, "testpassword").to_hex(),
+        assert_eq!(Kdf::from(262144)
+                       .derive(32, &kdf_salt, "testpassword")
+                       .to_hex(),
                    "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551");
     }
 

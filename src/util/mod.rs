@@ -19,7 +19,6 @@ pub fn to_arr<A, T>(slice: &[T]) -> A
 #[cfg(test)]
 mod tests {
     pub use super::*;
-    pub use super::tests::*;
     use rustc_serialize::hex::FromHex;
 
     /// Convert a string encoded string into array

@@ -14,5 +14,4 @@ use super::util;
 #[cfg(test)]
 mod tests {
     pub use super::*;
-    pub use super::tests::*;
 }

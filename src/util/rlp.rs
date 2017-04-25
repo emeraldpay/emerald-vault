@@ -171,7 +171,6 @@ fn to_bytes(x: usize, b_len: u8) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::tests::*;
 
     #[test]
     fn u8_to_bytes() {

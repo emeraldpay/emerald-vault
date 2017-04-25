@@ -1,13 +1,13 @@
 //! # Account ECDSA signatures using the SECG curve secp256k1
 
 use super::Address;
-use super::util::{to_arr, keccak256, KECCAK256_BYTES};
 use super::Error;
-use rand::{OsRng, Rng};
-use secp256k1::{Secp256k1, ContextFlag, Message};
-use secp256k1::key::{PublicKey, SecretKey};
-use std::{fmt, str, ops};
+use super::util::{KECCAK256_BYTES, keccak256, to_arr};
+use rand::OsRng;
 use rustc_serialize::hex::{FromHex, ToHex};
+use secp256k1::{ContextFlag, Message, Secp256k1};
+use secp256k1::key::{PublicKey, SecretKey};
+use std::{fmt, ops, str};
 
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;
@@ -70,7 +70,9 @@ impl PrivateKey {
     }
 
     /// Sign hash from message (Keccak-256)
-    pub fn sign_hash(&self, hash: [u8; KECCAK256_BYTES]) -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
+    pub fn sign_hash(&self,
+                     hash: [u8; KECCAK256_BYTES])
+                     -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
         let msg = Message::from_slice(&hash)?;
         let key = SecretKey::from_slice(&ECDSA, &self)?;
         let sign = ECDSA.sign_schnorr(&msg, &key)?;
@@ -131,7 +133,6 @@ impl fmt::Display for PrivateKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::tests::*;
 
     #[test]
     fn should_sign_hash() {

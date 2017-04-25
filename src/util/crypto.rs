@@ -1,7 +1,7 @@
 //! # Crypto util functions
 
-use crypto::sha3::{Sha3, Sha3Mode};
 use crypto::digest::Digest;
+use crypto::sha3::{Sha3, Sha3Mode};
 
 /// Keccak-256 crypto hash length in bytes
 pub const KECCAK256_BYTES: usize = 32;
@@ -19,11 +19,10 @@ pub fn keccak256(data: &[u8]) -> [u8; KECCAK256_BYTES] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::tests::*;
 
     #[test]
     fn should_calculate_keccak256() {
         assert_eq!(keccak256(b"hello world!"),
-               &as_bytes("57caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd6"));
+                   &as_bytes("57caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd6"));
     }
 }

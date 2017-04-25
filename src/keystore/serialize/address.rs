@@ -34,7 +34,6 @@ pub fn try_extract_address(text: &str) -> Option<Address> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::tests::*;
     use rustc_serialize::json;
 
     #[test]

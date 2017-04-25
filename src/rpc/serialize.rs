@@ -1,12 +1,10 @@
 //! # Serialize JSON RPC parameters
 
 use super::{Error, Method, MethodParams};
-use super::{Address, PrivateKey, Transaction};
-use jsonrpc_core::Params;
+use super::core::{Address, PrivateKey, Transaction};
+use jsonrpc_core::{Params, Value};
 use rustc_serialize::hex::ToHex;
 use serde::ser::{Serialize, Serializer};
-use serde_json::Value;
-use std::{error, fmt};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -40,6 +38,14 @@ impl<'a> Transaction<'a> {
                value: [0u8; 32],
                data: EMPTY_DATA,
            })
+    }
+
+    /// Sign transaction and return as raw data
+    pub fn to_raw_params(&self, pk: &PrivateKey) -> Params {
+        self.to_raw(pk)
+            .map(|v| format!("0x{}", v.to_hex()))
+            .map(|s| Params::Array(vec![Value::String(s)]))
+            .expect("Expect to sign a transaction")
     }
 }
 
@@ -84,7 +90,6 @@ fn to_json_data<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::tests::*;
     use jsonrpc_core::Params;
 
     #[test]

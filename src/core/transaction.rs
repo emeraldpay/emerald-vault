@@ -1,7 +1,7 @@
 //! # Account transaction
 
 use super::{Address, Error, PrivateKey};
-use super::util::{RLPList, WriteRLP, keccak256, KECCAK256_BYTES};
+use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256};
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -99,7 +99,6 @@ impl From<Signature> for (u8, [u8; 32], [u8; 32]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::tests::*;
 
     #[test]
     fn should_sign_transaction() {

@@ -39,7 +39,7 @@ mod util;
 
 pub use self::contracts::{ContractError, Contracts};
 pub use self::core::{Address, PrivateKey};
-pub use self::keystore::KeyFile;
+pub use self::keystore::{KeyFile, create_keyfile, get_timestamp, to_file};
 pub use self::rpc::start;
 
 #[cfg(test)]

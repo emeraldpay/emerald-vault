@@ -165,7 +165,6 @@ fn decode_str<T: FromStr, D: Decoder>(d: &mut D) -> Result<T, D::Error>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::tests::*;
     use rustc_serialize::hex::FromHex;
     use rustc_serialize::json;
 

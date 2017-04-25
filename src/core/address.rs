@@ -2,7 +2,7 @@
 
 use super::Error;
 use super::util::to_arr;
-use rustc_serialize::hex::{self, FromHex, ToHex};
+use rustc_serialize::hex::{FromHex, ToHex};
 use std::{fmt, ops};
 use std::str::FromStr;
 
@@ -73,7 +73,6 @@ impl fmt::Display for Address {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::tests::*;
 
     #[test]
     fn should_display_zero_address() {
