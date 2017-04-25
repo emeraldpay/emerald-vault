@@ -11,7 +11,7 @@ pub const ADDRESS_BYTES: usize = 20;
 
 /// Account address (20 bytes)
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Address([u8; ADDRESS_BYTES]);
+pub struct Address(pub [u8; ADDRESS_BYTES]);
 
 impl Address {
     /// Try to convert a byte vector to `Address`.
@@ -54,12 +54,13 @@ impl FromStr for Address {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if !s.starts_with("0x") {
-            return Err(Error::UnexpectedPrefix(s.to_string()));
+            return Err(Error::UnexpectedHexPrefix(s.to_string()));
         }
 
         let (_, s) = s.split_at(2);
+        let value = s.from_hex()?;
 
-        s.from_hex().and_then(|v| Address::try_from(&v))
+        Address::try_from(&value)
     }
 }
 
@@ -82,8 +83,8 @@ mod tests {
 
     #[test]
     fn should_display_real_address() {
-        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
-                           0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
+        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04,
+                            0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
         assert_eq!(addr.to_string(),
                    "0x0e7c045110b8dbf29765047380898919c5cb56f4");
@@ -91,8 +92,8 @@ mod tests {
 
     #[test]
     fn should_parse_real_address() {
-        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65,
-                           0x04, 0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
+        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04,
+                            0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
         assert_eq!("0x0e7c045110b8dbf29765047380898919c5cb56f4"
                        .parse::<Address>()

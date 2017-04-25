@@ -8,19 +8,22 @@ mod cipher;
 mod kdf;
 mod prf;
 mod serialize;
+mod extract_key;
 
 pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 use self::serialize::try_extract_address;
-use super::core::{self, Address};
+use super::core::{self, Address, PRIVATE_KEY_BYTES, PrivateKey};
 use super::util::{self, KECCAK256_BYTES};
+use chrono::prelude::*;
 use rand::{OsRng, Rng};
 use rustc_serialize::json;
 use std::{cmp, fmt, fs, result};
-use std::io::Read;
-use std::path::Path;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 /// Derived core length in bytes (by default)
@@ -179,8 +182,8 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
 
         match try_extract_address(&content) {
             Some(a) if a == *addr => {
-                return Some(
-                    json::decode::<KeyFile>(&content).expect("Expect to decode keystore file"));
+                return Some(json::decode::<KeyFile>(&content).expect("Expect to decode keystore \
+                                                                      file"));
             }
             _ => continue,
         }
@@ -188,6 +191,77 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
 
     None
 }
+/// Creates a new `KeyFile` with a specified `Address`
+///
+/// # Arguments
+///
+/// * `pk` - private core for inserting in a `KeyFile`
+/// * `passphrase` - password for encryption of private core
+/// * `addr` - optional address to be included in `KeyFile`
+///
+pub fn create_keyfile(pk: PrivateKey,
+                      passphrase: &str,
+                      addr: Option<Address>)
+                      -> Result<KeyFile, Error> {
+    let mut kf = KeyFile::default();
+
+    match addr {
+        Some(a) => kf.with_address(&a),
+        _ => {}
+    }
+
+    let mut salt: [u8; KDF_SALT_BYTES] = [0; 32];
+    let mut iv: [u8; CIPHER_IV_BYTES] = [0; 16];
+
+    let mut rng = OsRng::new().ok().unwrap();
+    rng.fill_bytes(&mut salt);
+    rng.fill_bytes(&mut iv);
+
+    kf.kdf_salt = salt;
+    kf.cipher_iv = iv;
+
+    kf.insert_key(&pk, passphrase);
+
+    Ok(kf)
+}
+
+/// Serializes KeyFile into JSON file with name `UTC-<timestamp>Z--<uuid>`
+///
+/// # Arguments
+///
+/// * `kf` - `KeyFile`
+/// * `dir` - path to destination directory
+///
+pub fn to_file(kf: KeyFile, dir: Option<&Path>) -> Result<File, Error> {
+    let mut name: String = "UTC-".to_string();
+    name.push_str(&get_timestamp());
+    name.push_str("--");
+    name.push_str(&Uuid::new_v4().to_string());
+
+    let mut p: PathBuf = PathBuf::new();
+    let path = match dir {
+        Some(dir) => {
+            p = PathBuf::from(dir).with_file_name(name);
+            p.as_path()
+        }
+        None => Path::new(&name),
+    };
+
+    let mut file = File::create(&path).expect("Expect to create file for KeyFile");
+    let data = json::encode(&kf).expect("Expect to encode KeyFile");
+    file.write_all(data.as_ref());
+
+    Ok(file)
+}
+
+/// Time stamp for core file in format `<timestamp>Z`
+pub fn get_timestamp() -> String {
+    let mut stamp = UTC::now().to_rfc3339();
+    stamp.push_str("Z");
+
+    stamp
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -203,8 +277,8 @@ mod tests {
         let mut key_with_address = key_without_address.clone();
 
         key_with_address.with_address(&"0x0e7c045110b8dbf29765047380898919c5cb56f4"
-                                        .parse::<Address>()
-                                        .unwrap());
+                                           .parse::<Address>()
+                                           .unwrap());
 
         assert_eq!(key_without_address, key_with_address);
     }

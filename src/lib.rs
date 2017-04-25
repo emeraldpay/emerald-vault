@@ -37,10 +37,10 @@ mod storage;
 mod rpc;
 mod util;
 
+pub use self::contracts::{ContractError, Contracts};
 pub use self::core::{Address, PrivateKey};
 pub use self::keystore::KeyFile;
 pub use self::rpc::start;
-pub use self::contracts::{ContractError, Contracts};
 
 #[cfg(test)]
 mod tests {

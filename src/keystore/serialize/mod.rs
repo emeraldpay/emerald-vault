@@ -9,8 +9,8 @@ mod error;
 pub use self::address::try_extract_address;
 use self::crypto::Crypto;
 use self::error::Error;
+use super::Address;
 use super::KeyFile;
-use super::core::Address;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use uuid::Uuid;
 

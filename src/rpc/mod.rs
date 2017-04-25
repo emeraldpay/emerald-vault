@@ -1,5 +1,12 @@
 //! # JSON RPC module
 
+mod http;
+mod serialize;
+mod error;
+
+use super::core::{Address, PrivateKey, Transaction};
+use super::storage::{Storages, ChainStorage};
+use super::Contracts;
 use jsonrpc_core::{Error, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
@@ -8,6 +15,7 @@ use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use futures;
 
 /// RPC methods
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -74,7 +82,7 @@ pub struct MethodParams<'a>(pub Method, pub &'a Params);
 pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<PathBuf>) {
     let mut io = MetaIoHandler::default();
 
-    let url = Arc::new(request::AsyncWrapper::new(&format!("http://{}", client_addr)));
+    let url = Arc::new(http::AsyncWrapper::new(&format!("http://{}", client_addr)));
 
     {
         let url = url.clone();
@@ -132,9 +140,10 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             if let MethodMetadata::Passphrase(ref _passphrase) = m {
                 match Transaction::try_from(&p) {
                     Ok(tr) => {
+                        let params = Params::Array(tr.to_raw(&Default::default())?);
                         url.request(&MethodParams(
                             Method::EthSendRawTransaction,
-                            &tr.to_raw(&Default::default())))
+                            &params))
                     }
                     Err(err) => futures::done(Err(Error::invalid_params(err.to_string()))).boxed(),
                 }
@@ -209,10 +218,10 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 
     let server = ServerBuilder::new(io)
         .meta_extractor(|req: &Req| {
-            req.header("Authorization")
-                .map(MethodMetadata::with_authorization)
-                .unwrap_or_default()
-        })
+                            req.header("Authorization")
+                                .map(MethodMetadata::with_authorization)
+                                .unwrap_or_default()
+                        })
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
                                                 cors::AccessControlAllowOrigin::Null]))
         .start_http(addr)

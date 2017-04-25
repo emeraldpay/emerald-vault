@@ -1,7 +1,7 @@
 //! # Account transaction
 
 use super::{Address, Error, PrivateKey};
-use super::util::{keccak256, RLPList};
+use super::util::{RLPList, WriteRLP, keccak256, KECCAK256_BYTES};
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -33,11 +33,12 @@ impl<'a> Transaction<'a> {
     pub fn to_raw(&self, pk: &PrivateKey) -> Result<Vec<u8>, Error> {
         let mut rlp = self.to_rlp();
 
-        let s = pk.sign_hash(&self.hash()).and_then(Signature::from)?;
+        let val = pk.sign_hash(self.hash())?;
+        let sig = Signature::from(val);
 
-        rlp.push(&s.r);
-        rlp.push(&s.s);
-        rlp.push(&s.v);
+        rlp.push(&sig.r);
+        rlp.push(&sig.s);
+        rlp.push(&sig.v);
 
         let mut vec = Vec::new();
         rlp.write_rlp(&mut vec);
@@ -77,9 +78,9 @@ pub struct Signature {
     pub s: [u8; 32],
 }
 
-impl From<[u8; 64]> for TransactionSignature {
+impl From<[u8; 64]> for Signature {
     fn from(data: [u8; 64]) -> Self {
-        let mut sign = TransactionSignature::default();
+        let mut sign = Signature::default();
 
         sign.v = data[63] /* parity */ + 27;
         sign.r.copy_from_slice(&data[0..32]);
@@ -108,8 +109,8 @@ mod tests {
             ..Default::default()
         };
 
-        let res = tx.sign(
-            &as_bytes("7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"));
+        let res =
+            tx.sign(&as_bytes("7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"));
 
         assert!(res.is_ok());
         assert!(res.unwrap().len() > 32);

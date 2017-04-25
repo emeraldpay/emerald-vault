@@ -1,7 +1,7 @@
 //! # Serialize JSON RPC parameters
 
 use super::{Error, Method, MethodParams};
-use super::core::{Address, PrivateKey, Transaction};
+use super::{Address, PrivateKey, Transaction};
 use jsonrpc_core::Params;
 use rustc_serialize::hex::ToHex;
 use serde::ser::{Serialize, Serializer};
@@ -40,14 +40,6 @@ impl<'a> Transaction<'a> {
                value: [0u8; 32],
                data: EMPTY_DATA,
            })
-    }
-
-    /// Sign transaction and return as raw data
-    pub fn to_raw(&self, pk: &PrivateKey) -> Params {
-        self.sign(pk)
-            .map(|v| format!("0x{}", v.to_hex()))
-            .map(|s| Params::Array(vec![Value::String(s)]))
-            .expect("Expect to sign a transaction")
     }
 }
 
