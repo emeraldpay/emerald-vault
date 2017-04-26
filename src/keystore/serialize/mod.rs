@@ -9,9 +9,12 @@ mod error;
 pub use self::address::try_extract_address;
 use self::crypto::Crypto;
 use self::error::Error;
-use super::Address;
-use super::KeyFile;
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+use super::{Address, KeyFile, PrivateKey};
+use chrono::prelude::*;
+use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
+use std::fs::{self, File};
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 /// Keystore file current version used for serializing
@@ -68,9 +71,107 @@ impl From<SerializableKeyFile> for KeyFile {
     }
 }
 
+/// Search of `KeyFile` by specified `Address`
+///
+/// # Arguments
+///
+/// * `path` - path with keystore files
+/// * `addr` - target address
+///
+pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyFile> {
+    let entries = fs::read_dir(path).expect("Expect to read a keystore directory content");
+
+    for entry in entries {
+        let path = entry.expect("Expect keystore directory entry").path();
+
+        if path.is_dir() {
+            continue;
+        }
+
+        let mut file = fs::File::open(path).expect("Expect to open a keystore file");
+        let mut content = String::new();
+
+        if file.read_to_string(&mut content).is_err() {
+            continue;
+        }
+
+        match try_extract_address(&content) {
+            Some(a) if a == *addr => {
+                return Some(json::decode::<KeyFile>(&content).expect("Expect to decode keystore \
+                                                                      file"));
+            }
+            _ => continue,
+        }
+    }
+
+    None
+}
+
+/// Creates a new `KeyFile` with a specified `Address`
+///
+/// # Arguments
+///
+/// * `pk` - private core for inserting in a `KeyFile`
+/// * `passphrase` - password for encryption of private core
+/// * `addr` - optional address to be included in `KeyFile`
+///
+pub fn create_keyfile(pk: PrivateKey, passphrase: &str, addr: Option<Address>) -> KeyFile {
+    let mut kf = KeyFile::default();
+
+    match addr {
+        Some(a) => kf.with_address(&a),
+        _ => {}
+    }
+    kf.crypto_seed();
+    kf.encrypt_key(&pk, passphrase);
+    kf
+}
+
+/// Serializes KeyFile into JSON file with name `UTC-<timestamp>Z--<uuid>`
+///
+/// # Arguments
+///
+/// * `kf` - `KeyFile`
+/// * `dir` - path to destination directory
+///
+pub fn to_file(kf: &KeyFile, dir: Option<&Path>) -> Result<File, Error> {
+    let name = get_filename();
+
+    let p: PathBuf;
+    let path = match dir {
+        Some(dir) => {
+            p = PathBuf::from(dir).with_file_name(name);
+            p.as_path()
+        }
+        None => Path::new(&name),
+    };
+
+    let mut file = File::create(&path).expect("Expect to create file for KeyFile");
+    let data = json::encode(&kf).expect("Expect to encode KeyFile");
+    file.write_all(data.as_ref()).ok();
+    Ok(file)
+}
+
+/// Creates filename for keystore file in format:
+/// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
+pub fn get_filename() -> String {
+    format!("UTC--{}--{}", &get_timestamp(), &Uuid::new_v4())
+}
+
+/// Time stamp for core file in format `yyy-mm-ddThh-mm-ssZ`
+pub fn get_timestamp() -> String {
+    let val = UTC::now().to_rfc3339();
+    let stamp = str::replace(val.as_str(), ":", "-");
+    let data: Vec<&str> = stamp.split(".").collect(); //cut off milliseconds
+
+    format!("{}Z", data[0])
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use regex::Regex;
     use rustc_serialize::json;
 
     #[test]
@@ -108,5 +209,17 @@ mod tests {
         let str = r#"{"version": 3}"#;
 
         assert!(json::decode::<KeyFile>(str).is_err());
+    }
+
+    #[test]
+    fn should_generate_timestamp() {
+        let re = Regex::new(r"^\d{4}-\d{2}-\d{2}[T]\d{2}-\d{2}-\d{2}[Z]").unwrap();
+        assert!(re.is_match(&get_timestamp()));
+    }
+
+    #[test]
+    fn should_generate_filename() {
+        let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
+        assert!(re.is_match(&get_filename()));
     }
 }
