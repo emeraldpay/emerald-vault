@@ -250,11 +250,13 @@ pub fn to_file(kf: &KeyFile, dir: Option<&Path>) -> Result<File, Error> {
     Ok(file)
 }
 
-/// Time stamp for core file in format `<timestamp>Z`
+/// Time stamp for core file in format `yyy-mm-ddThh-mm-ssZ`
 pub fn get_timestamp() -> String {
-    let mut stamp = UTC::now().to_rfc3339();
-    stamp.push_str("Z");
-    stamp
+    let val = UTC::now().to_rfc3339();
+    let stamp = str::replace(val.as_str(), ":", "-");
+    let data: Vec<&str> = stamp.split(".").collect(); //cut off milliseconds
+
+    format!("{}Z", data[0])
 }
 
 #[cfg(test)]
