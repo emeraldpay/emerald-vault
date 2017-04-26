@@ -9,8 +9,8 @@ mod error;
 pub use self::address::try_extract_address;
 use self::crypto::Crypto;
 use self::error::Error;
-use super::{Address, KeyFile, PrivateKey};
-use chrono::prelude::*;
+use super::{Address, KeyFile};
+use chrono::prelude::UTC;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -105,26 +105,6 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
     }
 
     None
-}
-
-/// Creates a new `KeyFile` with a specified `Address`
-///
-/// # Arguments
-///
-/// * `pk` - private core for inserting in a `KeyFile`
-/// * `passphrase` - password for encryption of private core
-/// * `addr` - optional address to be included in `KeyFile`
-///
-pub fn create_keyfile(pk: PrivateKey, passphrase: &str, addr: Option<Address>) -> KeyFile {
-    let mut kf = KeyFile::default();
-
-    match addr {
-        Some(a) => kf.with_address(&a),
-        _ => {}
-    }
-    kf.crypto_seed();
-    kf.encrypt_key(&pk, passphrase);
-    kf
 }
 
 /// Serializes KeyFile into JSON file with name `UTC-<timestamp>Z--<uuid>`

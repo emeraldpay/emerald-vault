@@ -7,7 +7,7 @@ extern crate uuid;
 
 use emerald::{Address, KECCAK256_BYTES, PrivateKey};
 use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile, Prf,
-                        create_keyfile, search_by_address, to_file};
+                        search_by_address, to_file};
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
 use std::fs::File;
@@ -148,7 +148,7 @@ fn should_create_keyfile() {
     let pk = PrivateKey::gen();
 
     let addr = pk.to_address().unwrap();
-    let file = create_keyfile(pk, &"1234567890", Some(addr));
+    let file = KeyFile::create(pk, &"1234567890", Some(addr));
 
     to_file(&file, Some(&temp_dir)).ok();
 

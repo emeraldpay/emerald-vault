@@ -13,7 +13,7 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
-pub use self::serialize::{create_keyfile, search_by_address, to_file, try_extract_address};
+pub use self::serialize::{search_by_address, to_file, try_extract_address};
 pub use super::core::{Address, PrivateKey};
 use super::util::{KECCAK256_BYTES, keccak256, to_arr};
 use rand::{OsRng, Rng};
@@ -63,7 +63,14 @@ pub struct KeyFile {
 impl KeyFile {
     /// Generate default wallet with unique `uuid`
     pub fn new() -> Self {
-        Self::from(Uuid::new_v4())
+        let mut kf = Self::from(Uuid::new_v4());
+        let mut rng = OsRng::new()
+            .ok()
+            .expect("Expect to receive OS random generator");
+        rng.fill_bytes(&mut kf.kdf_salt);
+        rng.fill_bytes(&mut kf.cipher_iv);
+
+        kf
     }
 
     /// Append `Address` to current wallet
@@ -104,17 +111,23 @@ impl KeyFile {
         self.keccak256_mac = keccak256(&v);
     }
 
-    /// Creates seed vectors for `kdf` and `cipher`
-    pub fn crypto_seed(&mut self) {
-        let mut salt: [u8; KDF_SALT_BYTES] = [0; 32];
-        let mut iv: [u8; CIPHER_IV_BYTES] = [0; 16];
+    /// Creates a new `KeyFile` with a specified `Address`
+    ///
+    /// # Arguments
+    ///
+    /// * `pk` - private core for inserting in a `KeyFile`
+    /// * `passphrase` - password for encryption of private core
+    /// * `addr` - optional address to be included in `KeyFile`
+    ///
+    pub fn create(pk: PrivateKey, passphrase: &str, addr: Option<Address>) -> KeyFile {
+        let mut kf = KeyFile::new();
+        match addr {
+            Some(a) => kf.with_address(&a),
+            _ => {}
+        }
+        kf.encrypt_key(&pk, passphrase);
 
-        let mut rng = OsRng::new().ok().unwrap();
-        rng.fill_bytes(&mut salt);
-        rng.fill_bytes(&mut iv);
-
-        self.kdf_salt = salt;
-        self.cipher_iv = iv;
+        kf
     }
 }
 
