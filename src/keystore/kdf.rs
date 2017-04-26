@@ -62,7 +62,7 @@ impl Kdf {
 impl Default for Kdf {
     fn default() -> Self {
         Kdf::Scrypt {
-            n: 262144,
+            n: 4096,
             r: 8,
             p: 1,
         }

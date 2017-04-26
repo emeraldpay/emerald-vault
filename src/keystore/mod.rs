@@ -13,16 +13,11 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
-use self::serialize::try_extract_address;
-use super::core::{Address, PrivateKey};
+pub use self::serialize::{search_by_address, to_file, try_extract_address};
+pub use super::core::{Address, PrivateKey};
 use super::util::{KECCAK256_BYTES, keccak256, to_arr};
-use chrono::prelude::*;
 use rand::{OsRng, Rng};
-use rustc_serialize::json;
-use std::{cmp, fmt, fs};
-use std::fs::File;
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use std::{cmp, fmt};
 use uuid::Uuid;
 
 /// Derived core length in bytes (by default)
@@ -66,9 +61,16 @@ pub struct KeyFile {
 }
 
 impl KeyFile {
-    /// Generate a wallet with unique `uuid`
+    /// Generate default wallet with unique `uuid`
     pub fn new() -> Self {
-        Self::from(Uuid::new_v4())
+        let mut kf = Self::from(Uuid::new_v4());
+        let mut rng = OsRng::new()
+            .ok()
+            .expect("Expect to receive OS random generator");
+        rng.fill_bytes(&mut kf.kdf_salt);
+        rng.fill_bytes(&mut kf.cipher_iv);
+
+        kf
     }
 
     /// Append `Address` to current wallet
@@ -107,6 +109,25 @@ impl KeyFile {
         v.extend_from_slice(&self.cipher_text);
 
         self.keccak256_mac = keccak256(&v);
+    }
+
+    /// Creates a new `KeyFile` with a specified `Address`
+    ///
+    /// # Arguments
+    ///
+    /// * `pk` - private core for inserting in a `KeyFile`
+    /// * `passphrase` - password for encryption of private core
+    /// * `addr` - optional address to be included in `KeyFile`
+    ///
+    pub fn create(pk: PrivateKey, passphrase: &str, addr: Option<Address>) -> KeyFile {
+        let mut kf = KeyFile::new();
+        match addr {
+            Some(a) => kf.with_address(&a),
+            _ => {}
+        }
+        kf.encrypt_key(&pk, passphrase);
+
+        kf
     }
 }
 
@@ -157,104 +178,6 @@ impl fmt::Display for KeyFile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Keystore file: {}", self.uuid)
     }
-}
-
-/// Search of `KeyFile` by specified `Address`
-///
-/// # Arguments
-///
-/// * `path` - path with keystore files
-/// * `addr` - target address
-///
-pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyFile> {
-    let entries = fs::read_dir(path).expect("Expect to read a keystore directory content");
-
-    for entry in entries {
-        let path = entry.expect("Expect keystore directory entry").path();
-
-        if path.is_dir() {
-            continue;
-        }
-
-        let mut file = fs::File::open(path).expect("Expect to open a keystore file");
-        let mut content = String::new();
-
-        if file.read_to_string(&mut content).is_err() {
-            continue;
-        }
-
-        match try_extract_address(&content) {
-            Some(a) if a == *addr => {
-                return Some(json::decode::<KeyFile>(&content).expect("Expect to decode keystore \
-                                                                      file"));
-            }
-            _ => continue,
-        }
-    }
-
-    None
-}
-
-/// Creates a new `KeyFile` with a specified `Address`
-///
-/// # Arguments
-///
-/// * `pk` - private core for inserting in a `KeyFile`
-/// * `passphrase` - password for encryption of private core
-/// * `addr` - optional address to be included in `KeyFile`
-///
-pub fn create_keyfile(pk: PrivateKey, passphrase: &str, addr: Option<Address>) -> KeyFile {
-    let mut kf = KeyFile::default();
-
-    match addr {
-        Some(a) => kf.with_address(&a),
-        _ => {}
-    }
-
-    let mut salt: [u8; KDF_SALT_BYTES] = [0; 32];
-    let mut iv: [u8; CIPHER_IV_BYTES] = [0; 16];
-
-    let mut rng = OsRng::new().ok().unwrap();
-    rng.fill_bytes(&mut salt);
-    rng.fill_bytes(&mut iv);
-
-    kf.kdf_salt = salt;
-    kf.cipher_iv = iv;
-
-    kf.encrypt_key(&pk, passphrase);
-    kf
-}
-
-/// Serializes KeyFile into JSON file with name `UTC-<timestamp>Z--<uuid>`
-///
-/// # Arguments
-///
-/// * `kf` - `KeyFile`
-/// * `dir` - path to destination directory
-///
-pub fn to_file(kf: &KeyFile, dir: Option<&Path>) -> Result<File, Error> {
-    let name = format!("UTC-{}--{}", &get_timestamp(), &Uuid::new_v4());
-
-    let p: PathBuf;
-    let path = match dir {
-        Some(dir) => {
-            p = PathBuf::from(dir).with_file_name(name);
-            p.as_path()
-        }
-        None => Path::new(&name),
-    };
-
-    let mut file = File::create(&path).expect("Expect to create file for KeyFile");
-    let data = json::encode(&kf).expect("Expect to encode KeyFile");
-    file.write_all(data.as_ref()).ok();
-    Ok(file)
-}
-
-/// Time stamp for core file in format `<timestamp>Z`
-pub fn get_timestamp() -> String {
-    let mut stamp = UTC::now().to_rfc3339();
-    stamp.push_str("Z");
-    stamp
 }
 
 #[cfg(test)]
