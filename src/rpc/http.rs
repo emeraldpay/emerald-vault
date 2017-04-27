@@ -1,11 +1,15 @@
 //! # Send JSON encoded HTTP requests
 
-use super::MethodParams;
+use super::{Error, MethodParams};
 use hyper::Url;
 use hyper::client::IntoUrl;
-use jsonrpc_core::{Error, Value};
+use jsonrpc_core::{self, Value};
 use jsonrpc_core::futures::{BoxFuture, Future};
 use reqwest::Client;
+
+lazy_static! {
+    static ref CLIENT: Client = Client::new().expect("Expect to create an HTTP client");
+}
 
 pub struct AsyncWrapper {
     pub url: Url,
@@ -16,19 +20,21 @@ impl AsyncWrapper {
         AsyncWrapper { url: url.into_url().expect("Expect to encode request url") }
     }
 
-    /// Send and JSON RPC HTTP request
-    pub fn request(&self, params: &MethodParams) -> BoxFuture<Value, Error> {
-        let client = Client::new().expect("Expect to create a request client");
+    /// Wrap JSON RPC HTTP post request with async futures
+    pub fn request(&self, params: &MethodParams) -> BoxFuture<Value, jsonrpc_core::Error> {
+        match self.send_post(params) {
+            Ok(res) => ::futures::finished(res).boxed(),
+            Err(err) => {
+                error!("HTTP POST request error: {}", err);
+                ::futures::failed(jsonrpc_core::Error::from(err)).boxed()
+            }
+        }
+    }
 
-        let mut res = client
-            .post(self.url.clone())
-            .json(params)
-            .send()
-            .expect("Expect to receive response");
-
-        let json: Value = res.json()
-            .expect("Expect to deserialize a response as JSON");
-
-        ::futures::finished(json["result"].clone()).boxed()
+    /// Send and JSON RPC HTTP post request
+    pub fn send_post(&self, params: &MethodParams) -> Result<Value, Error> {
+        let mut res = CLIENT.post(self.url.clone()).json(params).send()?;
+        let json: Value = res.json()?;
+        Ok(json["result"].clone())
     }
 }

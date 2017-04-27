@@ -22,8 +22,20 @@ mod tests {
     use tests::*;
 
     #[test]
-    fn should_calculate_keccak256() {
-        assert_eq!(keccak256(b"hello world!"),
-                   to_32bytes("57caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd6"));
+    fn should_calculate_empty_keccak256() {
+        assert_eq!(keccak256(b""),
+                   to_32bytes("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"));
+    }
+
+    #[test]
+    fn should_calculate_small_keccak256() {
+        assert_eq!(keccak256(b"emerald-rs"),
+                   to_32bytes("f5ab12ff7b15bb4a5cd3d36a41bdbc8e54c180f7558cc4f8cd40acabda02dd84"));
+    }
+
+    #[test]
+    fn should_calculate_big_keccak256() {
+        assert_eq!(keccak256(&[b'-'; 1024]),
+                   to_32bytes("ea1da5135479c4eb22ed3743c379970895ed2d088fd5d79884b7493aaa49475b"));
     }
 }

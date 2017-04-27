@@ -27,7 +27,7 @@ macro_rules! arr {
 }
 
 #[test]
-fn should_decrypt_scrypt_based_kdf_private_key() {
+fn should_decrypt_private_key_protected_by_scrypt() {
     let path = keyfile_path("UTC--2017-03-17T10-52-08.\
                              229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
@@ -39,7 +39,7 @@ fn should_decrypt_scrypt_based_kdf_private_key() {
 }
 
 #[test]
-fn should_decrypt_pbkdf2_based_kdf_private_key() {
+fn should_decrypt_private_key_protected_by_pbkdf2() {
     let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
 
     let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
@@ -50,7 +50,51 @@ fn should_decrypt_pbkdf2_based_kdf_private_key() {
 }
 
 #[test]
-fn should_work_with_keyfile_with_address() {
+fn should_decode_keyfile_without_address() {
+    let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
+
+    let exp = KeyFile {
+        uuid: Uuid::from_str("37e0d14f-7269-7ca0-4419-d7b13abfeea9").unwrap(),
+        address: None,
+        dk_length: 32,
+        kdf: Kdf::Pbkdf2 {
+            prf: Prf::default(),
+            c: 10240,
+        },
+        kdf_salt: arr!(&"095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b"
+                            .from_hex()
+                            .unwrap(),
+                       KDF_SALT_BYTES),
+        keccak256_mac: arr!(&"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63"
+                                 .from_hex()
+                                 .unwrap(),
+                            KECCAK256_BYTES),
+        cipher: Cipher::default(),
+        cipher_text: "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126"
+            .from_hex()
+            .unwrap(),
+        cipher_iv: arr!(&"58d54158c3e27131b0a0f2b91201aedc".from_hex().unwrap(),
+                        CIPHER_IV_BYTES),
+    };
+
+    // just first encoding
+    let key = json::decode::<KeyFile>(&file_content(path)).unwrap();
+
+    // verify encoding & decoding full cycle logic
+    let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
+
+    assert_eq!(key, exp);
+    assert_eq!(key.address, exp.address);
+    assert_eq!(key.dk_length, exp.dk_length);
+    assert_eq!(key.kdf, exp.kdf);
+    assert_eq!(key.kdf_salt, exp.kdf_salt);
+    assert_eq!(key.keccak256_mac, exp.keccak256_mac);
+    assert_eq!(key.cipher_text, exp.cipher_text);
+    assert_eq!(key.cipher_iv, exp.cipher_iv);
+}
+
+#[test]
+fn should_decode_keyfile_with_address() {
     let path = keyfile_path("UTC--2017-03-17T10-52-08.\
                              229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
@@ -98,59 +142,12 @@ fn should_work_with_keyfile_with_address() {
 }
 
 #[test]
-fn should_work_with_keyfile_without_address() {
-    let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
-
-    let exp = KeyFile {
-        uuid: Uuid::from_str("37e0d14f-7269-7ca0-4419-d7b13abfeea9").unwrap(),
-        address: None,
-        dk_length: 32,
-        kdf: Kdf::Pbkdf2 {
-            prf: Prf::default(),
-            c: 10240,
-        },
-        kdf_salt: arr!(&"095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b"
-                            .from_hex()
-                            .unwrap(),
-                       KDF_SALT_BYTES),
-        keccak256_mac: arr!(&"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63"
-                                 .from_hex()
-                                 .unwrap(),
-                            KECCAK256_BYTES),
-        cipher: Cipher::default(),
-        cipher_text: "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126"
-            .from_hex()
-            .unwrap(),
-        cipher_iv: arr!(&"58d54158c3e27131b0a0f2b91201aedc".from_hex().unwrap(),
-                        CIPHER_IV_BYTES),
-    };
-
-    // just first encoding
-    let key = json::decode::<KeyFile>(&file_content(path)).unwrap();
-
-    // verify encoding & decoding full cycle logic
-    let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
-
-    assert_eq!(key, exp);
-    assert_eq!(key.address, exp.address);
-    assert_eq!(key.dk_length, exp.dk_length);
-    assert_eq!(key.kdf, exp.kdf);
-    assert_eq!(key.kdf_salt, exp.kdf_salt);
-    assert_eq!(key.keccak256_mac, exp.keccak256_mac);
-    assert_eq!(key.cipher_text, exp.cipher_text);
-    assert_eq!(key.cipher_iv, exp.cipher_iv);
-}
-
-#[test]
-fn should_create_keyfile() {
-    let temp_dir = temp_dir();
+fn should_flush_to_file() {
     let pk = PrivateKey::gen();
-
     let addr = pk.to_address().unwrap();
-    let file = KeyFile::create(pk, &"1234567890", Some(addr));
+    let kf = KeyFile::create(pk, "1234567890", Some(addr));
 
-    assert!(file.to_file(temp_dir.as_path()).is_ok());
-    assert_eq!(file.address, Some(addr));
+    assert!(kf.flush(temp_dir().as_path()).is_ok());
 }
 
 #[test]
@@ -159,12 +156,9 @@ fn should_search_by_address() {
         .parse::<Address>()
         .unwrap();
 
-    let res = addr.search(&keystore_path());
-    assert!(res.is_ok());
+    let kf = addr.search_keyfile(&keystore_path()).unwrap();
 
-    let kf = res.unwrap();
-    assert_eq!(kf.uuid,
-               Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap());
+    assert_eq!(kf.address, Some(addr));
 }
 
 fn temp_dir() -> PathBuf {
@@ -192,6 +186,6 @@ fn keyfile_path(name: &str) -> PathBuf {
 
 fn keystore_path() -> PathBuf {
     let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
-    buf.push("tests/keystore");
+    buf.push("tests/keystore/serialize");
     buf
 }
