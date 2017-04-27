@@ -1,6 +1,7 @@
 //! # Keystore files (UTC / JSON) module errors
 
-use std::{error, fmt};
+use rustc_serialize::json;
+use std::{error, fmt, io};
 
 /// Keystore file errors
 #[derive(Debug)]
@@ -13,6 +14,10 @@ pub enum Error {
     UnsupportedPrf(String),
     /// `keccak256_mac` field validation failed
     FailedMacValidation,
+    ///
+    FileCreation,
+    ///
+    InvalidEncoding,
 }
 
 impl fmt::Display for Error {
@@ -25,7 +30,9 @@ impl fmt::Display for Error {
             Error::UnsupportedPrf(ref str) => {
                 write!(f, "Unsupported pseudo-random function: {}", str)
             }
-            Error::FailedMacValidation => f.write_str("Message authentication code failed"),
+            Error::FailedMacValidation => write!(f, "Message authentication code failed"),
+            Error::FileCreation => write!(f, "Can't create file for KeyFile"),
+            Error::InvalidEncoding => write!(f, "Can't encode KeyFile"),
         }
     }
 }
@@ -39,5 +46,17 @@ impl error::Error for Error {
         match *self {
             _ => None,
         }
+    }
+}
+
+impl From<json::EncoderError> for Error {
+    fn from(_: json::EncoderError) -> Self {
+        Error::InvalidEncoding
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(_: io::Error) -> Self {
+        Error::FileCreation
     }
 }

@@ -6,17 +6,14 @@ mod byte_array;
 mod crypto;
 mod error;
 
-pub use self::address::try_extract_address;
+pub use self::address::{search_by_address, try_extract_address};
 use self::crypto::Crypto;
 use self::error::Error;
 use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::core::{self, Address};
 use super::util;
 use chrono::prelude::UTC;
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
-use std::fs::{self, File};
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use uuid::Uuid;
 
 /// Keystore file current version used for serializing
@@ -73,71 +70,15 @@ impl From<SerializableKeyFile> for KeyFile {
     }
 }
 
-/// Search of `KeyFile` by specified `Address`
-///
-/// # Arguments
-///
-/// * `path` - path with keystore files
-/// * `addr` - target address
-///
-pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyFile> {
-    let entries = fs::read_dir(path).expect("Expect to read a keystore directory content");
-
-    for entry in entries {
-        let path = entry.expect("Expect keystore directory entry").path();
-
-        if path.is_dir() {
-            continue;
-        }
-
-        let mut file = fs::File::open(path).expect("Expect to open a keystore file");
-        let mut content = String::new();
-
-        if file.read_to_string(&mut content).is_err() {
-            continue;
-        }
-
-        match try_extract_address(&content) {
-            Some(a) if a == *addr => {
-                return Some(json::decode::<KeyFile>(&content).expect("Expect to decode keystore \
-                                                                      file"));
-            }
-            _ => continue,
-        }
-    }
-
-    None
-}
-
-/// Serializes into JSON file with name `UTC-<timestamp>Z--<uuid>`
-///
-/// # Arguments
-///
-/// * `kf` - `KeyFile`
-/// * `dir` - path to destination directory
-///
-pub fn to_file(kf: &KeyFile, dir: Option<&Path>) -> Result<File, Error> {
-    let name = get_filename();
-
-    let p: PathBuf;
-    let path = match dir {
-        Some(dir) => {
-            p = PathBuf::from(dir).with_file_name(name);
-            p.as_path()
-        }
-        None => Path::new(&name),
-    };
-
-    let mut file = File::create(&path).expect("Expect to create file for KeyFile");
-    let data = json::encode(&kf).expect("Expect to encode KeyFile");
-    file.write_all(data.as_ref()).ok();
-    Ok(file)
-}
-
 /// Creates filename for keystore file in format:
 /// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
-pub fn get_filename() -> String {
-    format!("UTC--{}Z--{}", &get_timestamp(), &Uuid::new_v4())
+///
+/// # Arguments
+///
+/// * `uuid` - UUID for keyfile
+///
+pub fn get_filename(uuid: &String) -> String {
+    format!("UTC--{}Z--{}", &get_timestamp(), &uuid)
 }
 
 /// Time stamp for core file in format `yyy-mm-ddThh-mm-ssZ`
@@ -201,6 +142,6 @@ mod tests {
     fn should_generate_filename() {
         let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
 
-        assert!(re.is_match(&get_filename()));
+        assert!(re.is_match(&get_filename(&String::from("9bec4728-37f9-4444-9990-2ba70ee038e9"))));
     }
 }

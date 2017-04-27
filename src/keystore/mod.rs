@@ -13,11 +13,15 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
-pub use self::serialize::{search_by_address, to_file, try_extract_address};
+pub use self::serialize::{get_filename, search_by_address, try_extract_address};
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
 use rand::{OsRng, Rng};
+use rustc_serialize::json;
 use std::{cmp, fmt};
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
 use uuid::Uuid;
 
 /// Derived core length in bytes (by default)
@@ -128,6 +132,22 @@ impl KeyFile {
         v.extend_from_slice(&self.cipher_text);
 
         self.keccak256_mac = keccak256(&v);
+    }
+
+    /// Serializes into JSON file with name `UTC-<timestamp>Z--<uuid>`
+    ///
+    /// # Arguments
+    ///
+    /// * `dir` - path to destination directory
+    ///
+    pub fn to_file<P: AsRef<Path>>(&self, dir: P) -> Result<File, Error> {
+        let path = dir.as_ref()
+            .with_file_name(&get_filename(&self.uuid.to_string()));
+        let mut file = File::create(&path)?;
+        let data = json::encode(self)?;
+        file.write_all(data.as_ref()).ok();
+
+        Ok(file)
     }
 }
 
