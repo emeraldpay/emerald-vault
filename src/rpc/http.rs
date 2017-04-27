@@ -7,6 +7,10 @@ use jsonrpc_core::{self, Value};
 use jsonrpc_core::futures::{BoxFuture, Future};
 use reqwest::Client;
 
+lazy_static! {
+    static ref CLIENT: Client = Client::new().expect("Expect to create an HTTP client");
+}
+
 pub struct AsyncWrapper {
     pub url: Url,
 }
@@ -29,8 +33,7 @@ impl AsyncWrapper {
 
     /// Send and JSON RPC HTTP post request
     pub fn send_post(&self, params: &MethodParams) -> Result<Value, Error> {
-        let client = Client::new()?;
-        let mut res = client.post(self.url.clone()).json(params).send()?;
+        let mut res = CLIENT.post(self.url.clone()).json(params).send()?;
         let json: Value = res.json()?;
         Ok(json["result"].clone())
     }
