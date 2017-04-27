@@ -14,8 +14,8 @@ pub enum Error {
     InvalidDecoding(json::DecoderError),
     /// Invalid `Keyfile` encoding
     InvalidEncoding(json::EncoderError),
-    /// Item wasn't found (for example `KeyFile`)
-    ItemNotFound,
+    /// `KeyFile` wasn't found
+    NotFound,
 }
 
 impl From<io::Error> for Error {
@@ -45,7 +45,7 @@ impl fmt::Display for Error {
             Error::IO(ref err) => write!(f, "Keystore file IO error: {}", err),
             Error::InvalidDecoding(ref err) => write!(f, "Invalid keystore file decoding: {}", err),
             Error::InvalidEncoding(ref err) => write!(f, "Invalid keystore file encoding: {}", err),
-            Error::ItemNotFound => f.write_str("Item wasn't found"),
+            Error::NotFound => f.write_str("Required keystore file wasn't found"),
         }
     }
 }
