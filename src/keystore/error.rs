@@ -1,5 +1,6 @@
 //! # Keystore files (UTC / JSON) module errors
 
+use super::core;
 use std::{error, fmt};
 
 /// Keystore file errors
@@ -13,6 +14,8 @@ pub enum Error {
     UnsupportedPrf(String),
     /// `keccak256_mac` field validation failed
     FailedMacValidation,
+    /// Invalid format of `PrivateKey`
+    InvalidPrivateKey,
 }
 
 impl fmt::Display for Error {
@@ -26,6 +29,7 @@ impl fmt::Display for Error {
                 write!(f, "Unsupported pseudo-random function: {}", str)
             }
             Error::FailedMacValidation => write!(f, "Message authentication code failed"),
+            Error::InvalidPrivateKey => write!(f, "Invalid format of private key"),
         }
     }
 }
@@ -39,5 +43,11 @@ impl error::Error for Error {
         match *self {
             _ => None,
         }
+    }
+}
+
+impl From<core::Error> for Error {
+    fn from(_: core::Error) -> Self {
+        Error::InvalidPrivateKey
     }
 }
