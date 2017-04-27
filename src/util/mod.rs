@@ -33,7 +33,7 @@ mod tests {
     }
 
     #[test]
-    fn should_convert_empty_string_into_20bytes() {
+    fn should_convert_zero_string_into_20bytes() {
         assert_eq!(to_20bytes("0000000000000000000000000000000000000000"),
                    [0u8; 20]);
     }

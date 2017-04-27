@@ -1,15 +1,32 @@
 //! # JSON RPC module errors
 
+use jsonrpc_core;
+use reqwest;
 use std::{error, fmt};
 
 /// JSON RPC errors
 #[derive(Debug)]
 pub enum Error {
+    /// Http client error
+    HttpClient(reqwest::Error),
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(err: reqwest::Error) -> Self {
+        Error::HttpClient(err)
+    }
+}
+
+impl From<Error> for jsonrpc_core::Error {
+    fn from(_err: Error) -> Self {
+        jsonrpc_core::Error::internal_error()
+    }
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, _f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
+            Error::HttpClient(ref err) => write!(f, "HTTP client error: {}", err),
         }
     }
 }
@@ -21,7 +38,8 @@ impl error::Error for Error {
 
     fn cause(&self) -> Option<&error::Error> {
         match *self {
-            _ => None,
+            Error::HttpClient(ref err) => Some(err),
+            //_ => None,
         }
     }
 }
