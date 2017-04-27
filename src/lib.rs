@@ -39,3 +39,13 @@ mod util;
 
 pub use self::core::*;
 pub use self::util::*;
+
+#[cfg(test)]
+mod tests {
+    pub use super::*;
+    pub use super::core::tests::*;
+    pub use super::util::tests::*;
+    pub use regex::Regex;
+    pub use rustc_serialize::hex::{FromHex, ToHex};
+    pub use rustc_serialize::json;
+}

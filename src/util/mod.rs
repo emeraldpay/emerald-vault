@@ -17,20 +17,21 @@ pub fn to_arr<A, T>(slice: &[T]) -> A
 }
 
 #[cfg(test)]
-mod tests {
+pub mod tests {
     use super::*;
     use rustc_serialize::hex::FromHex;
 
-    macro_rules! bytes {
-        ($hex: expr) => ({
-            to_arr(&$hex.from_hex().unwrap())
-        })
+    pub fn to_20bytes(hex: &str) -> [u8; 20] {
+        to_arr(&hex.from_hex().unwrap())
+    }
+
+    pub fn to_32bytes(hex: &str) -> [u8; 32] {
+        to_arr(&hex.from_hex().unwrap())
     }
 
     #[test]
     fn should_get_bytes_from_string() {
-        let arr: [u8; 8] = bytes!("0102030405060708");
-
-        assert_eq!(arr, [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08]);
+        assert_eq!(to_20bytes("0000000000000000000000000000000000000000"),
+                   [0u8; 20]);
     }
 }

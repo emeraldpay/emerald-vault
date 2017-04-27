@@ -19,20 +19,11 @@ pub fn keccak256(data: &[u8]) -> [u8; KECCAK256_BYTES] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rustc_serialize::hex::FromHex;
-    use util::*;
-
-    macro_rules! bytes {
-        ($hex: expr) => ({
-            to_arr(&$hex.from_hex().unwrap())
-        })
-    }
+    use tests::*;
 
     #[test]
     fn should_calculate_keccak256() {
-        let arr: [u8; 32] =
-            bytes!("57caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd6");
-
-        assert_eq!(keccak256(b"hello world!"), arr);
+        assert_eq!(keccak256(b"hello world!"),
+                   to_32bytes("57caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd6"));
     }
 }

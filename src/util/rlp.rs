@@ -13,7 +13,7 @@ pub struct RLPList {
 }
 
 impl RLPList {
-    /// start with provided vector
+    /// Start with provided vector
     pub fn from_slice<T: WriteRLP>(items: &[T]) -> RLPList {
         let mut start = RLPList { tail: Vec::new() };
         for i in items {
@@ -22,7 +22,7 @@ impl RLPList {
         start
     }
 
-    /// add an item to the list
+    /// Add an item to the list
     pub fn push<T: WriteRLP>(&mut self, item: &T) {
         item.write_rlp(&mut self.tail);
     }
@@ -159,10 +159,10 @@ fn bytes_count(x: usize) -> u8 {
     }
 }
 
-fn to_bytes(x: usize, b_len: u8) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::with_capacity(b_len as usize);
-    for i in 0..b_len {
-        let u = (x >> ((b_len - i - 1) * 8)) & 0xff;
+fn to_bytes(x: usize, len: u8) -> Vec<u8> {
+    let mut buf: Vec<u8> = Vec::with_capacity(len as usize);
+    for i in 0..len {
+        let u = (x >> ((len - i - 1) * 8)) & 0xff;
         buf.push(u as u8);
     }
     buf

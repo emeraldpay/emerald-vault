@@ -9,7 +9,9 @@ mod error;
 pub use self::address::try_extract_address;
 use self::crypto::Crypto;
 use self::error::Error;
-use super::{Address, KeyFile};
+use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
+use super::core::{self, Address};
+use super::util;
 use chrono::prelude::UTC;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
 use std::fs::{self, File};
@@ -107,7 +109,7 @@ pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Option<KeyF
     None
 }
 
-/// Serializes KeyFile into JSON file with name `UTC-<timestamp>Z--<uuid>`
+/// Serializes into JSON file with name `UTC-<timestamp>Z--<uuid>`
 ///
 /// # Arguments
 ///
@@ -135,24 +137,21 @@ pub fn to_file(kf: &KeyFile, dir: Option<&Path>) -> Result<File, Error> {
 /// Creates filename for keystore file in format:
 /// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
 pub fn get_filename() -> String {
-    format!("UTC--{}--{}", &get_timestamp(), &Uuid::new_v4())
+    format!("UTC--{}Z--{}", &get_timestamp(), &Uuid::new_v4())
 }
 
 /// Time stamp for core file in format `yyy-mm-ddThh-mm-ssZ`
 pub fn get_timestamp() -> String {
     let val = UTC::now().to_rfc3339();
     let stamp = str::replace(val.as_str(), ":", "-");
-    let data: Vec<&str> = stamp.split(".").collect(); //cut off milliseconds
-
-    format!("{}Z", data[0])
+    let data: Vec<&str> = stamp.split('.').collect(); //cut off milliseconds
+    data[0].to_string()
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use regex::Regex;
-    use rustc_serialize::json;
+    use tests::*;
 
     #[test]
     fn should_catch_unsupported_keyfile_version() {
@@ -193,13 +192,15 @@ mod tests {
 
     #[test]
     fn should_generate_timestamp() {
-        let re = Regex::new(r"^\d{4}-\d{2}-\d{2}[T]\d{2}-\d{2}-\d{2}[Z]").unwrap();
+        let re = Regex::new(r"^\d{4}-\d{2}-\d{2}[T]\d{2}-\d{2}-\d{2}").unwrap();
+
         assert!(re.is_match(&get_timestamp()));
     }
 
     #[test]
     fn should_generate_filename() {
         let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
+
         assert!(re.is_match(&get_filename()));
     }
 }

@@ -16,6 +16,7 @@ impl AsyncWrapper {
         AsyncWrapper { url: url.into_url().expect("Expect to encode request url") }
     }
 
+    /// Send and JSON RPC HTTP request
     pub fn request(&self, params: &MethodParams) -> BoxFuture<Value, Error> {
         let client = Client::new().expect("Expect to create a request client");
 
