@@ -6,21 +6,43 @@ mod byte_array;
 mod crypto;
 mod error;
 
-pub use self::address::{search_by_address, try_extract_address};
+pub use self::address::try_extract_address;
 use self::crypto::Crypto;
 use self::error::Error;
 use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::core::{self, Address};
 use super::util;
 use chrono::prelude::UTC;
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
 use uuid::Uuid;
+
 
 /// Keystore file current version used for serializing
 pub const CURRENT_VERSION: u8 = 3;
 
 /// Supported keystore file versions (only current V3 now)
 pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
+
+impl KeyFile {
+    /// Serializes into JSON file with name `UTC-<timestamp>Z--<uuid>`
+    ///
+    /// # Arguments
+    ///
+    /// * `dir` - path to destination directory
+    ///
+    pub fn to_file<P: AsRef<Path>>(&self, dir: P) -> Result<File, Error> {
+        let path = dir.as_ref()
+            .with_file_name(&get_filename(&self.uuid.to_string()));
+        let mut file = File::create(&path)?;
+        let data = json::encode(self)?;
+        file.write_all(data.as_ref()).ok();
+
+        Ok(file)
+    }
+}
 
 impl Decodable for KeyFile {
     fn decode<D: Decoder>(d: &mut D) -> Result<KeyFile, D::Error> {

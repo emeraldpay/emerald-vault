@@ -10,7 +10,6 @@ use std::io::Read;
 use std::path::Path;
 use std::str::FromStr;
 
-
 impl Decodable for Address {
     fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
         d.read_str()
@@ -37,38 +36,39 @@ pub fn try_extract_address(text: &str) -> Option<Address> {
         .and_then(|s| s.parse().ok())
 }
 
-/// Search of `KeyFile` by specified `Address`
-///
-/// # Arguments
-///
-/// * `path` - path with keystore files
-/// * `addr` - target address
-///
-pub fn search_by_address<P: AsRef<Path>>(path: P, addr: &Address) -> Result<KeyFile, Error> {
-    let entries = fs::read_dir(path)?;
+impl Address {
+    /// Search of `KeyFile` by specified `Address`
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - path with keystore files
+    ///
+    pub fn search<P: AsRef<Path>>(&self, path: P) -> Result<KeyFile, Error> {
+        let entries = fs::read_dir(path)?;
 
-    for entry in entries {
-        let path = entry?.path();
+        for entry in entries {
+            let path = entry?.path();
 
-        if path.is_dir() {
-            continue;
-        }
-
-        let mut file = fs::File::open(path)?;
-        let mut content = String::new();
-
-        if file.read_to_string(&mut content).is_err() {
-            continue;
-        }
-        match try_extract_address(&content) {
-            Some(a) if a == *addr => {
-                return Ok(json::decode::<KeyFile>(&content)?);
+            if path.is_dir() {
+                continue;
             }
-            _ => continue,
-        }
-    }
 
-    Err(Error::InvalidKeyfileSearch(String::from("No entry found")))
+            let mut file = fs::File::open(path)?;
+            let mut content = String::new();
+
+            if file.read_to_string(&mut content).is_err() {
+                continue;
+            }
+            match try_extract_address(&content) {
+                Some(a) if a == *self => {
+                    return Ok(json::decode::<KeyFile>(&content)?);
+                }
+                _ => continue,
+            }
+        }
+
+        Err(Error::KeyfileCreation(String::from("No entry found")))
+    }
 }
 
 #[cfg(test)]

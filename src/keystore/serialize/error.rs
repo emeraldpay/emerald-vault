@@ -9,9 +9,11 @@ pub enum Error {
     /// An unsupported version
     UnsupportedVersion(u8),
     /// Can't proceed keyfile search by address
-    InvalidKeyfileSearch(String),
+    KeyfileCreation(String),
     /// Can't decode to `Keyfile`
     InvalidKeyfileDecoding(String),
+    /// Can't endoce to `Keyfile`
+    InvalidKeyfileEncoding(String),
 }
 
 impl fmt::Display for Error {
@@ -20,10 +22,9 @@ impl fmt::Display for Error {
             Error::UnsupportedVersion(ver) => {
                 write!(f, "Unsupported keystore file version: {}", ver)
             }
-            Error::InvalidKeyfileSearch(ref str) => {
-                write!(f, "Can't proceed Keyfile search: {}", str)
-            }
+            Error::KeyfileCreation(ref str) => write!(f, "Can't create file for Keyfile: {}", str),
             Error::InvalidKeyfileDecoding(ref str) => write!(f, "Can't decode Keyfile: {}", str),
+            Error::InvalidKeyfileEncoding(ref str) => write!(f, "Can't decode Keyfile: {}", str),
         }
     }
 }
@@ -48,6 +49,12 @@ impl From<json::DecoderError> for Error {
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Self {
-        Error::InvalidKeyfileSearch(err.to_string())
+        Error::KeyfileCreation(err.to_string())
+    }
+}
+
+impl From<json::EncoderError> for Error {
+    fn from(err: json::EncoderError) -> Self {
+        Error::InvalidKeyfileEncoding(err.to_string())
     }
 }
