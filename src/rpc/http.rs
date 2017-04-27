@@ -16,9 +16,9 @@ impl AsyncWrapper {
         AsyncWrapper { url: url.into_url().expect("Expect to encode request url") }
     }
 
-    /// Send and JSON RPC HTTP request
+    /// Wrap JSON RPC HTTP post request with async futures
     pub fn request(&self, params: &MethodParams) -> BoxFuture<Value, jsonrpc_core::Error> {
-        match self.send(params) {
+        match self.send_post(params) {
             Ok(res) => ::futures::finished(res).boxed(),
             Err(err) => {
                 error!("{}", err);
@@ -27,7 +27,8 @@ impl AsyncWrapper {
         }
     }
 
-    fn send(&self, params: &MethodParams) -> Result<Value, Error> {
+    /// Send and JSON RPC HTTP post request
+    pub fn send_post(&self, params: &MethodParams) -> Result<Value, Error> {
         let client = Client::new()?;
         let mut res = client.post(self.url.clone()).json(params).send()?;
         let json: Value = res.json()?;
