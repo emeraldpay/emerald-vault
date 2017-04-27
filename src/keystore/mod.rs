@@ -14,8 +14,8 @@ pub use self::error::Error;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
 pub use self::serialize::{search_by_address, to_file, try_extract_address};
-pub use super::core::{Address, PrivateKey};
-use super::util::{KECCAK256_BYTES, keccak256, to_arr};
+use super::core::{self, Address, PrivateKey};
+use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
 use rand::{OsRng, Rng};
 use std::{cmp, fmt};
 use uuid::Uuid;
@@ -64,12 +64,30 @@ impl KeyFile {
     /// Generate default wallet with unique `uuid`
     pub fn new() -> Self {
         let mut kf = Self::from(Uuid::new_v4());
-        let mut rng = OsRng::new()
-            .ok()
-            .expect("Expect to receive OS random generator");
+
+        let mut rng = OsRng::new().expect("Expect OS specific random number generator");
         rng.fill_bytes(&mut kf.kdf_salt);
         rng.fill_bytes(&mut kf.cipher_iv);
 
+        kf
+    }
+
+    /// Creates a new `KeyFile` with specified `Address` and passphrase
+    ///
+    /// # Arguments
+    ///
+    /// * `pk` - private key to encrypt
+    /// * `passphrase` - password for key derivation function
+    /// * `addr` - optional address to be included
+    ///
+    pub fn create(pk: PrivateKey, passphrase: &str, addr: Option<Address>) -> KeyFile {
+        let mut kf = KeyFile::new();
+
+        if let Some(a) = addr {
+            kf.with_address(&a);
+        }
+
+        kf.encrypt_key(pk, passphrase);
         kf
     }
 
@@ -98,36 +116,18 @@ impl KeyFile {
     }
 
     /// Encrypt a new private key for keystore file with a passphrase
-    pub fn encrypt_key(&mut self, pk: &[u8], passphrase: &str) {
+    pub fn encrypt_key(&mut self, pk: PrivateKey, passphrase: &str) {
         let derived = self.kdf
             .derive(self.dk_length, &self.kdf_salt, passphrase);
 
-        self.cipher_text = self.cipher.encrypt(pk, &derived[0..16], &self.cipher_iv);
+        self.cipher_text = self.cipher
+            .encrypt(&pk, &derived[0..16], &self.cipher_iv);
 
         let mut v = vec![];
         v.extend_from_slice(&derived[16..32]);
         v.extend_from_slice(&self.cipher_text);
 
         self.keccak256_mac = keccak256(&v);
-    }
-
-    /// Creates a new `KeyFile` with a specified `Address`
-    ///
-    /// # Arguments
-    ///
-    /// * `pk` - private core for inserting in a `KeyFile`
-    /// * `passphrase` - password for encryption of private core
-    /// * `addr` - optional address to be included in `KeyFile`
-    ///
-    pub fn create(pk: PrivateKey, passphrase: &str, addr: Option<Address>) -> KeyFile {
-        let mut kf = KeyFile::new();
-        match addr {
-            Some(a) => kf.with_address(&a),
-            _ => {}
-        }
-        kf.encrypt_key(&pk, passphrase);
-
-        kf
     }
 }
 
@@ -183,7 +183,7 @@ impl fmt::Display for KeyFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rustc_serialize::hex::{FromHex, ToHex};
+    use tests::*;
 
     #[test]
     fn should_eq_regardless_of_address() {
@@ -196,76 +196,5 @@ mod tests {
                                            .unwrap());
 
         assert_eq!(key_without_address, key_with_address);
-    }
-
-    #[test]
-    fn should_derive_key_via_pbkdf2() {
-        let kdf_salt = "ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd"
-            .from_hex()
-            .unwrap();
-
-        assert_eq!(Kdf::from(262144)
-                       .derive(32, &kdf_salt, "testpassword")
-                       .to_hex(),
-                   "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551");
-    }
-
-    #[test]
-    fn should_derive_key_via_scrypt() {
-        let kdf_salt = "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
-            .from_hex()
-            .unwrap();
-
-        assert_eq!(Kdf::from((1024, 8, 1))
-                       .derive(32, &kdf_salt, "1234567890")
-                       .to_hex(),
-                   "b424c7c40d2409b8b7dce0d172bda34ca70e57232eb74db89396b55304dbe273");
-    }
-
-    #[test]
-    fn should_decrypt_key() {
-        let text = "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46"
-            .from_hex()
-            .unwrap();
-
-        let key = "f06d69cdc7da0faffb1008270bca38f5".from_hex().unwrap();
-        let iv = "6087dab2f9fdbbfaddc31a909735c1e6".from_hex().unwrap();
-
-        assert_eq!(Cipher::Aes256Ctr.encrypt(&text, &key, &iv).to_hex(),
-                   "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d");
-    }
-
-    #[test]
-    fn should_encrypt_key() {
-        let key = "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f"
-            .from_hex()
-            .unwrap();
-
-        let mut kf = KeyFile::default();
-
-        kf.kdf = Kdf::Scrypt {
-            n: 1024,
-            r: 8,
-            p: 1,
-        };
-
-        kf.cipher_iv = to_arr(&"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap());
-        kf.kdf_salt = to_arr(&"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
-                                  .from_hex()
-                                  .unwrap());
-
-        kf.encrypt_key(&key, "1234567890");
-
-        assert_eq!(kf.cipher_text,
-                   "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
-                       .from_hex()
-                       .unwrap());
-
-        let mac: [u8; 32] =
-            to_arr(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
-                        .from_hex()
-                        .unwrap());
-
-        assert_eq!(kf.keccak256_mac, mac);
     }
 }

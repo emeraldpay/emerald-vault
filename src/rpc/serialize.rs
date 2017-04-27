@@ -20,7 +20,7 @@ struct JsonData<'a> {
     id: usize,
 }
 
-const EMPTY_DATA: &'static [u8; 1] = &[0; 1];
+const EMPTY_DATA: &'static [u8; 1] = &[0];
 
 impl<'a> Transaction<'a> {
     /// Try to convert a request parameters to `Transaction`.

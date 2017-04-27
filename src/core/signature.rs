@@ -30,7 +30,7 @@ impl PrivateKey {
         PrivateKey::from(SecretKey::new(&ECDSA, &mut rng))
     }
 
-    /// Try to convert a byte vector to `PrivateKey`.
+    /// Try to convert a byte slice into `PrivateKey`.
     ///
     /// # Arguments
     ///
@@ -68,7 +68,7 @@ impl PrivateKey {
                      hash: [u8; KECCAK256_BYTES])
                      -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
         let msg = Message::from_slice(&hash)?;
-        let key = SecretKey::from_slice(&ECDSA, &self)?;
+        let key = SecretKey::from_slice(&ECDSA, self)?;
         let sign = ECDSA.sign_schnorr(&msg, &key)?;
 
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
@@ -127,20 +127,14 @@ impl fmt::Display for PrivateKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use util::*;
-
-    macro_rules! bytes {
-        ($hex: expr) => ({
-            to_arr(&$hex.from_hex().unwrap())
-        })
-    }
+    use tests::*;
 
     #[test]
     fn should_sign_hash() {
-        let key =
-            PrivateKey(bytes!("dcb2652ce3f3e46a57fd4814f926daefd6082c5cda44d35a6fd0f6da67ca256e"));
+        let key = PrivateKey(
+            to_32bytes("dcb2652ce3f3e46a57fd4814f926daefd6082c5cda44d35a6fd0f6da67ca256e"));
 
-        assert!(key.sign_hash(
-            bytes!("1f483adb4a0f8c53d0ff8b6df23bbeae846815e7a52bac234edeaeb082b8d51a")).is_ok());
+        assert!(key.sign_hash(to_32bytes(
+            "1f483adb4a0f8c53d0ff8b6df23bbeae846815e7a52bac234edeaeb082b8d51a")).is_ok());
     }
 }

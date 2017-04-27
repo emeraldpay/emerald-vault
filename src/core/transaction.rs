@@ -99,14 +99,7 @@ impl From<Signature> for (u8, [u8; 32], [u8; 32]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rustc_serialize::hex::FromHex;
-    use util::*;
-
-    macro_rules! bytes {
-        ($hex: expr) => ({
-            to_arr(&$hex.from_hex().unwrap())
-        })
-    }
+    use tests::*;
 
     #[test]
     fn should_sign_transaction() {
@@ -116,8 +109,8 @@ mod tests {
             ..Default::default()
         };
 
-        let pk =
-            PrivateKey(bytes!("7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"));
+        let pk = PrivateKey(
+            to_32bytes("7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"));
 
         let res = tx.to_raw(&pk);
 

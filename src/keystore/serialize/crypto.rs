@@ -1,6 +1,7 @@
 //! # JSON serialize for crypto field (UTC / JSON)
 
-use keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, KECCAK256_BYTES, Kdf, KeyFile};
+use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
+use super::util::KECCAK256_BYTES;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use rustc_serialize::hex::{FromHex, ToHex};
 use std::str::FromStr;
@@ -166,8 +167,7 @@ fn decode_str<T: FromStr, D: Decoder>(d: &mut D) -> Result<T, D::Error>
 mod tests {
     use super::*;
     use keystore::Prf;
-    use rustc_serialize::hex::FromHex;
-    use rustc_serialize::json;
+    use tests::*;
 
     const PBKDF2_TEXT: &'static str = r#"{
       "cipher": "aes-128-ctr",

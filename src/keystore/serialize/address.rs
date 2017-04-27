@@ -1,6 +1,6 @@
 //! # JSON serialize format for hex encoded account addresses (without '0x' prefix)
 
-use super::Address;
+use super::core::Address;
 use regex::Regex;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use std::str::FromStr;
@@ -34,7 +34,7 @@ pub fn try_extract_address(text: &str) -> Option<Address> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rustc_serialize::json;
+    use tests::*;
 
     #[test]
     fn should_encode_default_address() {
