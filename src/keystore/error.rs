@@ -25,7 +25,7 @@ impl fmt::Display for Error {
             Error::UnsupportedPrf(ref str) => {
                 write!(f, "Unsupported pseudo-random function: {}", str)
             }
-            Error::FailedMacValidation => f.write_str("Message authentication code failed"),
+            Error::FailedMacValidation => write!(f, "Message authentication code failed"),
         }
     }
 }

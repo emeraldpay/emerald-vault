@@ -13,7 +13,7 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::Kdf;
 pub use self::prf::Prf;
-pub use self::serialize::{search_by_address, to_file, try_extract_address};
+pub use self::serialize::try_extract_address;
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
 use rand::{OsRng, Rng};

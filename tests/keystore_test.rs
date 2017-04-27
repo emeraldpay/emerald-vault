@@ -6,8 +6,7 @@ extern crate tempdir;
 extern crate uuid;
 
 use emerald::{Address, KECCAK256_BYTES, PrivateKey};
-use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile, Prf,
-                        search_by_address, to_file};
+use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile, Prf};
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
 use std::fs::File;
@@ -150,8 +149,7 @@ fn should_create_keyfile() {
     let addr = pk.to_address().unwrap();
     let file = KeyFile::create(pk, &"1234567890", Some(addr));
 
-    to_file(&file, Some(&temp_dir)).ok();
-
+    assert!(file.to_file(temp_dir.as_path()).is_ok());
     assert_eq!(file.address, Some(addr));
 }
 
@@ -161,8 +159,8 @@ fn should_search_by_address() {
         .parse::<Address>()
         .unwrap();
 
-    let res = search_by_address(&keystore_path(), &addr);
-    assert!(res.is_some());
+    let res = addr.search(&keystore_path());
+    assert!(res.is_ok());
 
     let kf = res.unwrap();
     assert_eq!(kf.uuid,
