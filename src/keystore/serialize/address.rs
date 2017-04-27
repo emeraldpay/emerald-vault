@@ -41,7 +41,7 @@ impl Address {
             }
         }
 
-        Err(Error::ItemNotFound)
+        Err(Error::NotFound)
     }
 }
 
