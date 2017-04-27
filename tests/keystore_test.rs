@@ -142,15 +142,12 @@ fn should_decode_keyfile_with_address() {
 }
 
 #[test]
-fn should_create_keyfile() {
-    let temp_dir = temp_dir();
+fn should_flush_to_file() {
     let pk = PrivateKey::gen();
-
     let addr = pk.to_address().unwrap();
-    let file = KeyFile::create(pk, &"1234567890", Some(addr));
+    let kf = KeyFile::create(pk, "1234567890", Some(addr));
 
-    assert!(file.to_file(temp_dir.as_path()).is_ok());
-    assert_eq!(file.address, Some(addr));
+    assert!(kf.flush(temp_dir().as_path()).is_ok());
 }
 
 #[test]
@@ -159,12 +156,9 @@ fn should_search_by_address() {
         .parse::<Address>()
         .unwrap();
 
-    let res = addr.search(&keystore_path());
-    assert!(res.is_ok());
+    let kf = addr.search_keyfile(&keystore_path()).unwrap();
 
-    let kf = res.unwrap();
-    assert_eq!(kf.uuid,
-               Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap());
+    assert_eq!(kf.address, Some(addr));
 }
 
 fn temp_dir() -> PathBuf {
@@ -192,6 +186,6 @@ fn keyfile_path(name: &str) -> PathBuf {
 
 fn keystore_path() -> PathBuf {
     let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
-    buf.push("tests/keystore");
+    buf.push("tests/keystore/serialize");
     buf
 }

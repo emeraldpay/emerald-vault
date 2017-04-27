@@ -10,32 +10,6 @@ use std::io::Read;
 use std::path::Path;
 use std::str::FromStr;
 
-impl Decodable for Address {
-    fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
-        d.read_str()
-            .map(|s| format!("0x{}", s))
-            .and_then(|s| Address::from_str(&s).map_err(|e| d.error(&e.to_string())))
-    }
-}
-
-impl Encodable for Address {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        s.emit_str(&self.to_string()[2..]) /* cut '0x' prefix */
-    }
-}
-
-/// Try to extract `Address` from JSON formatted text
-pub fn try_extract_address(text: &str) -> Option<Address> {
-    lazy_static! {
-        static ref ADDR_RE: Regex = Regex::new(r#"address.+([a-fA-F0-9]{40})"#).unwrap();
-    }
-
-    ADDR_RE
-        .captures(text)
-        .and_then(|g| g.get(1).map(|m| format!("0x{}", m.as_str())))
-        .and_then(|s| s.parse().ok())
-}
-
 impl Address {
     /// Search of `KeyFile` by specified `Address`
     ///
@@ -43,7 +17,7 @@ impl Address {
     ///
     /// * `path` - path with keystore files
     ///
-    pub fn search<P: AsRef<Path>>(&self, path: P) -> Result<KeyFile, Error> {
+    pub fn search_keyfile<P: AsRef<Path>>(&self, path: P) -> Result<KeyFile, Error> {
         let entries = fs::read_dir(path)?;
 
         for entry in entries {
@@ -67,8 +41,34 @@ impl Address {
             }
         }
 
-        Err(Error::KeyfileCreation(String::from("No entry found")))
+        Err(Error::ItemNotFound)
     }
+}
+
+impl Decodable for Address {
+    fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
+        d.read_str()
+            .map(|s| format!("0x{}", s))
+            .and_then(|s| Address::from_str(&s).map_err(|e| d.error(&e.to_string())))
+    }
+}
+
+impl Encodable for Address {
+    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+        s.emit_str(&self.to_string()[2..]) /* cut '0x' prefix */
+    }
+}
+
+/// Try to extract `Address` from JSON formatted text
+fn try_extract_address(text: &str) -> Option<Address> {
+    lazy_static! {
+        static ref ADDR_RE: Regex = Regex::new(r#"address.+([a-fA-F0-9]{40})"#).unwrap();
+    }
+
+    ADDR_RE
+        .captures(text)
+        .and_then(|g| g.get(1).map(|m| format!("0x{}", m.as_str())))
+        .and_then(|s| s.parse().ok())
 }
 
 #[cfg(test)]

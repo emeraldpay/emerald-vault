@@ -6,7 +6,6 @@ mod byte_array;
 mod crypto;
 mod error;
 
-pub use self::address::try_extract_address;
 use self::crypto::Crypto;
 use self::error::Error;
 use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
@@ -18,7 +17,6 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use uuid::Uuid;
-
 
 /// Keystore file current version used for serializing
 pub const CURRENT_VERSION: u8 = 3;
@@ -33,14 +31,13 @@ impl KeyFile {
     ///
     /// * `dir` - path to destination directory
     ///
-    pub fn to_file<P: AsRef<Path>>(&self, dir: P) -> Result<File, Error> {
+    pub fn flush<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
         let path = dir.as_ref()
             .with_file_name(&get_filename(&self.uuid.to_string()));
         let mut file = File::create(&path)?;
         let data = json::encode(self)?;
         file.write_all(data.as_ref()).ok();
-
-        Ok(file)
+        Ok(())
     }
 }
 
@@ -99,12 +96,12 @@ impl From<SerializableKeyFile> for KeyFile {
 ///
 /// * `uuid` - UUID for keyfile
 ///
-pub fn get_filename(uuid: &String) -> String {
+fn get_filename(uuid: &str) -> String {
     format!("UTC--{}Z--{}", &get_timestamp(), &uuid)
 }
 
 /// Time stamp for core file in format `yyy-mm-ddThh-mm-ssZ`
-pub fn get_timestamp() -> String {
+fn get_timestamp() -> String {
     let val = UTC::now().to_rfc3339();
     let stamp = str::replace(val.as_str(), ":", "-");
     let data: Vec<&str> = stamp.split('.').collect(); //cut off milliseconds
@@ -154,16 +151,16 @@ mod tests {
     }
 
     #[test]
+    fn should_generate_filename() {
+        let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
+
+        assert!(re.is_match(&get_filename("9bec4728-37f9-4444-9990-2ba70ee038e9")));
+    }
+
+    #[test]
     fn should_generate_timestamp() {
         let re = Regex::new(r"^\d{4}-\d{2}-\d{2}[T]\d{2}-\d{2}-\d{2}").unwrap();
 
         assert!(re.is_match(&get_timestamp()));
-    }
-
-    #[test]
-    fn should_generate_filename() {
-        let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
-
-        assert!(re.is_match(&get_filename(&String::from("9bec4728-37f9-4444-9990-2ba70ee038e9"))));
     }
 }
