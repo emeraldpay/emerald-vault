@@ -25,7 +25,7 @@ impl AsyncWrapper {
         match self.send_post(params) {
             Ok(res) => ::futures::finished(res).boxed(),
             Err(err) => {
-                error!("{}", err);
+                error!("HTTP POST request error: {}", err);
                 ::futures::failed(jsonrpc_core::Error::from(err)).boxed()
             }
         }

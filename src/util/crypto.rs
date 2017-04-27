@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn should_calculate_big_keccak256() {
-        assert_eq!(keccak256(&vec![b'-'; 1024]),
+        assert_eq!(keccak256(&[b'-'; 1024]),
                    to_32bytes("ea1da5135479c4eb22ed3743c379970895ed2d088fd5d79884b7493aaa49475b"));
     }
 }
