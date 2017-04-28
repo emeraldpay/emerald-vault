@@ -1,49 +1,9 @@
 //! # JSON serialize format for hex encoded account addresses (without '0x' prefix)
 
-use super::Error;
-use super::KeyFile;
 use super::core::Address;
 use regex::Regex;
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
-use std::fs;
-use std::io::Read;
-use std::path::Path;
+use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use std::str::FromStr;
-
-impl Address {
-    /// Search of `KeyFile` by specified `Address`
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - path with keystore files
-    ///
-    pub fn search_keyfile<P: AsRef<Path>>(&self, path: P) -> Result<KeyFile, Error> {
-        let entries = fs::read_dir(path)?;
-
-        for entry in entries {
-            let path = entry?.path();
-
-            if path.is_dir() {
-                continue;
-            }
-
-            let mut file = fs::File::open(path)?;
-            let mut content = String::new();
-
-            if file.read_to_string(&mut content).is_err() {
-                continue;
-            }
-            match try_extract_address(&content) {
-                Some(a) if a == *self => {
-                    return Ok(json::decode::<KeyFile>(&content)?);
-                }
-                _ => continue,
-            }
-        }
-
-        Err(Error::NotFound)
-    }
-}
 
 impl Decodable for Address {
     fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
@@ -60,7 +20,7 @@ impl Encodable for Address {
 }
 
 /// Try to extract `Address` from JSON formatted text
-fn try_extract_address(text: &str) -> Option<Address> {
+pub fn try_extract_address(text: &str) -> Option<Address> {
     lazy_static! {
         static ref ADDR_RE: Regex = Regex::new(r#"address.+([a-fA-F0-9]{40})"#).unwrap();
     }
