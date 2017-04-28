@@ -39,9 +39,7 @@ impl From<json::DecoderError> for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::UnsupportedVersion(ver) => {
-                write!(f, "Unsupported keystore file version: {}", ver)
-            }
+            Error::UnsupportedVersion(v) => write!(f, "Unsupported keystore file version: {}", v),
             Error::IO(ref err) => write!(f, "Keystore file IO error: {}", err),
             Error::InvalidDecoding(ref err) => write!(f, "Invalid keystore file decoding: {}", err),
             Error::InvalidEncoding(ref err) => write!(f, "Invalid keystore file encoding: {}", err),

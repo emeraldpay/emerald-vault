@@ -84,7 +84,7 @@ impl Decodable for KeyFile {
             return Err(d.error(&Error::UnsupportedVersion(ser.version).to_string()));
         }
 
-        Ok(KeyFile::from(ser))
+        Ok(ser.into())
     }
 }
 
@@ -114,12 +114,12 @@ impl From<KeyFile> for SerializableKeyFile {
     }
 }
 
-impl From<SerializableKeyFile> for KeyFile {
-    fn from(ser: SerializableKeyFile) -> KeyFile {
+impl Into<KeyFile> for SerializableKeyFile {
+    fn into(self) -> KeyFile {
         KeyFile {
-            uuid: ser.id,
-            address: ser.address,
-            ..KeyFile::from(ser.crypto)
+            uuid: self.id,
+            address: self.address,
+            ..KeyFile::from(self.crypto)
         }
     }
 }
