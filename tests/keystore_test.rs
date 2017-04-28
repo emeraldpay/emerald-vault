@@ -144,8 +144,7 @@ fn should_decode_keyfile_with_address() {
 #[test]
 fn should_flush_to_file() {
     let pk = PrivateKey::gen();
-    let addr = pk.to_address().unwrap();
-    let kf = KeyFile::create(pk, "1234567890", Some(addr));
+    let kf = KeyFile::create(Some(pk), "1234567890", true).unwrap();
 
     assert!(kf.flush(temp_dir().as_path()).is_ok());
 }

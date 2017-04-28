@@ -71,23 +71,32 @@ impl KeyFile {
         kf
     }
 
-    /// Creates a new `KeyFile` with specified `Address` and passphrase
+    /// Creates a new `KeyFile` with specified passphrase
+    /// Uses supplied `PrivateKey` or generates new one
+    /// `Address` inclusion defined by flag
     ///
     /// # Arguments
     ///
-    /// * `pk` - private key to encrypt
+    /// * `pk` - optional private key to encrypt
     /// * `passphrase` - password for key derivation function
-    /// * `addr` - optional address to be included
+    /// * `with_addr` - flag for address inclusion
     ///
-    pub fn create(pk: PrivateKey, passphrase: &str, addr: Option<Address>) -> KeyFile {
+    pub fn create(pkey: Option<PrivateKey>,
+                  passphrase: &str,
+                  with_addr: bool)
+                  -> Result<KeyFile, Error> {
         let mut kf = KeyFile::new();
+        let pk = match pkey {
+            Some(k) => k,
+            None => PrivateKey::gen(),
+        };
 
-        if let Some(a) = addr {
-            kf.with_address(&a);
+        if with_addr {
+            kf.with_address(&pk.to_address()?);
         }
-
         kf.encrypt_key(pk, passphrase);
-        kf
+
+        Ok(kf)
     }
 
     /// Append `Address` to current wallet
@@ -195,5 +204,21 @@ mod tests {
                                            .unwrap());
 
         assert_eq!(key_without_address, key_with_address);
+    }
+
+    #[test]
+    fn should_create_from_private_key() {
+        let pk_generated = PrivateKey::gen();
+        let pk_extracted = KeyFile::create(Some(pk_generated), "1234567890", false)
+            .and_then(|kf| kf.decrypt_key("1234567890"))
+            .unwrap();
+
+        assert_eq!(pk_generated, pk_extracted);
+    }
+
+    #[test]
+    fn should_create_from_generated() {
+        let res = KeyFile::create(None, "1234567890", false);
+        assert!(res.is_ok());
     }
 }
