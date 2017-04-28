@@ -129,17 +129,23 @@ mod tests {
     }
 
     #[test]
-    fn should_extract_address() {
+    fn should_extract_address_single_quoted() {
         assert_eq!(try_extract_address(r#"address: '008aeeda4d805471df9b2a5b0f38a0c3bcba786b',"#),
                    Some("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b"
                             .parse::<Address>()
                             .unwrap()));
+    }
 
+    #[test]
+    fn should_extract_address_double_quoted() {
         assert_eq!(try_extract_address(r#""address": "0047201aed0b69875b24b614dda0270bcd9f11cc","#),
-        Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc"
-            .parse::<Address>()
-            .unwrap()));
+            Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc"
+                .parse::<Address>()
+                .unwrap()));
+    }
 
+    #[test]
+    fn should_extract_address_with_optional_fields() {
         assert_eq!(try_extract_address(r#"  },
                      "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
                      "name": "",
