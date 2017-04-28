@@ -90,9 +90,9 @@ impl From<[u8; 64]> for Signature {
     }
 }
 
-impl From<Signature> for (u8, [u8; 32], [u8; 32]) {
-    fn from(s: Signature) -> Self {
-        (s.v, s.r, s.s)
+impl Into<(u8, [u8; 32], [u8; 32])> for Signature {
+    fn into(self) -> (u8, [u8; 32], [u8; 32]) {
+        (self.v, self.r, self.s)
     }
 }
 

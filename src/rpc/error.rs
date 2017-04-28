@@ -17,8 +17,8 @@ impl From<reqwest::Error> for Error {
     }
 }
 
-impl From<Error> for jsonrpc_core::Error {
-    fn from(_err: Error) -> Self {
+impl Into<jsonrpc_core::Error> for Error {
+    fn into(self) -> jsonrpc_core::Error {
         jsonrpc_core::Error::internal_error()
     }
 }

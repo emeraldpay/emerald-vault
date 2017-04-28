@@ -14,15 +14,15 @@ macro_rules! byte_array_struct {
             }
         }
 
-        impl From<$name> for [u8; $num] {
-            fn from(arr: $name) -> Self {
-                arr.0
-            }
-        }
-
         impl From<[u8; $num]> for $name {
             fn from(bytes: [u8; $num]) -> Self {
                 $name(bytes)
+            }
+        }
+
+        impl Into<[u8; $num]> for $name {
+            fn into(self) -> [u8; $num] {
+                self.0
             }
         }
 
