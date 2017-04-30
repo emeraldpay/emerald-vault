@@ -142,6 +142,7 @@ fn bytes_hash(data: &[u8]) -> [u8; KECCAK256_BYTES] {
     keccak256(&v)
 }
 
+/// [internal/ethapi: add personal_sign method](https://github.com/ethereum/go-ethereum/pull/2940)
 fn prefix(data: &[u8]) -> String {
     format!("\x19Ethereum Signed Message:\x0a{}", data.len())
 }
