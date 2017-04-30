@@ -137,11 +137,13 @@ fn message_hash(msg: &str) -> [u8; KECCAK256_BYTES] {
 }
 
 fn bytes_hash(data: &[u8]) -> [u8; KECCAK256_BYTES] {
-    let str = format!("\x19Ethereum Signed Message:\x0a{}", data.len());
-
-    let mut v = str.into_bytes();
+    let mut v = prefix(data).into_bytes();
     v.extend_from_slice(data);
     keccak256(&v)
+}
+
+fn prefix(data: &[u8]) -> String {
+    format!("\x19Ethereum Signed Message:\x0a{}", data.len())
 }
 
 #[cfg(test)]
