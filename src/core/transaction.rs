@@ -1,6 +1,6 @@
 //! # Account transaction
 
-use super::{Address, Error, PrivateKey};
+use super::{Address, ECDSA_SIGNATURE_BYTES, Error, PrivateKey};
 use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256};
 
 /// Transaction data
@@ -78,11 +78,11 @@ pub struct Signature {
     pub s: [u8; 32],
 }
 
-impl From<[u8; 64]> for Signature {
-    fn from(data: [u8; 64]) -> Self {
+impl From<[u8; ECDSA_SIGNATURE_BYTES]> for Signature {
+    fn from(data: [u8; ECDSA_SIGNATURE_BYTES]) -> Self {
         let mut sign = Signature::default();
 
-        sign.v = data[63] /* parity */ + 27;
+        sign.v = data[64] /* parity + 27 */;
         sign.r.copy_from_slice(&data[0..32]);
         sign.s.copy_from_slice(&data[32..64]);
 
