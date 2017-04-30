@@ -84,7 +84,7 @@ impl Into<KeyFile> for SerializableKeyFile {
         KeyFile {
             uuid: self.id,
             address: self.address,
-            ..KeyFile::from(self.crypto)
+            ..self.crypto.into()
         }
     }
 }
