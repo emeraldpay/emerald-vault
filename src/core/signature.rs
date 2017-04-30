@@ -19,6 +19,37 @@ lazy_static! {
     static ref ECDSA: Secp256k1 = Secp256k1::with_caps(ContextFlag::SignOnly);
 }
 
+/// Transaction sign data (see Appendix F. "Signing Transactions" from Yellow Paper)
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Signature {
+    /// ‘recovery id’, a 1 byte value specifying the sign and finiteness of the curve point
+    pub v: u8,
+
+    /// ECDSA signature first point (0 < r < secp256k1n)
+    pub r: [u8; 32],
+
+    /// ECDSA signature second point (0 < s < secp256k1n ÷ 2 + 1)
+    pub s: [u8; 32],
+}
+
+impl From<[u8; ECDSA_SIGNATURE_BYTES]> for Signature {
+    fn from(data: [u8; ECDSA_SIGNATURE_BYTES]) -> Self {
+        let mut sign = Signature::default();
+
+        sign.v = data[64];
+        sign.r.copy_from_slice(&data[0..32]);
+        sign.s.copy_from_slice(&data[32..64]);
+
+        sign
+    }
+}
+
+impl Into<(u8, [u8; 32], [u8; 32])> for Signature {
+    fn into(self) -> (u8, [u8; 32], [u8; 32]) {
+        (self.v, self.r, self.s)
+    }
+}
+
 /// Private key used as x in an ECDSA signature
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
@@ -59,19 +90,17 @@ impl PrivateKey {
     }
 
     /// Sign message
-    pub fn sign_message(&self, msg: &str) -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
+    pub fn sign_message(&self, msg: &str) -> Result<Signature, Error> {
         self.sign_hash(message_hash(msg))
     }
 
     /// Sign a slice of bytes
-    pub fn sign_bytes(&self, data: &[u8]) -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
+    pub fn sign_bytes(&self, data: &[u8]) -> Result<Signature, Error> {
         self.sign_hash(bytes_hash(data))
     }
 
     /// Sign hash from message (Keccak-256)
-    pub fn sign_hash(&self,
-                     hash: [u8; KECCAK256_BYTES])
-                     -> Result<[u8; ECDSA_SIGNATURE_BYTES], Error> {
+    pub fn sign_hash(&self, hash: [u8; KECCAK256_BYTES]) -> Result<Signature, Error> {
         let msg = Message::from_slice(&hash)?;
         let key = SecretKey::from_slice(&ECDSA, &self)?;
 
@@ -81,7 +110,7 @@ impl PrivateKey {
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
         buf[0..64].copy_from_slice(&sig[0..64]);
         buf[64] = (rid.to_i32() + 27) as u8;
-        Ok(buf)
+        Ok(Signature::from(buf))
     }
 }
 
@@ -166,12 +195,15 @@ mod tests {
         let key = PrivateKey(
             to_32bytes("3c9229289a6125f7fdf1885a77bb12c37a8d3b4962d936f7e3084dece32a3ca1"));
 
-        let hash = to_32bytes("82ff40c0a986c6a5cfad4ddf4c3aa6996f1a7837f9c398e17e5de5cbd5a12b28");
+        let s = key.sign_hash(
+            to_32bytes("82ff40c0a986c6a5cfad4ddf4c3aa6996f1a7837f9c398e17e5de5cbd5a12b28"))
+            .unwrap();
 
-        assert_eq!(key.sign_hash(hash).unwrap().to_hex(),
-                   "99e71a99cb2270b8cac5254f9e99b6210c6c10224a1579cf389ef88b20a1abe9\
-                   129ff05af364204442bdb53ab6f18a99ab48acc9326fa689f228040429e3ca66\
-                   1b");
+        assert_eq!(s.v, 27);
+        assert_eq!(s.r,
+                   to_32bytes("99e71a99cb2270b8cac5254f9e99b6210c6c10224a1579cf389ef88b20a1abe9"));
+        assert_eq!(s.s,
+                   to_32bytes("129ff05af364204442bdb53ab6f18a99ab48acc9326fa689f228040429e3ca66"));
     }
 
     #[test]
