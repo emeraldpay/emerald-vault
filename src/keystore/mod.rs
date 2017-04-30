@@ -77,19 +77,34 @@ impl KeyFile {
     ///
     /// # Arguments
     ///
-    /// * `pk` - optional private key to encrypt
+    /// * `passphrase` - password for key derivation function
+    /// * `kdf` - customized key derivation function
+    /// * `with_addr` - flag for address inclusion
+    ///
+    pub fn create_custom(passphrase: &str, kdf: Kdf, with_addr: bool) -> Result<KeyFile, Error> {
+        let mut kf = KeyFile::new();
+        kf.kdf = kdf;
+
+        let pk = PrivateKey::gen();
+        if with_addr {
+            kf.with_address(&pk.to_address()?);
+        }
+        kf.encrypt_key(pk, passphrase);
+
+        Ok(kf)
+    }
+
+    /// Creates a new `KeyFile` with specified passphrase
+    /// `Address` inclusion defined by flag
+    ///
+    /// # Arguments
+    ///
     /// * `passphrase` - password for key derivation function
     /// * `with_addr` - flag for address inclusion
     ///
-    pub fn create(pkey: Option<PrivateKey>,
-                  passphrase: &str,
-                  with_addr: bool)
-                  -> Result<KeyFile, Error> {
+    pub fn create(passphrase: &str, with_addr: bool) -> Result<KeyFile, Error> {
         let mut kf = KeyFile::new();
-        let pk = match pkey {
-            Some(k) => k,
-            None => PrivateKey::gen(),
-        };
+        let pk = PrivateKey::gen();
 
         if with_addr {
             kf.with_address(&pk.to_address()?);
@@ -207,18 +222,16 @@ mod tests {
     }
 
     #[test]
-    fn should_create_from_private_key() {
-        let pk_generated = PrivateKey::gen();
-        let pk_extracted = KeyFile::create(Some(pk_generated), "1234567890", false)
-            .and_then(|kf| kf.decrypt_key("1234567890"))
-            .unwrap();
-
-        assert_eq!(pk_generated, pk_extracted);
+    fn should_create() {
+        assert!(KeyFile::create("1234567890", false).is_ok());
     }
 
     #[test]
-    fn should_create_from_generated() {
-        let res = KeyFile::create(None, "1234567890", false);
+    fn should_create_custom() {
+        let custom_kdf = Kdf::from((8, 2, 1));
+        let res = KeyFile::create_custom("1234567890", custom_kdf, false);
+
         assert!(res.is_ok());
+        assert_eq!(custom_kdf, res.unwrap().kdf);
     }
 }
