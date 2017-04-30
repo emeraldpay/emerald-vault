@@ -78,7 +78,7 @@ impl PrivateKey {
         let s = ECDSA.sign_recoverable(&msg, &key)?;
         let (rid, sig) = s.serialize_compact(&ECDSA);
 
-        let mut buf = [0; ECDSA_SIGNATURE_BYTES];
+        let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
         buf[0..64].copy_from_slice(&sig[0..64]);
         buf[64] = (rid.to_i32() + 27) as u8;
         Ok(buf)
