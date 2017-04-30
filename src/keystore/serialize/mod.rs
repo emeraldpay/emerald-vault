@@ -19,7 +19,6 @@ use std::io::{Read, Write};
 use std::path::Path;
 use uuid::Uuid;
 
-
 /// Keystore file current version used for serializing
 pub const CURRENT_VERSION: u8 = 3;
 
