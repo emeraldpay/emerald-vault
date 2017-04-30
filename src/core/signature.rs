@@ -159,19 +159,6 @@ mod tests {
     }
 
     #[test]
-    fn should_sign_message() {
-        let key = PrivateKey(
-            to_32bytes("00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf"));
-
-        assert_eq!(key.sign_message("Emerald SDK | 29 APR 2017 00:22")
-                       .unwrap()
-                       .to_hex(),
-                   "474feb17b8c08e2434fd3b346449c2c08d2ab9ab15e4d058621ae03ff46001a0\
-                   2545dc513074ac0c4090ede31cd64463edf3b0db719a5442b29be714a9ec7f1a\
-                   1b");
-    }
-
-    #[test]
     fn should_sign_hash() {
         let key = PrivateKey(
             to_32bytes("3c9229289a6125f7fdf1885a77bb12c37a8d3b4962d936f7e3084dece32a3ca1"));
