@@ -46,10 +46,10 @@ impl Into<KeyFile> for Crypto {
             dk_length: self.kdfparams_dklen,
             kdf: self.kdf,
             kdf_salt: self.kdfparams_salt.into(),
-            keccak256_mac: self.mac.into(),
             cipher: self.cipher,
             cipher_text: self.cipher_text.clone(),
             cipher_iv: self.cipher_params.iv.into(),
+            keccak256_mac: self.mac.into(),
             ..Default::default()
         }
     }

@@ -24,24 +24,33 @@ use std::sync::Arc;
 pub enum Method {
     /// [web3_clientVersion](https://github.com/ethereum/wiki/wiki/JSON-RPC#web3_clientversion)
     ClientVersion,
+
     /// [eth_syncing](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_syncing)
     EthSyncing,
+
     /// [eth_blockNumber](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_blocknumber)
     EthBlockNumber,
+
     /// [eth_accounts](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_accounts)
     EthAccounts,
+
     /// [eth_getBalance](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getbalance)
     EthGetBalance,
+
     /// [eth_getTransactionCount](
     /// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactioncount)
     EthGetTxCount,
+
     /// [eth_sendRawTransaction](
     /// https://github.com/paritytech/parity/wiki/JSONRPC-eth-module#eth_sendrawtransaction)
     EthSendRawTransaction,
+
     /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
     EthCall,
+
     /// `trace_call`
     TraceCall,
+
     /// [eth_getTransactionByHash](
     /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash)
     GetTxByHash,
@@ -144,7 +153,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
                     Ok(tr) => {
                         url.request(&MethodParams(
                             Method::EthSendRawTransaction,
-                            &tr.to_raw_params(&pk.unwrap())))
+                            &tr.to_raw_params(pk.unwrap())))
                     }
                     Err(err) => futures::done(Err(XError::invalid_params(err.to_string()))).boxed(),
                 }

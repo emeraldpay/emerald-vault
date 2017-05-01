@@ -8,12 +8,16 @@ use std::{error, fmt, io};
 pub enum Error {
     /// An unsupported version
     UnsupportedVersion(u8),
+
     /// IO errors
     IO(io::Error),
+
     /// Invalid `Keyfile` decoding
     InvalidDecoding(json::DecoderError),
+
     /// Invalid `Keyfile` encoding
     InvalidEncoding(json::EncoderError),
+
     /// `KeyFile` wasn't found
     NotFound,
 }

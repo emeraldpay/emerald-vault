@@ -15,9 +15,6 @@ pub struct Transaction<'a> {
     /// Gas Limit
     pub gas_limit: u64,
 
-    /// Source address
-    pub from: Address,
-
     /// Target address, or None to create contract
     pub to: Option<Address>,
 
@@ -30,7 +27,7 @@ pub struct Transaction<'a> {
 
 impl<'a> Transaction<'a> {
     /// Sign transaction data with provided private key
-    pub fn to_raw(&self, pk: &PrivateKey) -> Result<Vec<u8>, Error> {
+    pub fn to_signed_raw(&self, pk: PrivateKey) -> Result<Vec<u8>, Error> {
         let mut rlp = self.to_rlp();
 
         let sig = pk.sign_hash(self.hash())?;
@@ -71,18 +68,27 @@ mod tests {
 
     #[test]
     fn should_sign_transaction() {
+        let empty = [];
         let tx = Transaction {
-            nonce: 101,
-            gas_limit: 100000,
-            ..Default::default()
+            nonce: 0,
+            gas_price: /* 21000000000 */
+                to_32bytes("00000000000000000000000000000000000000000000000000000004e3b29200"),
+            gas_limit: 21000,
+            to: Some("0x13978aee95f38490e9769c39b2773ed763d9cd5f"
+                    .parse::<Address>()
+                    .unwrap()),
+            value: /* 1 ETC */
+                to_32bytes("0000000000000000000000000000000000000000000000000de0b6b3a7640000"),
+            data: &empty,
         };
 
         let pk = PrivateKey(
-            to_32bytes("7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"));
+            to_32bytes("c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4"));
 
-        let res = tx.to_raw(&pk);
-
-        assert!(res.is_ok());
-        assert!(res.unwrap().len() > 32);
+        assert_eq!(tx.to_signed_raw(pk).unwrap().to_hex(),
+                   "f86d808504e3b292008252089413978aee95f38490e9769c39b2773ed763d9cd\
+                    5f880de0b6b3a764000080819da00b5534f62bdb75adb28d3940838521d932cf\
+                    3f968e39b3c8bc7d9dc829e6e0f7a05aab73ca44d2d3b8f5c3568cae9cc3e652e\
+                    1441d3c6a2942eb00a48f660ddc79");
     }
 }
