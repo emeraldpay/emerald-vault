@@ -33,8 +33,7 @@ impl<'a> Transaction<'a> {
     pub fn to_raw(&self, pk: &PrivateKey) -> Result<Vec<u8>, Error> {
         let mut rlp = self.to_rlp();
 
-        let val = pk.sign_hash(self.hash())?;
-        let sig = Signature::from(val);
+        let sig = pk.sign_hash(self.hash())?;
 
         rlp.push(&sig.r);
         rlp.push(&sig.s);
@@ -62,37 +61,6 @@ impl<'a> Transaction<'a> {
         data.push(&self.data.to_vec());
 
         data
-    }
-}
-
-/// Transaction sign data (see Appendix F. "Signing Transactions" from Yellow Paper)
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Signature {
-    /// ‘recovery id’, a 1 byte value specifying the sign and finiteness of the curve point
-    pub v: u8,
-
-    /// ECDSA signature first point (0 < r < secp256k1n)
-    pub r: [u8; 32],
-
-    /// ECDSA signature second point (0 < s < secp256k1n ÷ 2 + 1)
-    pub s: [u8; 32],
-}
-
-impl From<[u8; 64]> for Signature {
-    fn from(data: [u8; 64]) -> Self {
-        let mut sign = Signature::default();
-
-        sign.v = data[63] /* parity */ + 27;
-        sign.r.copy_from_slice(&data[0..32]);
-        sign.s.copy_from_slice(&data[32..64]);
-
-        sign
-    }
-}
-
-impl Into<(u8, [u8; 32], [u8; 32])> for Signature {
-    fn into(self) -> (u8, [u8; 32], [u8; 32]) {
-        (self.v, self.r, self.s)
     }
 }
 

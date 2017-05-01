@@ -24,6 +24,10 @@ mod tests {
     use super::*;
     use tests::*;
 
+    pub fn to_16bytes(hex: &str) -> [u8; 16] {
+        to_arr(&hex.from_hex().unwrap())
+    }
+
     pub fn to_20bytes(hex: &str) -> [u8; 20] {
         to_arr(&hex.from_hex().unwrap())
     }
@@ -33,9 +37,15 @@ mod tests {
     }
 
     #[test]
-    fn should_convert_zero_string_into_20bytes() {
-        assert_eq!(to_20bytes("0000000000000000000000000000000000000000"),
-                   [0u8; 20]);
+    fn should_convert_zero_string_into_16bytes() {
+        assert_eq!(to_16bytes("00000000000000000000000000000000"), [0u8; 16]);
+    }
+
+    #[test]
+    fn should_convert_address_into_20bytes() {
+        assert_eq!(to_20bytes("3f4e0668c20e100d7c2a27d4b177ac65b2875d26"),
+                   [0x3f, 0x4e, 0x06, 0x68, 0xc2, 0x0e, 0x10, 0x0d, 0x7c, 0x2a, 0x27, 0xd4, 0xb1,
+                    0x77, 0xac, 0x65, 0xb2, 0x87, 0x5d, 0x26]);
     }
 
     #[test]
