@@ -2,8 +2,9 @@
 
 use super::{Error, Method, MethodParams};
 use super::core::{Address, PrivateKey, Transaction};
+use super::to_arr;
 use jsonrpc_core::{Params, Value};
-use rustc_serialize::hex::ToHex;
+use rustc_serialize::hex::{FromHex, ToHex};
 use serde::ser::{Serialize, Serializer};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -28,14 +29,55 @@ impl<'a> Transaction<'a> {
     /// # Arguments
     ///
     /// * `p` - A request parameters (structure mapping directly to JSON)
-    pub fn try_from(_p: &Params) -> Result<Transaction, Error> {
+    pub fn try_from(p: &Params) -> Result<Transaction, Error> {
+        let data = p.clone()
+            .parse::<Value>()
+            .expect("Expect to parse params");
+        let params = data.get(0)
+            .and_then(|v| v.as_object())
+            .expect("Expect to convert into object");
+
+        let from = params
+            .get("from")
+            .and_then(|v| v.as_str().unwrap().parse::<Address>().ok())
+            .expect("Expect to parse sender address");
+
+        let to = params
+            .get("to")
+            .and_then(|v| v.as_str().unwrap().parse::<Address>().ok());
+
+        let extract = |name: &str| -> Result<[u8; 32], Error> {
+            let val = match params.get(name).and_then(|v| v.as_str()) {
+                Some(p) => {
+                    let (_, s) = p.split_at(2);
+                    println!("DEBUG from extract: {:?}", s);
+                    match s.from_hex() {
+                        Ok(d) => Ok(to_arr(&d)),
+                        Err(_) => Err(Error::DataFormat),
+                    }
+                }
+                None => return Err(Error::DataFormat),
+            };
+            val
+        };
+
+        let gas_price = extract(&"gasPrice")?;
+        let value = extract(&"value")?;
+
+        let gas_limit = match params.get("gas").and_then(|v| v.as_u64()) {
+            Some(v) => v,
+            None => return Err(Error::DataFormat),
+        };
+
+        println!("DEBUG: {:?}", value);
+
         Ok(Transaction {
                nonce: 0u64,
-               gas_price: [0u8; 32],
-               gas_limit: 0u64,
-               from: Address::default(),
-               to: Option::None,
-               value: [0u8; 32],
+               gas_price: gas_price,
+               gas_limit: gas_limit,
+               from: from,
+               to: to,
+               value: value,
                data: EMPTY_DATA,
            })
     }
@@ -88,12 +130,61 @@ fn to_json_data<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::Transaction;
     use jsonrpc_core::Params;
+    use serde_json;
 
     #[test]
     fn should_increase_request_ids() {
         assert_eq!(to_json_data("", &Params::None).id, 1);
         assert_eq!(to_json_data("", &Params::None).id, 2);
         assert_eq!(to_json_data("", &Params::None).id, 3);
+    }
+
+    #[test]
+    fn should_create_transaction() {
+        let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
+            "gas": "0x5208",
+            "gasPrice": "0x2540be400",
+            "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
+            "value": "0xde0b6b3a7640000"}]"#;
+        let params: Params = serde_json::from_str(s).unwrap();
+        let tr = Transaction::try_from(&params);
+        assert!(tr.is_ok())
+    }
+
+    #[test]
+    fn should_alert_missed_field() {
+        let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
+            "gas": "0x5208",
+            "gasPrice": "0x2540be4000",
+            "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a"}]"#;
+        let p: Params = serde_json::from_str(s).unwrap();
+        let tr = Transaction::try_from(&p);
+        assert!(tr.is_err())
+    }
+
+    #[test]
+    fn should_alert_invalid_field() {
+        let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
+            "gas": "0x5208",
+            "gasPrice": "0x2540be400",
+            "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
+            "valuuue": "0xde0b6b3a7640000"}]"#;
+        let p: Params = serde_json::from_str(s).unwrap();
+        let tr = Transaction::try_from(&p);
+        assert!(tr.is_err())
+    }
+
+    #[test]
+    fn should_alert_invalid_data() {
+        let s = r#"[{"from": "0xff",
+            "gas": "0x5208",
+            "gasPrice": "0x2540be400",
+            "to": "0x004a301af857a471b9bde4fcc4654dba4f38272affffffffffffffffff",
+            "valuuue": "0xde0b6b3a7640000"}]"#;
+        let p: Params = serde_json::from_str(s).unwrap();
+        let tr = Transaction::try_from(&p);
+        assert!(tr.is_err())
     }
 }

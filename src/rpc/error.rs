@@ -9,11 +9,21 @@ use std::{error, fmt};
 pub enum Error {
     /// Http client error
     HttpClient(reqwest::Error),
+    /// RPC error
+    RPC(jsonrpc_core::Error),
+    /// Invalid
+    DataFormat,
 }
 
 impl From<reqwest::Error> for Error {
     fn from(err: reqwest::Error) -> Self {
         Error::HttpClient(err)
+    }
+}
+
+impl From<jsonrpc_core::Error> for Error {
+    fn from(err: jsonrpc_core::Error) -> Self {
+        Error::RPC(err)
     }
 }
 
@@ -27,6 +37,8 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::HttpClient(ref err) => write!(f, "HTTP client error: {}", err),
+            Error::RPC(ref err) => write!(f, "RPC error: {:?}", err),
+            Error::DataFormat => write!(f, "Invalid data format"),
         }
     }
 }
@@ -39,7 +51,7 @@ impl error::Error for Error {
     fn cause(&self) -> Option<&error::Error> {
         match *self {
             Error::HttpClient(ref err) => Some(err),
-            //_ => None,
+            _ => None,
         }
     }
 }

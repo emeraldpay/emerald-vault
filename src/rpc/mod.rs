@@ -9,6 +9,7 @@ use super::contract::Contracts;
 use super::core::{self, Transaction};
 use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages};
+use super::util::to_arr;
 use futures;
 use jsonrpc_core::{Error as XError, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
@@ -134,12 +135,12 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 
         io.add_method_with_meta("eth_sendTransaction", move |p, m| {
             if let MethodMetadata::Passphrase(ref passphrase) = m {
+                println!("DEBUG: in rpc");
                 let pk = KeyFile::default().decrypt_key(passphrase);
-
-                if let Err(err) = pk {
-                    return futures::done(Err(XError::invalid_params(err.to_string()))).boxed();
-                }
-
+//                if let Err(err) = pk {
+//                    return futures::done(Err(XError::invalid_params(err.to_string()))).boxed();
+//                }
+//                println!("DEBUG: in rpc");
                 match Transaction::try_from(&p) {
                     Ok(tr) => {
                         url.request(&MethodParams(
