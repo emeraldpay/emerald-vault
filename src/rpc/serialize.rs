@@ -37,44 +37,30 @@ impl<'a> Transaction<'a> {
             .and_then(|v| v.as_object())
             .expect("Expect to convert into object");
 
-        let from = params
-            .get("from")
-            .and_then(|v| v.as_str().unwrap().parse::<Address>().ok())
-            .expect("Expect to parse sender address");
 
-        let to = params
-            .get("to")
-            .and_then(|v| v.as_str().unwrap().parse::<Address>().ok());
-
-        let extract = |name: &str| -> Result<[u8; 32], Error> {
+        let extract = |name: &str| -> Result<Vec<u8>, Error> {
             let val = match params.get(name).and_then(|v| v.as_str()) {
                 Some(p) => {
                     let (_, s) = p.split_at(2);
-                    println!("DEBUG from extract: {:?}", s);
-                    match s.from_hex() {
-                        Ok(d) => Ok(to_arr(&d)),
-                        Err(_) => Err(Error::DataFormat),
-                    }
+                    s.from_hex().map_err(|_| Error::DataFormat)
                 }
                 None => return Err(Error::DataFormat),
             };
             val
         };
+        let from = Address::try_from(&extract(&"from")?)?;
+        let to = Address::try_from(&extract(&"to")?).ok();
 
-        let gas_price = extract(&"gasPrice")?;
-        let value = extract(&"value")?;
+        println!("DEBUG from: {:?},\n to: {:?},\n", from, extract(&"value")?);
 
-        let gas_limit = match params.get("gas").and_then(|v| v.as_u64()) {
-            Some(v) => v,
-            None => return Err(Error::DataFormat),
-        };
-
-        println!("DEBUG: {:?}", value);
+        let value = to_arr(&extract(&"value")?);
+        let gas_price = to_arr(&extract(&"gasPrice")?);
+        let gas_limit = extract(&"gas");
 
         Ok(Transaction {
                nonce: 0u64,
                gas_price: gas_price,
-               gas_limit: gas_limit,
+               gas_limit: 0u64,
                from: from,
                to: to,
                value: value,
@@ -145,11 +131,12 @@ mod tests {
     fn should_create_transaction() {
         let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
             "gas": "0x5208",
-            "gasPrice": "0x2540be400",
+            "gasPrice": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
-            "value": "0xde0b6b3a7640000"}]"#;
+            "value": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}]"#;
         let params: Params = serde_json::from_str(s).unwrap();
         let tr = Transaction::try_from(&params);
+        println!("DEBUG tr: {:?},\n ", tr);
         assert!(tr.is_ok())
     }
 

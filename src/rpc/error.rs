@@ -1,5 +1,6 @@
 //! # JSON RPC module errors
 
+use super::core;
 use jsonrpc_core;
 use reqwest;
 use std::{error, fmt};
@@ -11,13 +12,19 @@ pub enum Error {
     HttpClient(reqwest::Error),
     /// RPC error
     RPC(jsonrpc_core::Error),
-    /// Invalid
+    /// Invalid data format
     DataFormat,
 }
 
 impl From<reqwest::Error> for Error {
     fn from(err: reqwest::Error) -> Self {
         Error::HttpClient(err)
+    }
+}
+
+impl From<core::Error> for Error {
+    fn from(_: core::Error) -> Self {
+        Error::DataFormat
     }
 }
 
