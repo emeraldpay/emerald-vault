@@ -26,21 +26,6 @@ struct CipherParams {
     iv: Iv,
 }
 
-impl From<Crypto> for KeyFile {
-    fn from(crypto: Crypto) -> Self {
-        KeyFile {
-            dk_length: crypto.kdfparams_dklen,
-            kdf: crypto.kdf,
-            kdf_salt: crypto.kdfparams_salt.into(),
-            keccak256_mac: crypto.mac.into(),
-            cipher: crypto.cipher,
-            cipher_text: crypto.cipher_text.clone(),
-            cipher_iv: crypto.cipher_params.iv.into(),
-            ..Default::default()
-        }
-    }
-}
-
 impl From<KeyFile> for Crypto {
     fn from(key_file: KeyFile) -> Self {
         Crypto {
@@ -51,6 +36,21 @@ impl From<KeyFile> for Crypto {
             kdfparams_dklen: key_file.dk_length,
             kdfparams_salt: Salt::from(key_file.kdf_salt),
             mac: Mac::from(key_file.keccak256_mac),
+        }
+    }
+}
+
+impl Into<KeyFile> for Crypto {
+    fn into(self) -> KeyFile {
+        KeyFile {
+            dk_length: self.kdfparams_dklen,
+            kdf: self.kdf,
+            kdf_salt: self.kdfparams_salt.into(),
+            keccak256_mac: self.mac.into(),
+            cipher: self.cipher,
+            cipher_text: self.cipher_text.clone(),
+            cipher_iv: self.cipher_params.iv.into(),
+            ..Default::default()
         }
     }
 }
