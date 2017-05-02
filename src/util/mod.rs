@@ -17,13 +17,9 @@ pub fn to_arr<A, T>(slice: &[T]) -> A
 }
 
 /// Insert O-padding into vector head to fit `size`
-pub fn align_vec(val: &Vec<u8>, size: usize) -> Vec<u8> {
-    let mut pad = vec![];
-    for _ in 0..size - val.len() {
-        pad.push(0)
-    }
+pub fn align_vec(val: &[u8], size: usize) -> Vec<u8> {
+    let mut pad = vec![0u8; size - val.len()];
     pad.extend(val.into_iter().cloned());
-
     pad
 }
 
@@ -70,6 +66,7 @@ mod tests {
     #[test]
     fn should_align_vector() {
         let expected = vec![0, 0, 0, 0, 0, 1, 2, 3];
-        assert_eq!(expected, align_vec(&vec![1u8, 2u8, 3u8], 8));
+
+        assert_eq!(expected, align_vec(&[1u8, 2u8, 3u8], 8));
     }
 }
