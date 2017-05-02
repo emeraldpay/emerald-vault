@@ -13,7 +13,7 @@ pub enum Error {
     /// RPC error
     RPC(jsonrpc_core::Error),
     /// Invalid data format
-    DataFormat,
+    DataFormat(String),
 }
 
 impl From<reqwest::Error> for Error {
@@ -24,7 +24,7 @@ impl From<reqwest::Error> for Error {
 
 impl From<core::Error> for Error {
     fn from(_: core::Error) -> Self {
-        Error::DataFormat
+        Error::DataFormat("".to_string())
     }
 }
 
@@ -45,7 +45,7 @@ impl fmt::Display for Error {
         match *self {
             Error::HttpClient(ref err) => write!(f, "HTTP client error: {}", err),
             Error::RPC(ref err) => write!(f, "RPC error: {:?}", err),
-            Error::DataFormat => write!(f, "Invalid data format"),
+            Error::DataFormat(ref str) => write!(f, "Invalid data format: {}", str),
         }
     }
 }

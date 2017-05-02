@@ -9,7 +9,7 @@ use super::contract::Contracts;
 use super::core::{self, Transaction};
 use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages};
-use super::util::to_arr;
+use super::util::{align_vec, to_arr};
 use futures;
 use jsonrpc_core::{self, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
@@ -142,22 +142,22 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
     {
         let url = url.clone();
 
-        io.add_method_with_meta("eth_sendTransaction", move |p, m| {
-            if let MethodMetadata::Passphrase(ref passphrase) = m {
-                let pk = KeyFile::default().decrypt_key(passphrase);
-                match Transaction::try_from(&p) {
-                    Ok(tr) => {
+        io.add_method_with_meta("eth_sendTransaction",
+                                move |p, m| if let MethodMetadata::Passphrase(ref passphrase) =
+            m {
+                                    let pk = KeyFile::default().decrypt_key(passphrase);
+                                    match Transaction::try_from(&p) {
+                                        Ok(tr) => {
                         url.request(&MethodParams(
                             Method::EthSendRawTransaction,
                             &tr.to_raw_params(pk.unwrap())))
                     }
-                    Err(err) => futures::done(
+                                        Err(err) => futures::done(
                         Err(jsonrpc_core::Error::invalid_params(err.to_string()))).boxed(),
-                }
-            } else {
-                futures::failed(jsonrpc_core::Error::invalid_request()).boxed()
-            }
-        });
+                                    }
+                                } else {
+                                    futures::failed(jsonrpc_core::Error::invalid_request()).boxed()
+                                });
     }
 
     {

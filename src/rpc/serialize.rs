@@ -1,8 +1,8 @@
 //! # Serialize JSON RPC parameters
 
 use super::{Error, Method, MethodParams};
-use super::core::{PrivateKey, Transaction};
-use super::to_arr;
+use super::{align_vec, to_arr};
+use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value};
 use rustc_serialize::hex::{FromHex, ToHex};
 use serde::ser::{Serialize, Serializer};
@@ -47,23 +47,29 @@ impl<'a> Transaction<'a> {
 
         let extract = |name: &str| -> Result<Vec<u8>, Error> {
             let val = match params.get(name) {
-                Some(p) => p.from_hex().map_err(|_| Error::DataFormat),
-                None => return Err(Error::DataFormat),
+                Some(p) => {
+                    p.from_hex()
+                        .map_err(|_| Error::DataFormat(format!("Can't extract '{}' field", name)))
+                }
+                None => return Err(Error::DataFormat(format!("no `{}` field", name))),
             };
             val
         };
 
         let gas_limit = match params.get("gas") {
-            Some(p) => u64::from_str_radix(p, 16).map_err(|_| Error::DataFormat),
-            None => return Err(Error::DataFormat),
+            Some(p) => {
+                u64::from_str_radix(p, 16)
+                    .map_err(|_| { Error::DataFormat("Can't extract 'gas' field".to_string()) })
+            }
+            None => return Err(Error::DataFormat("no `gas` field".to_string())),
         };
 
         Ok(Transaction {
                nonce: 0u64,
-               gas_price: to_arr(&extract(&"gasPrice")?),
+               gas_price: to_arr(&align_vec(&extract(&"gasPrice")?, 32)),
                gas_limit: gas_limit?,
                to: Address::try_from(&extract(&"to")?).ok(),
-               value: to_arr(&extract(&"value")?),
+               value: to_arr(&align_vec(&extract(&"value")?, 32)),
                data: EMPTY_DATA,
            })
     }
@@ -128,12 +134,11 @@ mod tests {
 
     #[test]
     fn should_create_transaction() {
-        let s =
-            r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
+        let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
             "gas": "0x5208",
-            "gasPrice": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "gasPrice": "0x2540be4000",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
-            "value": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}]"#;
+            "value": "0xde0b6b3a764000"}]"#;
         let params: Params = serde_json::from_str(s).unwrap();
         let tr = Transaction::try_from(&params);
         assert!(tr.is_ok())
@@ -143,7 +148,7 @@ mod tests {
     fn should_alert_missed_field() {
         let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
             "gas": "0x5208",
-            "gasPrice": "0x2540be4000",
+            "gasPrice": "0x2540be400",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a"}]"#;
         let p: Params = serde_json::from_str(s).unwrap();
         let tr = Transaction::try_from(&p);
@@ -156,7 +161,7 @@ mod tests {
             "gas": "0x5208",
             "gasPrice": "0x2540be400",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
-            "valuuue": "0xde0b6b3a7640000"}]"#;
+            "valuuue": "0xde0b6b3a764000"}]"#;
         let p: Params = serde_json::from_str(s).unwrap();
         let tr = Transaction::try_from(&p);
         assert!(tr.is_err())
@@ -166,9 +171,9 @@ mod tests {
     fn should_alert_invalid_data() {
         let s = r#"[{"from": "0xff",
             "gas": "0x5208",
-            "gasPrice": "0x2540be400",
-            "to": "0x004a301af857a471b9bde4fcc4654dba4f38272affffffffffffffffff",
-            "valuuue": "0xde0b6b3a7640000"}]"#;
+            "gasPrice": "0x--",
+            "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
+            "value": "0xde0b6b3a764000"}]"#;
         let p: Params = serde_json::from_str(s).unwrap();
         let tr = Transaction::try_from(&p);
         assert!(tr.is_err())
