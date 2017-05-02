@@ -83,7 +83,6 @@ fn should_decode_keyfile_without_address() {
     let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
 
     assert_eq!(key, exp);
-    assert_eq!(key.address, exp.address);
     assert_eq!(key.dk_length, exp.dk_length);
     assert_eq!(key.kdf, exp.kdf);
     assert_eq!(key.kdf_salt, exp.kdf_salt);
@@ -128,7 +127,6 @@ fn should_decode_keyfile_with_address() {
     let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
 
     assert_eq!(key, exp);
-    assert_eq!(key.address, exp.address);
     assert_eq!(key.dk_length, exp.dk_length);
     assert_eq!(key.kdf, exp.kdf);
     assert_eq!(key.kdf_salt, exp.kdf_salt);
@@ -139,9 +137,9 @@ fn should_decode_keyfile_with_address() {
 
 #[test]
 fn should_flush_to_file() {
-    let kf = KeyFile::create("1234567890", true).unwrap();
+    let kf = KeyFile::new("1234567890").unwrap();
 
-    assert!(kf.flush(temp_dir().as_path()).is_ok());
+    assert!(kf.flush(temp_dir().as_path(), None).is_ok());
 }
 
 #[test]
@@ -152,7 +150,8 @@ fn should_search_by_address() {
 
     let kf = KeyFile::search_by_address(&addr, &keystore_path()).unwrap();
 
-    assert_eq!(kf.address, Some(addr));
+    assert_eq!(kf.uuid,
+               "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3".parse().unwrap());
 }
 
 fn temp_dir() -> PathBuf {
