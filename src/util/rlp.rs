@@ -1,9 +1,5 @@
-//! The purpose of RLP (Recursive Length Prefix) is to encode arbitrarily nested arrays of binary
-//! data, and RLP is the main encoding method used to serialize objects in Ethereum. The only
-//! purpose of RLP is to encode structure; encoding specific atomic data types (eg. strings, ints,
-//! floats) is left up to higher-order protocols; in Ethereum integers must be represented in big
-//! endian binary form with no leading zeroes (thus making the integer value zero be equivalent to
-//! the empty byte array).
+//! RLP (Recursive Length Prefix) is to encode arbitrarily nested arrays of binary data,
+//! RLP is the main encoding method used to serialize objects in Ethereum.
 //!
 //! See [RLP spec](https://github.com/ethereumproject/wiki/wiki/RLP)
 
@@ -82,19 +78,13 @@ impl<T: WriteRLP> WriteRLP for Vec<T> {
     }
 }
 
-impl WriteRLP for [u8; 32] {
-    fn write_rlp(&self, buf: &mut Vec<u8>) {
-        RLPList::from_slice(self).write_rlp(buf);
-    }
-}
-
 impl WriteRLP for [u8] {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         let len = self.len();
 
         // For a single byte whose value is in the [0x00, 0x7f] range,
         // that byte is its own RLP encoding.
-        if len == 1 && self[0] < 0x7f {
+        if len == 1 && self[0] <= 0x7f {
             buf.push(self[0])
         } else if len <= 55 {
             // Otherwise, if a string is 0-55 bytes long, the RLP encoding consists of a single byte
@@ -110,9 +100,7 @@ impl WriteRLP for [u8] {
             // range of the first byte is thus [0xb8, 0xbf].
             let len_bytes = bytes_count(len);
             buf.push(0xb7 + len_bytes);
-            for x in 0..len_bytes {
-                buf.push((0xff & (len >> (8 * x))) as u8);
-            }
+            buf.extend_from_slice(&to_bytes(len, len_bytes));
             buf.extend_from_slice(self);
         }
     }
@@ -135,10 +123,9 @@ impl WriteRLP for RLPList {
             // thus [0xf8, 0xff].
             let len_bytes = bytes_count(len);
             buf.push(0xf7 + len_bytes);
-            let len_data = to_bytes(len, len_bytes);
-            buf.extend_from_slice(len_data.as_slice());
+            buf.extend_from_slice(&to_bytes(len, len_bytes));
         }
-        buf.extend_from_slice(self.tail.as_slice());
+        buf.extend_from_slice(&self.tail);
     }
 }
 
@@ -162,7 +149,7 @@ fn bytes_count(x: usize) -> u8 {
 fn to_bytes(x: usize, len: u8) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::with_capacity(len as usize);
     for i in 0..len {
-        let u = (x >> ((len - i - 1) * 8)) & 0xff;
+        let u = (x >> ((len - i - 1) << 3)) & 0xff;
         buf.push(u as u8);
     }
     buf
@@ -171,39 +158,29 @@ fn to_bytes(x: usize, len: u8) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn u8_to_bytes() {
-        assert_eq!([1], to_bytes(1, 1).as_slice());
-        assert_eq!([2], to_bytes(2, 1).as_slice());
-        assert_eq!([127], to_bytes(127, 1).as_slice());
-        assert_eq!([128], to_bytes(128, 1).as_slice());
-        assert_eq!([255], to_bytes(255, 1).as_slice());
-    }
-
-    #[test]
-    fn u16_to_bytes() {
-        assert_eq!([0, 1], to_bytes(1, 2).as_slice());
-        assert_eq!([0, 2], to_bytes(2, 2).as_slice());
-        assert_eq!([0, 255], to_bytes(255, 2).as_slice());
-        assert_eq!([1, 0], to_bytes(256, 2).as_slice());
-        assert_eq!([0x12, 0x34], to_bytes(0x1234, 2).as_slice());
-        assert_eq!([0xff, 0xff], to_bytes(0xffff, 2).as_slice());
-    }
-
-    #[test]
-    fn u32_to_bytes() {
-        assert_eq!([0, 0, 0, 1], to_bytes(1, 4).as_slice());
-        assert_eq!([0x12, 0x34, 0x56, 0x78], to_bytes(0x12345678, 4).as_slice());
-        assert_eq!([0xff, 0x0, 0x0, 0x0], to_bytes(0xff000000, 4).as_slice());
-        assert_eq!([0x00, 0xff, 0x0, 0x0], to_bytes(0x00ff0000, 4).as_slice());
-    }
+    use tests::*;
 
     #[test]
     fn encode_str() {
         let mut buf = Vec::new();
+        "".write_rlp(&mut buf);
+        assert_eq!([0x80], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_short_str() {
+        let mut buf = Vec::new();
         "dog".write_rlp(&mut buf);
         assert_eq!([0x83, b'd', b'o', b'g'], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_long_str() {
+        let mut buf = Vec::new();
+        "Lorem ipsum dolor sit amet, consectetur adipisicing elit".write_rlp(&mut buf);
+        assert_eq!("b8384c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f\
+                    6e7365637465747572206164697069736963696e6720656c6974",
+                   buf.to_hex());
     }
 
     #[test]
@@ -265,5 +242,32 @@ mod tests {
             val.write_rlp(&mut buf);
             assert_eq!([0x82, 0x04, 0x00], buf.as_slice())
         }
+    }
+
+    #[test]
+    fn u8_to_bytes() {
+        assert_eq!([1], to_bytes(1, 1).as_slice());
+        assert_eq!([2], to_bytes(2, 1).as_slice());
+        assert_eq!([127], to_bytes(127, 1).as_slice());
+        assert_eq!([128], to_bytes(128, 1).as_slice());
+        assert_eq!([255], to_bytes(255, 1).as_slice());
+    }
+
+    #[test]
+    fn u16_to_bytes() {
+        assert_eq!([0, 1], to_bytes(1, 2).as_slice());
+        assert_eq!([0, 2], to_bytes(2, 2).as_slice());
+        assert_eq!([0, 255], to_bytes(255, 2).as_slice());
+        assert_eq!([1, 0], to_bytes(256, 2).as_slice());
+        assert_eq!([0x12, 0x34], to_bytes(0x1234, 2).as_slice());
+        assert_eq!([0xff, 0xff], to_bytes(0xffff, 2).as_slice());
+    }
+
+    #[test]
+    fn u32_to_bytes() {
+        assert_eq!([0, 0, 0, 1], to_bytes(1, 4).as_slice());
+        assert_eq!([0x12, 0x34, 0x56, 0x78], to_bytes(0x12345678, 4).as_slice());
+        assert_eq!([0xff, 0x0, 0x0, 0x0], to_bytes(0xff000000, 4).as_slice());
+        assert_eq!([0x00, 0xff, 0x0, 0x0], to_bytes(0x00ff0000, 4).as_slice());
     }
 }
