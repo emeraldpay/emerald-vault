@@ -6,6 +6,7 @@ use super::to_arr;
 use jsonrpc_core::{Params, Value};
 use rustc_serialize::hex::{FromHex, ToHex};
 use serde::ser::{Serialize, Serializer};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -33,37 +34,37 @@ impl<'a> Transaction<'a> {
         let data = p.clone()
             .parse::<Value>()
             .expect("Expect to parse params");
-        let params = data.get(0)
-            .and_then(|v| v.as_object())
-            .expect("Expect to convert into object");
 
+        let params: BTreeMap<&str, &str> = data.get(0)
+            .and_then(|d| d.as_object())
+            .expect("Expect to extract JSON object")
+            .iter()
+            .map(|(k, v)| {
+                     let (_, val) = v.as_str().expect("Expect to get parameter").split_at(2);
+                     (k.as_str(), val)
+                 })
+            .collect();
 
         let extract = |name: &str| -> Result<Vec<u8>, Error> {
-            let val = match params.get(name).and_then(|v| v.as_str()) {
-                Some(p) => {
-                    let (_, s) = p.split_at(2);
-                    s.from_hex().map_err(|_| Error::DataFormat)
-                }
+            let val = match params.get(name) {
+                Some(p) => p.from_hex().map_err(|_| Error::DataFormat),
                 None => return Err(Error::DataFormat),
             };
             val
         };
-        let from = Address::try_from(&extract(&"from")?)?;
-        let to = Address::try_from(&extract(&"to")?).ok();
 
-        println!("DEBUG from: {:?},\n to: {:?},\n", from, extract(&"value")?);
-
-        let value = to_arr(&extract(&"value")?);
-        let gas_price = to_arr(&extract(&"gasPrice")?);
-        let gas_limit = extract(&"gas");
+        let gas_limit = match params.get("gas") {
+            Some(p) => u64::from_str_radix(p, 16).map_err(|_| Error::DataFormat),
+            None => return Err(Error::DataFormat),
+        };
 
         Ok(Transaction {
                nonce: 0u64,
-               gas_price: gas_price,
-               gas_limit: 0u64,
-               from: from,
-               to: to,
-               value: value,
+               gas_price: to_arr(&extract(&"gasPrice")?),
+               gas_limit: gas_limit?,
+               from: Address::try_from(&extract(&"from")?)?,
+               to: Address::try_from(&extract(&"to")?).ok(),
+               value: to_arr(&extract(&"value")?),
                data: EMPTY_DATA,
            })
     }
@@ -116,7 +117,6 @@ fn to_json_data<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::Transaction;
     use jsonrpc_core::Params;
     use serde_json;
 
@@ -129,14 +129,14 @@ mod tests {
 
     #[test]
     fn should_create_transaction() {
-        let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
+        let s =
+            r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
             "gas": "0x5208",
             "gasPrice": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
             "value": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}]"#;
         let params: Params = serde_json::from_str(s).unwrap();
         let tr = Transaction::try_from(&params);
-        println!("DEBUG tr: {:?},\n ", tr);
         assert!(tr.is_ok())
     }
 
