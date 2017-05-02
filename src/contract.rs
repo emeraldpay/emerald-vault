@@ -17,6 +17,7 @@ pub struct Contracts {
 pub enum ContractError {
     /// IO Error
     IO,
+
     /// Invalid Contract
     InvalidContract,
 }

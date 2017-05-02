@@ -9,10 +9,13 @@ use std::{error, fmt};
 pub enum Error {
     /// An invalid length
     InvalidLength(usize),
+
     /// An unexpected hexadecimal prefix (should be '0x')
     UnexpectedHexPrefix(String),
+
     /// An unexpected hexadecimal encoding
     UnexpectedHexEncoding(hex::FromHexError),
+
     /// ECDSA crypto error
     EcdsaCrypto(secp256k1::Error),
 }

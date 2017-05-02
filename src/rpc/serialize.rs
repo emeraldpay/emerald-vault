@@ -1,7 +1,7 @@
 //! # Serialize JSON RPC parameters
 
 use super::{Error, Method, MethodParams};
-use super::core::{Address, PrivateKey, Transaction};
+use super::core::{PrivateKey, Transaction};
 use super::to_arr;
 use jsonrpc_core::{Params, Value};
 use rustc_serialize::hex::{FromHex, ToHex};
@@ -62,7 +62,6 @@ impl<'a> Transaction<'a> {
                nonce: 0u64,
                gas_price: to_arr(&extract(&"gasPrice")?),
                gas_limit: gas_limit?,
-               from: Address::try_from(&extract(&"from")?)?,
                to: Address::try_from(&extract(&"to")?).ok(),
                value: to_arr(&extract(&"value")?),
                data: EMPTY_DATA,
@@ -70,8 +69,8 @@ impl<'a> Transaction<'a> {
     }
 
     /// Sign transaction and return as raw data
-    pub fn to_raw_params(&self, pk: &PrivateKey) -> Params {
-        self.to_raw(pk)
+    pub fn to_raw_params(&self, pk: PrivateKey) -> Params {
+        self.to_signed_raw(pk)
             .map(|v| format!("0x{}", v.to_hex()))
             .map(|s| Params::Array(vec![Value::String(s)]))
             .expect("Expect to sign a transaction")
