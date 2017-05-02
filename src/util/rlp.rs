@@ -161,7 +161,105 @@ mod tests {
     use tests::*;
 
     #[test]
-    fn encode_str() {
+    fn encode_zero() {
+        let mut buf = Vec::new();
+        0u8.write_rlp(&mut buf);
+        assert_eq!([0x80], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_smallint() {
+        let mut buf = Vec::new();
+        1u8.write_rlp(&mut buf);
+        assert_eq!([0x01], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_smallint2() {
+        let mut buf = Vec::new();
+        16u8.write_rlp(&mut buf);
+        assert_eq!([0x10], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_smallint3() {
+        let mut buf = Vec::new();
+        79u8.write_rlp(&mut buf);
+        assert_eq!([0x4f], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_smallint4() {
+        let mut buf = Vec::new();
+        127u8.write_rlp(&mut buf);
+        assert_eq!([0x7f], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_mediumint1() {
+        let mut buf = Vec::new();
+        128u16.write_rlp(&mut buf);
+        assert_eq!([0x81, 0x80], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_mediumint2() {
+        let mut buf = Vec::new();
+        1000u16.write_rlp(&mut buf);
+        assert_eq!([0x82, 0x03, 0xe8], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_mediumint3() {
+        let mut buf = Vec::new();
+        100000u32.write_rlp(&mut buf);
+        assert_eq!([0x83, 0x01, 0x86, 0xa0], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_mediumint4() {
+        let mut buf = Vec::new();
+        "102030405060708090A0B0C0D0E0F2"
+            .from_hex()
+            .unwrap()
+            .write_rlp(&mut buf);
+        assert_eq!("8f102030405060708090a0b0c0d0e0f2", buf.to_hex());
+    }
+
+    #[test]
+    fn encode_mediumint5() {
+        let mut buf = Vec::new();
+        "100020003000400050006000700080009000A000B000C000D000E01"
+            .from_hex()
+            .unwrap()
+            .write_rlp(&mut buf);
+        assert_eq!("9c0100020003000400050006000700080009000a000b000c000d000e01",
+                   buf.to_hex());
+    }
+
+    #[test]
+    fn encode_bytestring00() {
+        let mut buf = Vec::new();
+        "\u{0000}".write_rlp(&mut buf);
+        assert_eq!([0x00], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_bytestring01() {
+        let mut buf = Vec::new();
+        "\u{0001}".write_rlp(&mut buf);
+        assert_eq!([0x01], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_bytestring7f() {
+        let mut buf = Vec::new();
+        "\u{007f}".write_rlp(&mut buf);
+        assert_eq!([0x7f], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_empty_str() {
         let mut buf = Vec::new();
         "".write_rlp(&mut buf);
         assert_eq!([0x80], buf.as_slice());
@@ -175,7 +273,7 @@ mod tests {
     }
 
     #[test]
-    fn encode_short_str2() {
+    fn encode_normal_str() {
         let mut buf = Vec::new();
         "Lorem ipsum dolor sit amet, consectetur adipisicing eli".write_rlp(&mut buf);
         assert_eq!("b74c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f6e\
@@ -243,68 +341,45 @@ mod tests {
                     6d65742065726f732e20437261732072686f6e6375732c206d65747573206163\
                     206f726e617265206375727375732c20646f6c6f72206a7573746f20756c7472\
                     69636573206d657475732c20617420756c6c616d636f7270657220766f6c7574\
-                    706174", buf.to_hex());
+                    706174",
+                   buf.to_hex());
     }
 
     #[test]
-    fn encode_list() {
-        {
-            let mut buf = Vec::new();
-            let list = vec!["cat".to_string(), "dog".to_string()];
-            list.write_rlp(&mut buf);
-            assert_eq!([0xc8, 0x83, b'c', b'a', b't', 0x83, b'd', b'o', b'g'],
-                       buf.as_slice());
-        }
-
-        {
-            let mut buf = Vec::new();
-            let list: Vec<u8> = vec![];
-            list.write_rlp(&mut buf);
-            assert_eq!([0xc0], buf.as_slice());
-        }
-
-        {
-            let mut buf = Vec::new();
-            let mut list = RLPList::default();
-            list.push(&RLPList::default());
-            let mut item1 = RLPList::default();
-            item1.push(&RLPList::default());
-            list.push(&item1);
-            let mut item2 = RLPList::default();
-            item2.push(&RLPList::default());
-            let mut item21 = RLPList::default();
-            item21.push(&RLPList::default());
-            item2.push(&item21);
-            list.push(&item2);
-            list.write_rlp(&mut buf);
-            assert_eq!([0xc7, 0xc0, 0xc1, 0xc0, 0xc3, 0xc0, 0xc1, 0xc0],
-                       buf.as_slice());
-        }
-    }
-
-    #[test]
-    fn encode_empty() {
+    fn encode_empty_list() {
         let mut buf = Vec::new();
-        let val: Option<String> = None;
-        val.write_rlp(&mut buf);
-        assert_eq!([0x80], buf.as_slice())
+        let list: Vec<u8> = vec![];
+        list.write_rlp(&mut buf);
+        assert_eq!([0xc0], buf.as_slice());
     }
 
     #[test]
-    fn encode_number() {
-        {
-            let mut buf = Vec::new();
-            let val = 0x0f as u8;
-            val.write_rlp(&mut buf);
-            assert_eq!([0x0f], buf.as_slice())
-        }
+    fn encode_simple_list() {
+        let mut buf = Vec::new();
+        let list = vec!["cat".to_string(), "dog".to_string()];
+        list.write_rlp(&mut buf);
+        assert_eq!([0xc8, 0x83, b'c', b'a', b't', 0x83, b'd', b'o', b'g'],
+                   buf.as_slice());
+    }
 
-        {
-            let mut buf = Vec::new();
-            let val = 0x0400 as u16;
-            val.write_rlp(&mut buf);
-            assert_eq!([0x82, 0x04, 0x00], buf.as_slice())
-        }
+    #[test]
+    fn encode_nested_lists() {
+        // [ [], [[]], [ [], [[]] ] ]
+        let mut buf = Vec::new();
+        let mut list = RLPList::default();
+        list.push(&RLPList::default());
+        let mut item1 = RLPList::default();
+        item1.push(&RLPList::default());
+        list.push(&item1);
+        let mut item2 = RLPList::default();
+        item2.push(&RLPList::default());
+        let mut item21 = RLPList::default();
+        item21.push(&RLPList::default());
+        item2.push(&item21);
+        list.push(&item2);
+        list.write_rlp(&mut buf);
+        assert_eq!([0xc7, 0xc0, 0xc1, 0xc0, 0xc3, 0xc0, 0xc1, 0xc0],
+                   buf.as_slice());
     }
 
     #[test]
