@@ -55,7 +55,6 @@ fn should_decode_keyfile_without_address() {
 
     let exp = KeyFile {
         uuid: Uuid::from_str("37e0d14f-7269-7ca0-4419-d7b13abfeea9").unwrap(),
-        address: None,
         dk_length: 32,
         kdf: Kdf::Pbkdf2 {
             prf: Prf::default(),
@@ -65,16 +64,16 @@ fn should_decode_keyfile_without_address() {
                             .from_hex()
                             .unwrap(),
                        KDF_SALT_BYTES),
-        keccak256_mac: arr!(&"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63"
-                                 .from_hex()
-                                 .unwrap(),
-                            KECCAK256_BYTES),
         cipher: Cipher::default(),
         cipher_text: "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126"
             .from_hex()
             .unwrap(),
         cipher_iv: arr!(&"58d54158c3e27131b0a0f2b91201aedc".from_hex().unwrap(),
                         CIPHER_IV_BYTES),
+        keccak256_mac: arr!(&"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63"
+                                 .from_hex()
+                                 .unwrap(),
+                            KECCAK256_BYTES),
     };
 
     // just first encoding
@@ -84,13 +83,12 @@ fn should_decode_keyfile_without_address() {
     let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
 
     assert_eq!(key, exp);
-    assert_eq!(key.address, exp.address);
     assert_eq!(key.dk_length, exp.dk_length);
     assert_eq!(key.kdf, exp.kdf);
     assert_eq!(key.kdf_salt, exp.kdf_salt);
-    assert_eq!(key.keccak256_mac, exp.keccak256_mac);
     assert_eq!(key.cipher_text, exp.cipher_text);
     assert_eq!(key.cipher_iv, exp.cipher_iv);
+    assert_eq!(key.keccak256_mac, exp.keccak256_mac);
 }
 
 #[test]
@@ -100,9 +98,6 @@ fn should_decode_keyfile_with_address() {
 
     let exp = KeyFile {
         uuid: Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap(),
-        address: Some("0x0047201aed0b69875b24b614dda0270bcd9f11cc"
-                          .parse()
-                          .unwrap()),
         dk_length: 32,
         kdf: Kdf::Scrypt {
             n: 1024,
@@ -113,16 +108,16 @@ fn should_decode_keyfile_with_address() {
                             .from_hex()
                             .unwrap(),
                        KDF_SALT_BYTES),
-        keccak256_mac: arr!(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
-                                 .from_hex()
-                                 .unwrap(),
-                            KECCAK256_BYTES),
         cipher: Cipher::default(),
         cipher_text: "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
             .from_hex()
             .unwrap(),
         cipher_iv: arr!(&"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap(),
                         CIPHER_IV_BYTES),
+        keccak256_mac: arr!(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
+                                 .from_hex()
+                                 .unwrap(),
+                            KECCAK256_BYTES),
     };
 
     // just first encoding
@@ -132,20 +127,19 @@ fn should_decode_keyfile_with_address() {
     let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
 
     assert_eq!(key, exp);
-    assert_eq!(key.address, exp.address);
     assert_eq!(key.dk_length, exp.dk_length);
     assert_eq!(key.kdf, exp.kdf);
     assert_eq!(key.kdf_salt, exp.kdf_salt);
-    assert_eq!(key.keccak256_mac, exp.keccak256_mac);
     assert_eq!(key.cipher_text, exp.cipher_text);
     assert_eq!(key.cipher_iv, exp.cipher_iv);
+    assert_eq!(key.keccak256_mac, exp.keccak256_mac);
 }
 
 #[test]
 fn should_flush_to_file() {
-    let kf = KeyFile::create("1234567890", true).unwrap();
+    let kf = KeyFile::new("1234567890").unwrap();
 
-    assert!(kf.flush(temp_dir().as_path()).is_ok());
+    assert!(kf.flush(temp_dir().as_path(), None).is_ok());
 }
 
 #[test]
@@ -156,7 +150,8 @@ fn should_search_by_address() {
 
     let kf = KeyFile::search_by_address(&addr, &keystore_path()).unwrap();
 
-    assert_eq!(kf.address, Some(addr));
+    assert_eq!(kf.uuid,
+               "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3".parse().unwrap());
 }
 
 fn temp_dir() -> PathBuf {

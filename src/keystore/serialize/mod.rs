@@ -26,18 +26,21 @@ pub const CURRENT_VERSION: u8 = 3;
 pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
 
 impl KeyFile {
-    /// Serializes into JSON file with name `UTC-<timestamp>Z--<uuid>`
+    /// Serializes into JSON file with the name format `UTC--<timestamp>Z--<uuid>`
     ///
     /// # Arguments
     ///
     /// * `dir` - path to destination directory
+    /// * `addr` - a public address (optional)
     ///
-    pub fn flush<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
+    pub fn flush<P: AsRef<Path>>(&self, dir: P, addr: Option<Address>) -> Result<(), Error> {
         let path = dir.as_ref()
-            .with_file_name(&get_filename(&self.uuid.to_string()));
+            .with_file_name(&generate_filename(&self.uuid.to_string()));
+        let mut sf = SerializableKeyFile::from(self.clone());
+        sf.address = addr;
+        let json = json::encode(&sf)?;
         let mut file = File::create(&path)?;
-        let data = json::encode(self)?;
-        file.write_all(data.as_ref()).ok();
+        file.write_all(json.as_ref()).ok();
         Ok(())
     }
 
@@ -77,13 +80,13 @@ impl KeyFile {
 
 impl Decodable for KeyFile {
     fn decode<D: Decoder>(d: &mut D) -> Result<KeyFile, D::Error> {
-        let ser = SerializableKeyFile::decode(d)?;
+        let sf = SerializableKeyFile::decode(d)?;
 
-        if !SUPPORTED_VERSIONS.contains(&ser.version) {
-            return Err(d.error(&Error::UnsupportedVersion(ser.version).to_string()));
+        if !SUPPORTED_VERSIONS.contains(&sf.version) {
+            return Err(d.error(&Error::UnsupportedVersion(sf.version).to_string()));
         }
 
-        Ok(ser.into())
+        Ok(sf.into())
     }
 }
 
@@ -107,7 +110,7 @@ impl From<KeyFile> for SerializableKeyFile {
         SerializableKeyFile {
             version: CURRENT_VERSION,
             id: key_file.uuid,
-            address: key_file.address,
+            address: None,
             crypto: Crypto::from(key_file),
         }
     }
@@ -117,7 +120,6 @@ impl Into<KeyFile> for SerializableKeyFile {
     fn into(self) -> KeyFile {
         KeyFile {
             uuid: self.id,
-            address: self.address,
             ..self.crypto.into()
         }
     }
@@ -130,16 +132,18 @@ impl Into<KeyFile> for SerializableKeyFile {
 ///
 /// * `uuid` - UUID for keyfile
 ///
-fn get_filename(uuid: &str) -> String {
-    format!("UTC--{}Z--{}", &get_timestamp(), &uuid)
+fn generate_filename(uuid: &str) -> String {
+    format!("UTC--{}Z--{}", &timestamp(), &uuid)
 }
 
-/// Time stamp for core file in format `yyy-mm-ddThh-mm-ssZ`
-fn get_timestamp() -> String {
-    let val = UTC::now().to_rfc3339();
-    let stamp = str::replace(val.as_str(), ":", "-");
-    let data: Vec<&str> = stamp.split('.').collect(); //cut off milliseconds
-    data[0].to_string()
+/// Time stamp for core file in format `yyy-mm-ddThh-mm-ss`
+fn timestamp() -> String {
+    // `2017-05-01T20:21:10.163281100+00:00` -> `2017-05-01T20-21-10`
+    str::replace(&UTC::now().to_rfc3339(), ":", "-")
+        .split('.')
+        .next()
+        .unwrap()
+        .to_string()
 }
 
 #[cfg(test)]
@@ -188,13 +192,13 @@ mod tests {
     fn should_generate_filename() {
         let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
 
-        assert!(re.is_match(&get_filename("9bec4728-37f9-4444-9990-2ba70ee038e9")));
+        assert!(re.is_match(&generate_filename("9bec4728-37f9-4444-9990-2ba70ee038e9")));
     }
 
     #[test]
     fn should_generate_timestamp() {
         let re = Regex::new(r"^\d{4}-\d{2}-\d{2}[T]\d{2}-\d{2}-\d{2}").unwrap();
 
-        assert!(re.is_match(&get_timestamp()));
+        assert!(re.is_match(&timestamp()));
     }
 }

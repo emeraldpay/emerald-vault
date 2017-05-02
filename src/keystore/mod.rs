@@ -34,9 +34,6 @@ pub struct KeyFile {
     /// UUID v4
     pub uuid: Uuid,
 
-    /// Public address (optional)
-    pub address: Option<Address>,
-
     /// Derived core length
     pub dk_length: usize,
 
@@ -46,9 +43,6 @@ pub struct KeyFile {
     /// Key derivation function salt
     pub kdf_salt: [u8; KDF_SALT_BYTES],
 
-    /// Keccak-256 based message authentication code
-    pub keccak256_mac: [u8; KECCAK256_BYTES],
-
     /// Cipher type
     pub cipher: Cipher,
 
@@ -57,66 +51,58 @@ pub struct KeyFile {
 
     /// Cipher initialization vector
     pub cipher_iv: [u8; CIPHER_IV_BYTES],
+
+    /// Keccak-256 based message authentication code
+    pub keccak256_mac: [u8; KECCAK256_BYTES],
 }
 
 impl KeyFile {
-    /// Generate default wallet with unique `uuid`
-    pub fn new() -> Self {
-        let mut kf = Self::from(Uuid::new_v4());
-
-        let mut rng = OsRng::new().expect("Expect OS specific random number generator");
-        rng.fill_bytes(&mut kf.kdf_salt);
-        rng.fill_bytes(&mut kf.cipher_iv);
-
-        kf
-    }
-
-    /// Creates a new `KeyFile` with specified passphrase
-    /// Uses supplied `PrivateKey` or generates new one
-    /// `Address` inclusion defined by flag
+    /// Creates a new `KeyFile` with specified passphrase at random (`rand::OsRng`)
     ///
     /// # Arguments
     ///
+    /// * `passphrase` - password for key derivation function
+    ///
+    pub fn new(passphrase: &str) -> Result<KeyFile, Error> {
+        let mut rng = os_random();
+
+        Self::new_custom(PrivateKey::gen_custom(&mut rng),
+                         passphrase,
+                         Kdf::default(),
+                         &mut rng)
+    }
+
+    /// Creates a new `KeyFile` with specified `PrivateKey`, passphrase, key derivation function
+    /// and with given custom random generator
+    ///
+    /// # Arguments
+    ///
+    /// * `pk` - a private key
     /// * `passphrase` - password for key derivation function
     /// * `kdf` - customized key derivation function
-    /// * `with_addr` - flag for address inclusion
+    /// * `rnd` - predefined random number generator
     ///
-    pub fn create_custom(passphrase: &str, kdf: Kdf, with_addr: bool) -> Result<KeyFile, Error> {
-        let mut kf = KeyFile::new();
-        kf.kdf = kdf;
+    pub fn new_custom<R: Rng>(pk: PrivateKey,
+                              passphrase: &str,
+                              kdf: Kdf,
+                              rng: &mut R)
+                              -> Result<KeyFile, Error> {
+        let mut kf = KeyFile {
+            uuid: rng.gen::<Uuid>(),
+            kdf: kdf,
+            kdf_salt: rng.gen::<[u8; KDF_SALT_BYTES]>(),
+            ..Default::default()
+        };
 
-        let pk = PrivateKey::gen();
-        if with_addr {
-            kf.with_address(&pk.to_address()?);
-        }
-        kf.encrypt_key(pk, passphrase);
+        kf.encrypt_key_custom(pk, passphrase, rng);
 
         Ok(kf)
     }
 
-    /// Creates a new `KeyFile` with specified passphrase
-    /// `Address` inclusion defined by flag
-    ///
-    /// # Arguments
-    ///
-    /// * `passphrase` - password for key derivation function
-    /// * `with_addr` - flag for address inclusion
-    ///
-    pub fn create(passphrase: &str, with_addr: bool) -> Result<KeyFile, Error> {
-        let mut kf = KeyFile::new();
-        let pk = PrivateKey::gen();
-
-        if with_addr {
-            kf.with_address(&pk.to_address()?);
-        }
-        kf.encrypt_key(pk, passphrase);
-
-        Ok(kf)
-    }
-
-    /// Append `Address` to current wallet
-    pub fn with_address(&mut self, addr: &Address) {
-        self.address = Some(*addr);
+    /// Decrypt public address from keystore file by a passphrase
+    pub fn decrypt_address(&self, passphrase: &str) -> Result<Address, Error> {
+        let pk = self.decrypt_key(passphrase)?;
+        pk.to_address().map_err(Error::from)
     }
 
     /// Decrypt private key from keystore file by a passphrase
@@ -124,8 +110,7 @@ impl KeyFile {
         let derived = self.kdf
             .derive(self.dk_length, &self.kdf_salt, passphrase);
 
-        let mut v = vec![];
-        v.extend_from_slice(&derived[16..32]);
+        let mut v = derived[16..32].to_vec();
         v.extend_from_slice(&self.cipher_text);
 
         if keccak256(&v) != self.keccak256_mac {
@@ -140,14 +125,21 @@ impl KeyFile {
 
     /// Encrypt a new private key for keystore file with a passphrase
     pub fn encrypt_key(&mut self, pk: PrivateKey, passphrase: &str) {
+        self.encrypt_key_custom(pk, passphrase, &mut os_random());
+    }
+
+    /// Encrypt a new private key for keystore file with a passphrase
+    /// and with given custom random generator
+    pub fn encrypt_key_custom<R: Rng>(&mut self, pk: PrivateKey, passphrase: &str, rng: &mut R) {
         let derived = self.kdf
             .derive(self.dk_length, &self.kdf_salt, passphrase);
+
+        rng.fill_bytes(&mut self.cipher_iv);
 
         self.cipher_text = self.cipher
             .encrypt(&pk, &derived[0..16], &self.cipher_iv);
 
-        let mut v = vec![];
-        v.extend_from_slice(&derived[16..32]);
+        let mut v = derived[16..32].to_vec();
         v.extend_from_slice(&self.cipher_text);
 
         self.keccak256_mac = keccak256(&v);
@@ -158,14 +150,13 @@ impl Default for KeyFile {
     fn default() -> Self {
         KeyFile {
             uuid: Uuid::default(),
-            address: None,
             dk_length: DEFAULT_DK_LENGTH,
             kdf: Kdf::default(),
             kdf_salt: [0u8; KDF_SALT_BYTES],
-            keccak256_mac: [0u8; KECCAK256_BYTES],
             cipher: Cipher::default(),
             cipher_text: vec![],
             cipher_iv: [0u8; CIPHER_IV_BYTES],
+            keccak256_mac: [0u8; KECCAK256_BYTES],
         }
     }
 }
@@ -203,35 +194,22 @@ impl fmt::Display for KeyFile {
     }
 }
 
+fn os_random() -> OsRng {
+    OsRng::new().expect("Expect OS specific random number generator")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use tests::*;
 
     #[test]
-    fn should_eq_regardless_of_address() {
-        let key_without_address = KeyFile::new();
+    fn should_create_keyfile() {
+        let pk = PrivateKey::gen();
+        let kdf = Kdf::from((8, 2, 1));
+        let kf = KeyFile::new_custom(pk, "1234567890", kdf, &mut rand::thread_rng()).unwrap();
 
-        let mut key_with_address = key_without_address.clone();
-
-        key_with_address.with_address(&"0x0e7c045110b8dbf29765047380898919c5cb56f4"
-                                           .parse::<Address>()
-                                           .unwrap());
-
-        assert_eq!(key_without_address, key_with_address);
-    }
-
-    #[test]
-    fn should_create() {
-        assert!(KeyFile::create("1234567890", false).is_ok());
-    }
-
-    #[test]
-    fn should_create_custom() {
-        let custom_kdf = Kdf::from((8, 2, 1));
-        let res = KeyFile::create_custom("1234567890", custom_kdf, false);
-
-        assert!(res.is_ok());
-        assert_eq!(custom_kdf, res.unwrap().kdf);
+        assert_eq!(kf.kdf, kdf);
+        assert_eq!(kf.decrypt_key("1234567890").unwrap(), pk);
     }
 }

@@ -3,7 +3,7 @@
 use super::Address;
 use super::Error;
 use super::util::{KECCAK256_BYTES, keccak256, to_arr};
-use rand::OsRng;
+use rand::{OsRng, Rng};
 use rustc_serialize::hex::{FromHex, ToHex};
 use secp256k1::{ContextFlag, Message, Secp256k1};
 use secp256k1::key::{PublicKey, SecretKey};
@@ -55,10 +55,14 @@ impl Into<(u8, [u8; 32], [u8; 32])> for Signature {
 pub struct PrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
 
 impl PrivateKey {
-    /// Generate a new `PrivateKey` at random (`rand::OsRng`).
+    /// Generate a new `PrivateKey` at random (`rand::OsRng`)
     pub fn gen() -> Self {
-        let mut rng = OsRng::new().expect("Expect OS specific random number generator");
-        PrivateKey::from(SecretKey::new(&ECDSA, &mut rng))
+        Self::gen_custom(&mut os_random())
+    }
+
+    /// Generate a new `PrivateKey` with given custom random generator
+    pub fn gen_custom<R: Rng>(rng: &mut R) -> Self {
+        PrivateKey::from(SecretKey::new(&ECDSA, rng))
     }
 
     /// Try to convert a byte slice into `PrivateKey`.
@@ -102,7 +106,7 @@ impl PrivateKey {
     /// Sign hash from message (Keccak-256)
     pub fn sign_hash(&self, hash: [u8; KECCAK256_BYTES]) -> Result<Signature, Error> {
         let msg = Message::from_slice(&hash)?;
-        let key = SecretKey::from_slice(&ECDSA, &self)?;
+        let key = SecretKey::from_slice(&ECDSA, self)?;
 
         let s = ECDSA.sign_recoverable(&msg, &key)?;
         let (rid, sig) = s.serialize_compact(&ECDSA);
@@ -110,6 +114,7 @@ impl PrivateKey {
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
         buf[0..64].copy_from_slice(&sig[0..64]);
         buf[64] = (rid.to_i32() + 27) as u8;
+
         Ok(Signature::from(buf))
     }
 }
@@ -161,6 +166,10 @@ impl fmt::Display for PrivateKey {
     }
 }
 
+fn os_random() -> OsRng {
+    OsRng::new().expect("Expect OS specific random number generator")
+}
+
 fn message_hash(msg: &str) -> [u8; KECCAK256_BYTES] {
     bytes_hash(msg.as_bytes())
 }
@@ -171,7 +180,7 @@ fn bytes_hash(data: &[u8]) -> [u8; KECCAK256_BYTES] {
     keccak256(&v)
 }
 
-/// [internal/ethapi: add personal_sign method](https://github.com/ethereum/go-ethereum/pull/2940)
+/// [internal/ethapi: add personal sign method](https://github.com/ethereum/go-ethereum/pull/2940)
 fn prefix(data: &[u8]) -> String {
     format!("\x19Ethereum Signed Message:\x0a{}", data.len())
 }
