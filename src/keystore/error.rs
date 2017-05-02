@@ -18,13 +18,13 @@ pub enum Error {
     /// `keccak256_mac` field validation failed
     FailedMacValidation,
 
-    /// Invalid format of `PrivateKey`
-    InvalidPrivateKey(core::Error),
+    /// Core module error wrapper
+    CoreFault(core::Error),
 }
 
 impl From<core::Error> for Error {
     fn from(err: core::Error) -> Self {
-        Error::InvalidPrivateKey(err)
+        Error::CoreFault(err)
     }
 }
 
@@ -39,9 +39,7 @@ impl fmt::Display for Error {
                 write!(f, "Unsupported pseudo-random function: {}", str)
             }
             Error::FailedMacValidation => write!(f, "Message authentication code failed"),
-            Error::InvalidPrivateKey(ref err) => {
-                write!(f, "Invalid format of private key: {}", err)
-            }
+            Error::CoreFault(ref err) => f.write_str(&err.to_string()),
         }
     }
 }
@@ -53,7 +51,7 @@ impl error::Error for Error {
 
     fn cause(&self) -> Option<&error::Error> {
         match *self {
-            Error::InvalidPrivateKey(ref err) => Some(err),
+            Error::CoreFault(ref err) => Some(err),
             _ => None,
         }
     }
