@@ -4,11 +4,13 @@ use super::core;
 use jsonrpc_core;
 use reqwest;
 use std::{error, fmt};
+use serde_json;
 
 /// JSON RPC errors
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub enum Error {
     /// Http client error
+    #[serde(skip_serializing, skip_deserializing)]
     HttpClient(reqwest::Error),
     /// RPC error
     RPC(jsonrpc_core::Error),
@@ -23,8 +25,14 @@ impl From<reqwest::Error> for Error {
 }
 
 impl From<core::Error> for Error {
-    fn from(_: core::Error) -> Self {
-        Error::DataFormat("".to_string())
+    fn from(err: core::Error) -> Self {
+        Error::DataFormat(err.to_string())
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        Error::DataFormat(err.to_string())
     }
 }
 

@@ -10,7 +10,7 @@ use std::str::FromStr;
 pub const ADDRESS_BYTES: usize = 20;
 
 /// Account address (20 bytes)
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct Address(pub [u8; ADDRESS_BYTES]);
 
 impl Address {

@@ -2,6 +2,7 @@
 
 use super::{Address, Error, PrivateKey};
 use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256};
+use serde_json;
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]

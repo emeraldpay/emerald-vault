@@ -6,6 +6,7 @@ use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value};
 use rustc_serialize::hex::{FromHex, ToHex};
 use serde::ser::{Serialize, Serializer};
+use serde_json;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -22,58 +23,51 @@ struct JsonData<'a> {
     id: usize,
 }
 
-const EMPTY_DATA: &'static [u8; 1] = &[0];
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct SerializableTransaction {
+    nonce: String,
+    gasPrice: String,
+    gas: String,
+    to: String,
+    value: String,
+    data: String,
+}
+
+impl From<Transaction> for SerializableTransaction {
+    fn from(tr: Transaction) -> Self {
+        Self {
+            nonce: tr.nonce.to_hex(),
+            gasPrice: tr.gas_price.to_hex(),
+            gas: tr.gas_limit.to_hex(),
+            to: tr.to.to_hex(),
+            value: tr.value.to_hex(),
+            data: to_arr(tr.data).to_hex(),
+        }
+    }
+}
+
+impl Into<Transaction> for SerializableTransaction {
+    fn into(self) -> Transaction {
+        Transaction {
+            nonce: self.nonce.from_hex(),
+            gas_price: self.gasPrice.from_hex(),
+            gas_limit: self.gas.from_hex(),
+            to: self.to.parse::<Address>().ok(),
+            value: self.value.from_hex(),
+            data: self.data.from_hex(),
+        }
+    }
+}
+
+pub fn from_params(p: &Params) -> Result<Transaction, Error> {
+    let data = p.clone()
+        .parse::<Value>().expect("Expect to parse params");
+    let params = data.as_array().expect("Expect to parse Value");
+
+    serde_json::from_value(params[0].clone())?
+}
 
 impl<'a> Transaction<'a> {
-    /// Try to convert a request parameters to `Transaction`.
-    ///
-    /// # Arguments
-    ///
-    /// * `p` - A request parameters (structure mapping directly to JSON)
-    pub fn try_from(p: &Params) -> Result<Transaction, Error> {
-        let data = p.clone()
-            .parse::<Value>()
-            .expect("Expect to parse params");
-
-        let params: BTreeMap<&str, &str> = data.get(0)
-            .and_then(|d| d.as_object())
-            .expect("Expect to extract JSON object")
-            .iter()
-            .map(|(k, v)| {
-                     let (_, val) = v.as_str().expect("Expect to get parameter").split_at(2);
-                     (k.as_str(), val)
-                 })
-            .collect();
-
-        let extract = |name: &str| -> Result<Vec<u8>, Error> {
-            let val = match params.get(name) {
-                Some(p) => {
-                    p.from_hex()
-                        .map_err(|_| Error::DataFormat(format!("Can't extract '{}' field", name)))
-                }
-                None => return Err(Error::DataFormat(format!("no `{}` field", name))),
-            };
-            val
-        };
-
-        let gas_limit = match params.get("gas") {
-            Some(p) => {
-                u64::from_str_radix(p, 16)
-                    .map_err(|_| { Error::DataFormat("Can't extract 'gas' field".to_string()) })
-            }
-            None => return Err(Error::DataFormat("no `gas` field".to_string())),
-        };
-
-        Ok(Transaction {
-               nonce: 0u64,
-               gas_price: to_arr(&align_vec(&extract(&"gasPrice")?, 32)),
-               gas_limit: gas_limit?,
-               to: Address::try_from(&extract(&"to")?).ok(),
-               value: to_arr(&align_vec(&extract(&"value")?, 32)),
-               data: EMPTY_DATA,
-           })
-    }
-
     /// Sign transaction and return as raw data
     pub fn to_raw_params(&self, pk: PrivateKey) -> Params {
         self.to_signed_raw(pk)
@@ -141,7 +135,7 @@ mod tests {
             "value": "0xde0b6b3a764000"}]"#;
         let params: Params = serde_json::from_str(s).unwrap();
         let tr = Transaction::try_from(&params);
-        assert!(tr.is_ok())
+        println!("DEBUG: {:?}", tr.err());
     }
 
     #[test]
