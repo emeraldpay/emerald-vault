@@ -1,7 +1,7 @@
 //! # Serialize JSON RPC parameters
 
 use super::{Error, Method, MethodParams};
-use super::{align_vec, to_arr};
+use super::{align_bytes, to_arr};
 use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value};
 use rustc_serialize::hex::{FromHex, ToHex};
@@ -65,10 +65,10 @@ impl<'a> Transaction<'a> {
 
         Ok(Transaction {
                nonce: 0u64,
-               gas_price: to_arr(&align_vec(&extract("gasPrice")?, 32)),
+               gas_price: to_arr(&align_bytes(&extract("gasPrice")?, 32)),
                gas_limit: gas_limit?,
                to: Address::try_from(&extract("to")?).ok(),
-               value: to_arr(&align_vec(&extract("value")?, 32)),
+               value: to_arr(&align_bytes(&extract("value")?, 32)),
                data: EMPTY_DATA,
            })
     }

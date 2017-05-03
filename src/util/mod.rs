@@ -16,11 +16,23 @@ pub fn to_arr<A, T>(slice: &[T]) -> A
     arr
 }
 
-/// Insert O-padding into vector head to fit `size`
-pub fn align_vec(val: &[u8], size: usize) -> Vec<u8> {
-    let mut pad = vec![0u8; size - val.len()];
-    pad.extend(val.into_iter().cloned());
-    pad
+/// Padding high bytes with `O` to fit `len` bytes
+pub fn align_bytes(data: &[u8], len: usize) -> Vec<u8> {
+    let mut v = vec![0u8; len - data.len()];
+    v.extend_from_slice(data);
+    v
+}
+
+/// Trim all high zero bytes
+pub fn trim_bytes(data: &[u8]) -> &[u8] {
+    let mut n = 0;
+    for b in data {
+        if *b != 0u8 {
+            break;
+        }
+        n += 1;
+    }
+    &data[n..data.len()]
 }
 
 #[cfg(test)]
@@ -64,9 +76,44 @@ mod tests {
     }
 
     #[test]
-    fn should_align_vector() {
-        let expected = vec![0, 0, 0, 0, 0, 1, 2, 3];
+    fn should_align_empty_bytes() {
+        assert_eq!(align_bytes(&[], 8), vec![0, 0, 0, 0, 0, 0, 0, 0]);
+    }
 
-        assert_eq!(expected, align_vec(&[1u8, 2u8, 3u8], 8));
+    #[test]
+    fn should_align_some_zero_bytes() {
+        assert_eq!(align_bytes(&[0, 0, 0], 8), vec![0, 0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn should_align_all_zero_bytes() {
+        assert_eq!(align_bytes(&[0, 0, 0, 0, 0, 0, 0, 0], 8),
+                   vec![0, 0, 0, 0, 0, 0, 0, 0]);
+    }
+
+    #[test]
+    fn should_align_some_bytes() {
+        assert_eq!(align_bytes(&[0, 1, 2, 3], 8), vec![0, 0, 0, 0, 0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn should_align_full_bytes() {
+        assert_eq!(align_bytes(&[1, 2, 3, 4, 5, 6, 7, 8], 8),
+                   vec![1, 2, 3, 4, 5, 6, 7, 8]);
+    }
+
+    #[test]
+    fn should_trim_empty_bytes() {
+        assert_eq!(trim_bytes(&[]), &[] as &[u8]);
+    }
+
+    #[test]
+    fn should_trim_zero_bytes() {
+        assert_eq!(trim_bytes(&[0, 0, 0]), &[] as &[u8]);
+    }
+
+    #[test]
+    fn should_trim_some_bytes() {
+        assert_eq!(trim_bytes(&[0, 0, 0, 0, 0, 1, 2, 3]), &[1, 2, 3]);
     }
 }

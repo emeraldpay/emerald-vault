@@ -3,6 +3,12 @@
 //!
 //! See [RLP spec](https://github.com/ethereumproject/wiki/wiki/RLP)
 
+/// The `WriteRLP` trait is used to specify functionality of serializing data to RLP bytes
+pub trait WriteRLP {
+    /// Writes itself as RLP bytes into specified buffer
+    fn write_rlp(&self, buf: &mut Vec<u8>);
+}
+
 /// A list serializable to RLP
 pub struct RLPList {
     tail: Vec<u8>,
@@ -19,7 +25,7 @@ impl RLPList {
     }
 
     /// Add an item to the list
-    pub fn push<T: WriteRLP>(&mut self, item: &T) {
+    pub fn push<T: WriteRLP + ?Sized>(&mut self, item: &T) {
         item.write_rlp(&mut self.tail);
     }
 }
@@ -28,12 +34,6 @@ impl Default for RLPList {
     fn default() -> RLPList {
         RLPList { tail: Vec::new() }
     }
-}
-
-/// The `WriteRLP` trait is used to specify functionality of serializing data to RLP bytes
-pub trait WriteRLP {
-    /// Writes itself as RLP bytes into specified buffer
-    fn write_rlp(&self, buf: &mut Vec<u8>);
 }
 
 impl WriteRLP for str {
@@ -56,25 +56,40 @@ impl WriteRLP for u8 {
 
 impl WriteRLP for u16 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(*self as usize, 2).as_slice().write_rlp(buf)
+        to_bytes(*self as usize,
+                 if *self == 0 {
+                     1
+                 } else {
+                     bytes_count(*self as usize)
+                 })
+                .as_slice()
+                .write_rlp(buf)
     }
 }
 
 impl WriteRLP for u32 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(*self as usize, 4).as_slice().write_rlp(buf)
+        to_bytes(*self as usize,
+                 if *self == 0 {
+                     1
+                 } else {
+                     bytes_count(*self as usize)
+                 })
+                .as_slice()
+                .write_rlp(buf)
     }
 }
 
 impl WriteRLP for u64 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(*self as usize, 8).as_slice().write_rlp(buf)
-    }
-}
-
-impl<T: WriteRLP> WriteRLP for Vec<T> {
-    fn write_rlp(&self, buf: &mut Vec<u8>) {
-        RLPList::from_slice(self).write_rlp(buf);
+        to_bytes(*self as usize,
+                 if *self == 0 {
+                     1
+                 } else {
+                     bytes_count(*self as usize)
+                 })
+                .as_slice()
+                .write_rlp(buf)
     }
 }
 
@@ -82,9 +97,11 @@ impl WriteRLP for [u8] {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         let len = self.len();
 
-        // For a single byte whose value is in the [0x00, 0x7f] range,
-        // that byte is its own RLP encoding.
-        if len == 1 && self[0] <= 0x7f {
+        if len == 1 && self[0] == 0 {
+            buf.push(0x80);
+            // For a single byte whose value is in the [0x00, 0x7f] range,
+            // that byte is its own RLP encoding.
+        } else if len == 1 && self[0] <= 0x7f {
             buf.push(self[0])
         } else if len <= 55 {
             // Otherwise, if a string is 0-55 bytes long, the RLP encoding consists of a single byte
@@ -103,6 +120,21 @@ impl WriteRLP for [u8] {
             buf.extend_from_slice(&to_bytes(len, len_bytes));
             buf.extend_from_slice(self);
         }
+    }
+}
+
+impl<T: WriteRLP> WriteRLP for Option<T> {
+    fn write_rlp(&self, buf: &mut Vec<u8>) {
+        match *self {
+            Some(ref x) => x.write_rlp(buf),
+            None => [].write_rlp(buf),
+        }
+    }
+}
+
+impl<T: WriteRLP> WriteRLP for Vec<T> {
+    fn write_rlp(&self, buf: &mut Vec<u8>) {
+        RLPList::from_slice(self).write_rlp(buf);
     }
 }
 
@@ -129,15 +161,7 @@ impl WriteRLP for RLPList {
     }
 }
 
-impl<T: WriteRLP> WriteRLP for Option<T> {
-    fn write_rlp(&self, buf: &mut Vec<u8>) {
-        match *self {
-            Some(ref x) => x.write_rlp(buf),
-            None => [].write_rlp(buf),
-        }
-    }
-}
-
+// FIXME: Move to utils
 fn bytes_count(x: usize) -> u8 {
     match x {
         _ if x > 0xff => 1 + bytes_count(x >> 8),
@@ -146,6 +170,7 @@ fn bytes_count(x: usize) -> u8 {
     }
 }
 
+// FIXME: Move to utils and rewrite with the help from `byteorder` crate
 fn to_bytes(x: usize, len: u8) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::with_capacity(len as usize);
     for i in 0..len {
@@ -219,9 +244,10 @@ mod tests {
     #[test]
     fn encode_mediumint4() {
         let mut buf = Vec::new();
-        "102030405060708090A0B0C0D0E0F2"
+        "102030405060708090a0b0c0d0e0f2"
             .from_hex()
             .unwrap()
+            .as_slice()
             .write_rlp(&mut buf);
         assert_eq!("8f102030405060708090a0b0c0d0e0f2", buf.to_hex());
     }
@@ -229,33 +255,13 @@ mod tests {
     #[test]
     fn encode_mediumint5() {
         let mut buf = Vec::new();
-        "100020003000400050006000700080009000A000B000C000D000E01"
+        "0100020003000400050006000700080009000a000b000c000d000e01"
             .from_hex()
             .unwrap()
+            .as_slice()
             .write_rlp(&mut buf);
         assert_eq!("9c0100020003000400050006000700080009000a000b000c000d000e01",
                    buf.to_hex());
-    }
-
-    #[test]
-    fn encode_bytestring00() {
-        let mut buf = Vec::new();
-        "\u{0000}".write_rlp(&mut buf);
-        assert_eq!([0x00], buf.as_slice());
-    }
-
-    #[test]
-    fn encode_bytestring01() {
-        let mut buf = Vec::new();
-        "\u{0001}".write_rlp(&mut buf);
-        assert_eq!([0x01], buf.as_slice());
-    }
-
-    #[test]
-    fn encode_bytestring7f() {
-        let mut buf = Vec::new();
-        "\u{007f}".write_rlp(&mut buf);
-        assert_eq!([0x7f], buf.as_slice());
     }
 
     #[test]

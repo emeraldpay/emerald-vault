@@ -1,7 +1,7 @@
 //! # Account transaction
 
 use super::{Address, Error, PrivateKey};
-use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256};
+use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -32,9 +32,9 @@ impl<'a> Transaction<'a> {
 
         let sig = pk.sign_hash(self.hash())?;
 
+        rlp.push(&sig.r[..]);
+        rlp.push(&sig.s[..]);
         rlp.push(&sig.v);
-        rlp.push(&sig.r.to_vec());
-        rlp.push(&sig.s.to_vec());
 
         let mut vec = Vec::new();
         rlp.write_rlp(&mut vec);
@@ -51,13 +51,19 @@ impl<'a> Transaction<'a> {
         let mut data = RLPList::default();
 
         data.push(&self.nonce);
-        data.push(&self.gas_price.to_vec());
+        data.push(trim_bytes(&self.gas_price));
         data.push(&self.gas_limit);
-        data.push(&self.to.map(|x| x.to_vec()));
-        data.push(&self.value.to_vec());
-        data.push(&self.data.to_vec());
+        data.push(&self.to);
+        data.push(trim_bytes(&self.value));
+        data.push(self.data);
 
         data
+    }
+}
+
+impl WriteRLP for Address {
+    fn write_rlp(&self, buf: &mut Vec<u8>) {
+        (&self[..]).write_rlp(buf);
     }
 }
 
@@ -67,7 +73,6 @@ mod tests {
     use tests::*;
 
     #[test]
-    #[ignore]
     fn should_sign_transaction() {
         let empty = [];
         let tx = Transaction {
