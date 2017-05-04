@@ -184,7 +184,7 @@ fn bytes_count(x: usize) -> u8 {
 fn to_bytes(x: usize, len: u8) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::with_capacity(len as usize);
     for i in 0..len {
-        let u = (x >> ((len - i - 1) << 3)) & 0xff;
+        let u = x.overflowing_shr(((len - i - 1) << 3) as u32).0 & 0xff;
         buf.push(u as u8);
     }
     buf
