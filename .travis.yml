@@ -17,9 +17,9 @@ script:
     echo "\$ rustfmt --version" &&
     cargo fmt -- --version &&
     cargo fmt -- --verbose --write-mode=diff &&
-    (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose) &&
+    (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose --release) &&
     (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --verbose --features "dev") &&
-    RUST_BACKTRACE=1 cargo test --verbose &&
+    cargo test --verbose &&
     cargo doc --no-deps
 matrix:
   allow_failures:
