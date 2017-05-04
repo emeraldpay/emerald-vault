@@ -6,7 +6,7 @@ use serde_json;
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
-pub struct Transaction<'a> {
+pub struct Transaction {
     /// Nonce
     pub nonce: u64,
 
@@ -23,10 +23,10 @@ pub struct Transaction<'a> {
     pub value: [u8; 32],
 
     /// Data transferred with transaction
-    pub data: &'a [u8],
+    pub data: Vec<u8>,
 }
 
-impl<'a> Transaction<'a> {
+impl Transaction {
     /// Sign transaction data with provided private key
     pub fn to_signed_raw(&self, pk: PrivateKey) -> Result<Vec<u8>, Error> {
         let mut rlp = self.to_rlp();

@@ -1,10 +1,10 @@
 //! # Serialize JSON RPC parameters
 
 use super::{Error, Method, MethodParams};
-use super::{align_vec, to_arr};
+use super::{align_vec, to_arr, to_u64, ToHex};
 use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value};
-use rustc_serialize::hex::{FromHex, ToHex};
+use rustc_serialize::hex::FromHex;
 use serde::ser::{Serialize, Serializer};
 use serde_json;
 use std::collections::BTreeMap;
@@ -13,6 +13,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 lazy_static! {
     static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
+}
+
+fn empty_data() -> Option<String> {
+    None
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -25,49 +29,102 @@ struct JsonData<'a> {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct SerializableTransaction {
-    nonce: String,
     gasPrice: String,
     gas: String,
-    to: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    to: Option<String>,
     value: String,
-    data: String,
+    #[serde(skip_serializing_if = "Option::is_none", default="empty_data")]
+    data: Option<String>,
+}
+
+impl IntoIterator for SerializableTransaction {
+    type Item = String;
+    type IntoIter = StrIntoIterator;
+
+    fn into_iter(self) -> Self::IntoIter {
+        StrIntoIterator { tr: self, index: 0 }
+    }
+}
+
+struct StrIntoIterator {
+    tr: SerializableTransaction,
+    index: usize,
+}
+
+impl<'a> Iterator for StrIntoIterator {
+    type Item = &'a str;
+    fn next(&mut self) -> Option<&'a str> {
+        let result = match self.index {
+            0 => Some(self.tr.gasPrice.as_str()),
+            1 => Some(self.tr.gas.as_str()),
+            2 => Some(self.tr.to.unwrap_or(None).as_str()),
+            3 => Some(self.tr.value.as_str()),
+            4 => Some(self.tr.data.unwrap_or(None).as_str()),
+            _ => return None,
+        };
+        self.index += 1;
+        result
+    }
 }
 
 impl From<Transaction> for SerializableTransaction {
     fn from(tr: Transaction) -> Self {
         Self {
-            nonce: tr.nonce.to_hex(),
             gasPrice: tr.gas_price.to_hex(),
             gas: tr.gas_limit.to_hex(),
-            to: tr.to.to_hex(),
+            to: match tr.to {
+                Some(a) => Some(a.to_hex()),
+                _ => None
+            },
             value: tr.value.to_hex(),
-            data: to_arr(tr.data).to_hex(),
+            data: match tr.data.is_empty() {
+                true => None,
+                false => Some(tr.data.to_hex()),
+            },
         }
     }
 }
 
 impl Into<Transaction> for SerializableTransaction {
     fn into(self) -> Transaction {
+        self.into_iter()
+            .map(|v| {
+                let (_, s) = v.split_at(2);
+                v = s.to_string();
+            });
+
+        let gas_price = align_vec(&self.gasPrice.from_hex().unwrap(), 32);
+        let value = align_vec(&self.value.from_hex().unwrap(), 32);
+
         Transaction {
-            nonce: self.nonce.from_hex(),
-            gas_price: self.gasPrice.from_hex(),
-            gas_limit: self.gas.from_hex(),
-            to: self.to.parse::<Address>().ok(),
-            value: self.value.from_hex(),
-            data: self.data.from_hex(),
+            nonce: 0u64,
+            gas_price: to_arr(&gas_price),
+            gas_limit: to_u64(&self.gas.from_hex().unwrap()),
+            to: match self.to {
+                Some(s) => s.parse::<Address>().ok(),
+                _ => None,
+            },
+            value: to_arr(&value),
+            data: match self.data {
+                Some(d) => d.from_hex().unwrap(),
+                _ => Vec::new(),
+            },
         }
     }
 }
 
-pub fn from_params(p: &Params) -> Result<Transaction, Error> {
-    let data = p.clone()
-        .parse::<Value>().expect("Expect to parse params");
-    let params = data.as_array().expect("Expect to parse Value");
+impl Transaction {
+    ///
+    pub fn try_from(p: &Params) -> Result<Transaction, Error> {
+        let data = p.clone()
+            .parse::<Value>().expect("Expect to parse params");
+        let params = data.as_array().expect("Expect to parse Value");
 
-    serde_json::from_value(params[0].clone())?
-}
+        let str: SerializableTransaction  = serde_json::from_value(params[0].clone())?;
+        Ok(str.into())
+    }
 
-impl<'a> Transaction<'a> {
     /// Sign transaction and return as raw data
     pub fn to_raw_params(&self, pk: PrivateKey) -> Params {
         self.to_signed_raw(pk)

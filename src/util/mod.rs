@@ -5,6 +5,42 @@ mod rlp;
 
 pub use self::crypto::{KECCAK256_BYTES, keccak256};
 pub use self::rlp::{RLPList, WriteRLP};
+use std::mem::transmute;
+
+static CHARS: &'static[u8] = b"0123456789abcdef";
+
+/// Convert `self` into hex string
+pub trait ToHex {
+    ///
+    fn to_hex(&self) -> String;
+}
+
+impl ToHex for [u8] {
+    fn to_hex(&self) -> String {
+        let mut v = Vec::with_capacity(self.len() * 2);
+        for &byte in self.iter() {
+            v.push(CHARS[(byte >> 4) as usize]);
+            v.push(CHARS[(byte & 0xf) as usize]);
+        }
+
+        unsafe {
+            String::from_utf8_unchecked(v)
+        }
+    }
+}
+
+impl ToHex for u64 {
+    fn to_hex(&self) -> String {
+        let bytes: [u8; 8] = unsafe { transmute(self.to_be()) };
+        bytes.to_hex()
+    }
+}
+
+///
+pub fn to_u64(data: &[u8]) -> u64 {
+    0u64
+}
+
 
 /// Convert a slice into array
 pub fn to_arr<A, T>(slice: &[T]) -> A
