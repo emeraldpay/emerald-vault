@@ -1,7 +1,13 @@
 //! # Account transaction
 
 use super::{Address, Error, PrivateKey};
-use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256};
+use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
+
+// Main chain id
+pub const MAINNET_ID: u8 = 61;
+
+// Test chain id
+pub const _TESTNET_ID: u8 = 62;
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -30,11 +36,14 @@ impl<'a> Transaction<'a> {
     pub fn to_signed_raw(&self, pk: PrivateKey) -> Result<Vec<u8>, Error> {
         let mut rlp = self.to_rlp();
 
-        let sig = pk.sign_hash(self.hash())?;
+        let mut sig = pk.sign_hash(self.hash())?;
 
-        rlp.push(&sig.v);
-        rlp.push(&sig.r.to_vec());
-        rlp.push(&sig.s.to_vec());
+        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
+        sig.v += MAINNET_ID * 2 + 35 - 27;
+
+        rlp.push(&[sig.v][..]);
+        rlp.push(&sig.r[..]);
+        rlp.push(&sig.s[..]);
 
         let mut vec = Vec::new();
         rlp.write_rlp(&mut vec);
@@ -42,8 +51,15 @@ impl<'a> Transaction<'a> {
     }
 
     fn hash(&self) -> [u8; KECCAK256_BYTES] {
+        let mut rlp = self.to_rlp();
+
+        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
+        rlp.push(&MAINNET_ID);
+        rlp.push(&[][..]);
+        rlp.push(&[][..]);
+
         let mut vec = Vec::new();
-        self.to_rlp().write_rlp(&mut vec);
+        rlp.write_rlp(&mut vec);
         keccak256(&vec)
     }
 
@@ -51,11 +67,16 @@ impl<'a> Transaction<'a> {
         let mut data = RLPList::default();
 
         data.push(&self.nonce);
-        data.push(&self.gas_price.to_vec());
+        data.push(trim_bytes(&self.gas_price));
         data.push(&self.gas_limit);
-        data.push(&self.to.map(|x| x.to_vec()));
-        data.push(&self.value.to_vec());
-        data.push(&self.data.to_vec());
+
+        match self.to {
+            Some(addr) => data.push(&Some(&addr[..])),
+            _ => data.push::<Option<&[u8]>>(&None),
+        };
+
+        data.push(trim_bytes(&self.value));
+        data.push(self.data);
 
         data
     }
@@ -67,7 +88,6 @@ mod tests {
     use tests::*;
 
     #[test]
-    #[ignore]
     fn should_sign_transaction() {
         let empty = [];
         let tx = Transaction {
@@ -75,7 +95,7 @@ mod tests {
             gas_price: /* 21000000000 */
                 to_32bytes("00000000000000000000000000000000000000000000000000000004e3b29200"),
             gas_limit: 21000,
-            to: Some("0x13978aee95f38490e9769c39b2773ed763d9cd5f"
+            to: Some("0x0000000000000000000000000000000012345678"
                     .parse::<Address>()
                     .unwrap()),
             value: /* 1 ETC */
@@ -83,13 +103,31 @@ mod tests {
             data: &empty,
         };
 
+        /*
+        {
+           "nonce":"0x00",
+           "gasPrice":"0x04e3b29200",
+           "gasLimit":"0x5208",
+           "to":"0x0000000000000000000000000000000012345678",
+           "value":"0x0de0b6b3a7640000",
+           "data":"",
+           "chainId":61
+        }
+        */
+
         let pk = PrivateKey(
             to_32bytes("c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4"));
 
         assert_eq!(tx.to_signed_raw(pk).unwrap().to_hex(),
-                   "f86d808504e3b292008252089413978aee95f38490e9769c39b2773ed763d9cd\
-                    5f880de0b6b3a764000080819da00b5534f62bdb75adb28d3940838521d932cf\
-                    3f968e39b3c8bc7d9dc829e6e0f7a05aab73ca44d2d3b8f5c3568cae9cc3e652e\
-                    1441d3c6a2942eb00a48f660ddc79");
+                   "f86d\
+                   80\
+                   8504e3b29200\
+                   825208\
+                   940000000000000000000000000000000012345678\
+                   880de0b6b3a7640000\
+                   80\
+                   819e\
+                   a0b17da8416f42d62192b07ff855f4a8e8e9ee1a2e920e3c407fd9a3bd5e388daa\
+                   a0547981b617c88587bfcd924437f6134b0b75f4484042db0750a2b1c0ccccc597");
     }
 }

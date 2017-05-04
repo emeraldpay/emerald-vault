@@ -25,6 +25,35 @@ pub const CURRENT_VERSION: u8 = 3;
 /// Supported keystore file versions (only current V3 now)
 pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
 
+/// A serializable keystore file (UTC / JSON format)
+#[derive(Clone, Debug, RustcDecodable, RustcEncodable)]
+struct SerializableKeyFile {
+    version: u8,
+    id: Uuid,
+    address: Option<Address>,
+    crypto: Crypto,
+}
+
+impl From<KeyFile> for SerializableKeyFile {
+    fn from(key_file: KeyFile) -> Self {
+        SerializableKeyFile {
+            version: CURRENT_VERSION,
+            id: key_file.uuid,
+            address: None,
+            crypto: Crypto::from(key_file),
+        }
+    }
+}
+
+impl Into<KeyFile> for SerializableKeyFile {
+    fn into(self) -> KeyFile {
+        KeyFile {
+            uuid: self.id,
+            ..self.crypto.into()
+        }
+    }
+}
+
 impl KeyFile {
     /// Serializes into JSON file with the name format `UTC--<timestamp>Z--<uuid>`
     ///
@@ -93,35 +122,6 @@ impl Decodable for KeyFile {
 impl Encodable for KeyFile {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         SerializableKeyFile::from(self.clone()).encode(s)
-    }
-}
-
-/// A serializable keystore file (UTC / JSON format)
-#[derive(Clone, Debug, RustcDecodable, RustcEncodable)]
-struct SerializableKeyFile {
-    version: u8,
-    id: Uuid,
-    address: Option<Address>,
-    crypto: Crypto,
-}
-
-impl From<KeyFile> for SerializableKeyFile {
-    fn from(key_file: KeyFile) -> Self {
-        SerializableKeyFile {
-            version: CURRENT_VERSION,
-            id: key_file.uuid,
-            address: None,
-            crypto: Crypto::from(key_file),
-        }
-    }
-}
-
-impl Into<KeyFile> for SerializableKeyFile {
-    fn into(self) -> KeyFile {
-        KeyFile {
-            uuid: self.id,
-            ..self.crypto.into()
-        }
     }
 }
 

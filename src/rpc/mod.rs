@@ -9,7 +9,7 @@ use super::contract::Contracts;
 use super::core::{self, Transaction};
 use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages};
-use super::util::{align_vec, to_arr};
+use super::util::{align_bytes, to_arr};
 use futures;
 use jsonrpc_core::{self, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
