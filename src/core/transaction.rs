@@ -3,6 +3,12 @@
 use super::{Address, Error, PrivateKey};
 use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
 
+// Main chain id
+pub const MAINNET_ID: u8 = 61;
+
+// Test chain id
+pub const _TESTNET_ID: u8 = 62;
+
 /// Transaction data
 #[derive(Clone, Debug, Default)]
 pub struct Transaction<'a> {
@@ -30,7 +36,10 @@ impl<'a> Transaction<'a> {
     pub fn to_signed_raw(&self, pk: PrivateKey) -> Result<Vec<u8>, Error> {
         let mut rlp = self.to_rlp();
 
-        let sig = pk.sign_hash(self.hash())?;
+        let mut sig = pk.sign_hash(self.hash())?;
+
+        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
+        sig.v += MAINNET_ID * 2 + 35 - 27;
 
         rlp.push(&[sig.v][..]);
         rlp.push(&sig.r[..]);
@@ -42,8 +51,15 @@ impl<'a> Transaction<'a> {
     }
 
     fn hash(&self) -> [u8; KECCAK256_BYTES] {
+        let mut rlp = self.to_rlp();
+
+        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
+        rlp.push(&MAINNET_ID);
+        rlp.push(&[][..]);
+        rlp.push(&[][..]);
+
         let mut vec = Vec::new();
-        self.to_rlp().write_rlp(&mut vec);
+        rlp.write_rlp(&mut vec);
         keccak256(&vec)
     }
 
@@ -87,9 +103,6 @@ mod tests {
             data: &empty,
         };
 
-        let pk = PrivateKey(
-            to_32bytes("c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4"));
-
         /*
         {
            "nonce":"0x00",
@@ -101,6 +114,9 @@ mod tests {
            "chainId":61
         }
         */
+
+        let pk = PrivateKey(
+            to_32bytes("c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4"));
 
         assert_eq!(tx.to_signed_raw(pk).unwrap().to_hex(),
                    "f86d\

@@ -110,6 +110,21 @@ impl WriteRLP for u64 {
     }
 }
 
+impl<'a, T: WriteRLP + ?Sized> WriteRLP for Option<&'a T> {
+    fn write_rlp(&self, buf: &mut Vec<u8>) {
+        match *self {
+            Some(x) => x.write_rlp(buf),
+            None => [].write_rlp(buf),
+        };
+    }
+}
+
+impl<T: WriteRLP> WriteRLP for Vec<T> {
+    fn write_rlp(&self, buf: &mut Vec<u8>) {
+        RLPList::from_slice(self).write_rlp(buf);
+    }
+}
+
 impl WriteRLP for [u8] {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         let len = self.len();
@@ -130,21 +145,6 @@ impl WriteRLP for [u8] {
             buf.extend_from_slice(&to_bytes(len, len_bytes));
             buf.extend_from_slice(self);
         }
-    }
-}
-
-impl<'a, T: WriteRLP + ?Sized> WriteRLP for Option<&'a T> {
-    fn write_rlp(&self, buf: &mut Vec<u8>) {
-        match *self {
-            Some(x) => x.write_rlp(buf),
-            None => [].write_rlp(buf),
-        };
-    }
-}
-
-impl<T: WriteRLP> WriteRLP for Vec<T> {
-    fn write_rlp(&self, buf: &mut Vec<u8>) {
-        RLPList::from_slice(self).write_rlp(buf);
     }
 }
 
