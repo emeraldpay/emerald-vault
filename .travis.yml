@@ -19,7 +19,7 @@ script:
     cargo fmt -- --verbose --write-mode=diff &&
     (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose) &&
     (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --verbose --features "dev") &&
-    cargo test --verbose &&
+    RUST_BACKTRACE=1 cargo test --verbose &&
     cargo doc --no-deps
 matrix:
   allow_failures:
