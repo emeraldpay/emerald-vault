@@ -69,7 +69,7 @@ impl WriteRLP for u8 {
         } else if *self <= 0x7f {
             buf.push(*self);
         } else {
-            trim_bytes(&to_bytes(*self as usize, 1)).write_rlp(buf);
+            trim_bytes(&to_bytes(*self as u64, 1)).write_rlp(buf);
         }
     }
 }
@@ -81,7 +81,7 @@ impl WriteRLP for u16 {
         } else if *self <= 0x7f {
             buf.push(*self as u8);
         } else {
-            trim_bytes(&to_bytes(*self as usize, 2)).write_rlp(buf);
+            trim_bytes(&to_bytes(*self as u64, 2)).write_rlp(buf);
         }
     }
 }
@@ -93,7 +93,7 @@ impl WriteRLP for u32 {
         } else if *self <= 0x7f {
             buf.push(*self as u8);
         } else {
-            trim_bytes(&to_bytes(*self as usize, 4)).write_rlp(buf);
+            trim_bytes(&to_bytes(*self as u64, 4)).write_rlp(buf);
         }
     }
 }
@@ -105,7 +105,7 @@ impl WriteRLP for u64 {
         } else if *self <= 0x7f {
             buf.push(*self as u8);
         } else {
-            trim_bytes(&to_bytes(*self as usize, 8)).write_rlp(buf);
+            trim_bytes(&to_bytes(*self, 8)).write_rlp(buf);
         }
     }
 }
@@ -142,7 +142,7 @@ impl WriteRLP for [u8] {
             // range of the first byte is thus [0xb8, 0xbf].
             let len_bytes = bytes_count(len);
             buf.push(0xb7 + len_bytes);
-            buf.extend_from_slice(&to_bytes(len, len_bytes));
+            buf.extend_from_slice(&to_bytes(len as u64, len_bytes));
             buf.extend_from_slice(self);
         }
     }
@@ -165,7 +165,7 @@ impl WriteRLP for RLPList {
             // thus [0xf8, 0xff].
             let len_bytes = bytes_count(len);
             buf.push(0xf7 + len_bytes);
-            buf.extend_from_slice(&to_bytes(len, len_bytes));
+            buf.extend_from_slice(&to_bytes(len as u64, len_bytes));
         }
         buf.extend_from_slice(&self.tail);
     }
@@ -181,7 +181,7 @@ fn bytes_count(x: usize) -> u8 {
 }
 
 // FIXME: Move to utils and rewrite with the help from `byteorder` crate
-fn to_bytes(x: usize, len: u8) -> Vec<u8> {
+fn to_bytes(x: u64, len: u8) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::with_capacity(len as usize);
     for i in 0..len {
         let u = (x >> ((len - i - 1) << 3)) & 0xff;
