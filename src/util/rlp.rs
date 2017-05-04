@@ -3,6 +3,8 @@
 //!
 //! See [RLP spec](https://github.com/ethereumproject/wiki/wiki/RLP)
 
+use super::trim_bytes;
+
 /// The `WriteRLP` trait is used to specify functionality of serializing data to RLP bytes
 pub trait WriteRLP {
     /// Writes itself as RLP bytes into specified buffer
@@ -38,72 +40,80 @@ impl Default for RLPList {
 
 impl WriteRLP for str {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        self.as_bytes().write_rlp(buf)
+        let bytes = self.as_bytes();
+
+        if self.len() == 1 && bytes[0] <= 0x7f {
+            buf.push(bytes[0]);
+        } else {
+            bytes.write_rlp(buf);
+        }
     }
 }
 
 impl WriteRLP for String {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        self.as_bytes().write_rlp(buf)
+        let bytes = self.as_bytes();
+
+        if self.len() == 1 && bytes[0] <= 0x7f {
+            buf.push(bytes[0]);
+        } else {
+            bytes.write_rlp(buf);
+        }
     }
 }
 
 impl WriteRLP for u8 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(*self as usize, 1).as_slice().write_rlp(buf)
+        if *self == 0 {
+            buf.push(0x80);
+        } else if *self <= 0x7f {
+            buf.push(*self);
+        } else {
+            trim_bytes(&to_bytes(*self as usize, 1)).write_rlp(buf);
+        }
     }
 }
 
 impl WriteRLP for u16 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(*self as usize,
-                 if *self == 0 {
-                     1
-                 } else {
-                     bytes_count(*self as usize)
-                 })
-                .as_slice()
-                .write_rlp(buf)
+        if *self == 0 {
+            buf.push(0x80);
+        } else if *self <= 0x7f {
+            buf.push(*self as u8);
+        } else {
+            trim_bytes(&to_bytes(*self as usize, 2)).write_rlp(buf);
+        }
     }
 }
 
 impl WriteRLP for u32 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(*self as usize,
-                 if *self == 0 {
-                     1
-                 } else {
-                     bytes_count(*self as usize)
-                 })
-                .as_slice()
-                .write_rlp(buf)
+        if *self == 0 {
+            buf.push(0x80);
+        } else if *self <= 0x7f {
+            buf.push(*self as u8);
+        } else {
+            trim_bytes(&to_bytes(*self as usize, 4)).write_rlp(buf);
+        }
     }
 }
 
 impl WriteRLP for u64 {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
-        to_bytes(*self as usize,
-                 if *self == 0 {
-                     1
-                 } else {
-                     bytes_count(*self as usize)
-                 })
-                .as_slice()
-                .write_rlp(buf)
+        if *self == 0 {
+            buf.push(0x80);
+        } else if *self <= 0x7f {
+            buf.push(*self as u8);
+        } else {
+            trim_bytes(&to_bytes(*self as usize, 8)).write_rlp(buf);
+        }
     }
 }
 
 impl WriteRLP for [u8] {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         let len = self.len();
-
-        if len == 1 && self[0] == 0 {
-            buf.push(0x80);
-            // For a single byte whose value is in the [0x00, 0x7f] range,
-            // that byte is its own RLP encoding.
-        } else if len == 1 && self[0] <= 0x7f {
-            buf.push(self[0])
-        } else if len <= 55 {
+        if len <= 55 {
             // Otherwise, if a string is 0-55 bytes long, the RLP encoding consists of a single byte
             // with value 0x80 plus the length of the string followed by the string. The range of
             // the first byte is thus [0x80, 0xb7].
@@ -123,12 +133,12 @@ impl WriteRLP for [u8] {
     }
 }
 
-impl<T: WriteRLP> WriteRLP for Option<T> {
+impl<'a, T: WriteRLP + ?Sized> WriteRLP for Option<&'a T> {
     fn write_rlp(&self, buf: &mut Vec<u8>) {
         match *self {
-            Some(ref x) => x.write_rlp(buf),
+            Some(x) => x.write_rlp(buf),
             None => [].write_rlp(buf),
-        }
+        };
     }
 }
 
@@ -349,6 +359,49 @@ mod tests {
                     69636573206d657475732c20617420756c6c616d636f7270657220766f6c7574\
                     706174",
                    buf.to_hex());
+    }
+
+    #[test]
+    fn encode_bytearray() {
+        let mut buf = Vec::new();
+        [].write_rlp(&mut buf);
+        assert_eq!([0x80], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_single_bytearray() {
+        let mut buf = Vec::new();
+        [0].write_rlp(&mut buf);
+        assert_eq!([0x81, 0x00], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_bytestring00() {
+        let mut buf = Vec::new();
+        "\u{0000}".write_rlp(&mut buf);
+        assert_eq!([0x00], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_bytestring01() {
+        let mut buf = Vec::new();
+        "\u{0001}".write_rlp(&mut buf);
+        assert_eq!([0x01], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_bytestring7f() {
+        let mut buf = Vec::new();
+        "\u{007f}".write_rlp(&mut buf);
+        assert_eq!([0x7f], buf.as_slice());
+    }
+
+    #[test]
+    fn encode_empty_option() {
+        let mut buf = Vec::new();
+        let val: Option<&str> = None;
+        val.write_rlp(&mut buf);
+        assert_eq!([0x80], buf.as_slice())
     }
 
     #[test]

@@ -53,17 +53,16 @@ impl<'a> Transaction<'a> {
         data.push(&self.nonce);
         data.push(trim_bytes(&self.gas_price));
         data.push(&self.gas_limit);
-        data.push(&self.to);
+
+        match self.to {
+            Some(addr) => data.push(&Some(&addr[..])),
+            _ => data.push::<Option<&[u8]>>(&None),
+        };
+
         data.push(trim_bytes(&self.value));
         data.push(self.data);
 
         data
-    }
-}
-
-impl WriteRLP for Address {
-    fn write_rlp(&self, buf: &mut Vec<u8>) {
-        (&self[..]).write_rlp(buf);
     }
 }
 
