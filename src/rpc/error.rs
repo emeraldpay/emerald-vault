@@ -3,8 +3,9 @@
 use super::core;
 use jsonrpc_core;
 use reqwest;
-use std::{error, fmt};
+use rustc_serialize::hex;
 use serde_json;
+use std::{error, fmt};
 
 /// JSON RPC errors
 #[derive(Debug, Deserialize)]
@@ -15,7 +16,7 @@ pub enum Error {
     /// RPC error
     RPC(jsonrpc_core::Error),
     /// Invalid data format
-    DataFormat(String),
+    InvalidDataFormat(String),
 }
 
 impl From<reqwest::Error> for Error {
@@ -26,13 +27,19 @@ impl From<reqwest::Error> for Error {
 
 impl From<core::Error> for Error {
     fn from(err: core::Error) -> Self {
-        Error::DataFormat(err.to_string())
+        Error::InvalidDataFormat(err.to_string())
     }
 }
 
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Self {
-        Error::DataFormat(err.to_string())
+        Error::InvalidDataFormat(err.to_string())
+    }
+}
+
+impl From<hex::FromHexError> for Error {
+    fn from(err: hex::FromHexError) -> Self {
+        Error::InvalidDataFormat(err.to_string())
     }
 }
 
@@ -53,7 +60,7 @@ impl fmt::Display for Error {
         match *self {
             Error::HttpClient(ref err) => write!(f, "HTTP client error: {}", err),
             Error::RPC(ref err) => write!(f, "RPC error: {:?}", err),
-            Error::DataFormat(ref str) => write!(f, "Invalid data format: {}", str),
+            Error::InvalidDataFormat(ref str) => write!(f, "Invalid data format: {}", str),
         }
     }
 }

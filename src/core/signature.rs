@@ -149,14 +149,19 @@ impl str::FromStr for PrivateKey {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if !s.starts_with("0x") {
-            return Err(Error::UnexpectedHexPrefix(s.to_string()));
+        if s.len() != PRIVATE_KEY_BYTES * 2 && !s.starts_with("0x") {
+            return Err(Error::InvalidHexLength(s.to_string()));
         }
 
-        let (_, s) = s.split_at(2);
-        let val = s.from_hex()?;
+        let value = match s.starts_with("0x") {
+            true => {
+                let (_, v) = s.split_at(2);
+                v
+            }
+            _ => s,
+        };
 
-        PrivateKey::try_from(&val)
+        PrivateKey::try_from(&value.from_hex()?)
     }
 }
 

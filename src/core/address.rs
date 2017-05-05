@@ -53,14 +53,19 @@ impl FromStr for Address {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if !s.starts_with("0x") {
-            return Err(Error::UnexpectedHexPrefix(s.to_string()));
+        if s.len() != ADDRESS_BYTES * 2 && !s.starts_with("0x") {
+            return Err(Error::InvalidHexLength(s.to_string()));
         }
 
-        let (_, s) = s.split_at(2);
-        let value = s.from_hex()?;
+        let value = match s.starts_with("0x") {
+            true => {
+                let (_, v) = s.split_at(2);
+                v
+            }
+            _ => s,
+        };
 
-        Address::try_from(&value)
+        Address::try_from(&value.from_hex()?)
     }
 }
 
@@ -95,6 +100,17 @@ mod tests {
                             0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
         assert_eq!("0x0e7c045110b8dbf29765047380898919c5cb56f4"
+                       .parse::<Address>()
+                       .unwrap(),
+                   addr);
+    }
+
+    #[test]
+    fn should_parse_real_address_without_prefix() {
+        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04,
+                            0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
+
+        assert_eq!("0e7c045110b8dbf29765047380898919c5cb56f4"
                        .parse::<Address>()
                        .unwrap(),
                    addr);

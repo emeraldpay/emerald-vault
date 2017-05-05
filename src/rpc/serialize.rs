@@ -1,13 +1,12 @@
 //! # Serialize JSON RPC parameters
 
 use super::{Error, Method, MethodParams};
-use super::{align_bytes, to_arr, to_u64, ToHex};
+use super::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value};
 use rustc_serialize::hex::FromHex;
 use serde::ser::{Serialize, Serializer};
 use serde_json;
-use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -38,77 +37,46 @@ struct SerializableTransaction {
     data: Option<String>,
 }
 
-impl IntoIterator for SerializableTransaction {
-    type Item = String;
-    type IntoIter = StrIntoIterator;
+impl SerializableTransaction {
+    /// Try to create `Transaction` from `Self`
+    pub fn try_into(self) -> Result<Transaction, Error> {
+        let gp_str = trim_hex(self.gasPrice.as_str());
+        let v_str = trim_hex(self.value.as_str());
 
-    fn into_iter(self) -> Self::IntoIter {
-        StrIntoIterator { tr: self, index: 0 }
-    }
-}
+        let gas_limit = trim_hex(self.gas.as_str()).from_hex()?;
+        let gas_price = gp_str.from_hex()?;
+        let value = v_str.from_hex()?;
 
-struct StrIntoIterator {
-    tr: SerializableTransaction,
-    index: usize,
-}
-
-impl<'a> Iterator for StrIntoIterator {
-    type Item = &'a str;
-    fn next(&mut self) -> Option<&'a str> {
-        let result = match self.index {
-            0 => Some(self.tr.gasPrice.as_str()),
-            1 => Some(self.tr.gas.as_str()),
-            2 => Some(self.tr.to.unwrap_or(None).as_str()),
-            3 => Some(self.tr.value.as_str()),
-            4 => Some(self.tr.data.unwrap_or(None).as_str()),
-            _ => return None,
-        };
-        self.index += 1;
-        result
+        Ok(Transaction {
+               nonce: 0u64,
+               gas_price: to_arr(&align_bytes(&gas_price, 32)),
+               gas_limit: to_u64(&gas_limit),
+               to: match self.to {
+                   Some(s) => s.as_str().parse::<Address>().ok(),
+                   _ => None,
+               },
+               value: to_arr(&align_bytes(&value, 32)),
+               data: match self.data {
+                   Some(d) => trim_hex(d.as_str()).from_hex()?,
+                   _ => Vec::new(),
+               },
+           })
     }
 }
 
 impl From<Transaction> for SerializableTransaction {
     fn from(tr: Transaction) -> Self {
         Self {
-            gasPrice: tr.gas_price.to_hex(),
-            gas: tr.gas_limit.to_hex(),
+            gasPrice: format!("0x{}", tr.gas_price.to_hex()),
+            gas: format!("{:#x}", tr.gas_limit),
             to: match tr.to {
                 Some(a) => Some(a.to_hex()),
-                _ => None
-            },
-            value: tr.value.to_hex(),
-            data: match tr.data.is_empty() {
-                true => None,
-                false => Some(tr.data.to_hex()),
-            },
-        }
-    }
-}
-
-impl Into<Transaction> for SerializableTransaction {
-    fn into(self) -> Transaction {
-        self.into_iter()
-            .map(|v| {
-                let (_, s) = v.split_at(2);
-                v = s.to_string();
-            });
-
-        let gas_price = align_bytes(&self.gasPrice.from_hex().unwrap(), 32);
-        let value = align_bytes(&self.value.from_hex().unwrap(), 32);
-
-        Transaction {
-            nonce: 0u64,
-            gas_price: to_arr(&gas_price),
-            gas_limit: to_u64(&self.gas.from_hex().unwrap()),
-            to: match self.to {
-                Some(s) => s.parse::<Address>().ok(),
                 _ => None,
             },
-            value: to_arr(&value),
-            data: match self.data {
-                Some(d) => d.from_hex().unwrap(),
-                _ => Vec::new(),
+            value: format!("0x{}", tr.value.to_hex()),
+            data: match tr.data.is_empty() {
+                true => None,
+                false => Some(format!("0x{}", tr.data.to_hex())),
             },
         }
     }
@@ -118,11 +86,12 @@ impl Transaction {
     ///
     pub fn try_from(p: &Params) -> Result<Transaction, Error> {
         let data = p.clone()
-            .parse::<Value>().expect("Expect to parse params");
+            .parse::<Value>()
+            .expect("Expect to parse params");
         let params = data.as_array().expect("Expect to parse Value");
 
-        let str: SerializableTransaction  = serde_json::from_value(params[0].clone())?;
-        Ok(str.into())
+        let str: SerializableTransaction = serde_json::from_value(params[0].clone())?;
+        str.try_into()
     }
 
     /// Sign transaction and return as raw data
@@ -175,6 +144,7 @@ mod tests {
     use super::*;
     use jsonrpc_core::Params;
     use serde_json;
+    use std::str::FromStr;
 
     #[test]
     fn should_increase_request_ids() {
@@ -184,15 +154,51 @@ mod tests {
     }
 
     #[test]
-    fn should_create_transaction() {
+    fn should_create_transaction_with_hex_prefix() {
         let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
             "gas": "0x5208",
             "gasPrice": "0x2540be4000",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
-            "value": "0xde0b6b3a764000"}]"#;
+            "value": "0xde0b6b3a764000",
+            "data": "0x11223344556677889900aabb"}]"#;
         let params: Params = serde_json::from_str(s).unwrap();
-        let tr = Transaction::try_from(&params);
-        println!("DEBUG: {:?}", tr.err());
+        let tr: Transaction = Transaction::try_from(&params).unwrap();
+
+        assert_eq!(tr.gas_limit, 21000u64);
+        assert_eq!(tr.gas_price,
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 37, 64, 190, 64, 0]);
+        assert_eq!(tr.to.unwrap(),
+                   Address::from_str("0x004a301af857a471b9bde4fcc4654dba4f38272a").unwrap());
+        assert_eq!(tr.value,
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    222, 11, 107, 58, 118, 64, 0]);
+        assert_eq!(tr.data,
+                   [17, 34, 51, 68, 85, 102, 119, 136, 153, 0, 170, 187]);
+    }
+
+    #[test]
+    fn should_create_transaction_without_hex_prefix() {
+        let s = r#"[{"from": "2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
+            "gas": "5208",
+            "gasPrice": "2540be4000",
+            "to": "004a301af857a471b9bde4fcc4654dba4f38272a",
+            "value": "de0b6b3a764000",
+            "data": "11223344556677889900aabb"}]"#;
+        let params: Params = serde_json::from_str(s).unwrap();
+        let tr = Transaction::try_from(&params).unwrap();
+
+        assert_eq!(tr.gas_limit, 21000u64);
+        assert_eq!(tr.gas_price,
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 37, 64, 190, 64, 0]);
+        assert_eq!(tr.to.unwrap(),
+                   Address::from_str("0x004a301af857a471b9bde4fcc4654dba4f38272a").unwrap());
+        assert_eq!(tr.value,
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    222, 11, 107, 58, 118, 64, 0]);
+        assert_eq!(tr.data,
+                   [17, 34, 51, 68, 85, 102, 119, 136, 153, 0, 170, 187]);
     }
 
     #[test]

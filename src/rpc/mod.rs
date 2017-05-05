@@ -9,7 +9,7 @@ use super::contract::Contracts;
 use super::core::{self, Transaction};
 use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages};
-use super::util::{align_bytes, to_arr, ToHex};
+use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
 use jsonrpc_core::{self, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
@@ -145,12 +145,12 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             let pk = KeyFile::default().decrypt_key(passphrase);
             match Transaction::try_from(&p) {
                 Ok(tr) => {
-                    url.request(&MethodParams(
-                        Method::EthSendRawTransaction,
-                        &tr.to_raw_params(pk.unwrap())))
+                    url.request(&MethodParams(Method::EthSendRawTransaction,
+                                              &tr.to_raw_params(pk.unwrap())))
                 }
-                Err(err) => futures::done(
-                    Err(jsonrpc_core::Error::invalid_params(err.to_string()))).boxed(),
+                Err(err) => {
+                    futures::done(Err(jsonrpc_core::Error::invalid_params(err.to_string()))).boxed()
+                }
             }
         } else {
             futures::failed(jsonrpc_core::Error::invalid_request()).boxed()

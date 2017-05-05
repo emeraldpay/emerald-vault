@@ -1,10 +1,6 @@
 //! # Account transaction
 
 use super::{Address, Error, PrivateKey};
-<<<<<<< HEAD
-use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256};
-use serde_json;
-=======
 use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
 
 // Main chain id
@@ -12,7 +8,6 @@ pub const MAINNET_ID: u8 = 61;
 
 // Test chain id
 pub const _TESTNET_ID: u8 = 62;
->>>>>>> emerald/master
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -81,7 +76,7 @@ impl Transaction {
         };
 
         data.push(trim_bytes(&self.value));
-        data.push(self.data);
+        data.push(self.data.as_slice());
 
         data
     }
@@ -94,7 +89,6 @@ mod tests {
 
     #[test]
     fn should_sign_transaction() {
-        let empty = [];
         let tx = Transaction {
             nonce: 0,
             gas_price: /* 21000000000 */
@@ -105,7 +99,7 @@ mod tests {
                     .unwrap()),
             value: /* 1 ETC */
                 to_32bytes("0000000000000000000000000000000000000000000000000de0b6b3a7640000"),
-            data: &empty,
+            data: Vec::new(),
         };
 
         /*
