@@ -3,7 +3,7 @@
 //!
 //! See [RLP spec](https://github.com/ethereumproject/wiki/wiki/RLP)
 
-use super::{rlp_bytes_count, to_bytes, trim_bytes};
+use super::{bytes_count, to_bytes, trim_bytes};
 
 /// The `WriteRLP` trait is used to specify functionality of serializing data to RLP bytes
 pub trait WriteRLP {
@@ -140,7 +140,7 @@ impl WriteRLP for [u8] {
             // followed by the length of the string, followed by the string. For example, a
             // length-1024 string would be encoded as \xb9\x04\x00 followed by the string. The
             // range of the first byte is thus [0xb8, 0xbf].
-            let len_bytes = rlp_bytes_count(len);
+            let len_bytes = bytes_count(len);
             buf.push(0xb7 + len_bytes);
             buf.extend_from_slice(&to_bytes(len as u64, len_bytes));
             buf.extend_from_slice(self);
@@ -163,7 +163,7 @@ impl WriteRLP for RLPList {
             // payload in binary form, followed by the length of the payload, followed by the
             // concatenation of the RLP encodings of the items. The range of the first byte is
             // thus [0xf8, 0xff].
-            let len_bytes = rlp_bytes_count(len);
+            let len_bytes = bytes_count(len);
             buf.push(0xf7 + len_bytes);
             buf.extend_from_slice(&to_bytes(len as u64, len_bytes));
         }
