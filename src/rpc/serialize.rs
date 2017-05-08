@@ -105,8 +105,9 @@ impl Transaction {
 
 
 impl<'a> Serialize for MethodParams<'a> {
-    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error> where
-        S: Serializer {
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
         match self.0 {
             Method::ClientVersion => serialize("web3_clientVersion", self.1, s),
             Method::EthSyncing => serialize("eth_syncing", self.1, s),

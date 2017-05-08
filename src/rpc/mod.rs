@@ -214,9 +214,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             Params::Array(ref vec) => {
                 match contracts.add(&vec[0]) {
                     Ok(_) => futures::finished(Value::Bool(true)).boxed(),
-                    Err(_) => {
-                        futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed()
-                    }
+                    Err(_) => futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed(),
                 }
             }
             _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),

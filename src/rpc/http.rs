@@ -3,10 +3,10 @@
 use super::{Error, MethodParams};
 use hyper::Url;
 use hyper::client::IntoUrl;
-use serde_json;
-use jsonrpc_core::Error as  JsonRpcError;
+use jsonrpc_core::Error as JsonRpcError;
 use jsonrpc_core::futures::{BoxFuture, Future};
 use reqwest::Client;
+use serde_json;
 
 lazy_static! {
     static ref CLIENT: Client = Client::new().expect("Expect to create an HTTP client");
