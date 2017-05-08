@@ -2,7 +2,7 @@
 
 use super::core::Address;
 use glob::glob;
-use serde_json::{self, Value};
+use serde_json;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
@@ -28,7 +28,7 @@ impl Contracts {
         Contracts { dir: dir }
     }
 
-    fn read_json(path: &Path) -> Result<Value, ContractError> {
+    fn read_json(path: &Path) -> Result<serde_json::Value, ContractError> {
         match File::open(path) {
             Ok(f) => serde_json::from_reader(f).or(Err(ContractError::IO)),
             Err(_) => Err(ContractError::IO),
@@ -36,7 +36,7 @@ impl Contracts {
     }
 
     /// List all available contracts
-    pub fn list(&self) -> Vec<Value> {
+    pub fn list(&self) -> Vec<serde_json::Value> {
         let files = glob(&format!("{}/*.json", &self.dir.to_str().unwrap())).unwrap();
 
         files
@@ -48,7 +48,7 @@ impl Contracts {
     }
 
     /// Validate contract structure
-    pub fn validate(&self, contract: &Value) -> Result<(), ContractError> {
+    pub fn validate(&self, contract: &serde_json::Value) -> Result<(), ContractError> {
         if !contract.is_object() {
             return Err(ContractError::InvalidContract);
         }
@@ -67,7 +67,7 @@ impl Contracts {
     }
 
     /// Add new contract to storage
-    pub fn add(&self, contract: &Value) -> Result<(), ContractError> {
+    pub fn add(&self, contract: &serde_json::Value) -> Result<(), ContractError> {
         self.validate(contract)?;
         let addr = contract
             .get("address")

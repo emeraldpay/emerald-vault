@@ -11,7 +11,7 @@ pub enum Error {
     InvalidLength(usize),
 
     /// An unexpected hexadecimal prefix (should be '0x')
-    UnexpectedHexPrefix(String),
+    InvalidHexLength(String),
 
     /// An unexpected hexadecimal encoding
     UnexpectedHexEncoding(hex::FromHexError),
@@ -36,9 +36,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::InvalidLength(len) => write!(f, "Invalid length: {}", len),
-            Error::UnexpectedHexPrefix(ref str) => {
-                write!(f, "Unexpected hexadecimal prefix (should be '0x'): {}", str)
-            }
+            Error::InvalidHexLength(ref str) => write!(f, "Invalid hex data length: {}", str),
             Error::UnexpectedHexEncoding(ref err) => {
                 write!(f, "Unexpected hexadecimal encoding: {}", err)
             }

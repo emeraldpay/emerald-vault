@@ -6,6 +6,7 @@ use hyper::client::IntoUrl;
 use jsonrpc_core::{self, Value};
 use jsonrpc_core::futures::{BoxFuture, Future};
 use reqwest::Client;
+use serde_json;
 
 lazy_static! {
     static ref CLIENT: Client = Client::new().expect("Expect to create an HTTP client");
@@ -32,7 +33,7 @@ impl AsyncWrapper {
     }
 
     /// Send and JSON RPC HTTP post request
-    pub fn send_post(&self, params: &MethodParams) -> Result<Value, Error> {
+    pub fn send_post(&self, params: &MethodParams) -> Result<serde_json::Value, Error> {
         let mut res = CLIENT.post(self.url.clone()).json(params).send()?;
         let json: Value = res.json()?;
         Ok(json["result"].clone())

@@ -26,10 +26,8 @@ path = "src/main.rs"
 
 [dependencies]
 futures = "0.1"
-jsonrpc-core = { git = "https://github.com/dulanov/jsonrpc.git", branch="master" }
-jsonrpc-minihttp-server = { git = "https://github.com/dulanov/jsonrpc.git", branch="master" }
-#jsonrpc-core = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
-#jsonrpc-minihttp-server = { git = "https://github.com/ethcore/jsonrpc.git", branch="master" }
+jsonrpc-core = { git = "https://github.com/paritytech/jsonrpc.git", branch="backrpot" }
+jsonrpc-minihttp-server = { git = "https://github.com/paritytech/jsonrpc.git", branch="backrpot" }
 lazy_static = "0.2"
 log = "0.3"
 regex = "0.2"
@@ -42,6 +40,7 @@ uuid = { version = "0.5", features = ["rustc-serialize", "v4"] }
 rust-crypto = "0.2"
 secp256k1 = "0.6"
 rand = "0.3"
+byteorder="1.0.0"
 # optional dependencies
 docopt = { version = "0.7", optional = true }
 env_logger = { version = "0.4", optional = true }

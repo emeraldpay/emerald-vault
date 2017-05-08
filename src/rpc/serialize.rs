@@ -1,17 +1,21 @@
 //! # Serialize JSON RPC parameters
 
 use super::{Error, Method, MethodParams};
-use super::{align_bytes, to_arr};
+use super::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use super::core::{Address, PrivateKey, Transaction};
-use jsonrpc_core::{Params, Value};
-use rustc_serialize::hex::{FromHex, ToHex};
-use serde::ser::{Serialize, Serializer};
-use std::collections::BTreeMap;
+use jsonrpc_core::{Params, Value as JValue};
+use rustc_serialize::hex::FromHex;
+use serde::{Serialize, Serializer};
+use serde_json::{self, Value};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 lazy_static! {
     static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
+}
+
+fn empty_data() -> Option<String> {
+    None
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -22,65 +26,85 @@ struct JsonData<'a> {
     id: usize,
 }
 
-const EMPTY_DATA: &'static [u8; 1] = &[0];
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct SerializableTransaction {
+    #[serde(rename="gasPrice")]
+    gas_price: String,
+    gas: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    to: Option<String>,
+    value: String,
+    #[serde(skip_serializing_if = "Option::is_none", default="empty_data")]
+    data: Option<String>,
+}
 
-impl<'a> Transaction<'a> {
-    /// Try to convert a request parameters to `Transaction`.
-    ///
-    /// # Arguments
-    ///
-    /// * `p` - A request parameters (structure mapping directly to JSON)
-    pub fn try_from(p: &Params) -> Result<Transaction, Error> {
-        let data = p.clone()
-            .parse::<Value>()
-            .expect("Expect to parse params");
+impl SerializableTransaction {
+    /// Try to create `Transaction` from `Self`
+    pub fn try_into(self) -> Result<Transaction, Error> {
+        let gp_str = trim_hex(self.gas_price.as_str());
+        let v_str = trim_hex(self.value.as_str());
 
-        let params: BTreeMap<&str, &str> = data.get(0)
-            .and_then(|d| d.as_object())
-            .expect("Expect to extract JSON object")
-            .iter()
-            .map(|(k, v)| {
-                     let (_, val) = v.as_str().expect("Expect to get parameter").split_at(2);
-                     (k.as_str(), val)
-                 })
-            .collect();
-
-        let extract = |name: &str| -> Result<Vec<u8>, Error> {
-            match params.get(name) {
-                Some(p) => {
-                    p.from_hex()
-                        .map_err(|_| Error::DataFormat(format!("Can't extract '{}' field", name)))
-                }
-                None => Err(Error::DataFormat(format!("no `{}` field", name))),
-            }
-        };
-
-        let gas_limit = match params.get("gas") {
-            Some(p) => {
-                u64::from_str_radix(p, 16)
-                    .map_err(|_| { Error::DataFormat("Can't extract 'gas' field".to_string()) })
-            }
-            None => return Err(Error::DataFormat("no `gas` field".to_string())),
-        };
+        let gas_limit = trim_hex(self.gas.as_str()).from_hex()?;
+        let gas_price = gp_str.from_hex()?;
+        let value = v_str.from_hex()?;
 
         Ok(Transaction {
                nonce: 0u64,
-               gas_price: to_arr(&align_bytes(&extract("gasPrice")?, 32)),
-               gas_limit: gas_limit?,
-               to: Address::try_from(&extract("to")?).ok(),
-               value: to_arr(&align_bytes(&extract("value")?, 32)),
-               data: EMPTY_DATA,
+               gas_price: to_arr(&align_bytes(&gas_price, 32)),
+               gas_limit: to_u64(&gas_limit),
+               to: match self.to {
+                   Some(s) => s.as_str().parse::<Address>().ok(),
+                   _ => None,
+               },
+               value: to_arr(&align_bytes(&value, 32)),
+               data: match self.data {
+                   Some(d) => trim_hex(d.as_str()).from_hex()?,
+                   _ => Vec::new(),
+               },
            })
+    }
+}
+
+impl From<Transaction> for SerializableTransaction {
+    fn from(tr: Transaction) -> Self {
+        Self {
+            gas_price: format!("0x{}", tr.gas_price.to_hex()),
+            gas: format!("{:#x}", tr.gas_limit),
+            to: match tr.to {
+                Some(a) => Some(a.to_hex()),
+                _ => None,
+            },
+            value: format!("0x{}", tr.value.to_hex()),
+            data: if tr.data.is_empty() {
+                None
+            } else {
+                Some(format!("0x{}", tr.data.to_hex()))
+            },
+        }
+    }
+}
+
+impl Transaction {
+    ///
+    pub fn try_from(p: &Params) -> Result<Transaction, Error> {
+        let data = p.clone()
+            .parse::<JValue>()
+            .expect("Expect to parse params");
+        let params: &Vec<Value> = data.as_array().expect("Expect to parse Value");
+
+        let str: SerializableTransaction = serde_json::from_value(params[0].clone())?;
+        str.try_into()
     }
 
     /// Sign transaction and return as raw data
     pub fn to_raw_params(&self, pk: PrivateKey) -> Params {
         self.to_signed_raw(pk)
             .map(|v| format!("0x{}", v.to_hex()))
-            .map(|s| Params::Array(vec![Value::String(s)]))
+            .map(|s| Params::Array(vec![JValue::String(s)]))
             .expect("Expect to sign a transaction")
     }
 }
+
 
 impl<'a> Serialize for MethodParams<'a> {
     fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
@@ -123,6 +147,7 @@ mod tests {
     use super::*;
     use jsonrpc_core::Params;
     use serde_json;
+    use std::str::FromStr;
 
     #[test]
     fn should_increase_request_ids() {
@@ -132,15 +157,51 @@ mod tests {
     }
 
     #[test]
-    fn should_create_transaction() {
+    fn should_create_transaction_with_hex_prefix() {
         let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
             "gas": "0x5208",
             "gasPrice": "0x2540be4000",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
-            "value": "0xde0b6b3a764000"}]"#;
+            "value": "0xde0b6b3a764000",
+            "data": "0x11223344556677889900aabb"}]"#;
         let params: Params = serde_json::from_str(s).unwrap();
-        let tr = Transaction::try_from(&params);
-        assert!(tr.is_ok())
+        let tr: Transaction = Transaction::try_from(&params).unwrap();
+
+        assert_eq!(tr.gas_limit, 21000u64);
+        assert_eq!(tr.gas_price,
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 37, 64, 190, 64, 0]);
+        assert_eq!(tr.to.unwrap(),
+                   Address::from_str("0x004a301af857a471b9bde4fcc4654dba4f38272a").unwrap());
+        assert_eq!(tr.value,
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    222, 11, 107, 58, 118, 64, 0]);
+        assert_eq!(tr.data,
+                   [17, 34, 51, 68, 85, 102, 119, 136, 153, 0, 170, 187]);
+    }
+
+    #[test]
+    fn should_create_transaction_without_hex_prefix() {
+        let s = r#"[{"from": "2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
+            "gas": "5208",
+            "gasPrice": "2540be4000",
+            "to": "004a301af857a471b9bde4fcc4654dba4f38272a",
+            "value": "de0b6b3a764000",
+            "data": "11223344556677889900aabb"}]"#;
+        let params: Params = serde_json::from_str(s).unwrap();
+        let tr = Transaction::try_from(&params).unwrap();
+
+        assert_eq!(tr.gas_limit, 21000u64);
+        assert_eq!(tr.gas_price,
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 37, 64, 190, 64, 0]);
+        assert_eq!(tr.to.unwrap(),
+                   Address::from_str("0x004a301af857a471b9bde4fcc4654dba4f38272a").unwrap());
+        assert_eq!(tr.value,
+                   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    222, 11, 107, 58, 118, 64, 0]);
+        assert_eq!(tr.data,
+                   [17, 34, 51, 68, 85, 102, 119, 136, 153, 0, 170, 187]);
     }
 
     #[test]

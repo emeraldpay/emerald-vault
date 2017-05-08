@@ -5,6 +5,55 @@ mod rlp;
 
 pub use self::crypto::{KECCAK256_BYTES, keccak256};
 pub use self::rlp::{RLPList, WriteRLP};
+use byteorder::{BigEndian, ReadBytesExt};
+use std::io::Cursor;
+use std::mem::transmute;
+
+static CHARS: &'static [u8] = b"0123456789abcdef";
+
+/// Convert `self` into hex string
+pub trait ToHex {
+    ///
+    fn to_hex(&self) -> String;
+}
+
+impl ToHex for [u8] {
+    fn to_hex(&self) -> String {
+        let mut v = Vec::with_capacity(self.len() * 2);
+        for &byte in self.iter() {
+            v.push(CHARS[(byte >> 4) as usize]);
+            v.push(CHARS[(byte & 0xf) as usize]);
+        }
+
+        unsafe { String::from_utf8_unchecked(v) }
+    }
+}
+
+impl ToHex for u64 {
+    fn to_hex(&self) -> String {
+        let bytes: [u8; 8] = unsafe { transmute(self.to_be()) };
+        bytes.to_hex()
+    }
+}
+
+/// Convert byte array into `u64`
+pub fn to_u64(v: &[u8]) -> u64 {
+    let data = align_bytes(v, 8);
+    let mut buf = Cursor::new(&data);
+
+    buf.read_u64::<BigEndian>().unwrap()
+}
+
+/// Trix hex prefix `0x`
+pub fn trim_hex(val: &str) -> &str {
+    if !val.starts_with("0x") {
+        return val;
+    }
+
+    let (_, s) = val.split_at(2);
+    s
+}
+
 
 /// Convert a slice into array
 pub fn to_arr<A, T>(slice: &[T]) -> A
@@ -116,4 +165,15 @@ mod tests {
     fn should_trim_some_bytes() {
         assert_eq!(trim_bytes(&[0, 0, 0, 0, 0, 1, 2, 3]), &[1, 2, 3]);
     }
+
+    #[test]
+    fn should_trim_hex_prefix() {
+        assert_eq!("12345", trim_hex("0x12345"))
+    }
+
+    #[test]
+    fn should_skip_trim_hex_prefix() {
+        assert_eq!("12345", trim_hex("12345"))
+    }
+
 }

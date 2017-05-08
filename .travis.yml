@@ -7,6 +7,10 @@ rust:
 os:
   - linux
   - osx
+env:
+  matrix:
+    - ARCH=x86_64
+    - ARCH=i686
 before_script:
   - |
     (travis_wait cargo install rustfmt --force || true)

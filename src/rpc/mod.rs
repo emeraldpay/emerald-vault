@@ -9,9 +9,9 @@ use super::contract::Contracts;
 use super::core::{self, Transaction};
 use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages};
-use super::util::{align_bytes, to_arr};
+use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
-use jsonrpc_core::{self, ErrorCode, MetaIoHandler, Metadata, Params};
+use jsonrpc_core::{Error as JsonRpcError, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
 use log::LogLevel;
@@ -141,23 +141,21 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 
     {
         let url = url.clone();
-
-        io.add_method_with_meta("eth_sendTransaction",
-                                move |p, m| if let MethodMetadata::Passphrase(ref passphrase) =
-            m {
-                                    let pk = KeyFile::default().decrypt_key(passphrase);
-                                    match Transaction::try_from(&p) {
-                                        Ok(tr) => {
-                        url.request(&MethodParams(
-                            Method::EthSendRawTransaction,
-                            &tr.to_raw_params(pk.unwrap())))
-                    }
-                                        Err(err) => futures::done(
-                        Err(jsonrpc_core::Error::invalid_params(err.to_string()))).boxed(),
-                                    }
-                                } else {
-                                    futures::failed(jsonrpc_core::Error::invalid_request()).boxed()
-                                });
+        let callback = move |p: Params, m| if let MethodMetadata::Passphrase(ref passphrase) = m {
+            let pk = KeyFile::default().decrypt_key(passphrase);
+            match Transaction::try_from(&p) {
+                Ok(tr) => {
+                    url.request(&MethodParams(Method::EthSendRawTransaction,
+                                              &tr.to_raw_params(pk.unwrap())))
+                }
+                Err(err) => {
+                    futures::done(Err(JsonRpcError::invalid_params(err.to_string()))).boxed()
+                }
+            }
+        } else {
+            futures::failed(JsonRpcError::invalid_request()).boxed()
+        };
+        io.add_method_with_meta("eth_sendTransaction", callback);
     }
 
     {
@@ -216,12 +214,10 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             Params::Array(ref vec) => {
                 match contracts.add(&vec[0]) {
                     Ok(_) => futures::finished(Value::Bool(true)).boxed(),
-                    Err(_) => {
-                        futures::failed(jsonrpc_core::Error::new(ErrorCode::InternalError)).boxed()
-                    }
+                    Err(_) => futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed(),
                 }
             }
-            _ => futures::failed(jsonrpc_core::Error::new(ErrorCode::InvalidParams)).boxed(),
+            _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
         });
     }
 
