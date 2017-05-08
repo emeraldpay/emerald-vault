@@ -16,18 +16,18 @@ before_script:
     (travis_wait cargo install rustfmt --force || true) &&
     export RUST_BACKTRACE=1 &&
     export PATH="$PATH":~/.cargo/bin &&
-    if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "x86_64" ]]; then rustup target add x86_64-unknown-linux-gnu; fi
-    if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "i686" ]]; then rustup target add i686-unknown-linux-gnu; fi
-    if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "x86_64" ]]; then rustup target add x86_64-apple-darwin; fi
-    if [[ $TRAVIS_OS_NAME == "osx" && $ARCH == "i686" ]]; then rustup target add i686-apple-darwin; fi
+    if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "x86_64" ]]; then rustup target add x86_64-unknown-linux-gnu; fi &&
+    if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "i686" ]]; then rustup target add i686-unknown-linux-gnu; fi &&
+    if [[ $TRAVIS_OS_NAME == "osx" && $ARCH == "x86_64" ]]; then rustup target add x86_64-apple-darwin; fi &&
+    if [[ $TRAVIS_OS_NAME == "osx" && $ARCH == "i686" ]]; then rustup target add i686-apple-darwin; fi &&
     echo "\$ cargo --version --verbose" &&
     cargo --version --verbose &&
     echo "\$ rustc --version --verbose" &&
     rustc --version --verbose &&
     echo "\$ rustfmt --version" &&
+    cargo fmt -- --version
 script:
   - |
-    cargo fmt -- --version &&
     cargo fmt -- --verbose --write-mode=diff &&
     (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose --release) &&
     (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --verbose --features "dev") &&
