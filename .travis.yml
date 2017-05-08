@@ -12,8 +12,8 @@ env:
   - ARCH=x86_64
 before_install:
   - if [[ $TRAVIS_OS_NAME == "linux" ]]; then sudo apt-get -qq update; fi
-  - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "i686" ]]; then sudo apt-get install -y gcc-multilib g++-multilib; fi
-  - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "x86_64" ]]; then sudo apt-get install -y gcc-multilib g++-multilib; fi
+  - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "i686" ]]; then sudo apt-get install -y gcc-multilib g++-multilib libssl-dev; fi
+  - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "x86_64" ]]; then sudo apt-get install -y gcc-multilib g++-multilib libssl-dev; fi
   - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "i686" ]]; then export TARGET=i686-unknown-linux-gnu; fi
   - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "x86_64" ]]; then export TARGET=x86_64-unknown-linux-gnu; fi
   - if [[ $TRAVIS_OS_NAME == "osx" && $ARCH == "i686" ]]; then export TARGET=i686-apple-darwin; fi
@@ -27,9 +27,9 @@ before_script:
   - cargo fmt -- --version
 script:
   - cargo fmt -- --verbose --write-mode=diff
-  - (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --target=$TARGET --verbose --release)
-  - (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --target=$TARGET --verbose --features "dev")
-  - cargo test --target=$TARGET --verbose
+  - (test "$TRAVIS_RUST_VERSION" == nightly || cargo test --target=$TARGET --verbose)
+  - (test "$TRAVIS_RUST_VERSION" != nightly || cargo test --target=$TARGET --verbose --features "dev")
+  - cargo build --target=$TARGET --verbose --release
   - cargo doc --no-deps
 matrix:
   allow_failures:
