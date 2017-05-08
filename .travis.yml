@@ -1,15 +1,14 @@
-dist: trusty
-sudo: required
 language: rust
-rust: stable
 cache: cargo
+rust:
+  - stable
+  - beta
+  - nightly
 env:
   global:
     - TARGET=x86_64-unknown-linux-gnu
 matrix:
   include:
-    - rust: beta
-    - rust: nightly
     - env: TARGET=i686-unknown-linux-gnu
       addons:
         apt:
@@ -17,6 +16,8 @@ matrix:
             - gcc-multilib
     - os: osx
       env: TARGET=x86_64-apple-darwin
+    - os: osx
+      env: TARGET=i686-apple-darwin
 before_install:
   - rustup target add $TARGET || true
   - travis_wait cargo install rustfmt --force || true
