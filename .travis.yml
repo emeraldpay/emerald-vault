@@ -11,6 +11,7 @@ matrix:
         apt:
           packages:
             - gcc-multilib
+            - openssl-devel
     - os: osx
       env: TARGET=x86_64-apple-darwin
     - os: osx
