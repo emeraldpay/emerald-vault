@@ -5,7 +5,7 @@ mod rlp;
 
 pub use self::crypto::{KECCAK256_BYTES, keccak256};
 pub use self::rlp::{RLPList, WriteRLP};
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::Cursor;
 use std::mem::transmute;
 
@@ -54,7 +54,6 @@ pub fn trim_hex(val: &str) -> &str {
     s
 }
 
-
 /// Convert a slice into array
 pub fn to_arr<A, T>(slice: &[T]) -> A
     where A: AsMut<[T]> + Default,
@@ -84,12 +83,35 @@ pub fn trim_bytes(data: &[u8]) -> &[u8] {
     &data[n..data.len()]
 }
 
+/// Counts bytes required to encode value into `RLP`
+fn rlp_bytes_count(x: usize) -> u8 {
+    match x {
+        _ if x > 0xff => 1 + rlp_bytes_count(x >> 8),
+        _ if x > 0 => 1,
+        _ => 0,
+    }
+}
+
+/// Converts `unsigned` value to byte array
+fn to_bytes(x: u64, len: u8) -> Vec<u8> {
+    let mut buf = vec![];
+    match len {
+        1 => buf.push(x as u8),
+        2 => buf.write_u16::<BigEndian>(x as u16).unwrap(),
+        4 => buf.write_u32::<BigEndian>(x as u32).unwrap(),
+        8 => buf.write_u64::<BigEndian>(x).unwrap(),
+        _ => (),
+    }
+    buf
+}
+
 #[cfg(test)]
 pub use self::tests::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rustc_serialize::hex::FromHex;
     use tests::*;
 
     pub fn to_16bytes(hex: &str) -> [u8; 16] {
@@ -176,4 +198,51 @@ mod tests {
         assert_eq!("12345", trim_hex("12345"))
     }
 
+    #[test]
+    fn should_count_bytes_for_rlp() {
+        assert_eq!(rlp_bytes_count(0x00), 0);
+        assert_eq!(rlp_bytes_count(0x01), 1);
+        assert_eq!(rlp_bytes_count(0xff), 1);
+        assert_eq!(rlp_bytes_count(0xff01), 2);
+        assert_eq!(rlp_bytes_count(0xffff01), 3);
+
+    }
+
+    #[test]
+    fn u8_to_bytes() {
+        assert_eq!([1], to_bytes(1, 1).as_slice());
+        assert_eq!([2], to_bytes(2, 1).as_slice());
+        assert_eq!([127], to_bytes(127, 1).as_slice());
+        assert_eq!([128], to_bytes(128, 1).as_slice());
+        assert_eq!([255], to_bytes(255, 1).as_slice());
+    }
+
+    #[test]
+    fn u16_to_bytes() {
+        assert_eq!([0, 1], to_bytes(1, 2).as_slice());
+        assert_eq!([0, 2], to_bytes(2, 2).as_slice());
+        assert_eq!([0, 255], to_bytes(255, 2).as_slice());
+        assert_eq!([1, 0], to_bytes(256, 2).as_slice());
+        assert_eq!([0x12, 0x34], to_bytes(0x1234, 2).as_slice());
+        assert_eq!([0xff, 0xff], to_bytes(0xffff, 2).as_slice());
+    }
+
+    #[test]
+    fn u32_to_bytes() {
+        assert_eq!([0, 0, 0, 1], to_bytes(1, 4).as_slice());
+        assert_eq!([0x12, 0x34, 0x56, 0x78], to_bytes(0x12345678, 4).as_slice());
+        assert_eq!([0xff, 0x0, 0x0, 0x0], to_bytes(0xff000000, 4).as_slice());
+        assert_eq!([0x00, 0xff, 0x0, 0x0], to_bytes(0x00ff0000, 4).as_slice());
+    }
+
+    #[test]
+    fn u64_to_bytes() {
+        assert_eq!([0, 0, 0, 0, 0, 0, 0, 1], to_bytes(1, 8).as_slice());
+        assert_eq!([0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef],
+                   to_bytes(0x1234567890abcdef, 8).as_slice());
+        assert_eq!([0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0],
+                   to_bytes(0xff00000000000000, 8).as_slice());
+        assert_eq!([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+                   to_bytes(0xffffffffffffffff, 8).as_slice());
+    }
 }

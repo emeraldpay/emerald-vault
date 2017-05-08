@@ -3,7 +3,7 @@
 //!
 //! See [RLP spec](https://github.com/ethereumproject/wiki/wiki/RLP)
 
-use super::trim_bytes;
+use super::{rlp_bytes_count, to_bytes, trim_bytes};
 
 /// The `WriteRLP` trait is used to specify functionality of serializing data to RLP bytes
 pub trait WriteRLP {
@@ -140,7 +140,7 @@ impl WriteRLP for [u8] {
             // followed by the length of the string, followed by the string. For example, a
             // length-1024 string would be encoded as \xb9\x04\x00 followed by the string. The
             // range of the first byte is thus [0xb8, 0xbf].
-            let len_bytes = bytes_count(len);
+            let len_bytes = rlp_bytes_count(len);
             buf.push(0xb7 + len_bytes);
             buf.extend_from_slice(&to_bytes(len as u64, len_bytes));
             buf.extend_from_slice(self);
@@ -163,31 +163,12 @@ impl WriteRLP for RLPList {
             // payload in binary form, followed by the length of the payload, followed by the
             // concatenation of the RLP encodings of the items. The range of the first byte is
             // thus [0xf8, 0xff].
-            let len_bytes = bytes_count(len);
+            let len_bytes = rlp_bytes_count(len);
             buf.push(0xf7 + len_bytes);
             buf.extend_from_slice(&to_bytes(len as u64, len_bytes));
         }
         buf.extend_from_slice(&self.tail);
     }
-}
-
-// FIXME: Move to utils
-fn bytes_count(x: usize) -> u8 {
-    match x {
-        _ if x > 0xff => 1 + bytes_count(x >> 8),
-        _ if x > 0 => 1,
-        _ => 0,
-    }
-}
-
-// FIXME: Move to utils and rewrite with the help from `byteorder` crate
-fn to_bytes(x: u64, len: u8) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::with_capacity(len as usize);
-    for i in 0..len {
-        let u = (x >> ((len - i - 1) << 3)) & 0xff;
-        buf.push(u as u8);
-    }
-    buf
 }
 
 #[cfg(test)]
@@ -439,32 +420,5 @@ mod tests {
         list.write_rlp(&mut buf);
         assert_eq!([0xc7, 0xc0, 0xc1, 0xc0, 0xc3, 0xc0, 0xc1, 0xc0],
                    buf.as_slice());
-    }
-
-    #[test]
-    fn u8_to_bytes() {
-        assert_eq!([1], to_bytes(1, 1).as_slice());
-        assert_eq!([2], to_bytes(2, 1).as_slice());
-        assert_eq!([127], to_bytes(127, 1).as_slice());
-        assert_eq!([128], to_bytes(128, 1).as_slice());
-        assert_eq!([255], to_bytes(255, 1).as_slice());
-    }
-
-    #[test]
-    fn u16_to_bytes() {
-        assert_eq!([0, 1], to_bytes(1, 2).as_slice());
-        assert_eq!([0, 2], to_bytes(2, 2).as_slice());
-        assert_eq!([0, 255], to_bytes(255, 2).as_slice());
-        assert_eq!([1, 0], to_bytes(256, 2).as_slice());
-        assert_eq!([0x12, 0x34], to_bytes(0x1234, 2).as_slice());
-        assert_eq!([0xff, 0xff], to_bytes(0xffff, 2).as_slice());
-    }
-
-    #[test]
-    fn u32_to_bytes() {
-        assert_eq!([0, 0, 0, 1], to_bytes(1, 4).as_slice());
-        assert_eq!([0x12, 0x34, 0x56, 0x78], to_bytes(0x12345678, 4).as_slice());
-        assert_eq!([0xff, 0x0, 0x0, 0x0], to_bytes(0xff000000, 4).as_slice());
-        assert_eq!([0x00, 0xff, 0x0, 0x0], to_bytes(0x00ff0000, 4).as_slice());
     }
 }
