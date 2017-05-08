@@ -6,13 +6,17 @@ rust:
   - nightly
 os:
   - linux
-    env: ARCH=x86_64 TARGET=x86_64-unknown-linux-gnu
+    env: ARCH=x86_64
+    env: TARGET=x86_64-unknown-linux-gnu
   - linux
-    env: ARCH=i686 TARGET=i686-unknown-linux-gnu
+    env: ARCH=i686
+    env: TARGET=i686-unknown-linux-gnu
   - osx
-    env: ARCH=x86_64 TARGET=x86_64-apple-darwin
+    env: ARCH=x86_64
+    env: TARGET=x86_64-apple-darwin
   - osx
-    env: ARCH=i686 TARGET=i686-apple-darwin
+    env: ARCH=i686
+    env: TARGET=i686-apple-darwin
 before_script:
   - |
     (travis_wait cargo install rustfmt --force || true)
