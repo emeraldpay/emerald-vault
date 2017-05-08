@@ -7,6 +7,10 @@ rust:
 os:
   - linux
   - osx
+env:
+  matrix:
+    - ARCH=x86_64
+    - ARCH=i686
 before_script:
   - |
     (travis_wait cargo install rustfmt --force || true)
@@ -17,7 +21,7 @@ script:
     echo "\$ rustfmt --version" &&
     cargo fmt -- --version &&
     cargo fmt -- --verbose --write-mode=diff &&
-    (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose) &&
+    (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose --release) &&
     (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --verbose --features "dev") &&
     cargo test --verbose &&
     cargo doc --no-deps

@@ -14,22 +14,22 @@ macro_rules! byte_array_struct {
             }
         }
 
-        impl From<$name> for [u8; $num] {
-            fn from(arr: $name) -> Self {
-                arr.0
-            }
-        }
-
         impl From<[u8; $num]> for $name {
             fn from(bytes: [u8; $num]) -> Self {
                 $name(bytes)
             }
         }
 
+        impl Into<[u8; $num]> for $name {
+            fn into(self) -> [u8; $num] {
+                self.0
+            }
+        }
+
         impl ::rustc_serialize::Decodable for $name {
             fn decode<D: ::rustc_serialize::Decoder>(d: &mut D) -> Result<$name, D::Error> {
                 let v =
-                    (d.read_str().and_then(|s| s.from_hex().map_err(|e| d.error(&e.to_string()))))?;
+                    d.read_str().and_then(|s| s.from_hex().map_err(|e| d.error(&e.to_string())))?;
 
                 if v.len() != $num {
                     return Err(d.error(&format!("Byte array invalid length: {}", v.len())));
@@ -37,7 +37,7 @@ macro_rules! byte_array_struct {
 
                 let mut bytes = [0u8; $num];
 
-                bytes.clone_from_slice(&v);
+                bytes.copy_from_slice(&v);
 
                 Ok($name(bytes))
             }
@@ -53,8 +53,7 @@ macro_rules! byte_array_struct {
 
 #[cfg(test)]
 mod tests {
-    use rustc_serialize::hex::{FromHex, ToHex};
-    use rustc_serialize::json;
+    use tests::*;
 
     byte_array_struct!(Hex8, 8);
 
