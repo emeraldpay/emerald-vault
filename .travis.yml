@@ -8,14 +8,20 @@ os:
   - linux
   - osx
 env:
-  - env: TARGET=x86_64-unknown-linux-gnu
-  - env: TARGET=x86_64-apple-darwin
+  - TARGET=x86_64-unknown-linux-gnu
+  - TARGET=i686-unknown-linux-gnu
+  - TARGET=i686-apple-darwin
+  - TARGET=x86_64-apple-darwin
 matrix:
   include:
     - env: TARGET=i686-unknown-linux-gnu
-      os: linux
-    - env: TARGET=i686-apple-darwin
       os: osx
+    - env: TARGET=x86_64-unknown-linux-gnu
+      os: osx
+    - env: TARGET=i686-apple-darwin
+      os: linux
+    - env: TARGET=x86_64-apple-darwin
+      os: linux
 before_script:
   - |
     export RUST_BACKTRACE=1 &&
