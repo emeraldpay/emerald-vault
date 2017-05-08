@@ -1,34 +1,34 @@
+dist: trusty
+sudo: required
 language: rust
+rust: stable
 cache: cargo
-rust:
-  - stable
-  - beta
-  - nightly
-os:
-  - linux
-  - osx
 env:
-  - ARCH=i686
-  - ARCH=x86_64
+  global:
+    - TARGET=x86_64-unknown-linux-gnu
+matrix:
+  include:
+    - rust: beta
+    - rust: nightly
+    - env: TARGET=i686-unknown-linux-gnu
+      addons:
+        apt:
+          packages:
+            - gcc-multilib
+    - os: osx
+      env: TARGET=x86_64-apple-darwin
 before_install:
-  - if [[ $TRAVIS_OS_NAME == "linux" ]]; then sudo apt-get -qq update; fi
-  - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "i686" ]]; then sudo apt-get install -y gcc-multilib g++-multilib libssl-dev; fi
-  - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "x86_64" ]]; then sudo apt-get install -y gcc-multilib g++-multilib libssl-dev; fi
-  - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "i686" ]]; then export TARGET=i686-unknown-linux-gnu; fi
-  - if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "x86_64" ]]; then export TARGET=x86_64-unknown-linux-gnu; fi
-  - if [[ $TRAVIS_OS_NAME == "osx" && $ARCH == "i686" ]]; then export TARGET=i686-apple-darwin; fi
-  - if [[ $TRAVIS_OS_NAME == "osx" && $ARCH == "x86_64" ]]; then export TARGET=x86_64-apple-darwin; fi
+  - rustup target add $TARGET || true
+  - travis_wait cargo install rustfmt --force || true
 before_script:
-  - export RUST_BACKTRACE=1
   - export PATH="$PATH":~/.cargo/bin
-  - (rustup target add $TARGET || true)
-  - (travis_wait cargo install rustfmt --force || true)
   - echo "\$ rustfmt --version"
   - cargo fmt -- --version
 script:
+  - export RUST_BACKTRACE=1
   - cargo fmt -- --verbose --write-mode=diff
-  - (test "$TRAVIS_RUST_VERSION" == nightly || cargo test --target=$TARGET --verbose)
-  - (test "$TRAVIS_RUST_VERSION" != nightly || cargo test --target=$TARGET --verbose --features "dev")
+  - test "$TRAVIS_RUST_VERSION" == nightly || cargo test --target=$TARGET --verbose
+  - test "$TRAVIS_RUST_VERSION" != nightly || cargo test --target=$TARGET --verbose --features "dev"
   - cargo build --target=$TARGET --verbose --release
   - cargo doc --no-deps
 matrix:
