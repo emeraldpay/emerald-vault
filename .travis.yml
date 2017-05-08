@@ -1,25 +1,51 @@
 language: rust
 cache: cargo
-rust:
-  - stable
-  - beta
-  - nightly
-os:
-  - linux
-  - osx
-env:
-  matrix:
-    - ARCH=x86_64
-    - ARCH=i686
+matrix:
+  include:
+    # Stable
+    - env: TARGET=i686-unknown-linux-gnu
+      rust: stable
+      os: linux
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: stable
+      os: linux
+    - env: TARGET=i686-apple-darwin
+      rust: stable
+      os: osx
+    - env: TARGET=x86_64-apple-darwin
+      rust: stable
+      os: osx
+    # Beta
+    - env: TARGET=i686-unknown-linux-gnu
+      rust: beta
+      os: linux
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: beta
+      os: linux
+    - env: TARGET=i686-apple-darwin
+      rust: beta
+      os: osx
+    - env: TARGET=x86_64-apple-darwin
+      rust: beta
+      os: osx
+    # Nightly
+    - env: TARGET=i686-unknown-linux-gnu
+      rust: nightly
+      os: linux
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: nightly
+      os: linux
+    - env: TARGET=i686-apple-darwin
+      rust: nightly
+      os: osx
+    - env: TARGET=x86_64-apple-darwin
+      rust: nightly
+      os: osx
 before_script:
   - |
     (travis_wait cargo install rustfmt --force || true) &&
     export RUST_BACKTRACE=1 &&
     export PATH="$PATH":~/.cargo/bin &&
-    if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "x86_64" ]]; then rustup target add x86_64-unknown-linux-gnu; fi &&
-    if [[ $TRAVIS_OS_NAME == "linux" && $ARCH == "i686" ]]; then rustup target add i686-unknown-linux-gnu; fi &&
-    if [[ $TRAVIS_OS_NAME == "osx" && $ARCH == "x86_64" ]]; then rustup target add x86_64-apple-darwin; fi &&
-    if [[ $TRAVIS_OS_NAME == "osx" && $ARCH == "i686" ]]; then rustup target add i686-apple-darwin; fi &&
     echo "\$ cargo --version --verbose" &&
     cargo --version --verbose &&
     echo "\$ rustc --version --verbose" &&
