@@ -19,7 +19,9 @@ script:
     export RUST_BACKTRACE=1 &&
     export PATH="$PATH":~/.cargo/bin &&
     echo "\$ cargo --version --verbose" &&
+    cargo --version --verbose &&
     echo "\$ rustc --version --verbose" &&
+    rustc --version --verbose &&
     echo "\$ rustfmt --version" &&
     cargo fmt -- --version &&
     cargo fmt -- --verbose --write-mode=diff &&
