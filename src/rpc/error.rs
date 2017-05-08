@@ -8,10 +8,9 @@ use serde_json;
 use std::{error, fmt};
 
 /// JSON RPC errors
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 pub enum Error {
     /// Http client error
-    #[serde(skip_serializing, skip_deserializing)]
     HttpClient(reqwest::Error),
     /// RPC error
     RPC(jsonrpc_core::Error),

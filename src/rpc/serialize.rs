@@ -3,10 +3,10 @@
 use super::{Error, Method, MethodParams};
 use super::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use super::core::{Address, PrivateKey, Transaction};
-use jsonrpc_core::{Params, Value};
+use jsonrpc_core::{Params, Value as JValue};
 use rustc_serialize::hex::FromHex;
-use serde::ser::{Serialize, Serializer};
-use serde_json;
+use serde::{Serialize, Serializer};
+use serde_json::{self, Value};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -86,9 +86,9 @@ impl Transaction {
     ///
     pub fn try_from(p: &Params) -> Result<Transaction, Error> {
         let data = p.clone()
-            .parse::<Value>()
+            .parse::<JValue>()
             .expect("Expect to parse params");
-        let params = data.as_array().expect("Expect to parse Value");
+        let params: &Vec<Value> = data.as_array().expect("Expect to parse Value");
 
         let str: SerializableTransaction = serde_json::from_value(params[0].clone())?;
         str.try_into()
@@ -98,15 +98,15 @@ impl Transaction {
     pub fn to_raw_params(&self, pk: PrivateKey) -> Params {
         self.to_signed_raw(pk)
             .map(|v| format!("0x{}", v.to_hex()))
-            .map(|s| Params::Array(vec![Value::String(s)]))
+            .map(|s| Params::Array(vec![JValue::String(s)]))
             .expect("Expect to sign a transaction")
     }
 }
 
+
 impl<'a> Serialize for MethodParams<'a> {
-    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
-    {
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error> where
+        S: Serializer {
         match self.0 {
             Method::ClientVersion => serialize("web3_clientVersion", self.1, s),
             Method::EthSyncing => serialize("eth_syncing", self.1, s),
