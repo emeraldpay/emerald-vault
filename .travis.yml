@@ -1,34 +1,18 @@
 language: rust
 cache: cargo
-matrix:
-  include:
-    # stable
-    - os: linux
-      env: TARGET=x86_64-unknown-linux-gnu
-      rust: stable
-    - os: linux
-      env: TARGET=i686-unknown-linux-gnu
-      rust: stable
-    - os: osx
-      env: TARGET=x86_64-apple-darwin
-      rust: stable
-    - os: osx
-      env: TARGET=i686-apple-darwin
-      rust: stable
-    # beta
-    - os: linux
-      env: TARGET=x86_64-unknown-linux-gnu
-      rust: beta
-    - os: osx
-      env: TARGET=x86_64-apple-darwin
-      rust: beta
-    # nightly
-    - os: linux
-      env: TARGET=x86_64-unknown-linux-gnu
-      rust: nightly
-    - os: osx
-      env: TARGET=x86_64-apple-darwin
-      rust: nightly
+rust:
+  - stable
+  - beta
+  - nightly
+os:
+  - linux
+    env: ARCH=x86_64 TARGET=x86_64-unknown-linux-gnu
+  - linux
+    env: ARCH=i686 TARGET=i686-unknown-linux-gnu
+  - osx
+    env: ARCH=x86_64 TARGET=x86_64-apple-darwin
+  - osx
+    env: ARCH=i686 TARGET=i686-apple-darwin
 before_script:
   - |
     (travis_wait cargo install rustfmt --force || true)
