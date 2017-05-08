@@ -18,6 +18,11 @@ matrix:
       env: TARGET=x86_64-apple-darwin
     - os: osx
       env: TARGET=i686-apple-darwin
+  allow_failures:
+    - rust: nightly
+notifications:
+  email:
+    on_success: never
 before_install:
   - rustup target add $TARGET || true
   - travis_wait cargo install rustfmt --force || true
@@ -32,9 +37,3 @@ script:
   - test "$TRAVIS_RUST_VERSION" != nightly || cargo test --target=$TARGET --verbose --features "dev"
   - cargo build --target=$TARGET --verbose --release
   - cargo doc --no-deps
-matrix:
-  allow_failures:
-    - rust: nightly
-notifications:
-  email:
-    on_success: never
