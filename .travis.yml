@@ -1,5 +1,12 @@
 language: rust
 cache: cargo
+rust:
+  - stable
+  - beta
+  - nightly
+os:
+  - linux
+  - osx
 matrix:
   include:
     # Stable
@@ -43,9 +50,9 @@ matrix:
       os: osx
 before_script:
   - |
-    (travis_wait cargo install rustfmt --force || true) &&
     export RUST_BACKTRACE=1 &&
     export PATH="$PATH":~/.cargo/bin &&
+    (travis_wait cargo install rustfmt --force || true) &&
     echo "\$ cargo --version --verbose" &&
     cargo --version --verbose &&
     echo "\$ rustc --version --verbose" &&
