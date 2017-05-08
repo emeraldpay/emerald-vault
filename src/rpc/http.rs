@@ -3,7 +3,7 @@
 use super::{Error, MethodParams};
 use hyper::Url;
 use hyper::client::IntoUrl;
-use jsonrpc_core::Error as JsonRpcError;
+use jsonrpc_core::{self, Value};
 use jsonrpc_core::futures::{BoxFuture, Future};
 use reqwest::Client;
 use serde_json;
@@ -22,7 +22,7 @@ impl AsyncWrapper {
     }
 
     /// Wrap JSON RPC HTTP post request with async futures
-    pub fn request(&self, params: &MethodParams) -> BoxFuture<serde_json::Value, JsonRpcError> {
+    pub fn request(&self, params: &MethodParams) -> BoxFuture<Value, jsonrpc_core::Error> {
         match self.send_post(params) {
             Ok(res) => ::futures::finished(res).boxed(),
             Err(err) => {
@@ -35,7 +35,7 @@ impl AsyncWrapper {
     /// Send and JSON RPC HTTP post request
     pub fn send_post(&self, params: &MethodParams) -> Result<serde_json::Value, Error> {
         let mut res = CLIENT.post(self.url.clone()).json(params).send()?;
-        let json = res.json()?;
+        let json: Value = res.json()?;
         Ok(json["result"].clone())
     }
 }

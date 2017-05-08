@@ -153,12 +153,10 @@ impl str::FromStr for PrivateKey {
             return Err(Error::InvalidHexLength(s.to_string()));
         }
 
-        let value = match s.starts_with("0x") {
-            true => {
-                let (_, v) = s.split_at(2);
-                v
-            }
-            _ => s,
+        let value = if s.starts_with("0x") {
+            s.split_at(2).1
+        } else {
+            s
         };
 
         PrivateKey::try_from(&value.from_hex()?)

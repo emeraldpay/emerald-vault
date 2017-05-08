@@ -28,7 +28,8 @@ struct JsonData<'a> {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct SerializableTransaction {
-    gasPrice: String,
+    #[serde(rename="gasPrice")]
+    gas_price: String,
     gas: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     to: Option<String>,
@@ -40,7 +41,7 @@ struct SerializableTransaction {
 impl SerializableTransaction {
     /// Try to create `Transaction` from `Self`
     pub fn try_into(self) -> Result<Transaction, Error> {
-        let gp_str = trim_hex(self.gasPrice.as_str());
+        let gp_str = trim_hex(self.gas_price.as_str());
         let v_str = trim_hex(self.value.as_str());
 
         let gas_limit = trim_hex(self.gas.as_str()).from_hex()?;
@@ -67,16 +68,17 @@ impl SerializableTransaction {
 impl From<Transaction> for SerializableTransaction {
     fn from(tr: Transaction) -> Self {
         Self {
-            gasPrice: format!("0x{}", tr.gas_price.to_hex()),
+            gas_price: format!("0x{}", tr.gas_price.to_hex()),
             gas: format!("{:#x}", tr.gas_limit),
             to: match tr.to {
                 Some(a) => Some(a.to_hex()),
                 _ => None,
             },
             value: format!("0x{}", tr.value.to_hex()),
-            data: match tr.data.is_empty() {
-                true => None,
-                false => Some(format!("0x{}", tr.data.to_hex())),
+            data: if tr.data.is_empty() {
+                None
+            } else {
+                Some(format!("0x{}", tr.data.to_hex()))
             },
         }
     }
