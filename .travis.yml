@@ -1,33 +1,44 @@
 language: rust
 cache: cargo
-rust:
-  - stable
-  - beta
-  - nightly
-os:
-  - linux
-  - osx
+rust: stable
 env:
-  matrix:
-    - ARCH=x86_64
-    - ARCH=i686
-before_script:
-  - |
-    (travis_wait cargo install rustfmt --force || true)
-script:
-  - |
-    export PATH="$PATH":~/.cargo/bin &&
-    export RUST_BACKTRACE=1 &&
-    echo "\$ rustfmt --version" &&
-    cargo fmt -- --version &&
-    cargo fmt -- --verbose --write-mode=diff &&
-    (test "$TRAVIS_RUST_VERSION" == nightly || cargo build --verbose --release) &&
-    (test "$TRAVIS_RUST_VERSION" != nightly || cargo build --verbose --features "dev") &&
-    cargo test --verbose &&
-    cargo doc --no-deps
+  global:
+    - TARGET=x86_64-unknown-linux-gnu
 matrix:
+  include:
+    - rust: beta
+    - rust: nightly
+#    - env: TARGET=i686-unknown-linux-gnu
+#      addons:
+#        apt:
+#          packages:
+#            - gcc-multilib
+    - os: osx
+      env: TARGET=x86_64-apple-darwin
+    - os: osx
+      env: TARGET=i686-apple-darwin
+    - os: osx
+      rust: beta
+      env: TARGET=x86_64-apple-darwin
+    - os: osx
+      rust: beta
+      env: TARGET=i686-apple-darwin
   allow_failures:
     - rust: nightly
 notifications:
   email:
     on_success: never
+before_install:
+  - rustup target add $TARGET || true
+  - travis_wait cargo install rustfmt --force || true
+before_script:
+  - export PATH="$PATH":~/.cargo/bin
+  - echo "\$ rustfmt --version"
+  - cargo fmt -- --version
+script:
+  - export RUST_BACKTRACE=1
+  - cargo fmt -- --verbose --write-mode=diff
+  - test "$TRAVIS_RUST_VERSION" == nightly || cargo test --target=$TARGET --verbose
+  - test "$TRAVIS_RUST_VERSION" != nightly || cargo test --target=$TARGET --verbose --features "dev"
+  - cargo build --target=$TARGET --verbose --release
+  - cargo doc --no-deps

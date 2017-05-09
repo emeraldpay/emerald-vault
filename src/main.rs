@@ -7,9 +7,9 @@
 
 #[macro_use]
 extern crate log;
-extern crate env_logger;
 
 extern crate docopt;
+extern crate env_logger;
 extern crate emerald;
 extern crate rustc_serialize;
 
