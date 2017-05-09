@@ -5,7 +5,7 @@ mod rlp;
 
 pub use self::crypto::{KECCAK256_BYTES, keccak256};
 pub use self::rlp::{RLPList, WriteRLP};
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use std::io::Cursor;
 use std::mem::transmute;
 
@@ -13,7 +13,7 @@ static CHARS: &'static [u8] = b"0123456789abcdef";
 
 /// Convert `self` into hex string
 pub trait ToHex {
-    ///
+    /// converts to hex
     fn to_hex(&self) -> String;
 }
 
@@ -37,6 +37,11 @@ impl ToHex for u64 {
 }
 
 /// Convert byte array into `u64`
+///
+/// # Arguments
+///
+/// * `v` - array to be converted
+///
 pub fn to_u64(v: &[u8]) -> u64 {
     let data = align_bytes(v, 8);
     let mut buf = Cursor::new(&data);
@@ -45,6 +50,11 @@ pub fn to_u64(v: &[u8]) -> u64 {
 }
 
 /// Trix hex prefix `0x`
+///
+/// # Arguments
+///
+/// * `val` - string to be trimmed
+///
 pub fn trim_hex(val: &str) -> &str {
     if !val.starts_with("0x") {
         return val;
@@ -54,8 +64,12 @@ pub fn trim_hex(val: &str) -> &str {
     s
 }
 
-
 /// Convert a slice into array
+///
+/// # Arguments
+///
+/// * `slice` - slice to be converted
+///
 pub fn to_arr<A, T>(slice: &[T]) -> A
     where A: AsMut<[T]> + Default,
           T: Clone
@@ -66,6 +80,12 @@ pub fn to_arr<A, T>(slice: &[T]) -> A
 }
 
 /// Padding high bytes with `O` to fit `len` bytes
+///
+/// # Arguments
+///
+/// * `data` - data to be aligned
+/// * `len` - length of required array
+///
 pub fn align_bytes(data: &[u8], len: usize) -> Vec<u8> {
     let mut v = vec![0u8; len - data.len()];
     v.extend_from_slice(data);
@@ -73,6 +93,11 @@ pub fn align_bytes(data: &[u8], len: usize) -> Vec<u8> {
 }
 
 /// Trim all high zero bytes
+///
+/// # Arguments
+///
+/// * `data` - value to be trimmed
+///
 pub fn trim_bytes(data: &[u8]) -> &[u8] {
     let mut n = 0;
     for b in data {
@@ -82,6 +107,39 @@ pub fn trim_bytes(data: &[u8]) -> &[u8] {
         n += 1;
     }
     &data[n..data.len()]
+}
+
+/// Counts bytes required to hold `x` value
+///
+/// # Arguments
+///
+/// * `x` - value to find size
+///
+fn bytes_count(x: usize) -> u8 {
+    match x {
+        _ if x > 0xff => 1 + bytes_count(x >> 8),
+        _ if x > 0 => 1,
+        _ => 0,
+    }
+}
+
+/// Converts `unsigned` value to byte array
+///
+/// # Arguments
+///
+/// * `x` - a value to be converted into byte vector
+/// * `len` - size of value
+///
+fn to_bytes(x: u64, len: u8) -> Vec<u8> {
+    let mut buf = vec![];
+    match len {
+        1 => buf.push(x as u8),
+        2 => buf.write_u16::<BigEndian>(x as u16).unwrap(),
+        4 => buf.write_u32::<BigEndian>(x as u32).unwrap(),
+        8 => buf.write_u64::<BigEndian>(x).unwrap(),
+        _ => (),
+    }
+    buf
 }
 
 #[cfg(test)]
@@ -176,4 +234,51 @@ mod tests {
         assert_eq!("12345", trim_hex("12345"))
     }
 
+    #[test]
+    fn should_count_bytes_for_rlp() {
+        assert_eq!(bytes_count(0x00), 0);
+        assert_eq!(bytes_count(0x01), 1);
+        assert_eq!(bytes_count(0xff), 1);
+        assert_eq!(bytes_count(0xff01), 2);
+        assert_eq!(bytes_count(0xffff01), 3);
+
+    }
+
+    #[test]
+    fn should_convert_u8_to_bytes() {
+        assert_eq!([1], to_bytes(1, 1).as_slice());
+        assert_eq!([2], to_bytes(2, 1).as_slice());
+        assert_eq!([127], to_bytes(127, 1).as_slice());
+        assert_eq!([128], to_bytes(128, 1).as_slice());
+        assert_eq!([255], to_bytes(255, 1).as_slice());
+    }
+
+    #[test]
+    fn should_convert_u16_to_bytes() {
+        assert_eq!([0, 1], to_bytes(1, 2).as_slice());
+        assert_eq!([0, 2], to_bytes(2, 2).as_slice());
+        assert_eq!([0, 255], to_bytes(255, 2).as_slice());
+        assert_eq!([1, 0], to_bytes(256, 2).as_slice());
+        assert_eq!([0x12, 0x34], to_bytes(0x1234, 2).as_slice());
+        assert_eq!([0xff, 0xff], to_bytes(0xffff, 2).as_slice());
+    }
+
+    #[test]
+    fn should_convert_u32_to_bytes() {
+        assert_eq!([0, 0, 0, 1], to_bytes(1, 4).as_slice());
+        assert_eq!([0x12, 0x34, 0x56, 0x78], to_bytes(0x12345678, 4).as_slice());
+        assert_eq!([0xff, 0x0, 0x0, 0x0], to_bytes(0xff000000, 4).as_slice());
+        assert_eq!([0x00, 0xff, 0x0, 0x0], to_bytes(0x00ff0000, 4).as_slice());
+    }
+
+    #[test]
+    fn should_convert_u64_to_bytes() {
+        assert_eq!([0, 0, 0, 0, 0, 0, 0, 1], to_bytes(1, 8).as_slice());
+        assert_eq!([0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef],
+                   to_bytes(0x1234567890abcdef, 8).as_slice());
+        assert_eq!([0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0],
+                   to_bytes(0xff00000000000000, 8).as_slice());
+        assert_eq!([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+                   to_bytes(0xffffffffffffffff, 8).as_slice());
+    }
 }
