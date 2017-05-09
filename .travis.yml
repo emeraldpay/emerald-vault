@@ -26,6 +26,7 @@ notifications:
 before_install:
   - rustup target add $TARGET || true
   - travis_wait cargo install rustfmt --force || true
+  - test "$TARGET" == i686-unknown-linux-gnu || ./build.sh
 before_script:
   - export PATH="$PATH":~/.cargo/bin
   - echo "\$ rustfmt --version"
