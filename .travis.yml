@@ -1,7 +1,11 @@
 dist: trusty
 sudo: required
 language: rust
-cache: cargo
+cache:
+  cargo: true
+  directories:
+    - $HOME/libressl
+    - $HOME/openssl
 rust: stable
 env:
   global:
