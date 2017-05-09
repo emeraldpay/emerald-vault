@@ -6,7 +6,7 @@ env:
     - TARGET=x86_64-unknown-linux-gnu
 matrix:
   include:
-    - env: TARGET=i686-unknown-linux-gnu
+    - env: TARGET=i686-unknown-linux-gnu BUILD_OPENSSL_VERSION=1.0.1u
       addons:
         apt:
           packages:
@@ -26,6 +26,7 @@ notifications:
 before_install:
   - rustup target add $TARGET || true
   - travis_wait cargo install rustfmt --force || true
+  - "$TARGET" != i686-unknown-linux-gnu || ./build.sh
 before_script:
   - export PATH="$PATH":~/.cargo/bin
   - echo "\$ rustfmt --version"
