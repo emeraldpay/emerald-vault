@@ -1,23 +1,16 @@
-dist: trusty
-sudo: required
 language: rust
-cache:
-  cargo: true
-  directories:
-    - $HOME/libressl
-    - $HOME/openssl
+cache: cargo
 rust: stable
 env:
   global:
     - TARGET=x86_64-unknown-linux-gnu
 matrix:
 #  include:
-#    - env: TARGET=i686-unknown-linux-gnu BUILD_OPENSSL_VERSION=1.0.1u
+#    - env: TARGET=i686-unknown-linux-gnu
 #      addons:
 #        apt:
 #          packages:
 #            - gcc-multilib
-#            - libssl-dev
     - os: osx
       env: TARGET=x86_64-apple-darwin
     - os: osx
