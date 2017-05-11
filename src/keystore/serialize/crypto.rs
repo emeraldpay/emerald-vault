@@ -160,7 +160,7 @@ impl Encodable for Crypto {
 }
 
 #[inline]
-fn decode_str<T: FromStr, D: Decoder>(d: &mut D) -> Result<T, D::Error>
+pub fn decode_str<T: FromStr, D: Decoder>(d: &mut D) -> Result<T, D::Error>
     where <T as FromStr>::Err: ::std::fmt::Display
 {
     d.read_str()
