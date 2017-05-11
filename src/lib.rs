@@ -13,9 +13,8 @@ extern crate lazy_static;
 
 #[macro_use]
 extern crate serde_derive;
-extern crate serde;
-extern crate serde_json;
 
+extern crate byteorder;
 extern crate chrono;
 extern crate crypto;
 extern crate futures;
@@ -28,8 +27,9 @@ extern crate regex;
 extern crate reqwest;
 extern crate rustc_serialize;
 extern crate secp256k1;
+extern crate serde;
+extern crate serde_json;
 extern crate uuid;
-extern crate byteorder;
 
 mod core;
 pub mod keystore;
