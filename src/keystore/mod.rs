@@ -107,8 +107,7 @@ impl KeyFile {
 
     /// Decrypt private key from keystore file by a passphrase
     pub fn decrypt_key(&self, passphrase: &str) -> Result<PrivateKey, Error> {
-        let derived = self.kdf
-            .derive(self.dk_length, &self.kdf_salt, passphrase);
+        let derived = self.kdf.derive(self.dk_length, &self.kdf_salt, passphrase);
 
         let mut v = derived[16..32].to_vec();
         v.extend_from_slice(&self.cipher_text);
@@ -131,13 +130,11 @@ impl KeyFile {
     /// Encrypt a new private key for keystore file with a passphrase
     /// and with given custom random generator
     pub fn encrypt_key_custom<R: Rng>(&mut self, pk: PrivateKey, passphrase: &str, rng: &mut R) {
-        let derived = self.kdf
-            .derive(self.dk_length, &self.kdf_salt, passphrase);
+        let derived = self.kdf.derive(self.dk_length, &self.kdf_salt, passphrase);
 
         rng.fill_bytes(&mut self.cipher_iv);
 
-        self.cipher_text = self.cipher
-            .encrypt(&pk, &derived[0..16], &self.cipher_iv);
+        self.cipher_text = self.cipher.encrypt(&pk, &derived[0..16], &self.cipher_iv);
 
         let mut v = derived[16..32].to_vec();
         v.extend_from_slice(&self.cipher_text);

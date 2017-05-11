@@ -87,9 +87,7 @@ impl From<Transaction> for SerializableTransaction {
 impl Transaction {
     ///
     pub fn try_from(p: &Params) -> Result<Transaction, Error> {
-        let data = p.clone()
-            .parse::<JValue>()
-            .expect("Expect to parse params");
+        let data = p.clone().parse::<JValue>().expect("Expect to parse params");
         let params: &Vec<Value> = data.as_array().expect("Expect to parse Value");
 
         let str: SerializableTransaction = serde_json::from_value(params[0].clone())?;
@@ -121,6 +119,7 @@ impl<'a> Serialize for MethodParams<'a> {
             Method::EthCall => serialize("eth_call", self.1, s),
             Method::TraceCall => serialize("trace_call", self.1, s),
             Method::GetTxByHash => serialize("eth_getTransactionByHash", self.1, s),
+            Method::PersonalNewAccount => serialize("personal_newAccount", self.1, s),
         }
     }
 }
