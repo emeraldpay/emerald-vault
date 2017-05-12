@@ -18,7 +18,7 @@ use emerald::storage::default_path;
 use env_logger::LogBuilder;
 use log::{LogLevel, LogLevelFilter};
 use std::env;
-use std::io::Error;
+use std::io;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::*;
@@ -39,7 +39,7 @@ struct Args {
     flag_base_path: String,
 }
 
-fn launch_node(path: Option<PathBuf>) -> Result<(), Error> {
+fn launch_node(path: Option<PathBuf>) -> io::Result<Child> {
     let np = match path {
         Some(p) => p,
         None => {
@@ -52,10 +52,8 @@ fn launch_node(path: Option<PathBuf>) -> Result<(), Error> {
 
     Command::new(np.as_path().as_os_str())
         .args(&["--testnet", "--fast"])
-        //.stdout(Stdio::null())
-        .spawn()?;
-
-    Ok(())
+        .stdo   ut(Stdio::null())
+        .spawn()
 }
 
 fn main() {
@@ -103,15 +101,16 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
-    match launch_node(None) {
-        Ok(_) => (),
+    let mut node = match launch_node(None) {
+        Ok(pr) => pr,
         Err(err) => {
             if log_enabled!(LogLevel::Error) {
                 error!("Unable to launch Ethereum node: {}", err);
             }
             exit(1);
         }
-    }
+    };
 
     emerald::rpc::start(&addr, &client_addr, base_path);
+    node.kill().ok();
 }
