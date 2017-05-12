@@ -52,7 +52,7 @@ fn launch_node(path: Option<PathBuf>) -> io::Result<Child> {
 
     Command::new(np.as_path().as_os_str())
         .args(&["--testnet", "--fast"])
-        .stdo   ut(Stdio::null())
+        .stdout(Stdio::null())
         .spawn()
 }
 
