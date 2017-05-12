@@ -14,9 +14,11 @@ extern crate emerald;
 extern crate rustc_serialize;
 
 use docopt::Docopt;
+use emerald::storage::default_path;
 use env_logger::LogBuilder;
 use log::{LogLevel, LogLevelFilter};
 use std::env;
+use std::io::Error;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::*;
@@ -35,6 +37,25 @@ struct Args {
     flag_client_host: String,
     flag_client_port: String,
     flag_base_path: String,
+}
+
+fn launch_node(path: Option<PathBuf>) -> Result<(), Error> {
+    let np = match path {
+        Some(p) => p,
+        None => {
+            let mut p = default_path();
+            p.push("bin");
+            p.push("geth");
+            p
+        }
+    };
+
+    Command::new(np.as_path().as_os_str())
+        .args(&["--testnet", "--fast"])
+        //.stdout(Stdio::null())
+        .spawn()?;
+
+    Ok(())
 }
 
 fn main() {
@@ -80,6 +101,16 @@ fn main() {
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}",
               VERSION.unwrap_or("unknown"));
+    }
+
+    match launch_node(None) {
+        Ok(_) => (),
+        Err(err) => {
+            if log_enabled!(LogLevel::Error) {
+                error!("Unable to launch Ethereum node: {}", err);
+            }
+            exit(1);
+        }
     }
 
     emerald::rpc::start(&addr, &client_addr, base_path);
