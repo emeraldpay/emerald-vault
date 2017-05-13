@@ -17,8 +17,8 @@ use docopt::Docopt;
 use emerald::storage::default_path;
 use env_logger::LogBuilder;
 use log::{LogLevel, LogLevelFilter};
-use std::env;
-use std::io;
+use std::{env, fs, io};
+use std::ffi::OsStr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::*;
@@ -39,20 +39,10 @@ struct Args {
     flag_base_path: String,
 }
 
-fn launch_node(path: Option<PathBuf>) -> io::Result<Child> {
-    let np = match path {
-        Some(p) => p,
-        None => {
-            let mut p = default_path();
-            p.push("bin");
-            p.push("geth");
-            p
-        }
-    };
-
-    Command::new(np.as_path().as_os_str())
+fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
+    Command::new(cmd)
         .args(&["--testnet", "--fast"])
-        .stdout(Stdio::null())
+        .stdout(Stdio::piped())
         .spawn()
 }
 
@@ -101,16 +91,32 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
-    let mut node = match launch_node(None) {
+    let mut log = default_path();
+    log.push("log");
+    if fs::create_dir_all(log.as_path()).is_ok() { };
+
+    log.push("geth_log.txt");
+    let mut log_file = match fs::File::create(log.as_path()) {
+        Ok(f) => f,
+        Err(err) => {
+            error!("Unable to open node log file: {}", err);
+            exit(1);
+        }
+    };
+
+    let mut np = default_path();
+    np.push("bin");
+    np.push("geth");
+
+    let node = match launch_node(np.as_os_str()) {
         Ok(pr) => pr,
         Err(err) => {
-            if log_enabled!(LogLevel::Error) {
-                error!("Unable to launch Ethereum node: {}", err);
-            }
+            error!("Unable to launch Ethereum node: {}", err);
             exit(1);
         }
     };
 
     emerald::rpc::start(&addr, &client_addr, base_path);
-    node.kill().ok();
+
+    io::copy(&mut node.stdout.unwrap(), &mut log_file).ok();
 }
