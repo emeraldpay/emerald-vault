@@ -93,7 +93,7 @@ fn main() {
 
     let mut log = default_path();
     log.push("log");
-    if fs::create_dir_all(log.as_path()).is_ok() { };
+    if fs::create_dir_all(log.as_path()).is_ok() {};
 
     log.push("geth_log.txt");
     let mut log_file = match fs::File::create(log.as_path()) {
