@@ -12,10 +12,12 @@ extern crate docopt;
 extern crate env_logger;
 extern crate emerald;
 extern crate rustc_serialize;
+extern crate futures_cpupool;
 
 use docopt::Docopt;
 use emerald::storage::default_path;
 use env_logger::LogBuilder;
+use futures_cpupool::CpuPool;
 use log::{LogLevel, LogLevelFilter};
 use std::{env, fs, io};
 use std::ffi::OsStr;
@@ -43,6 +45,8 @@ fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
     Command::new(cmd)
         .args(&["--testnet", "--fast"])
         .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::piped())
         .spawn()
 }
 
@@ -116,7 +120,12 @@ fn main() {
         }
     };
 
-    emerald::rpc::start(&addr, &client_addr, base_path);
+    let pool = CpuPool::new_num_cpus();
+    pool.spawn_fn(move || {
+                      io::copy(&mut node.stderr.unwrap(), &mut log_file);
+                      io::copy(&mut node.stdout.unwrap(), &mut log_file)
+                  })
+        .forget();
 
-    io::copy(&mut node.stdout.unwrap(), &mut log_file).ok();
+    emerald::rpc::start(&addr, &client_addr, base_path);
 }
