@@ -121,10 +121,7 @@ fn main() {
     };
 
     let pool = CpuPool::new_num_cpus();
-    pool.spawn_fn(move || {
-                      io::copy(&mut node.stderr.unwrap(), &mut log_file);
-                      io::copy(&mut node.stdout.unwrap(), &mut log_file)
-                  })
+    pool.spawn_fn(move || io::copy(&mut node.stderr.unwrap(), &mut log_file))
         .forget();
 
     emerald::rpc::start(&addr, &client_addr, base_path);
