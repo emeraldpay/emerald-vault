@@ -92,7 +92,12 @@ impl Metadata for MethodMetadata {}
 pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
-pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<PathBuf>) {
+pub fn start<F>(addr: &SocketAddr,
+                client_addr: &SocketAddr,
+                base_path: Option<PathBuf>,
+                restart_node: F)
+    where F: Fn(String) -> () + Send + Sync + 'static
+{
     let mut io = MetaIoHandler::default();
 
     let url = Arc::new(http::AsyncWrapper::new(&format!("http://{}", client_addr)));
@@ -211,6 +216,25 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
         };
         io.add_async_method("backend_importWallet", import_callback);
+    }
+
+    {
+        let switch_callback = move |p| match Params::parse::<Value>(p) {
+            Ok(ref v) if v.as_str().is_some() => {
+                let chain = v.as_str().unwrap();
+                restart_node(String::from(chain));
+                futures::done(Ok((Value::Bool(true)))).boxed()
+            }
+            Ok(_) => {
+                futures::failed(JsonRpcError::invalid_params("Invalid chain label for node"))
+                    .boxed()
+            }
+            Err(_) => {
+                futures::failed(JsonRpcError::invalid_params("Invalid chain label for node"))
+                    .boxed()
+            }
+        };
+        io.add_async_method("backend_switchChain", switch_callback);
     }
 
     {

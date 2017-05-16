@@ -8,6 +8,9 @@
 #[macro_use]
 extern crate log;
 
+#[macro_use]
+extern crate lazy_static;
+
 extern crate docopt;
 extern crate env_logger;
 extern crate emerald;
@@ -24,10 +27,15 @@ use std::ffi::OsStr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::*;
+use std::sync::Arc;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
+
+lazy_static! {
+    static ref pool: Arc<CpuPool> = Arc::new(CpuPool::new_num_cpus());
+}
 
 #[derive(Debug, RustcDecodable)]
 struct Args {
@@ -41,13 +49,28 @@ struct Args {
     flag_base_path: String,
 }
 
-fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
+enum Node_chain {
+    MAINNET,
+    TESTNET,
+}
+
+/// Launches  node in child process
+fn launch_node<I, C>(cmd: C, args: I) -> io::Result<Child>
+    where I: IntoIterator<Item = C>,
+          C: AsRef<OsStr>
+{
     Command::new(cmd)
-        .args(&["--testnet", "--fast"])
+        .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .stdin(Stdio::piped())
         .spawn()
+}
+
+/// Redirects log output of node into file
+fn redirect_log(node: &mut Child, log_file: &mut fs::File) {
+    pool.spawn_fn(move || io::copy(&mut node.stderr.unwrap(), log_file))
+        .forget();
 }
 
 fn main() {
@@ -112,17 +135,27 @@ fn main() {
     np.push("bin");
     np.push("geth");
 
-    let node = match launch_node(np.as_os_str()) {
+    let mut node = match launch_node(np.as_os_str(), &["--fast"]) {
         Ok(pr) => pr,
         Err(err) => {
             error!("Unable to launch Ethereum node: {}", err);
             exit(1);
         }
     };
+    redirect_log(&mut node, &mut log_file);
 
-    let pool = CpuPool::new_num_cpus();
-    pool.spawn_fn(move || io::copy(&mut node.stderr.unwrap(), &mut log_file))
-        .forget();
+    let restart_callback = |chain: String| {
+        node.kill();
+        node = match chain {
+            "MAINNET" => {
+                launch_node(np.as_os_str(), &["--testnet, --fast"])
+                    .and_then(|&mut n| redirect_log(n, &mut log_file)).unwrap()
+            }
+            "TESTNET" => {
+                launch_node(np.as_os_str(), &["--fast"]).and_then(|&mut n| redirect_log(n, &mut log_file)).unwrap()
+            }
+        }
+    };
 
-    emerald::rpc::start(&addr, &client_addr, base_path);
+    emerald::rpc::start(&addr, &client_addr, base_path, restart_callback);
 }
