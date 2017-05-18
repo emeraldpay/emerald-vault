@@ -26,26 +26,27 @@ path = "src/main.rs"
 
 [dependencies]
 futures = "0.1"
-jsonrpc-core = { git = "https://github.com/paritytech/jsonrpc.git", branch="parity-1.7" }
-jsonrpc-minihttp-server = { git = "https://github.com/paritytech/jsonrpc.git", branch="parity-1.7" }
+futures-cpupool = "0.1"
+jsonrpc-core = { git = "https://github.com/paritytech/jsonrpc.git",  branch="master" }
+jsonrpc-minihttp-server = { git = "https://github.com/paritytech/jsonrpc.git", branch="master" }
 lazy_static = "0.2"
 log = "0.3"
 regex = "0.2"
 rustc-serialize = "0.3"
-serde = "0.9"
-serde_json = "0.9"
-serde_derive = "0.9"
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
 glob = "0.2"
 uuid = { version = "0.5", features = ["rustc-serialize", "v4"] }
 rust-crypto = "0.2"
 secp256k1 = "0.6"
 rand = "0.3"
-byteorder="1.0.0"
+byteorder="1.0"
 # optional dependencies
 docopt = { version = "0.7", optional = true }
 env_logger = { version = "0.4", optional = true }
 hyper = { version = "0.10", optional = true }
-reqwest = { version = "0.5", optional = true }
+reqwest = { version = "0.6", optional = true }
 clippy = {version = "0.0", optional = true}
 chrono = "0.3"
 

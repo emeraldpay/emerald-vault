@@ -12,11 +12,15 @@ extern crate docopt;
 extern crate env_logger;
 extern crate emerald;
 extern crate rustc_serialize;
+extern crate futures_cpupool;
 
 use docopt::Docopt;
+use emerald::storage::default_path;
 use env_logger::LogBuilder;
+use futures_cpupool::CpuPool;
 use log::{LogLevel, LogLevelFilter};
-use std::env;
+use std::{env, fs, io};
+use std::ffi::OsStr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::*;
@@ -35,6 +39,15 @@ struct Args {
     flag_client_host: String,
     flag_client_port: String,
     flag_base_path: String,
+}
+
+fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
+    Command::new(cmd)
+        .args(&["--testnet", "--fast"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .stdin(Stdio::piped())
+        .spawn()
 }
 
 fn main() {
@@ -81,6 +94,35 @@ fn main() {
         info!("Starting Emerald Connector - v{}",
               VERSION.unwrap_or("unknown"));
     }
+
+    let mut log = default_path();
+    log.push("log");
+    if fs::create_dir_all(log.as_path()).is_ok() {};
+
+    log.push("geth_log.txt");
+    let mut log_file = match fs::File::create(log.as_path()) {
+        Ok(f) => f,
+        Err(err) => {
+            error!("Unable to open node log file: {}", err);
+            exit(1);
+        }
+    };
+
+    let mut np = default_path();
+    np.push("bin");
+    np.push("geth");
+
+    let node = match launch_node(np.as_os_str()) {
+        Ok(pr) => pr,
+        Err(err) => {
+            error!("Unable to launch Ethereum node: {}", err);
+            exit(1);
+        }
+    };
+
+    let pool = CpuPool::new_num_cpus();
+    pool.spawn_fn(move || io::copy(&mut node.stderr.unwrap(), &mut log_file))
+        .forget();
 
     emerald::rpc::start(&addr, &client_addr, base_path);
 }

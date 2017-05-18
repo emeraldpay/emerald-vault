@@ -6,6 +6,7 @@ mod rlp;
 pub use self::crypto::{KECCAK256_BYTES, keccak256};
 pub use self::rlp::{RLPList, WriteRLP};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use chrono::prelude::UTC;
 use std::io::Cursor;
 use std::mem::transmute;
 
@@ -115,7 +116,7 @@ pub fn trim_bytes(data: &[u8]) -> &[u8] {
 ///
 /// * `x` - value to find size
 ///
-fn bytes_count(x: usize) -> u8 {
+pub fn bytes_count(x: usize) -> u8 {
     match x {
         _ if x > 0xff => 1 + bytes_count(x >> 8),
         _ if x > 0 => 1,
@@ -130,7 +131,7 @@ fn bytes_count(x: usize) -> u8 {
 /// * `x` - a value to be converted into byte vector
 /// * `len` - size of value
 ///
-fn to_bytes(x: u64, len: u8) -> Vec<u8> {
+pub fn to_bytes(x: u64, len: u8) -> Vec<u8> {
     let mut buf = vec![];
     match len {
         1 => buf.push(x as u8),
@@ -141,6 +142,17 @@ fn to_bytes(x: u64, len: u8) -> Vec<u8> {
     }
     buf
 }
+
+/// Time stamp in format `yyy-mm-ddThh-mm-ss`
+pub fn timestamp() -> String {
+    // `2017-05-01T20:21:10.163281100+00:00` -> `2017-05-01T20-21-10`
+    str::replace(&UTC::now().to_rfc3339(), ":", "-")
+        .split('.')
+        .next()
+        .unwrap()
+        .to_string()
+}
+
 
 #[cfg(test)]
 pub use self::tests::*;
@@ -280,5 +292,12 @@ mod tests {
                    to_bytes(0xff00000000000000, 8).as_slice());
         assert_eq!([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
                    to_bytes(0xffffffffffffffff, 8).as_slice());
+    }
+
+    #[test]
+    fn should_generate_timestamp() {
+        let re = Regex::new(r"^\d{4}-\d{2}-\d{2}[T]\d{2}-\d{2}-\d{2}").unwrap();
+
+        assert!(re.is_match(&timestamp()));
     }
 }
