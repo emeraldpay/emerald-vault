@@ -40,8 +40,8 @@ struct Args {
     flag_port: String,
     flag_client_host: String,
     flag_client_port: String,
+    flag_client_path: String,
     flag_base_path: String,
-    flag_node_path: String,
 }
 
 fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
@@ -98,7 +98,7 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
-    let node_path = args.flag_node_path
+    let node_path = args.flag_client_path
         .parse::<String>()
         .expect("Expect to parse path to node executable");
 
