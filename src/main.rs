@@ -13,12 +13,14 @@ extern crate env_logger;
 extern crate emerald;
 extern crate rustc_serialize;
 extern crate futures_cpupool;
+extern crate regex;
 
 use docopt::Docopt;
 use emerald::storage::default_path;
 use env_logger::LogBuilder;
 use futures_cpupool::CpuPool;
 use log::{LogLevel, LogLevelFilter};
+use regex::Regex;
 use std::{env, fs, io};
 use std::ffi::OsStr;
 use std::net::SocketAddr;
@@ -39,6 +41,7 @@ struct Args {
     flag_client_host: String,
     flag_client_port: String,
     flag_base_path: String,
+    flag_node_path: String,
 }
 
 fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
@@ -95,6 +98,19 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
+    let node_path = args.flag_node_path
+        .parse::<String>()
+        .expect("Expect to parse path to node executable");
+
+    let np = if !node_path.is_empty() {
+        PathBuf::from(&node_path)
+    } else {
+        let re = Regex::new(r".+?geth").unwrap();
+        let path = env::var("PATH").expect("Expect to get PATH variable");
+        let p: Vec<&str> = path.split(":").filter(|s| re.is_match(s)).collect();
+        PathBuf::from(p[0])
+    };
+
     let mut log = default_path();
     log.push("log");
     if fs::create_dir_all(log.as_path()).is_ok() {};
@@ -107,10 +123,6 @@ fn main() {
             exit(1);
         }
     };
-
-    let mut np = default_path();
-    np.push("bin");
-    np.push("geth");
 
     let node = match launch_node(np.as_os_str()) {
         Ok(pr) => pr,

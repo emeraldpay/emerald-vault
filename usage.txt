@@ -19,3 +19,4 @@ Options:
                                         + Mac OS X: ~/Library/Emerald
                                         + Linux: ~/.emerald
                                         + Windows: %USERDIR%\.emerald
+    --node-path PATH            Path to Ethereum's node executable
