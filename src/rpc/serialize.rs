@@ -1,6 +1,6 @@
 //! # Serialize JSON RPC parameters
 
-use super::{Error, ClientMethod, MethodParams};
+use super::{ClientMethod, Error, MethodParams};
 use super::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value as JValue};
@@ -115,10 +115,10 @@ impl<'a> Serialize for MethodParams<'a> {
             ClientMethod::EthAccounts => serialize("eth_accounts", self.1, s),
             ClientMethod::EthGetBalance => serialize("eth_getBalance", self.1, s),
             ClientMethod::EthGetTxCount => serialize("eth_getTransactionCount", self.1, s),
+            ClientMethod::EthGetTxByHash => serialize("eth_getTransactionByHash", self.1, s),
             ClientMethod::EthSendRawTransaction => serialize("eth_sendRawTransaction", self.1, s),
             ClientMethod::EthCall => serialize("eth_call", self.1, s),
             ClientMethod::EthTraceCall => serialize("eth_traceCall", self.1, s),
-            ClientMethod::EthGetTxByHash => serialize("eth_getTransactionByHash", self.1, s),
         }
     }
 }
