@@ -139,8 +139,8 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
     {
         let url = url.clone();
 
-        io.add_async_method("eth_sendRawTransaction", move |p| {⏎
-            url.request(&MethodParams(ClientMethod::EthSendRawTransaction, &p))⏎
+        io.add_async_method("eth_sendRawTransaction", move |p| {
+            url.request(&MethodParams(ClientMethod::EthSendRawTransaction, &p))
         });
     }
 
