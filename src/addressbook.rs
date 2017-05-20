@@ -52,7 +52,7 @@ impl Addressbook {
         if !entry.is_object() {
             return Err(AddressbookError::InvalidAddress);
         }
-        let addr = match entry.get("address") {
+        let addr = match entry.get("id") {
             Some(addr) => addr,
             None => return Err(AddressbookError::InvalidAddress),
         };
@@ -70,10 +70,10 @@ impl Addressbook {
     pub fn add(&self, entry: &serde_json::Value) -> Result<(), AddressbookError> {
         self.validate(entry)?;
         let addr = entry
-            .get("address")
-            .expect("Expect address for addressbook entry")
+            .get("id")
+            .expect("Expect id for addressbook entry")
             .as_str()
-            .expect("Expect address be convertible to a string");
+            .expect("Expect id be convertible to a string");
         let mut filename: PathBuf = self.dir.clone();
         filename.push(format!("{}.json", addr));
         let mut f = File::create(filename.as_path()).unwrap();
@@ -82,4 +82,21 @@ impl Addressbook {
             Err(_) => Err(AddressbookError::IO),
         }
     }
+
+    /// Edit address entry in addressbook storage
+    pub fn edit(&self, entry: &serde_json::Value) -> Result<(), AddressbookError> {
+        self.validate(entry)?;
+        let addr = entry
+            .get("id")
+            .expect("Expect id for addressbook entry")
+            .as_str()
+            .expect("Expect id be convertible to a string");
+        let mut filename: PathBuf = self.dir.clone();
+        filename.push(format!("{}.json", addr));
+        let mut f = File::create(filename.as_path()).unwrap();
+        match serde_json::to_writer_pretty(&mut f, entry) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(AddressbookError::IO),
+        }
+    }    
 }

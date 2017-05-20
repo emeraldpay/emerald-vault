@@ -32,6 +32,7 @@ extern crate serde_json;
 extern crate uuid;
 
 mod core;
+pub mod addressbook;
 pub mod keystore;
 pub mod contract;
 pub mod storage;
