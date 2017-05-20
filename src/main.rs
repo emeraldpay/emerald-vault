@@ -107,7 +107,7 @@ fn main() {
     } else {
         let re = Regex::new(r".+?geth").unwrap();
         let path = env::var("PATH").expect("Expect to get PATH variable");
-        let p: Vec<&str> = path.split(":").filter(|s| re.is_match(s)).collect();
+        let p: Vec<&str> = path.split(':').filter(|s| re.is_match(s)).collect();
         PathBuf::from(p[0])
     };
 
@@ -135,6 +135,7 @@ fn main() {
     let pool = CpuPool::new_num_cpus();
     pool.spawn_fn(move || io::copy(&mut node.stderr.unwrap(), &mut log_file))
         .forget();
+
 
     emerald::rpc::start(&addr, &client_addr, base_path);
 }

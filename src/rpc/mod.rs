@@ -11,9 +11,9 @@ use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages, default_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
-use jsonrpc_core::{Error as JsonRpcError, ErrorCode, MetaIoHandler, Metadata, Params};
+use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
-use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
+use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
 use rustc_serialize::json;
 use serde_json::Value;
@@ -50,42 +50,13 @@ pub enum Method {
     /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
     EthCall,
 
-    /// `trace_call`
+    /// [trace_call](https://github.com/ethereumproject/emerald-rs/issues/30#issuecomment-291987132)
     EthTraceCall,
 
     /// [eth_getTransactionByHash](
     /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash)
     GetTxByHash,
-
-    /// import account
-    ImportAccountCall,
-
-    /// creates new account
-    PersonalNewAccount,
 }
-
-/// RPC method's request metadata
-#[derive(Clone, Debug)]
-enum MethodMetadata {
-    /// Nothing special
-    None,
-    /// Given account passphrase
-    Passphrase(String),
-}
-
-impl MethodMetadata {
-    fn with_authorization(str: &str) -> MethodMetadata {
-        MethodMetadata::Passphrase(str.to_string())
-    }
-}
-
-impl Default for MethodMetadata {
-    fn default() -> Self {
-        MethodMetadata::None
-    }
-}
-
-impl Metadata for MethodMetadata {}
 
 /// PRC method's parameters
 #[derive(Clone, Debug, PartialEq)]
@@ -93,7 +64,7 @@ pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<PathBuf>) {
-    let mut io = MetaIoHandler::default();
+    let mut io = IoHandler::default();
 
     let url = Arc::new(http::AsyncWrapper::new(&format!("http://{}", client_addr)));
 
@@ -148,8 +119,9 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 
     {
         let url = url.clone();
-        let callback = move |p: Params, m| if let MethodMetadata::Passphrase(ref passphrase) = m {
-            let pk = KeyFile::default().decrypt_key(passphrase);
+
+        let callback = move |p| {
+            let pk = KeyFile::default().decrypt_key("");
             match Transaction::try_from(&p) {
                 Ok(tr) => {
                     url.request(&MethodParams(Method::EthSendRawTransaction,
@@ -159,10 +131,9 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
                     futures::done(Err(JsonRpcError::invalid_params(err.to_string()))).boxed()
                 }
             }
-        } else {
-            futures::failed(JsonRpcError::invalid_request()).boxed()
         };
-        io.add_method_with_meta("eth_sendTransaction", callback);
+
+        io.add_async_method("eth_sendTransaction", callback);
     }
 
     {
@@ -210,6 +181,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             }
             Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
         };
+
         io.add_async_method("backend_importWallet", import_callback);
     }
 
@@ -243,9 +215,9 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             }
             Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
         };
+
         io.add_async_method("personal_newAccount", create_callback);
     }
-
 
     let storage = match base_path {
         Some(p) => Storages::new(p),
@@ -290,11 +262,6 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
     }
 
     let server = ServerBuilder::new(io)
-        .meta_extractor(|req: &Req| {
-                            req.header("Authorization")
-                                .map(MethodMetadata::with_authorization)
-                                .unwrap_or_default()
-                        })
         .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
                                                 cors::AccessControlAllowOrigin::Null]))
         .start_http(addr)

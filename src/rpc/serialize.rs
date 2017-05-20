@@ -119,8 +119,6 @@ impl<'a> Serialize for MethodParams<'a> {
             Method::EthCall => serialize("eth_call", self.1, s),
             Method::EthTraceCall => serialize("eth_traceCall", self.1, s),
             Method::GetTxByHash => serialize("eth_getTransactionByHash", self.1, s),
-            Method::ImportAccountCall => serialize("importAccount_call", self.1, s),
-            Method::PersonalNewAccount => serialize("personal_newAccount", self.1, s),
         }
     }
 }
