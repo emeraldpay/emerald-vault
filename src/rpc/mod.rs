@@ -23,9 +23,9 @@ use std::sync::Arc;
 
 /// RPC methods
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub enum Method {
+pub enum ClientMethod {
     /// [web3_clientVersion](https://github.com/ethereum/wiki/wiki/JSON-RPC#web3_clientversion)
-    ClientVersion,
+    Version,
 
     /// [eth_syncing](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_syncing)
     EthSyncing,
@@ -43,6 +43,10 @@ pub enum Method {
     /// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactioncount)
     EthGetTxCount,
 
+    /// [eth_getTransactionByHash](
+    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash)
+    EthGetTxByHash,
+
     /// [eth_sendRawTransaction](
     /// https://github.com/paritytech/parity/wiki/JSONRPC-eth-module#eth_sendrawtransaction)
     EthSendRawTransaction,
@@ -52,15 +56,11 @@ pub enum Method {
 
     /// [trace_call](https://github.com/ethereumproject/emerald-rs/issues/30#issuecomment-291987132)
     EthTraceCall,
-
-    /// [eth_getTransactionByHash](
-    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash)
-    GetTxByHash,
 }
 
 /// PRC method's parameters
 #[derive(Clone, Debug, PartialEq)]
-pub struct MethodParams<'a>(pub Method, pub &'a Params);
+pub struct MethodParams<'a>(pub ClientMethod, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<PathBuf>) {
@@ -72,49 +72,49 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
         let url = url.clone();
 
         io.add_async_method("web3_clientVersion",
-                            move |p| url.request(&MethodParams(Method::ClientVersion, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::Version, &p)));
     }
 
     {
         let url = url.clone();
 
         io.add_async_method("eth_syncing",
-                            move |p| url.request(&MethodParams(Method::EthSyncing, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::EthSyncing, &p)));
     }
 
     {
         let url = url.clone();
 
         io.add_async_method("eth_blockNumber",
-                            move |p| url.request(&MethodParams(Method::EthBlockNumber, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::EthBlockNumber, &p)));
     }
 
     {
         let url = url.clone();
 
         io.add_async_method("eth_accounts",
-                            move |p| url.request(&MethodParams(Method::EthAccounts, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::EthAccounts, &p)));
     }
 
     {
         let url = url.clone();
 
         io.add_async_method("eth_getBalance",
-                            move |p| url.request(&MethodParams(Method::EthGetBalance, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::EthGetBalance, &p)));
     }
 
     {
         let url = url.clone();
 
         io.add_async_method("eth_getTransactionCount",
-                            move |p| url.request(&MethodParams(Method::EthGetTxCount, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::EthGetTxCount, &p)));
     }
 
     {
         let url = url.clone();
 
         io.add_async_method("eth_getTransactionByHash",
-                            move |p| url.request(&MethodParams(Method::GetTxByHash, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::EthGetTxByHash, &p)));
     }
 
     {
@@ -124,7 +124,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             let pk = KeyFile::default().decrypt_key("");
             match Transaction::try_from(&p) {
                 Ok(tr) => {
-                    url.request(&MethodParams(Method::EthSendRawTransaction,
+                    url.request(&MethodParams(ClientMethod::EthSendRawTransaction,
                                               &tr.to_raw_params(pk.unwrap())))
                 }
                 Err(err) => {
@@ -140,21 +140,21 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
         let url = url.clone();
 
         io.add_async_method("eth_sendRawTransaction",
-                            move |p| url.request(&MethodParams(Method::EthSendRawTransaction, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::EthSendRawTransaction, &p)));
     }
 
     {
         let url = url.clone();
 
         io.add_async_method("eth_call",
-                            move |p| url.request(&MethodParams(Method::EthCall, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::EthCall, &p)));
     }
 
     {
         let url = url.clone();
 
         io.add_async_method("eth_traceCall",
-                            move |p| url.request(&MethodParams(Method::EthTraceCall, &p)));
+                            move |p| url.request(&MethodParams(ClientMethod::EthTraceCall, &p)));
     }
 
     {
