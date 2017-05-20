@@ -16,8 +16,8 @@ extern crate regex;
 extern crate rustc_serialize;
 
 use docopt::Docopt;
-use env_logger::LogBuilder;
 use emerald::storage::default_path;
+use env_logger::LogBuilder;
 use futures_cpupool::CpuPool;
 use log::{LogLevel, LogLevelFilter};
 use regex::Regex;
