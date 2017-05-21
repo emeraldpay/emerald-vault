@@ -6,6 +6,7 @@ mod error;
 
 pub use self::error::Error;
 use super::contract::Contracts;
+use super::addressbook::Addressbook;
 use super::core::{self, Transaction};
 use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages};
@@ -220,6 +221,61 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
         });
     }
+
+    let address_dir = chain
+        .get_path("addressbook".to_string())
+        .expect("Expect directory for address book");
+
+    let addressbook = Arc::new(Addressbook::new(address_dir));
+
+    {
+        let addressbook = addressbook.clone();
+
+        io.add_async_method("emerald_addressBook",
+                            move |_| futures::finished(Value::Array(addressbook.list())).boxed());
+    }
+
+    {
+        let addressbook = addressbook.clone();
+
+        io.add_async_method("emerald_addAddress", move |p| match p {
+            Params::Array(ref vec) => {
+                match addressbook.add(&vec[0]) {
+                    Ok(_) => futures::finished(Value::Bool(true)).boxed(),
+                    Err(_) => futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed(),
+                }
+            }
+            _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
+        });
+    }
+
+    {
+        let addressbook = addressbook.clone();
+
+        io.add_async_method("emerald_updateAddress", move |p| match p {
+            Params::Array(ref vec) => {
+                match addressbook.edit(&vec[0]) {
+                    Ok(_) => futures::finished(Value::Bool(true)).boxed(),
+                    Err(_) => futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed(),
+                }
+            }
+            _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
+        });
+    }  
+
+    {
+        let addressbook = addressbook.clone();
+
+        io.add_async_method("emerald_deleteAddress", move |p| match p {
+            Params::Array(ref vec) => {
+                match addressbook.delete(&vec[0]) {
+                    Ok(_) => futures::finished(Value::Bool(true)).boxed(),
+                    Err(_) => futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed(),
+                }
+            }
+            _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
+        });
+    }    
 
     let server = ServerBuilder::new(io)
         .meta_extractor(|req: &Req| {
