@@ -11,15 +11,14 @@ extern crate docopt;
 extern crate env_logger;
 extern crate emerald;
 extern crate rustc_serialize;
-extern crate futures_cpupool;
 extern crate futures;
+extern crate regex;
 
 use docopt::Docopt;
 use emerald::storage::default_path;
 use env_logger::LogBuilder;
-use futures::future::Future;
-use futures_cpupool::CpuPool;
 use log::{LogLevel, LogLevelFilter};
+use regex::Regex;
 use std::{env, fs, io};
 use std::ffi::OsStr;
 use std::net::SocketAddr;
@@ -43,6 +42,7 @@ struct Args {
     flag_port: String,
     flag_client_host: String,
     flag_client_port: String,
+    flag_client_path: String,
     flag_base_path: String,
 }
 
@@ -104,13 +104,26 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
+    let node_path = args.flag_client_path
+        .parse::<String>()
+        .expect("Expect to parse path to node executable");
+
+    let np = if !node_path.is_empty() {
+        PathBuf::from(&node_path)
+    } else {
+        let re = Regex::new(r".+?geth").unwrap();
+        let path = env::var("PATH").expect("Expect to get PATH variable");
+        let p: Vec<&str> = path.split(":").filter(|s| re.is_match(s)).collect();
+        PathBuf::from(p[0])
+    };
+
     // TODO: extract node logic into separate mod
     let mut log = default_path();
     log.push("log");
     if fs::create_dir_all(log.as_path()).is_ok() {};
 
     log.push("geth_log.txt");
-    let mut f = match fs::File::create(log.as_path()) {
+    let f = match fs::File::create(log.as_path()) {
         Ok(f) => f,
         Err(err) => {
             error!("Unable to open node log file: {}", err);
@@ -118,15 +131,11 @@ fn main() {
         }
     };
 
-    let mut ndp = default_path();
-    ndp.push("bin");
-    ndp.push("geth");
-
     let log_file = Arc::new(Mutex::new(f));
-    let node_path = Arc::new(Mutex::new(ndp));
+    let node_path = Arc::new(Mutex::new(np));
 
     let guard_lf = log_file.lock().unwrap();
-    let l_f = match guard_lf.try_clone() {
+    let lf = match guard_lf.try_clone() {
         Ok(f) => f,
         Err(e) => {
             error!("Node restart: can't redirect stdio: {}", e);
@@ -134,18 +143,17 @@ fn main() {
         }
     };
 
-    let out = unsafe { Stdio::from_raw_fd(l_f.as_raw_fd()) };
-    let err = unsafe { Stdio::from_raw_fd(l_f.as_raw_fd()) };
+    let out = unsafe { Stdio::from_raw_fd(lf.as_raw_fd()) };
+    let err = unsafe { Stdio::from_raw_fd(lf.as_raw_fd()) };
 
     let guard_np = node_path.lock().unwrap();
     let node = match launch_node(guard_np.as_os_str(), out, err, &["--fast"]) {
         Ok(pr) => Arc::new(Mutex::new(pr)),
         Err(err) => {
-            error!("Unable to launch Ethereum node: {}", err);
+            error!("Unable to launch client: {}", err);
             exit(1);
         }
     };
-
     drop(guard_lf);
     drop(guard_np);
 
@@ -159,7 +167,7 @@ fn main() {
             let mut n = nd.lock().unwrap();
             n.kill().expect("Expect to kill node");
 
-            let l_f = match lf.lock().unwrap().try_clone() {
+            let lf = match lf.lock().unwrap().try_clone() {
                 Ok(f) => f,
                 Err(e) => {
                     error!("Node restart: can't redirect stdio: {}", e);
@@ -167,8 +175,8 @@ fn main() {
                 }
             };
 
-            let out = unsafe { Stdio::from_raw_fd(l_f.as_raw_fd()) };
-            let err = unsafe { Stdio::from_raw_fd(l_f.as_raw_fd()) };
+            let out = unsafe { Stdio::from_raw_fd(lf.as_raw_fd()) };
+            let err = unsafe { Stdio::from_raw_fd(lf.as_raw_fd()) };
 
             let res = match chain {
                 "TESTNET" => {
