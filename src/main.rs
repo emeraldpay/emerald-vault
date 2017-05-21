@@ -7,25 +7,27 @@
 
 #[macro_use]
 extern crate log;
-
 extern crate docopt;
 extern crate env_logger;
 extern crate emerald;
 extern crate rustc_serialize;
-extern crate futures_cpupool;
+extern crate futures;
 extern crate regex;
 
 use docopt::Docopt;
 use emerald::storage::default_path;
 use env_logger::LogBuilder;
-use futures_cpupool::CpuPool;
 use log::{LogLevel, LogLevelFilter};
 use regex::Regex;
 use std::{env, fs, io};
 use std::ffi::OsStr;
 use std::net::SocketAddr;
+use std::os::unix::io::AsRawFd;
+use std::os::unix::io::FromRawFd;
 use std::path::PathBuf;
 use std::process::*;
+use std::sync::{Arc, Mutex, mpsc};
+use std::thread;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
@@ -44,11 +46,15 @@ struct Args {
     flag_base_path: String,
 }
 
-fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
+/// Launches  node in child process
+fn launch_node<I, C>(cmd: &OsStr, out: Stdio, err: Stdio, args: I) -> io::Result<Child>
+    where I: IntoIterator<Item = C>,
+          C: AsRef<OsStr>
+{
     Command::new(cmd)
-        .args(&["--testnet", "--fast"])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .args(args)
+        .stdout(out)
+        .stderr(err)
         .stdin(Stdio::piped())
         .spawn()
 }
@@ -111,12 +117,13 @@ fn main() {
         PathBuf::from(p[0])
     };
 
+    // TODO: extract node logic into separate mod
     let mut log = default_path();
     log.push("log");
     if fs::create_dir_all(log.as_path()).is_ok() {};
 
     log.push("geth_log.txt");
-    let mut log_file = match fs::File::create(log.as_path()) {
+    let f = match fs::File::create(log.as_path()) {
         Ok(f) => f,
         Err(err) => {
             error!("Unable to open node log file: {}", err);
@@ -124,17 +131,83 @@ fn main() {
         }
     };
 
-    let node = match launch_node(np.as_os_str()) {
-        Ok(pr) => pr,
-        Err(err) => {
-            error!("Unable to launch Ethereum node: {}", err);
+    let log_file = Arc::new(Mutex::new(f));
+    let node_path = Arc::new(Mutex::new(np));
+
+    let guard_lf = log_file.lock().unwrap();
+    let lf = match guard_lf.try_clone() {
+        Ok(f) => f,
+        Err(e) => {
+            error!("Node restart: can't redirect stdio: {}", e);
             exit(1);
         }
     };
 
-    let pool = CpuPool::new_num_cpus();
-    pool.spawn_fn(move || io::copy(&mut node.stderr.unwrap(), &mut log_file))
-        .forget();
+    let out = unsafe { Stdio::from_raw_fd(lf.as_raw_fd()) };
+    let err = unsafe { Stdio::from_raw_fd(lf.as_raw_fd()) };
 
-    emerald::rpc::start(&addr, &client_addr, base_path);
+    let guard_np = node_path.lock().unwrap();
+    let node = match launch_node(guard_np.as_os_str(), out, err, &["--fast"]) {
+        Ok(pr) => Arc::new(Mutex::new(pr)),
+        Err(err) => {
+            error!("Unable to launch client: {}", err);
+            exit(1);
+        }
+    };
+    drop(guard_lf);
+    drop(guard_np);
+
+    let (tx, rx) = mpsc::channel();
+    {
+        let nd = node.clone();
+        let lf = log_file.clone();
+        let np = node_path.clone();
+
+        let restart = move |chain: &str| {
+            let mut n = nd.lock().unwrap();
+            n.kill().expect("Expect to kill node");
+
+            let lf = match lf.lock().unwrap().try_clone() {
+                Ok(f) => f,
+                Err(e) => {
+                    error!("Node restart: can't redirect stdio: {}", e);
+                    exit(1);
+                }
+            };
+
+            let out = unsafe { Stdio::from_raw_fd(lf.as_raw_fd()) };
+            let err = unsafe { Stdio::from_raw_fd(lf.as_raw_fd()) };
+
+            let res = match chain {
+                "TESTNET" => {
+                    launch_node(np.lock().unwrap().as_os_str(),
+                                out,
+                                err,
+                                &["--testnet", "--fast"])
+                }
+                "MAINNET" | _ => launch_node(np.lock().unwrap().as_os_str(), out, err, &["--fast"]),
+            };
+
+            *n = match res {
+                Ok(n) => n,
+                Err(e) => {
+                    error!("Can't restart node: {}", e);
+                    exit(1);
+                }
+            };
+        };
+
+        thread::spawn(move || loop {
+                          let chain: String = match rx.recv() {
+                              Ok(s) => s,
+                              Err(e) => {
+                                  error!("Can't switch node chain: {}", e);
+                                  exit(1);
+                              }
+                          };
+                          restart(&chain);
+                      });
+    };
+
+    emerald::rpc::start(&addr, &client_addr, base_path, tx.clone());
 }
