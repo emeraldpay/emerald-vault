@@ -12,7 +12,6 @@ use self::error::Error;
 use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::core::{self, Address};
 use super::util;
-use chrono::prelude::UTC;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -133,18 +132,9 @@ impl Encodable for KeyFile {
 /// * `uuid` - UUID for keyfile
 ///
 fn generate_filename(uuid: &str) -> String {
-    format!("UTC--{}Z--{}", &timestamp(), &uuid)
+    format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
 }
 
-/// Time stamp for core file in format `yyy-mm-ddThh-mm-ss`
-fn timestamp() -> String {
-    // `2017-05-01T20:21:10.163281100+00:00` -> `2017-05-01T20-21-10`
-    str::replace(&UTC::now().to_rfc3339(), ":", "-")
-        .split('.')
-        .next()
-        .unwrap()
-        .to_string()
-}
 
 #[cfg(test)]
 mod tests {
@@ -193,12 +183,5 @@ mod tests {
         let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
 
         assert!(re.is_match(&generate_filename("9bec4728-37f9-4444-9990-2ba70ee038e9")));
-    }
-
-    #[test]
-    fn should_generate_timestamp() {
-        let re = Regex::new(r"^\d{4}-\d{2}-\d{2}[T]\d{2}-\d{2}-\d{2}").unwrap();
-
-        assert!(re.is_match(&timestamp()));
     }
 }
