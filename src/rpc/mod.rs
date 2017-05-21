@@ -19,7 +19,8 @@ use rustc_serialize::json;
 use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc::Sender;
 
 /// RPC methods
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -92,15 +93,14 @@ impl Metadata for MethodMetadata {}
 pub struct MethodParams<'a>(pub Method, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
-pub fn start<F>(addr: &SocketAddr,
-                client_addr: &SocketAddr,
-                base_path: Option<PathBuf>,
-                restart_node: F)
-    where F: Fn(String) -> () + Send + Sync + 'static
-{
+pub fn start(addr: &SocketAddr,
+             client_addr: &SocketAddr,
+             base_path: Option<PathBuf>,
+             node_sender: Sender<String>) {
     let mut io = MetaIoHandler::default();
 
     let url = Arc::new(http::AsyncWrapper::new(&format!("http://{}", client_addr)));
+    let node = Arc::new(Mutex::new(node_sender));
 
     {
         let url = url.clone();
@@ -219,21 +219,28 @@ pub fn start<F>(addr: &SocketAddr,
     }
 
     {
-        let switch_callback = move |p| match Params::parse::<Value>(p) {
-            Ok(ref v) if v.as_str().is_some() => {
-                let chain = v.as_str().unwrap();
-                restart_node(String::from(chain));
-                futures::done(Ok((Value::Bool(true)))).boxed()
-            }
-            Ok(_) => {
-                futures::failed(JsonRpcError::invalid_params("Invalid chain label for node"))
-                    .boxed()
-            }
-            Err(_) => {
-                futures::failed(JsonRpcError::invalid_params("Invalid chain label for node"))
-                    .boxed()
-            }
-        };
+        let switch_callback =
+            move |p| match Params::parse::<Value>(p) {
+                Ok(ref v) if v.as_array().is_some() => {
+                    let chain = v.as_array()
+                        .and_then(|arr| arr[0].as_str())
+                        .and_then(|s| Some(s.to_owned()))
+                        .expect("Node restart: Expect to extract chain label");
+
+                    let tx = node.lock().expect("Node restart: Expect acquire channel");
+                    let channel = tx.clone();
+                    match channel.send(chain.clone()) {
+                        Ok(_) => futures::done(Ok(Value::String(chain))).boxed(),
+                        Err(err) => futures::failed(JsonRpcError::invalid_params(
+                            format!("Node not responding: {}", err.to_string())))
+                            .boxed(),
+                    }
+                }
+                Ok(_) | Err(_) => {
+                    futures::failed(JsonRpcError::invalid_params("Invalid chain label for node"))
+                        .boxed()
+                }
+            };
         io.add_async_method("backend_switchChain", switch_callback);
     }
 

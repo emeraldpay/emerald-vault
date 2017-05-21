@@ -42,6 +42,8 @@ rust-crypto = "0.2"
 secp256k1 = "0.6"
 rand = "0.3"
 byteorder="1.0.0"
+tokio-core = "0.1.7"
+tokio-io = "0.1.1"
 # optional dependencies
 docopt = { version = "0.7", optional = true }
 env_logger = { version = "0.4", optional = true }
