@@ -1,6 +1,6 @@
 //! # Serialize JSON RPC parameters
 
-use super::{Error, Method, MethodParams};
+use super::{ClientMethod, Error, MethodParams};
 use super::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value as JValue};
@@ -109,18 +109,16 @@ impl<'a> Serialize for MethodParams<'a> {
         where S: Serializer
     {
         match self.0 {
-            Method::ClientVersion => serialize("web3_clientVersion", self.1, s),
-            Method::EthSyncing => serialize("eth_syncing", self.1, s),
-            Method::EthBlockNumber => serialize("eth_blockNumber", self.1, s),
-            Method::EthAccounts => serialize("eth_accounts", self.1, s),
-            Method::EthGetBalance => serialize("eth_getBalance", self.1, s),
-            Method::EthGetTxCount => serialize("eth_getTransactionCount", self.1, s),
-            Method::EthSendRawTransaction => serialize("eth_sendRawTransaction", self.1, s),
-            Method::EthCall => serialize("eth_call", self.1, s),
-            Method::EthTraceCall => serialize("eth_traceCall", self.1, s),
-            Method::GetTxByHash => serialize("eth_getTransactionByHash", self.1, s),
-            Method::ImportAccountCall => serialize("importAccount_call", self.1, s),
-            Method::PersonalNewAccount => serialize("personal_newAccount", self.1, s),
+            ClientMethod::Version => serialize("web3_clientVersion", self.1, s),
+            ClientMethod::EthSyncing => serialize("eth_syncing", self.1, s),
+            ClientMethod::EthBlockNumber => serialize("eth_blockNumber", self.1, s),
+            ClientMethod::EthAccounts => serialize("eth_accounts", self.1, s),
+            ClientMethod::EthGetBalance => serialize("eth_getBalance", self.1, s),
+            ClientMethod::EthGetTxCount => serialize("eth_getTransactionCount", self.1, s),
+            ClientMethod::EthGetTxByHash => serialize("eth_getTransactionByHash", self.1, s),
+            ClientMethod::EthSendRawTransaction => serialize("eth_sendRawTransaction", self.1, s),
+            ClientMethod::EthCall => serialize("eth_call", self.1, s),
+            ClientMethod::EthTraceCall => serialize("eth_traceCall", self.1, s),
         }
     }
 }
