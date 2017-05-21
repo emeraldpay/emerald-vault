@@ -5,7 +5,7 @@ extern crate serde_json;
 extern crate tempdir;
 
 use self::serde_json::Value;
-use emerald::addressbook::{AddressbookError, Addressbook};
+use emerald::addressbook::{Addressbook, AddressbookError};
 use std::path::PathBuf;
 use tempdir::TempDir;
 
@@ -25,13 +25,10 @@ fn should_add_entry() {
     let act = a.list();
     assert_eq!(act.len(), 0);
 
-    let json = serde_json::from_str::<Value>("{\"id\":\
-                                              \"0x000000000031eaedbc2b611aa528f22343eb52db\", \
-                                              \"name\":\
-                                              \"elaine\", \
-                                              \"description\":\
-                                              \"drug money\"}")
-            .unwrap();
+    let json =
+        serde_json::from_str::<Value>("{\"id\":\"0x000000000031eaedbc2b611aa528f22343eb52db\", \
+                                       \"name\":\"elaine\", \"description\":\"drug money\"}")
+                .unwrap();
     a.add(&json).ok();
     let act = a.list();
     assert_eq!(act.len(), 1);
