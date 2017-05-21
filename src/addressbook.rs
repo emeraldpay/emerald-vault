@@ -4,6 +4,7 @@ use super::core::Address;
 use glob::glob;
 use serde_json;
 use std::fs::File;
+use std::fs::remove_file;
 use std::path::{Path, PathBuf};
 
 /// Addressbook Service
@@ -35,7 +36,7 @@ impl Addressbook {
         }
     }
 
-    /// List all contacts in the addressbook
+    /// List all entries in the addressbook
     pub fn list(&self) -> Vec<serde_json::Value> {
         let files = glob(&format!("{}/*.json", &self.dir.to_str().unwrap())).unwrap();
 
@@ -83,7 +84,7 @@ impl Addressbook {
         }
     }
 
-    /// Edit address entry in addressbook storage
+    /// Edit address entry in addressbook storage (address cannot change)
     pub fn edit(&self, entry: &serde_json::Value) -> Result<(), AddressbookError> {
         self.validate(entry)?;
         let addr = entry
@@ -99,4 +100,17 @@ impl Addressbook {
             Err(_) => Err(AddressbookError::IO),
         }
     }    
+
+    /// Edit address entry in addressbook storage (address cannot change)
+    pub fn delete(&self, entry: &serde_json::Value) -> Result<(), AddressbookError> {
+        let addr = entry
+            .as_str()
+            .expect("Expect id be convertible to a string");
+        let mut filename: PathBuf = self.dir.clone();
+        filename.push(format!("{}.json", addr));
+        match remove_file(filename) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(AddressbookError::IO),
+        }    
+    }        
 }
