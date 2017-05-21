@@ -99,7 +99,7 @@ impl Addressbook {
             Ok(_) => Ok(()),
             Err(_) => Err(AddressbookError::IO),
         }
-    }    
+    }
 
     /// Edit address entry in addressbook storage (address cannot change)
     pub fn delete(&self, entry: &serde_json::Value) -> Result<(), AddressbookError> {
@@ -111,6 +111,6 @@ impl Addressbook {
         match remove_file(filename) {
             Ok(_) => Ok(()),
             Err(_) => Err(AddressbookError::IO),
-        }    
-    }        
+        }
+    }
 }

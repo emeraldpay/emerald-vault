@@ -5,8 +5,8 @@ mod serialize;
 mod error;
 
 pub use self::error::Error;
-use super::contract::Contracts;
 use super::addressbook::Addressbook;
+use super::contract::Contracts;
 use super::core::{self, Transaction};
 use super::keystore::KeyFile;
 use super::storage::{ChainStorage, Storages};
@@ -261,7 +261,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             }
             _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
         });
-    }  
+    }
 
     {
         let addressbook = addressbook.clone();
@@ -275,7 +275,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
             }
             _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
         });
-    }    
+    }
 
     let server = ServerBuilder::new(io)
         .meta_extractor(|req: &Req| {
