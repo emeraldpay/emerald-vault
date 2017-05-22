@@ -4,7 +4,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate tempdir;
 
-use self::serde_json::Value;
+use serde_json::Value;
 use emerald::addressbook::{Addressbook, AddressbookError};
 use std::path::PathBuf;
 use tempdir::TempDir;

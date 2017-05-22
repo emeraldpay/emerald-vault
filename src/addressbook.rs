@@ -29,7 +29,7 @@ impl Addressbook {
         Addressbook { dir: dir }
     }
 
-    fn read_json(path: &Path) -> Result<serde_json::Value, AddressbookError> {
+    pub fn read_json(path: &Path) -> Result<serde_json::Value, AddressbookError> {
         match File::open(path) {
             Ok(f) => serde_json::from_reader(f).or(Err(AddressbookError::IO)),
             Err(_) => Err(AddressbookError::IO),
@@ -101,7 +101,7 @@ impl Addressbook {
         }
     }
 
-    /// Edit address entry in addressbook storage (address cannot change)
+    /// Delete address entry in addressbook storage (address cannot change)
     pub fn delete(&self, entry: &serde_json::Value) -> Result<(), AddressbookError> {
         let addr = entry
             .as_str()
