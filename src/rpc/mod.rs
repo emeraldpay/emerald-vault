@@ -160,25 +160,34 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
 
     {
         let import_callback = move |p| match Params::parse::<Value>(p) {
-            Ok(ref v) if v.as_str().is_some() => {
-                let str = v.as_str().unwrap();
-                match json::decode::<KeyFile>(str) {
+            Ok(ref v) => {
+                let data = v.as_object().unwrap();
+                let kf = data.get("account").unwrap().to_string();
+
+                let name = match data.get("name") {
+                    Some(n) => Some(n.to_string()),
+                    None => None,
+                };
+
+                let descr = match data.get("description") {
+                    Some(d) => Some(d.to_string()),
+                    None => None,
+                };
+
+                match json::decode::<KeyFile>(&kf) {
                     Ok(kf) => {
                         let addr = Address::default().to_string();
-                        match kf.flush(&default_path(), None) {
+                        match kf.flush(&default_path(), None, name, descr) {
                             Ok(_) => futures::done(Ok(Value::String(addr))).boxed(),
                             Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
                         }
                     }
                     Err(_) => {
                         futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
-                                                                        format")))
+                                                                    format")))
                                 .boxed()
                     }
                 }
-            }
-            Ok(_) => {
-                futures::done(Err(JsonRpcError::invalid_params("Invalid JSON object"))).boxed()
             }
             Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
         };
@@ -199,7 +208,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
                         }
                         let addr = addr_res.unwrap();
 
-                        match kf.flush(&default_path(), Some(addr)) {
+                        match kf.flush(&default_path(), Some(addr), None, None) {
                             Ok(_) => futures::done(Ok(Value::String(addr.to_string()))).boxed(),
                             Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
                         }
