@@ -42,6 +42,7 @@ struct Args {
     flag_client_port: String,
     flag_client_path: String,
     flag_base_path: String,
+    flag_security_level: String,
 }
 
 fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
@@ -92,6 +93,12 @@ fn main() {
     } else {
         None
     };
+
+    let security_level = args.flag_security_level
+        .parse::<String>()
+        .expect("Expect to security level");
+
+    
 
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}",
