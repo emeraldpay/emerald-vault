@@ -124,9 +124,7 @@ pub mod tests {
         let kdf_salt =
             to_32bytes("ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd");
 
-        assert_eq!(Kdf::from(8)
-                       .derive(32, &kdf_salt, "testpassword")
-                       .to_hex(),
+        assert_eq!(Kdf::from(8).derive(32, &kdf_salt, "testpassword").to_hex(),
                    "031dc7e0f4f375f6d6fdab7ad8d71834d844e39a6b62f9fb98d942bab76db0f9");
     }
 

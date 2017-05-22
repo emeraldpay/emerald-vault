@@ -7,15 +7,16 @@ mod error;
 pub use self::error::Error;
 use super::addressbook::Addressbook;
 use super::contract::Contracts;
-use super::core::{self, Transaction};
+use super::core::{self, Address, Transaction};
 use super::keystore::KeyFile;
-use super::storage::{ChainStorage, Storages};
+use super::storage::{ChainStorage, Storages, default_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, MetaIoHandler, Metadata, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, Req, ServerBuilder, cors};
 use log::LogLevel;
+use rustc_serialize::json;
 use serde_json::Value;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -51,11 +52,17 @@ pub enum Method {
     EthCall,
 
     /// `trace_call`
-    TraceCall,
+    EthTraceCall,
 
     /// [eth_getTransactionByHash](
     /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash)
     GetTxByHash,
+
+    /// import account
+    ImportAccountCall,
+
+    /// creates new account
+    PersonalNewAccount,
 }
 
 /// RPC method's request metadata
@@ -176,9 +183,70 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
     {
         let url = url.clone();
 
-        io.add_async_method("trace_call",
-                            move |p| url.request(&MethodParams(Method::TraceCall, &p)));
+        io.add_async_method("eth_traceCall",
+                            move |p| url.request(&MethodParams(Method::EthTraceCall, &p)));
     }
+
+    {
+        let import_callback = move |p| match Params::parse::<Value>(p) {
+            Ok(ref v) if v.as_str().is_some() => {
+                let str = v.as_str().unwrap();
+                match json::decode::<KeyFile>(str) {
+                    Ok(kf) => {
+                        let addr = Address::default().to_string();
+                        match kf.flush(&default_path(), None) {
+                            Ok(_) => futures::done(Ok(Value::String(addr))).boxed(),
+                            Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
+                        }
+                    }
+                    Err(_) => {
+                        futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
+                                                                        format")))
+                                .boxed()
+                    }
+                }
+            }
+            Ok(_) => {
+                futures::done(Err(JsonRpcError::invalid_params("Invalid JSON object"))).boxed()
+            }
+            Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
+        };
+        io.add_async_method("backend_importWallet", import_callback);
+    }
+
+    {
+        let create_callback = move |p| match Params::parse::<Value>(p) {
+            Ok(ref v) if v.as_array().is_some() => {
+                let passwd = v.as_array().and_then(|arr| arr[0].as_str()).unwrap();
+
+                match KeyFile::new(passwd) {
+                    Ok(kf) => {
+                        let addr_res = kf.decrypt_address(passwd);
+                        if addr_res.is_err() {
+                            return futures::done(Err(JsonRpcError::internal_error())).boxed();
+                        }
+                        let addr = addr_res.unwrap();
+
+                        match kf.flush(&default_path(), Some(addr)) {
+                            Ok(_) => futures::done(Ok(Value::String(addr.to_string()))).boxed(),
+                            Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
+                        }
+                    }
+                    Err(_) => {
+                        futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
+                                                                        format")))
+                                .boxed()
+                    }
+                }
+            }
+            Ok(_) => {
+                futures::done(Err(JsonRpcError::invalid_params("Invalid JSON object"))).boxed()
+            }
+            Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
+        };
+        io.add_async_method("personal_newAccount", create_callback);
+    }
+
 
     let storage = match base_path {
         Some(p) => Storages::new(p),
