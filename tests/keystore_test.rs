@@ -145,7 +145,7 @@ fn should_flush_to_file() {
 #[test]
 fn should_flush_to_file_with_meta() {
     let kf = KeyFile::new("1234567890").unwrap();
-    let name  = Some(String::from("test name"));
+    let name = Some(String::from("test name"));
     let descr = Some(String::from("test description"));
 
     assert!(kf.flush(temp_dir().as_path(), None, name, descr).is_ok());
