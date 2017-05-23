@@ -18,6 +18,7 @@ use std::io::{Read, Write};
 use std::path::Path;
 use uuid::Uuid;
 
+
 /// Keystore file current version used for serializing
 pub const CURRENT_VERSION: u8 = 3;
 
@@ -30,6 +31,8 @@ struct SerializableKeyFile {
     version: u8,
     id: Uuid,
     address: Option<Address>,
+    name: Option<String>,
+    description: Option<String>,
     crypto: Crypto,
 }
 
@@ -39,6 +42,8 @@ impl From<KeyFile> for SerializableKeyFile {
             version: CURRENT_VERSION,
             id: key_file.uuid,
             address: None,
+            name: None,
+            description: None,
             crypto: Crypto::from(key_file),
         }
     }
@@ -61,11 +66,18 @@ impl KeyFile {
     /// * `dir` - path to destination directory
     /// * `addr` - a public address (optional)
     ///
-    pub fn flush<P: AsRef<Path>>(&self, dir: P, addr: Option<Address>) -> Result<(), Error> {
+    pub fn flush<P: AsRef<Path>>(&self,
+                                 dir: P,
+                                 addr: Option<Address>,
+                                 name: Option<String>,
+                                 desc: Option<String>)
+                                 -> Result<(), Error> {
         let path = dir.as_ref()
             .with_file_name(&generate_filename(&self.uuid.to_string()));
         let mut sf = SerializableKeyFile::from(self.clone());
         sf.address = addr;
+        sf.name = name;
+        sf.description = desc;
         let json = json::encode(&sf)?;
         let mut file = File::create(&path)?;
         file.write_all(json.as_ref()).ok();
@@ -134,7 +146,6 @@ impl Encodable for KeyFile {
 fn generate_filename(uuid: &str) -> String {
     format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
 }
-
 
 #[cfg(test)]
 mod tests {

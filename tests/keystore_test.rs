@@ -139,7 +139,16 @@ fn should_decode_keyfile_with_address() {
 fn should_flush_to_file() {
     let kf = KeyFile::new("1234567890").unwrap();
 
-    assert!(kf.flush(temp_dir().as_path(), None).is_ok());
+    assert!(kf.flush(temp_dir().as_path(), None, None, None).is_ok());
+}
+
+#[test]
+fn should_flush_to_file_with_meta() {
+    let kf = KeyFile::new("1234567890").unwrap();
+    let name = Some(String::from("test name"));
+    let descr = Some(String::from("test description"));
+
+    assert!(kf.flush(temp_dir().as_path(), None, name, descr).is_ok());
 }
 
 #[test]
