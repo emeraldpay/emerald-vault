@@ -16,7 +16,7 @@ extern crate regex;
 extern crate rustc_serialize;
 
 use docopt::Docopt;
-use emerald::keystore::SecurityLevel;
+use emerald::keystore::KdfDepthLevel;
 use emerald::storage::default_path;
 use env_logger::LogBuilder;
 use futures_cpupool::CpuPool;
@@ -27,6 +27,7 @@ use std::ffi::OsStr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::*;
+use std::str::FromStr;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
@@ -100,16 +101,14 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
-    let sec_level_str: &str = &args.flag_security_level
-                                   .parse::<String>()
-                                   .expect("Expect to parse security level");
-    let sec_level = match sec_level_str {
-        "normal" => SecurityLevel::Normal,
-        "high" => SecurityLevel::High,
-        "ultra" => SecurityLevel::Ultra,
-        s => {
-            error!("invalid `--security-level` argument: {}", s);
-            SecurityLevel::Normal
+    let sec_level: &str = &args.flag_security_level
+                               .parse::<String>()
+                               .expect("Expect to parse security level");
+    let sec_level = match KdfDepthLevel::from_str(sec_level) {
+        Ok(sec) => sec,
+        Err(e) => {
+            error!("{}", e.to_string());
+            KdfDepthLevel::default()
         }
     };
     info!("security level set to '{}'", sec_level);

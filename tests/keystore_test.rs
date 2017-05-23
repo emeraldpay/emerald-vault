@@ -6,7 +6,7 @@ extern crate tempdir;
 extern crate uuid;
 
 use emerald::{Address, KECCAK256_BYTES};
-use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile, Prf, SecurityLevel};
+use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Prf};
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
 use std::fs::File;
@@ -137,26 +137,25 @@ fn should_decode_keyfile_with_address() {
 
 #[test]
 fn should_use_security_level() {
-    let sec = SecurityLevel::Normal;
+    let sec = KdfDepthLevel::Normal;
     let kf = KeyFile::new("1234567890", &sec).unwrap();
     assert_eq!(kf.kdf, Kdf::from(sec));
 
-    let sec = SecurityLevel::High;
+    let sec = KdfDepthLevel::High;
     let kf = KeyFile::new("1234567890", &sec).unwrap();
     assert_eq!(kf.kdf, Kdf::from(sec));
 }
 
 #[test]
 fn should_flush_to_file() {
-    let sec = SecurityLevel::Normal;
-    let kf = KeyFile::new("1234567890", &sec).unwrap();
+    let kf = KeyFile::new("1234567890", &KdfDepthLevel::Normal).unwrap();
 
     assert!(kf.flush(temp_dir().as_path(), None, None, None).is_ok());
 }
 
 #[test]
 fn should_flush_to_file_with_meta() {
-    let kf = KeyFile::new("1234567890").unwrap();
+    let kf = KeyFile::new("1234567890", &KdfDepthLevel::Normal).unwrap();
     let name = Some(String::from("test name"));
     let descr = Some(String::from("test description"));
 

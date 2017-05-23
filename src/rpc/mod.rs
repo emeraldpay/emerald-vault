@@ -7,7 +7,7 @@ mod error;
 pub use self::error::Error;
 use super::contract::Contracts;
 use super::core::{self, Address, Transaction};
-use super::keystore::{KeyFile, SecurityLevel};
+use super::keystore::{KdfDepthLevel, KeyFile};
 use super::storage::{ChainStorage, Storages, default_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
@@ -66,8 +66,7 @@ pub struct MethodParams<'a>(pub ClientMethod, pub &'a Params);
 pub fn start(addr: &SocketAddr,
              client_addr: &SocketAddr,
              base_path: Option<PathBuf>,
-             sec_level: SecurityLevel)
-{
+             sec_level: KdfDepthLevel) {
     let mut io = IoHandler::default();
     let url = Arc::new(http::AsyncWrapper::new(&format!("http://{}", client_addr)));
 

@@ -15,7 +15,7 @@ pub const SCRYPT_KDF_NAME: &'static str = "scrypt";
 
 /// Security level for `Kdf`
 #[derive(Clone, Copy, Debug)]
-pub enum SecurityLevel {
+pub enum KdfDepthLevel {
     /// Security level used by default
     Normal = 1024,
 
@@ -26,9 +26,33 @@ pub enum SecurityLevel {
     Ultra = 262144,
 }
 
-impl fmt::Display for SecurityLevel {
+impl fmt::Display for KdfDepthLevel {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        let printable = match *self {
+            KdfDepthLevel::Normal => "normal",
+            KdfDepthLevel::High => "high",
+            KdfDepthLevel::Ultra => "ultra",
+        };
+        write!(f, "{}", printable)
+    }
+}
+
+impl FromStr for KdfDepthLevel {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "normal" => Ok(KdfDepthLevel::Normal),
+            "high" => Ok(KdfDepthLevel::High),
+            "ultra" => Ok(KdfDepthLevel::Ultra),
+            v => Err(Error::InvalidKdfDepth(v.to_string())),
+        }
+    }
+}
+
+impl Default for KdfDepthLevel {
+    fn default() -> Self {
+        KdfDepthLevel::Normal
     }
 }
 
@@ -88,8 +112,8 @@ impl Default for Kdf {
     }
 }
 
-impl From<SecurityLevel> for Kdf {
-    fn from(sec: SecurityLevel) -> Self {
+impl From<KdfDepthLevel> for Kdf {
+    fn from(sec: KdfDepthLevel) -> Self {
         Kdf::from((sec as u32, 8, 1))
     }
 }
