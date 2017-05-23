@@ -6,7 +6,7 @@ extern crate tempdir;
 extern crate uuid;
 
 use emerald::{Address, KECCAK256_BYTES};
-use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile, Prf};
+use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile, Prf, SecurityLevel};
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
 use std::fs::File;
@@ -136,8 +136,20 @@ fn should_decode_keyfile_with_address() {
 }
 
 #[test]
+fn should_use_security_level() {
+    let sec = SecurityLevel::Normal;
+    let kf = KeyFile::new("1234567890", &sec).unwrap();
+    assert_eq!(kf.kdf, Kdf::from(sec));
+
+    let sec = SecurityLevel::High;
+    let kf = KeyFile::new("1234567890", &sec).unwrap();
+    assert_eq!(kf.kdf, Kdf::from(sec));
+}
+
+#[test]
 fn should_flush_to_file() {
-    let kf = KeyFile::new("1234567890").unwrap();
+    let sec = SecurityLevel::Normal;
+    let kf = KeyFile::new("1234567890", &sec).unwrap();
 
     assert!(kf.flush(temp_dir().as_path(), None).is_ok());
 }

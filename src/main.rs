@@ -16,6 +16,7 @@ extern crate futures_cpupool;
 extern crate regex;
 
 use docopt::Docopt;
+use emerald::keystore::SecurityLevel;
 use emerald::storage::default_path;
 use env_logger::LogBuilder;
 use futures_cpupool::CpuPool;
@@ -94,16 +95,24 @@ fn main() {
         None
     };
 
-    let security_level = args.flag_security_level
-        .parse::<String>()
-        .expect("Expect to security level");
-
-    
-
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}",
               VERSION.unwrap_or("unknown"));
     }
+
+    let sec_level_str: &str = &args.flag_security_level
+                                   .parse::<String>()
+                                   .expect("Expect to parse security level");
+    let sec_level = match sec_level_str {
+        "normal" => SecurityLevel::Normal,
+        "high" => SecurityLevel::High,
+        "ultra" => SecurityLevel::Ultra,
+        s => {
+            error!("invalid `--security-level` argument: {}", s);
+            SecurityLevel::Normal
+        }
+    };
+    info!("security level set to '{}'", sec_level);
 
     let node_path = args.flag_client_path
         .parse::<String>()
@@ -143,5 +152,5 @@ fn main() {
     pool.spawn_fn(move || io::copy(&mut node.stderr.unwrap(), &mut log_file))
         .forget();
 
-    emerald::rpc::start(&addr, &client_addr, base_path);
+    emerald::rpc::start(&addr, &client_addr, base_path, sec_level);
 }

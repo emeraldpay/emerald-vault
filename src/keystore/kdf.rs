@@ -13,6 +13,25 @@ pub const PBKDF2_KDF_NAME: &'static str = "pbkdf2";
 /// Scrypt key derivation function name
 pub const SCRYPT_KDF_NAME: &'static str = "scrypt";
 
+/// Security level for `Kdf`
+#[derive(Clone, Copy, Debug)]
+pub enum SecurityLevel {
+    /// Security level used by default
+    Normal = 1024,
+
+    /// Advanced security level
+    High = 8096,
+
+    /// Top security level (consumes more CPU time)
+    Ultra = 262144,
+}
+
+impl fmt::Display for SecurityLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 /// Key derivation function
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kdf {
@@ -62,10 +81,16 @@ impl Kdf {
 impl Default for Kdf {
     fn default() -> Self {
         Kdf::Scrypt {
-            n: 19201,
+            n: 1024,
             r: 8,
             p: 1,
         }
+    }
+}
+
+impl From<SecurityLevel> for Kdf {
+    fn from(sec: SecurityLevel) -> Self {
+        Kdf::from((sec as u32, 8, 1))
     }
 }
 
