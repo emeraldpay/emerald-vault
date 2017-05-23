@@ -20,3 +20,6 @@ Options:
                                         + Mac OS X: ~/Library/Emerald
                                         + Linux: ~/.emerald
                                         + Windows: %USERDIR%\.emerald
+    --security-level LEVEL      Defines level of security for cryptographic operations  [default: normal]
+                                ('normal', 'high', 'ultra')
+                                Note: higher level consumes more computation time.

@@ -16,6 +16,7 @@ extern crate regex;
 extern crate rustc_serialize;
 
 use docopt::Docopt;
+use emerald::keystore::KdfDepthLevel;
 use emerald::storage::default_path;
 use env_logger::LogBuilder;
 use futures_cpupool::CpuPool;
@@ -26,6 +27,7 @@ use std::ffi::OsStr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::*;
+use std::str::FromStr;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
@@ -42,6 +44,7 @@ struct Args {
     flag_client_port: String,
     flag_client_path: String,
     flag_base_path: String,
+    flag_security_level: String,
 }
 
 fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
@@ -98,6 +101,18 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
+    let sec_level: &str = &args.flag_security_level
+                               .parse::<String>()
+                               .expect("Expect to parse security level");
+    let sec_level = match KdfDepthLevel::from_str(sec_level) {
+        Ok(sec) => sec,
+        Err(e) => {
+            error!("{}", e.to_string());
+            KdfDepthLevel::default()
+        }
+    };
+    info!("security level set to '{}'", sec_level);
+
     let node_path = args.flag_client_path
         .parse::<String>()
         .expect("Expect to parse path to node executable");
@@ -136,5 +151,5 @@ fn main() {
     pool.spawn_fn(move || io::copy(&mut node.stderr.unwrap(), &mut log_file))
         .forget();
 
-    emerald::rpc::start(&addr, &client_addr, base_path);
+    emerald::rpc::start(&addr, &client_addr, base_path, sec_level);
 }
