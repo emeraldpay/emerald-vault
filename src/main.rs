@@ -11,9 +11,9 @@ extern crate log;
 extern crate docopt;
 extern crate env_logger;
 extern crate emerald;
-extern crate rustc_serialize;
 extern crate futures_cpupool;
 extern crate regex;
+extern crate rustc_serialize;
 
 use docopt::Docopt;
 use emerald::keystore::SecurityLevel;
@@ -49,9 +49,9 @@ struct Args {
 fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
     Command::new(cmd)
         .args(&["--testnet", "--fast"])
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .stdin(Stdio::piped())
         .spawn()
 }
 
@@ -123,7 +123,7 @@ fn main() {
     } else {
         let re = Regex::new(r".+?geth").unwrap();
         let path = env::var("PATH").expect("Expect to get PATH variable");
-        let p: Vec<&str> = path.split(":").filter(|s| re.is_match(s)).collect();
+        let p: Vec<&str> = path.split(':').filter(|s| re.is_match(s)).collect();
         PathBuf::from(p[0])
     };
 
@@ -135,7 +135,7 @@ fn main() {
     let mut log_file = match fs::File::create(log.as_path()) {
         Ok(f) => f,
         Err(err) => {
-            error!("Unable to open node log file: {}", err);
+            error!("Unable to open node client log file: {}", err);
             exit(1);
         }
     };
@@ -143,7 +143,7 @@ fn main() {
     let node = match launch_node(np.as_os_str()) {
         Ok(pr) => pr,
         Err(err) => {
-            error!("Unable to launch Ethereum node: {}", err);
+            error!("Unable to launch node client: {}", err);
             exit(1);
         }
     };
