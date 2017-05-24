@@ -7,7 +7,7 @@ mod error;
 pub use self::error::Error;
 use super::contract::Contracts;
 use super::core::{self, Transaction};
-use super::keystore::{KdfDepthLevel, KeyFile};
+use super::keystore::{KdfDepthLevel, KeyFile, list_accounts};
 use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
@@ -106,11 +106,18 @@ pub fn start(addr: &SocketAddr,
                             move |p| url.request(&MethodParams(ClientMethod::EthBlockNumber, &p)));
     }
 
-    {
-        let url = url.clone();
 
-        io.add_async_method("eth_accounts",
-                            move |p| url.request(&MethodParams(ClientMethod::EthAccounts, &p)));
+    {
+        let keystore_path = keystore_path.clone();
+        let accounts_callback = move |_| match list_accounts(keystore_path.as_ref()) {
+            Ok(list) => {
+                let accounts = list.iter().map(|s| Value::String(s.clone())).collect();
+                futures::done(Ok(Value::Array(accounts))).boxed()
+            }
+            Err(err) => futures::failed(JsonRpcError::invalid_params(err.to_string())).boxed(),
+        };
+
+        io.add_async_method("eth_accounts", accounts_callback);
     }
 
     {

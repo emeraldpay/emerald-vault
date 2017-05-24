@@ -13,7 +13,7 @@ use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::core::{self, Address};
 use super::util;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
-use std::fs::{self, File};
+use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
 use std::path::Path;
 use uuid::Uuid;
@@ -129,6 +129,38 @@ impl Encodable for KeyFile {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         SerializableKeyFile::from(self.clone()).encode(s)
     }
+}
+
+/// Lists addresses for all `Keystore` files
+/// in specified folder
+///
+/// # Arguments
+///
+/// * `path` - target directory
+///
+pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<String>, Error> {
+    let mut accounts: Vec<String> = vec![];
+
+    for e in read_dir(path)? {
+        if e.is_err() {
+            continue;
+        }
+        let entry = e.unwrap();
+
+        let mut content = String::new();
+        if let Ok(mut keyfile) = File::open(entry.path()) {
+            if keyfile.read_to_string(&mut content).is_err() {
+                continue;
+            }
+
+            match json::decode::<KeyFile>(&content) {
+                Ok(kf) => accounts.push(kf.address.to_string()),
+                Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
+            }
+        }
+    }
+
+    Ok(accounts)
 }
 
 /// Creates filename for keystore file in format:
