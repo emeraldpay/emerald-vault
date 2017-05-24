@@ -17,6 +17,8 @@ use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
 use rustc_serialize::json;
 use serde_json::Value;
+use std::fs::{File, read_dir};
+use std::io::prelude::*;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -106,11 +108,44 @@ pub fn start(addr: &SocketAddr,
                             move |p| url.request(&MethodParams(ClientMethod::EthBlockNumber, &p)));
     }
 
-    {
-        let url = url.clone();
 
-        io.add_async_method("eth_accounts",
-                            move |p| url.request(&MethodParams(ClientMethod::EthAccounts, &p)));
+    {
+        let keystore_path = keystore_path.clone();
+        let accounts_callback = move |_| {
+            let mut accounts: Vec<Value> = vec![];
+
+            let keystore_dir = read_dir(keystore_path.as_ref());
+            if keystore_dir.is_err() {
+                return futures::failed(JsonRpcError::invalid_params("Can't access keystore \
+                                                                     directory"))
+                               .boxed();
+            }
+
+            for e in keystore_dir.unwrap() {
+                if e.is_err() {
+                    continue;
+                }
+                let entry = e.unwrap();
+
+                let mut content = String::new();
+                if let Ok(mut keyfile) = File::open(entry.path()) {
+                    if keyfile.read_to_string(&mut content).is_err() {
+                        continue;
+                    }
+
+                    match json::decode::<KeyFile>(&content) {
+                        Ok(kf) => accounts.push(Value::String(kf.address.to_string())),
+                        Err(_) => {
+                            info!("Invalid keystore file format for: {:?}", entry.file_name())
+                        }
+                    }
+                }
+            }
+
+            futures::done(Ok(Value::Array(accounts))).boxed()
+        };
+
+        io.add_async_method("eth_accounts", accounts_callback);
     }
 
     {
