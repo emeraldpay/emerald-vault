@@ -7,7 +7,7 @@ mod error;
 pub use self::error::Error;
 use super::contract::Contracts;
 use super::core::{self, Transaction};
-use super::keystore::KeyFile;
+use super::keystore::{KeyFile, KdfDepthLevel};
 use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
@@ -63,9 +63,11 @@ pub enum ClientMethod {
 pub struct MethodParams<'a>(pub ClientMethod, pub &'a Params);
 
 /// Start an HTTP RPC endpoint
-pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<PathBuf>) {
+pub fn start(addr: &SocketAddr,
+             client_addr: &SocketAddr,
+             base_path: Option<PathBuf>,
+             sec_level: KdfDepthLevel) {
     let mut io = IoHandler::default();
-
     let url = Arc::new(http::AsyncWrapper::new(&format!("http://{}", client_addr)));
 
     {
@@ -159,11 +161,12 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
     }
 
     {
+        let sec = sec_level.clone();
         let create_callback = move |p| match Params::parse::<Value>(p) {
             Ok(ref v) if v.as_array().is_some() => {
                 let passwd = v.as_array().and_then(|arr| arr[0].as_str()).unwrap();
 
-                match KeyFile::new(passwd) {
+                match KeyFile::new(passwd, &sec) {
                     Ok(kf) => {
                         let addr_res = kf.decrypt_address(passwd);
                         if addr_res.is_err() {

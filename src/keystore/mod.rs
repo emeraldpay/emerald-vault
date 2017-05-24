@@ -11,7 +11,7 @@ mod serialize;
 
 pub use self::cipher::Cipher;
 pub use self::error::Error;
-pub use self::kdf::Kdf;
+pub use self::kdf::{Kdf, KdfDepthLevel};
 pub use self::prf::Prf;
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
@@ -72,12 +72,12 @@ impl KeyFile {
     ///
     /// * `passphrase` - password for key derivation function
     ///
-    pub fn new(passphrase: &str) -> Result<KeyFile, Error> {
+    pub fn new(passphrase: &str, sec_level: &KdfDepthLevel) -> Result<KeyFile, Error> {
         let mut rng = os_random();
 
         Self::new_custom(PrivateKey::gen_custom(&mut rng),
                          passphrase,
-                         Kdf::default(),
+                         Kdf::from(*sec_level),
                          &mut rng)
     }
 
