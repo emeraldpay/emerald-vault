@@ -30,7 +30,7 @@ pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
 struct SerializableKeyFile {
     version: u8,
     id: Uuid,
-    address: Option<Address>,
+    address: Address,
     name: Option<String>,
     description: Option<String>,
     crypto: Crypto,

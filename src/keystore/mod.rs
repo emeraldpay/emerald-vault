@@ -38,7 +38,7 @@ pub struct KeyFile {
     pub description: Option<String>,
 
     /// Address
-    pub address: Option<Address>,
+    pub address: Address,
 
     /// UUID v4
     pub uuid: Uuid,
@@ -104,6 +104,7 @@ impl KeyFile {
         };
 
         kf.encrypt_key_custom(pk, passphrase, rng);
+        kf.address = kf.decrypt_address(passphrase)?;
 
         Ok(kf)
     }
@@ -157,7 +158,7 @@ impl Default for KeyFile {
         KeyFile {
             name: None,
             description: None,
-            address: None,
+            address: Address::default(),
             uuid: Uuid::default(),
             dk_length: DEFAULT_DK_LENGTH,
             kdf: Kdf::default(),

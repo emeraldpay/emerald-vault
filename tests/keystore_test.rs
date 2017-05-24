@@ -56,7 +56,7 @@ fn should_decode_keyfile_without_address() {
     let exp = KeyFile {
         name: Some("".to_string()),
         description: None,
-        address: None,
+        address: Address::from_str("0x4c4cfc6470a1dc26916585ef03dfec42deb936ff").unwrap(),
         uuid: Uuid::from_str("37e0d14f-7269-7ca0-4419-d7b13abfeea9").unwrap(),
         dk_length: 32,
         kdf: Kdf::Pbkdf2 {
@@ -102,7 +102,7 @@ fn should_decode_keyfile_with_address() {
     let exp = KeyFile {
         name: None,
         description: None,
-        address: Some(Address::from_str("0x0047201aed0b69875b24b614dda0270bcd9f11cc").unwrap()),
+        address: Address::from_str("0x0047201aed0b69875b24b614dda0270bcd9f11cc").unwrap(),
         uuid: Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap(),
         dk_length: 32,
         kdf: Kdf::Scrypt {
