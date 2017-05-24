@@ -7,7 +7,7 @@ mod error;
 pub use self::error::Error;
 use super::contract::Contracts;
 use super::core::{self, Transaction};
-use super::keystore::{KdfDepthLevel, KeyFile};
+use super::keystore::{KdfDepthLevel, KeyFile, list_accounts};
 use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
@@ -17,8 +17,6 @@ use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
 use rustc_serialize::json;
 use serde_json::Value;
-use std::fs::{File, read_dir};
-use std::io::prelude::*;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -111,38 +109,12 @@ pub fn start(addr: &SocketAddr,
 
     {
         let keystore_path = keystore_path.clone();
-        let accounts_callback = move |_| {
-            let mut accounts: Vec<Value> = vec![];
-
-            let keystore_dir = read_dir(keystore_path.as_ref());
-            if keystore_dir.is_err() {
-                return futures::failed(JsonRpcError::invalid_params("Can't access keystore \
-                                                                     directory"))
-                               .boxed();
+        let accounts_callback = move |_| match list_accounts(keystore_path.as_ref()) {
+            Ok(list) => {
+                let accounts = list.iter().map(|s| Value::String(s.clone())).collect();
+                futures::done(Ok(Value::Array(accounts))).boxed()
             }
-
-            for e in keystore_dir.unwrap() {
-                if e.is_err() {
-                    continue;
-                }
-                let entry = e.unwrap();
-
-                let mut content = String::new();
-                if let Ok(mut keyfile) = File::open(entry.path()) {
-                    if keyfile.read_to_string(&mut content).is_err() {
-                        continue;
-                    }
-
-                    match json::decode::<KeyFile>(&content) {
-                        Ok(kf) => accounts.push(Value::String(kf.address.to_string())),
-                        Err(_) => {
-                            info!("Invalid keystore file format for: {:?}", entry.file_name())
-                        }
-                    }
-                }
-            }
-
-            futures::done(Ok(Value::Array(accounts))).boxed()
+            Err(err) => futures::failed(JsonRpcError::invalid_params(err.to_string())).boxed(),
         };
 
         io.add_async_method("eth_accounts", accounts_callback);
