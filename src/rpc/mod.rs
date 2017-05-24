@@ -7,7 +7,7 @@ mod error;
 pub use self::error::Error;
 use super::contract::Contracts;
 use super::core::{self, Transaction};
-use super::keystore::{KeyFile, KdfDepthLevel};
+use super::keystore::{KdfDepthLevel, KeyFile};
 use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
