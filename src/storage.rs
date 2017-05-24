@@ -38,6 +38,13 @@ pub fn default_path() -> PathBuf {
     config_dir
 }
 
+/// Default path for `Keystore` files
+pub fn default_keystore_path() -> PathBuf {
+    let mut path = default_path();
+    path.push("default_keystore");
+    path
+}
+
 impl Storages {
     /// Create storage using user directory if specified, or default path in other case.
     pub fn new(path: PathBuf) -> Storages {

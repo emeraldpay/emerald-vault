@@ -16,7 +16,7 @@ extern crate regex;
 extern crate rustc_serialize;
 
 use docopt::Docopt;
-use emerald::storage::default_path;
+use emerald::storage::{default_keystore_path, default_path};
 use env_logger::LogBuilder;
 use futures_cpupool::CpuPool;
 use log::{LogLevel, LogLevelFilter};
@@ -96,6 +96,15 @@ fn main() {
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}",
               VERSION.unwrap_or("unknown"));
+    }
+
+    let ks_path = default_keystore_path();
+    if !ks_path.exists() {
+        info!("Init new accounts storage at {}", ks_path.display());
+        if let Err(e) = fs::create_dir(ks_path.as_path()) {
+            error!("Unable to create accounts folder: {}", e);
+            exit(1);
+        }
     }
 
     let node_path = args.flag_client_path

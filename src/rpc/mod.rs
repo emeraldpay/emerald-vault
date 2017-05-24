@@ -6,9 +6,9 @@ mod error;
 
 pub use self::error::Error;
 use super::contract::Contracts;
-use super::core::{self, Address, Transaction};
+use super::core::{self, Transaction};
 use super::keystore::KeyFile;
-use super::storage::{ChainStorage, Storages, default_path};
+use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
@@ -159,43 +159,6 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
     }
 
     {
-        let import_callback = move |p| match Params::parse::<Value>(p) {
-            Ok(ref v) => {
-                let data = v.as_object().unwrap();
-                let kf = data.get("account").unwrap().to_string();
-
-                let name = match data.get("name") {
-                    Some(n) => Some(n.to_string()),
-                    None => None,
-                };
-
-                let descr = match data.get("description") {
-                    Some(d) => Some(d.to_string()),
-                    None => None,
-                };
-
-                match json::decode::<KeyFile>(&kf) {
-                    Ok(kf) => {
-                        let addr = Address::default().to_string();
-                        match kf.flush(&default_path(), None, name, descr) {
-                            Ok(_) => futures::done(Ok(Value::String(addr))).boxed(),
-                            Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
-                        }
-                    }
-                    Err(_) => {
-                        futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
-                                                                    format")))
-                                .boxed()
-                    }
-                }
-            }
-            Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
-        };
-
-        io.add_async_method("backend_importWallet", import_callback);
-    }
-
-    {
         let create_callback = move |p| match Params::parse::<Value>(p) {
             Ok(ref v) if v.as_array().is_some() => {
                 let passwd = v.as_array().and_then(|arr| arr[0].as_str()).unwrap();
@@ -208,7 +171,7 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
                         }
                         let addr = addr_res.unwrap();
 
-                        match kf.flush(&default_path(), Some(addr), None, None) {
+                        match kf.flush(&default_keystore_path()) {
                             Ok(_) => futures::done(Ok(Value::String(addr.to_string()))).boxed(),
                             Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
                         }
@@ -227,6 +190,34 @@ pub fn start(addr: &SocketAddr, client_addr: &SocketAddr, base_path: Option<Path
         };
 
         io.add_async_method("personal_newAccount", create_callback);
+    }
+
+    {
+        let import_callback = move |p| match Params::parse::<Value>(p) {
+            Ok(ref v) => {
+                match json::decode::<KeyFile>(&v.to_string()) {
+                    Ok(kf) => {
+                        let mut addr = "?".to_string();
+                        if kf.address.is_some() {
+                            addr = kf.address.unwrap().to_string();
+                        }
+
+                        match kf.flush(&default_keystore_path()) {
+                            Ok(_) => futures::done(Ok(Value::String(addr))).boxed(),
+                            Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
+                        }
+                    }
+                    Err(_) => {
+                        futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
+                                                                    format")))
+                                .boxed()
+                    }
+                }
+            }
+            Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
+        };
+
+        io.add_async_method("backend_importWallet", import_callback);
     }
 
     let storage = match base_path {
