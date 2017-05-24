@@ -30,7 +30,7 @@ pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
 struct SerializableKeyFile {
     version: u8,
     id: Uuid,
-    address: Option<Address>,
+    address: Address,
     name: Option<String>,
     description: Option<String>,
     crypto: Crypto,
@@ -41,9 +41,9 @@ impl From<KeyFile> for SerializableKeyFile {
         SerializableKeyFile {
             version: CURRENT_VERSION,
             id: key_file.uuid,
-            address: None,
-            name: None,
-            description: None,
+            address: key_file.address,
+            name: key_file.name.clone(),
+            description: key_file.description.clone(),
             crypto: Crypto::from(key_file),
         }
     }
@@ -52,6 +52,9 @@ impl From<KeyFile> for SerializableKeyFile {
 impl Into<KeyFile> for SerializableKeyFile {
     fn into(self) -> KeyFile {
         KeyFile {
+            name: self.name,
+            description: self.description,
+            address: self.address,
             uuid: self.id,
             ..self.crypto.into()
         }
@@ -66,18 +69,10 @@ impl KeyFile {
     /// * `dir` - path to destination directory
     /// * `addr` - a public address (optional)
     ///
-    pub fn flush<P: AsRef<Path>>(&self,
-                                 dir: P,
-                                 addr: Option<Address>,
-                                 name: Option<String>,
-                                 desc: Option<String>)
-                                 -> Result<(), Error> {
+    pub fn flush<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
         let path = dir.as_ref()
-            .with_file_name(&generate_filename(&self.uuid.to_string()));
-        let mut sf = SerializableKeyFile::from(self.clone());
-        sf.address = addr;
-        sf.name = name;
-        sf.description = desc;
+            .join(&generate_filename(&self.uuid.to_string()));
+        let sf = SerializableKeyFile::from(self.clone());
         let json = json::encode(&sf)?;
         let mut file = File::create(&path)?;
         file.write_all(json.as_ref()).ok();

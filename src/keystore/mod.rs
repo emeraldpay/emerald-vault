@@ -31,6 +31,15 @@ pub const CIPHER_IV_BYTES: usize = 16;
 /// A keystore file (account private core encrypted with a passphrase)
 #[derive(Clone, Debug, Eq)]
 pub struct KeyFile {
+    /// User specified name
+    pub name: Option<String>,
+
+    /// User specified description
+    pub description: Option<String>,
+
+    /// Address
+    pub address: Address,
+
     /// UUID v4
     pub uuid: Uuid,
 
@@ -95,6 +104,7 @@ impl KeyFile {
         };
 
         kf.encrypt_key_custom(pk, passphrase, rng);
+        kf.address = kf.decrypt_address(passphrase)?;
 
         Ok(kf)
     }
@@ -146,6 +156,9 @@ impl KeyFile {
 impl Default for KeyFile {
     fn default() -> Self {
         KeyFile {
+            name: None,
+            description: None,
+            address: Address::default(),
             uuid: Uuid::default(),
             dk_length: DEFAULT_DK_LENGTH,
             kdf: Kdf::default(),

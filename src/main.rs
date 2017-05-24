@@ -113,6 +113,7 @@ fn main() {
     };
     info!("security level set to '{}'", sec_level);
 
+
     let node_path = args.flag_client_path
         .parse::<String>()
         .expect("Expect to parse path to node executable");

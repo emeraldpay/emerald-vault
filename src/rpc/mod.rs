@@ -6,9 +6,9 @@ mod error;
 
 pub use self::error::Error;
 use super::contract::Contracts;
-use super::core::{self, Address, Transaction};
+use super::core::{self, Transaction};
 use super::keystore::{KdfDepthLevel, KeyFile};
-use super::storage::{ChainStorage, Storages, default_path};
+use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
@@ -67,6 +67,21 @@ pub fn start(addr: &SocketAddr,
              client_addr: &SocketAddr,
              base_path: Option<PathBuf>,
              sec_level: KdfDepthLevel) {
+    let storage = match base_path {
+        Some(p) => Storages::new(p),
+        None => Storages::default(),
+    };
+
+    if storage.init().is_err() {
+        panic!("Unable to initialize storage");
+    }
+
+    let chain = ChainStorage::new(&storage, "default".to_string());
+    if chain.init().is_err() {
+        panic!("Unable to initialize chain");
+    }
+    let keystore_path = Arc::new(default_keystore_path(&chain.id));
+
     let mut io = IoHandler::default();
     let url = Arc::new(http::AsyncWrapper::new(&format!("http://{}", client_addr)));
 
@@ -161,25 +176,54 @@ pub fn start(addr: &SocketAddr,
     }
 
     {
+        let sec = sec_level.clone();
+        let keystore_path = keystore_path.clone();
+        let create_callback = move |p| match Params::parse::<Value>(p) {
+            Ok(ref v) => {
+                let data = v.get(0);
+                if data.is_none() {
+                    return futures::failed(JsonRpcError::invalid_params("Invalid JSON object"))
+                               .boxed();
+                }
+                let p = data.unwrap();
+
+                if p.as_str().is_none() {
+                    return futures::failed(JsonRpcError::invalid_params("Invalid password format"))
+                               .boxed();
+                }
+                let passwd = p.as_str().unwrap();
+
+                match KeyFile::new(passwd, &sec) {
+                    Ok(kf) => {
+                        let addr = kf.address.to_string();
+                        match kf.flush(keystore_path.as_ref()) {
+                            Ok(_) => futures::done(Ok(Value::String(addr))).boxed(),
+                            Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
+                        }
+                    }
+                    Err(_) => {
+                        futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
+                                                                        format")))
+                                .boxed()
+                    }
+                }
+            }
+            Err(_) => {
+                futures::failed(JsonRpcError::invalid_params("Invalid password format")).boxed()
+            }
+        };
+
+        io.add_async_method("personal_newAccount", create_callback);
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
         let import_callback = move |p| match Params::parse::<Value>(p) {
             Ok(ref v) => {
-                let data = v.as_object().unwrap();
-                let kf = data.get("account").unwrap().to_string();
-
-                let name = match data.get("name") {
-                    Some(n) => Some(n.to_string()),
-                    None => None,
-                };
-
-                let descr = match data.get("description") {
-                    Some(d) => Some(d.to_string()),
-                    None => None,
-                };
-
-                match json::decode::<KeyFile>(&kf) {
+                match json::decode::<KeyFile>(&v.to_string()) {
                     Ok(kf) => {
-                        let addr = Address::default().to_string();
-                        match kf.flush(&default_path(), None, name, descr) {
+                        let addr = kf.address.to_string();
+                        match kf.flush(keystore_path.as_ref()) {
                             Ok(_) => futures::done(Ok(Value::String(addr))).boxed(),
                             Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
                         }
@@ -195,56 +239,6 @@ pub fn start(addr: &SocketAddr,
         };
 
         io.add_async_method("backend_importWallet", import_callback);
-    }
-
-    {
-        let sec = sec_level.clone();
-        let create_callback = move |p| match Params::parse::<Value>(p) {
-            Ok(ref v) if v.as_array().is_some() => {
-                let passwd = v.as_array().and_then(|arr| arr[0].as_str()).unwrap();
-
-                match KeyFile::new(passwd, &sec) {
-                    Ok(kf) => {
-                        let addr_res = kf.decrypt_address(passwd);
-                        if addr_res.is_err() {
-                            return futures::done(Err(JsonRpcError::internal_error())).boxed();
-                        }
-                        let addr = addr_res.unwrap();
-
-                        match kf.flush(&default_path(), Some(addr), None, None) {
-                            Ok(_) => futures::done(Ok(Value::String(addr.to_string()))).boxed(),
-                            Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
-                        }
-                    }
-                    Err(_) => {
-                        futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
-                                                                        format")))
-                                .boxed()
-                    }
-                }
-            }
-            Ok(_) => {
-                futures::done(Err(JsonRpcError::invalid_params("Invalid JSON object"))).boxed()
-            }
-            Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
-        };
-
-        io.add_async_method("personal_newAccount", create_callback);
-    }
-
-    let storage = match base_path {
-        Some(p) => Storages::new(p),
-        None => Storages::default(),
-    };
-
-    if storage.init().is_err() {
-        panic!("Unable to initialize storage");
-    }
-
-    let chain = ChainStorage::new(&storage, "default".to_string());
-
-    if chain.init().is_err() {
-        panic!("Unable to initialize chain");
     }
 
     let dir = chain
