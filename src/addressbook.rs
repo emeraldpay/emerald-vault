@@ -29,6 +29,7 @@ impl Addressbook {
         Addressbook { dir: dir }
     }
 
+    /// Read addressbook files
     pub fn read_json(path: &Path) -> Result<serde_json::Value, AddressbookError> {
         match File::open(path) {
             Ok(f) => serde_json::from_reader(f).or(Err(AddressbookError::IO)),
