@@ -38,6 +38,14 @@ pub fn default_path() -> PathBuf {
     config_dir
 }
 
+/// Default path for `Keystore` files
+pub fn default_keystore_path(chain_id: &str) -> PathBuf {
+    let mut path = default_path();
+    path.push(chain_id);
+    path.push("keystore");
+    path
+}
+
 impl Storages {
     /// Create storage using user directory if specified, or default path in other case.
     pub fn new(path: PathBuf) -> Storages {
@@ -66,7 +74,7 @@ impl Default for Storages {
 #[derive(Debug, Clone)]
 pub struct ChainStorage<'a> {
     /// subdir name
-    id: String,
+    pub id: String,
     /// storage
     base: &'a Storages,
 }
@@ -87,6 +95,12 @@ impl<'a> ChainStorage<'a> {
             }
             fs::create_dir(p)?
         }
+
+        let ks_path = default_keystore_path(&self.id);
+        if !ks_path.exists() {
+            fs::create_dir(ks_path.as_path())?
+        }
+
         Ok(())
     }
 

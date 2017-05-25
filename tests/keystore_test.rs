@@ -6,7 +6,7 @@ extern crate tempdir;
 extern crate uuid;
 
 use emerald::{Address, KECCAK256_BYTES};
-use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile, Prf};
+use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Prf};
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
 use std::fs::File;
@@ -54,6 +54,9 @@ fn should_decode_keyfile_without_address() {
     let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
 
     let exp = KeyFile {
+        name: Some("".to_string()),
+        description: None,
+        address: Address::from_str("0x4c4cfc6470a1dc26916585ef03dfec42deb936ff").unwrap(),
         uuid: Uuid::from_str("37e0d14f-7269-7ca0-4419-d7b13abfeea9").unwrap(),
         dk_length: 32,
         kdf: Kdf::Pbkdf2 {
@@ -97,6 +100,9 @@ fn should_decode_keyfile_with_address() {
                              229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
     let exp = KeyFile {
+        name: None,
+        description: None,
+        address: Address::from_str("0x0047201aed0b69875b24b614dda0270bcd9f11cc").unwrap(),
         uuid: Uuid::from_str("f7ab2bfa-e336-4f45-a31f-beb3dd0689f3").unwrap(),
         dk_length: 32,
         kdf: Kdf::Scrypt {
@@ -136,10 +142,21 @@ fn should_decode_keyfile_with_address() {
 }
 
 #[test]
-fn should_flush_to_file() {
-    let kf = KeyFile::new("1234567890").unwrap();
+fn should_use_security_level() {
+    let sec = KdfDepthLevel::Normal;
+    let kf = KeyFile::new("1234567890", &sec).unwrap();
+    assert_eq!(kf.kdf, Kdf::from(sec));
 
-    assert!(kf.flush(temp_dir().as_path(), None).is_ok());
+    let sec = KdfDepthLevel::High;
+    let kf = KeyFile::new("1234567890", &sec).unwrap();
+    assert_eq!(kf.kdf, Kdf::from(sec));
+}
+
+#[test]
+fn should_flush_to_file() {
+    let kf = KeyFile::new("1234567890", &KdfDepthLevel::Normal).unwrap();
+
+    assert!(kf.flush(temp_dir().as_path()).is_ok());
 }
 
 #[test]

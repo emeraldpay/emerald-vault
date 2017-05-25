@@ -14,9 +14,12 @@ Options:
     --port PORT                 Emerald wallet listen port [default: 1920]
     --client-host HOST          Ethereum client connect to host [default: 127.0.0.1]
     --client-port PORT          Ethereum client connect to port [default: 8545]
-    --client-path PATH          Path to Ethereum's node executable
+    --client-path PATH          Path to Ethereum's executable node client
     --base-path PATH            Base directory path.
                                     If omitted default os-specific value will be used:
                                         + Mac OS X: ~/Library/Emerald
                                         + Linux: ~/.emerald
                                         + Windows: %USERDIR%\.emerald
+    --security-level LEVEL      Defines level of security for cryptographic operations  [default: normal]
+                                ('normal', 'high', 'ultra')
+                                Note: higher level consumes more computation time.

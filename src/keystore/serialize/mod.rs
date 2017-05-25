@@ -13,10 +13,11 @@ use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::core::{self, Address};
 use super::util;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
-use std::fs::{self, File};
+use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
 use std::path::Path;
 use uuid::Uuid;
+
 
 /// Keystore file current version used for serializing
 pub const CURRENT_VERSION: u8 = 3;
@@ -29,7 +30,9 @@ pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
 struct SerializableKeyFile {
     version: u8,
     id: Uuid,
-    address: Option<Address>,
+    address: Address,
+    name: Option<String>,
+    description: Option<String>,
     crypto: Crypto,
 }
 
@@ -38,7 +41,9 @@ impl From<KeyFile> for SerializableKeyFile {
         SerializableKeyFile {
             version: CURRENT_VERSION,
             id: key_file.uuid,
-            address: None,
+            address: key_file.address,
+            name: key_file.name.clone(),
+            description: key_file.description.clone(),
             crypto: Crypto::from(key_file),
         }
     }
@@ -47,6 +52,9 @@ impl From<KeyFile> for SerializableKeyFile {
 impl Into<KeyFile> for SerializableKeyFile {
     fn into(self) -> KeyFile {
         KeyFile {
+            name: self.name,
+            description: self.description,
+            address: self.address,
             uuid: self.id,
             ..self.crypto.into()
         }
@@ -61,11 +69,10 @@ impl KeyFile {
     /// * `dir` - path to destination directory
     /// * `addr` - a public address (optional)
     ///
-    pub fn flush<P: AsRef<Path>>(&self, dir: P, addr: Option<Address>) -> Result<(), Error> {
+    pub fn flush<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
         let path = dir.as_ref()
-            .with_file_name(&generate_filename(&self.uuid.to_string()));
-        let mut sf = SerializableKeyFile::from(self.clone());
-        sf.address = addr;
+            .join(&generate_filename(&self.uuid.to_string()));
+        let sf = SerializableKeyFile::from(self.clone());
         let json = json::encode(&sf)?;
         let mut file = File::create(&path)?;
         file.write_all(json.as_ref()).ok();
@@ -124,6 +131,38 @@ impl Encodable for KeyFile {
     }
 }
 
+/// Lists addresses for all `Keystore` files
+/// in specified folder
+///
+/// # Arguments
+///
+/// * `path` - target directory
+///
+pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<String>, Error> {
+    let mut accounts: Vec<String> = vec![];
+
+    for e in read_dir(path)? {
+        if e.is_err() {
+            continue;
+        }
+        let entry = e.unwrap();
+
+        let mut content = String::new();
+        if let Ok(mut keyfile) = File::open(entry.path()) {
+            if keyfile.read_to_string(&mut content).is_err() {
+                continue;
+            }
+
+            match json::decode::<KeyFile>(&content) {
+                Ok(kf) => accounts.push(kf.address.to_string()),
+                Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
+            }
+        }
+    }
+
+    Ok(accounts)
+}
+
 /// Creates filename for keystore file in format:
 /// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
 ///
@@ -134,7 +173,6 @@ impl Encodable for KeyFile {
 fn generate_filename(uuid: &str) -> String {
     format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
 }
-
 
 #[cfg(test)]
 mod tests {
