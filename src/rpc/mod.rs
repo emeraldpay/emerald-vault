@@ -7,7 +7,7 @@ mod error;
 pub use self::error::Error;
 use super::addressbook::Addressbook;
 use super::contract::Contracts;
-use super::core::{self, Transaction};
+use super::core::{self, Address, Transaction};
 use super::keystore::{KdfDepthLevel, KeyFile, list_accounts};
 use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
@@ -144,16 +144,85 @@ pub fn start(addr: &SocketAddr,
 
     {
         let url = url.clone();
+        let keystore_path = keystore_path.clone();
 
         let callback = move |p| {
-            let pk = KeyFile::default().decrypt_key("");
-            match Transaction::try_from(&p) {
-                Ok(tr) => {
-                    url.request(&MethodParams(ClientMethod::EthSendRawTransaction,
-                                              &tr.to_raw_params(pk.unwrap())))
+            let addr = match p {
+                Params::Array(ref vec) => {
+                    let mut s = vec.get(0);
+                    if s.is_none() {
+                        return futures::failed(JsonRpcError::invalid_params("Invalid parameters \
+                                                                             structure"))
+                                       .boxed();
+                    }
+
+                    s = s.unwrap().get("from");
+                    if s.is_none() {
+                        return futures::failed(JsonRpcError::invalid_params("Can't parse sender \
+                                                                             address"))
+                                       .boxed();
+                    }
+
+                    let from = s.unwrap().as_str();
+                    if from.is_none() {
+                        return futures::failed(JsonRpcError::invalid_params("Invalid sender \
+                                                                             address format"))
+                                       .boxed();
+                    };
+
+                    let addr = from.unwrap().parse::<Address>();
+                    if addr.is_err() {
+                        return futures::failed(JsonRpcError::invalid_params("Can't parse sender \
+                                                                             address"))
+                                       .boxed();
+                    }
+                    addr.unwrap()
                 }
-                Err(err) => {
-                    futures::done(Err(JsonRpcError::invalid_params(err.to_string()))).boxed()
+                _ => {
+                    return futures::failed(JsonRpcError::invalid_params("Invalid JSON object"))
+                               .boxed();
+                }
+            };
+            let passphrase = match p {
+                Params::Array(ref vec) => {
+                    let s = vec.get(1);
+                    if s.is_none() {
+                        return futures::failed(JsonRpcError::invalid_params("Invalid parameters \
+                                                                             structure"))
+                                       .boxed();
+                    }
+                    let pass = s.unwrap().as_str();
+
+                    if pass.is_none() {
+                        return futures::failed(JsonRpcError::invalid_params("Invalid sender \
+                                                                             address format"))
+                                       .boxed();
+                    };
+                    pass.unwrap()
+                }
+                _ => {
+                    return futures::failed(JsonRpcError::invalid_params("Invalid JSON object"))
+                               .boxed();
+                }
+            };
+
+            match KeyFile::search_by_address(&addr, keystore_path.as_ref()) {
+                Ok(kf) => {
+                    let pk = kf.decrypt_key(passphrase);
+                    match Transaction::try_from(&p) {
+                        Ok(tr) => {
+                            url.request(&MethodParams(ClientMethod::EthSendRawTransaction,
+                                                      &tr.to_raw_params(pk.unwrap())))
+                        }
+                        Err(err) => {
+                            futures::done(Err(JsonRpcError::invalid_params(err.to_string())))
+                                .boxed()
+                        }
+                    }
+                }
+
+                Err(_) => {
+                    futures::failed(JsonRpcError::invalid_params("Can't find account")).boxed()
                 }
             }
         };
@@ -178,15 +247,27 @@ pub fn start(addr: &SocketAddr,
 
     {
         let url = url.clone();
+        let callback = move |mut p| {
+            match p {
+                Params::Array(ref mut vec) => {
+                    vec.push(Value::String("latest".to_string()));
+                }
+                _ => {
+                    return futures::failed(JsonRpcError::invalid_params("Invalid JSON object"))
+                               .boxed();
+                }
+            };
 
-        io.add_async_method("eth_traceCall",
-                            move |p| url.request(&MethodParams(ClientMethod::EthTraceCall, &p)));
+            url.request(&MethodParams(ClientMethod::EthTraceCall, &p))
+        };
+
+        io.add_async_method("eth_traceCall", callback);
     }
 
     {
         let sec = sec_level.clone();
         let keystore_path = keystore_path.clone();
-        let create_callback = move |p| match Params::parse::<Value>(p) {
+        let callback = move |p| match Params::parse::<Value>(p) {
             Ok(ref v) => {
                 let data = v.get(0);
                 if data.is_none() {
@@ -221,12 +302,12 @@ pub fn start(addr: &SocketAddr,
             }
         };
 
-        io.add_async_method("personal_newAccount", create_callback);
+        io.add_async_method("personal_newAccount", callback);
     }
 
     {
         let keystore_path = keystore_path.clone();
-        let import_callback = move |p| match Params::parse::<Value>(p) {
+        let callback = move |p| match Params::parse::<Value>(p) {
             Ok(ref v) => {
                 match json::decode::<KeyFile>(&v.to_string()) {
                     Ok(kf) => {
@@ -246,7 +327,7 @@ pub fn start(addr: &SocketAddr,
             Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
         };
 
-        io.add_async_method("backend_importWallet", import_callback);
+        io.add_async_method("backend_importWallet", callback);
     }
 
     let dir = chain
