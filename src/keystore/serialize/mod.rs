@@ -101,6 +101,7 @@ impl KeyFile {
             if file.read_to_string(&mut content).is_err() {
                 continue;
             }
+
             match try_extract_address(&content) {
                 Some(a) if a == *addr => {
                     return Ok(json::decode::<KeyFile>(&content)?);

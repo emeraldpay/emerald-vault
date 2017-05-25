@@ -49,7 +49,7 @@ struct Args {
 
 fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
     Command::new(cmd)
-        .args(&["--testnet", "--fast"])
+        .args(&["--testnet", "--fast", "--rpc"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

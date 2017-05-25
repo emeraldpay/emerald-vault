@@ -22,7 +22,7 @@ impl Encodable for Address {
 /// Try to extract `Address` from JSON formatted text
 pub fn try_extract_address(text: &str) -> Option<Address> {
     lazy_static! {
-        static ref ADDR_RE: Regex = Regex::new(r#"address.+([a-fA-F0-9]{40})"#).unwrap();
+        static ref ADDR_RE: Regex = Regex::new(r#"address.+?([a-fA-F0-9]{40})"#).unwrap();
     }
 
     ADDR_RE
@@ -108,8 +108,8 @@ mod tests {
     fn should_extract_address_with_optional_fields() {
         assert_eq!(try_extract_address(r#"  },
                      "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
-                     "name": "",
-                     "meta": "{}"
+                     "meta": "{}",
+                     "name": "83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63",
                    }"#),
                    Some("0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
                             .parse::<Address>()
