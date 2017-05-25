@@ -11,11 +11,12 @@ extern crate log;
 extern crate docopt;
 extern crate env_logger;
 extern crate emerald;
-extern crate rustc_serialize;
 extern crate futures_cpupool;
 extern crate regex;
+extern crate rustc_serialize;
 
 use docopt::Docopt;
+use emerald::keystore::KdfDepthLevel;
 use emerald::storage::default_path;
 use env_logger::LogBuilder;
 use futures_cpupool::CpuPool;
@@ -26,6 +27,7 @@ use std::ffi::OsStr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::*;
+use std::str::FromStr;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
@@ -42,14 +44,15 @@ struct Args {
     flag_client_port: String,
     flag_client_path: String,
     flag_base_path: String,
+    flag_security_level: String,
 }
 
 fn launch_node<C: AsRef<OsStr>>(cmd: C) -> io::Result<Child> {
     Command::new(cmd)
         .args(&["--testnet", "--fast"])
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .stdin(Stdio::piped())
         .spawn()
 }
 
@@ -98,6 +101,19 @@ fn main() {
               VERSION.unwrap_or("unknown"));
     }
 
+    let sec_level: &str = &args.flag_security_level
+                               .parse::<String>()
+                               .expect("Expect to parse security level");
+    let sec_level = match KdfDepthLevel::from_str(sec_level) {
+        Ok(sec) => sec,
+        Err(e) => {
+            error!("{}", e.to_string());
+            KdfDepthLevel::default()
+        }
+    };
+    info!("security level set to '{}'", sec_level);
+
+
     let node_path = args.flag_client_path
         .parse::<String>()
         .expect("Expect to parse path to node executable");
@@ -107,7 +123,7 @@ fn main() {
     } else {
         let re = Regex::new(r".+?geth").unwrap();
         let path = env::var("PATH").expect("Expect to get PATH variable");
-        let p: Vec<&str> = path.split(":").filter(|s| re.is_match(s)).collect();
+        let p: Vec<&str> = path.split(':').filter(|s| re.is_match(s)).collect();
         PathBuf::from(p[0])
     };
 
@@ -119,7 +135,7 @@ fn main() {
     let mut log_file = match fs::File::create(log.as_path()) {
         Ok(f) => f,
         Err(err) => {
-            error!("Unable to open node log file: {}", err);
+            error!("Unable to open node client log file: {}", err);
             exit(1);
         }
     };
@@ -127,7 +143,7 @@ fn main() {
     let node = match launch_node(np.as_os_str()) {
         Ok(pr) => pr,
         Err(err) => {
-            error!("Unable to launch Ethereum node: {}", err);
+            error!("Unable to launch node client: {}", err);
             exit(1);
         }
     };
@@ -136,5 +152,5 @@ fn main() {
     pool.spawn_fn(move || io::copy(&mut node.stderr.unwrap(), &mut log_file))
         .forget();
 
-    emerald::rpc::start(&addr, &client_addr, base_path);
+    emerald::rpc::start(&addr, &client_addr, base_path, sec_level);
 }
