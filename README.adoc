@@ -26,7 +26,7 @@ Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 === General
 
 * [x] Accounts
-* [ ] Address books (In Progress)
+* [x] Address books
 * [x] Transactions signing
 * [ ] C interface (ABI)
 
@@ -37,11 +37,11 @@ Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
 == Roadmap
 
-=== Internal Beta (Apr'17, In Progress)
+=== Internal Beta (May'17, In Progress)
 
-Internal version with general features for testing and for early dApp adopters.
+Internal version with general features for testing and for early dApp adopters, to use only in testnet.
 
-=== Public Beta (May'17)
+=== Public Beta (July'17)
 
 First public release.
 
