@@ -39,7 +39,7 @@ impl Transaction {
         let mut sig = pk.sign_hash(self.hash())?;
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        sig.v += MAINNET_ID * 2 + 35 - 27;
+        sig.v += _TESTNET_ID * 2 + 35 - 27;
 
         rlp.push(&[sig.v][..]);
         rlp.push(&sig.r[..]);
@@ -54,7 +54,7 @@ impl Transaction {
         let mut rlp = self.to_rlp();
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        rlp.push(&MAINNET_ID);
+        rlp.push(&_TESTNET_ID);
         rlp.push(&[][..]);
         rlp.push(&[][..]);
 
