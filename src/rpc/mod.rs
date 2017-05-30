@@ -248,15 +248,13 @@ pub fn start(addr: &SocketAddr,
                 }
             };
 
-            println!(">> TRACE: {:?}", params);
             match KeyFile::search_by_address(&addr, keystore_path.as_ref()) {
                 Ok(kf) => {
                     let pk = kf.decrypt_key(passphrase);
                     match Transaction::try_from(&params) {
                         Ok(tr) => {
-                            let res = tr.to_raw_params(pk.unwrap());
-                            println!(">> TRACE: {:?}", &res);
-                            url.request(&MethodParams(ClientMethod::EthSendRawTransaction, &res))
+                            url.request(&MethodParams(ClientMethod::EthSendRawTransaction,
+                                                      &tr.to_raw_params(pk.unwrap())))
                         }
                         Err(err) => {
                             futures::done(Err(JsonRpcError::invalid_params(err.to_string())))
