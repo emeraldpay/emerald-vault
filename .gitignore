@@ -1,6 +1,11 @@
+*.o
+*.so
+*.rlib
+*.dll
 *.bk
 *.iml
 *.swp
+*.exe
 .idea
 .vscode
 target
