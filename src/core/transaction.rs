@@ -4,10 +4,10 @@ use super::{Address, Error, PrivateKey};
 use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
 
 // Main chain id
-pub const MAINNET_ID: u8 = 61;
+pub const _MAINNET_ID: u8 = 61;
 
 // Test chain id
-pub const _TESTNET_ID: u8 = 62;
+pub const TESTNET_ID: u8 = 62;
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -39,7 +39,7 @@ impl Transaction {
         let mut sig = pk.sign_hash(self.hash())?;
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        sig.v += _TESTNET_ID * 2 + 35 - 27;
+        sig.v += TESTNET_ID * 2 + 35 - 27;
 
         rlp.push(&[sig.v][..]);
         rlp.push(&sig.r[..]);
@@ -54,7 +54,7 @@ impl Transaction {
         let mut rlp = self.to_rlp();
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        rlp.push(&_TESTNET_ID);
+        rlp.push(&TESTNET_ID);
         rlp.push(&[][..]);
         rlp.push(&[][..]);
 
