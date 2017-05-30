@@ -10,12 +10,13 @@ use super::contract::Contracts;
 use super::core::{self, Address, Transaction};
 use super::keystore::{KdfDepthLevel, KeyFile, list_accounts};
 use super::storage::{ChainStorage, Storages, default_keystore_path};
-use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
+use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_bytes, trim_hex};
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
+use rustc_serialize::hex::FromHex;
 use rustc_serialize::json;
 use serde_json::Value;
 use std::net::SocketAddr;
@@ -62,6 +63,37 @@ pub enum ClientMethod {
 /// PRC method's parameters
 #[derive(Clone, Debug, PartialEq)]
 pub struct MethodParams<'a>(pub ClientMethod, pub &'a Params);
+
+fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Result<Params, Error> {
+    let nonce = url.request(&MethodParams(ClientMethod::EthGetTxCount,
+                                          &Params::Array(vec![Value::String(addr.to_string()),
+                                                      Value::String("latest".to_string())])))
+        .wait()?;
+
+    if let Some(s) = nonce.as_str() {
+        let arr = trim_hex(s).from_hex()?;
+
+        let val = to_u64(trim_bytes(&arr)) + 1;
+        match *p {
+            Params::Array(ref vec) => {
+                let v = vec.get(0).and_then(|v| v.as_object());
+                if v.is_none() {
+                    return Err(Error::InvalidDataFormat("Expected transaction formatted in JSON"
+                                                            .to_string()));
+                }
+
+                let mut obj = v.unwrap().clone();
+                obj.insert("nonce".to_string(),
+                           Value::String(format!("0x{}", val.to_hex())));
+
+                return Ok(Params::Array(vec![Value::Object(obj)]));
+            }
+            _ => return Err(Error::InvalidDataFormat("Expected array of parameters".to_string())),
+        }
+    }
+
+    Err(Error::InvalidDataFormat(format!("Invalid `nonce` value for: {}", addr)))
+}
 
 /// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr,
@@ -162,7 +194,6 @@ pub fn start(addr: &SocketAddr,
                                                                              address"))
                                        .boxed();
                     }
-
                     let from = s.unwrap().as_str();
                     if from.is_none() {
                         return futures::failed(JsonRpcError::invalid_params("Invalid sender \
@@ -183,9 +214,10 @@ pub fn start(addr: &SocketAddr,
                                .boxed();
                 }
             };
+
             let passphrase = match p {
                 Params::Array(ref vec) => {
-                    let s = vec.get(1);
+                    let s = vec[0].get("password");
                     if s.is_none() {
                         return futures::failed(JsonRpcError::invalid_params("Invalid parameters \
                                                                              structure"))
@@ -206,10 +238,20 @@ pub fn start(addr: &SocketAddr,
                 }
             };
 
+            let params = match inject_nonce(url.clone(), &p, &addr) {
+                Ok(v) => v,
+                Err(e) => {
+                    return futures::failed(JsonRpcError::invalid_params(format!("Invalid JSON \
+                                                                                 object: {}",
+                                                                                e.to_string())))
+                                   .boxed()
+                }
+            };
+
             match KeyFile::search_by_address(&addr, keystore_path.as_ref()) {
                 Ok(kf) => {
                     let pk = kf.decrypt_key(passphrase);
-                    match Transaction::try_from(&p) {
+                    match Transaction::try_from(&params) {
                         Ok(tr) => {
                             url.request(&MethodParams(ClientMethod::EthSendRawTransaction,
                                                       &tr.to_raw_params(pk.unwrap())))
@@ -265,7 +307,7 @@ pub fn start(addr: &SocketAddr,
     }
 
     {
-        let sec = sec_level.clone();
+        let sec = sec_level;
         let keystore_path = keystore_path.clone();
         let callback = move |p| match Params::parse::<Value>(p) {
             Ok(ref v) => {

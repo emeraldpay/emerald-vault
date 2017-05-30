@@ -30,6 +30,7 @@ struct JsonData<'a> {
 struct SerializableTransaction {
     #[serde(rename="gasPrice")]
     gas_price: String,
+    nonce: String,
     gas: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     to: Option<String>,
@@ -47,9 +48,10 @@ impl SerializableTransaction {
         let gas_limit = trim_hex(self.gas.as_str()).from_hex()?;
         let gas_price = gp_str.from_hex()?;
         let value = v_str.from_hex()?;
+        let nonce = trim_hex(self.nonce.as_str()).from_hex()?;
 
         Ok(Transaction {
-               nonce: 0u64,
+               nonce: to_u64(&nonce),
                gas_price: to_arr(&align_bytes(&gas_price, 32)),
                gas_limit: to_u64(&gas_limit),
                to: match self.to {
@@ -68,6 +70,7 @@ impl SerializableTransaction {
 impl From<Transaction> for SerializableTransaction {
     fn from(tr: Transaction) -> Self {
         Self {
+            nonce: format!("{:#x}", tr.nonce),
             gas_price: format!("0x{}", tr.gas_price.to_hex()),
             gas: format!("{:#x}", tr.gas_limit),
             to: match tr.to {
@@ -157,6 +160,7 @@ mod tests {
     #[test]
     fn should_create_transaction_with_hex_prefix() {
         let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
+            "nonce": "0x0f",
             "gas": "0x5208",
             "gasPrice": "0x2540be4000",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
@@ -166,6 +170,7 @@ mod tests {
         let tr: Transaction = Transaction::try_from(&params).unwrap();
 
         assert_eq!(tr.gas_limit, 21000u64);
+        assert_eq!(tr.nonce, 15u64);
         assert_eq!(tr.gas_price,
                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                     0, 37, 64, 190, 64, 0]);
@@ -181,6 +186,7 @@ mod tests {
     #[test]
     fn should_create_transaction_without_hex_prefix() {
         let s = r#"[{"from": "2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
+            "nonce": "0f",
             "gas": "5208",
             "gasPrice": "2540be4000",
             "to": "004a301af857a471b9bde4fcc4654dba4f38272a",
@@ -190,6 +196,7 @@ mod tests {
         let tr = Transaction::try_from(&params).unwrap();
 
         assert_eq!(tr.gas_limit, 21000u64);
+        assert_eq!(tr.nonce, 15u64);
         assert_eq!(tr.gas_price,
                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                     0, 37, 64, 190, 64, 0]);
@@ -217,6 +224,7 @@ mod tests {
     fn should_alert_invalid_field() {
         let s = r#"[{"from": "0x2a191e0a15dbcfaf30fa0548ed189bc77f3284ae",
             "gas": "0x5208",
+            "nonce": "0x1001",
             "gasPrice": "0x2540be400",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
             "valuuue": "0xde0b6b3a764000"}]"#;
@@ -229,7 +237,8 @@ mod tests {
     fn should_alert_invalid_data() {
         let s = r#"[{"from": "0xff",
             "gas": "0x5208",
-            "gasPrice": "0x--",
+            "nonce": "0x10--1",
+            "gasPrice": "0x2540be400",
             "to": "0x004a301af857a471b9bde4fcc4654dba4f38272a",
             "value": "0xde0b6b3a764000"}]"#;
         let p: Params = serde_json::from_str(s).unwrap();
