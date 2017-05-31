@@ -113,6 +113,7 @@ impl<'a> Serialize for MethodParams<'a> {
     {
         match self.0 {
             ClientMethod::Version => serialize("web3_clientVersion", self.1, s),
+            ClientMethod::NetVersion => serialize("net_version", self.1, s),
             ClientMethod::EthSyncing => serialize("eth_syncing", self.1, s),
             ClientMethod::EthBlockNumber => serialize("eth_blockNumber", self.1, s),
             ClientMethod::EthAccounts => serialize("eth_accounts", self.1, s),
