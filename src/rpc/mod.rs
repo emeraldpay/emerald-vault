@@ -248,28 +248,30 @@ pub fn start(addr: &SocketAddr,
                 }
             };
 
-            let params = match inject_nonce(url.clone(), &p, &addr) {
-                Ok(v) => v,
-                Err(e) => {
-                    return futures::failed(JsonRpcError::invalid_params(format!("Invalid JSON \
-                                                                                 object: {}",
-                                                                                e.to_string())))
-                                   .boxed()
-                }
-            };
+            let params =
+                match inject_nonce(url.clone(), &p, &addr) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        return futures::failed(JsonRpcError::invalid_params(
+                            format!("Can't read `nonce` value: {}", e.to_string()))).boxed()
+                    }
+                };
 
             match KeyFile::search_by_address(&addr, keystore_path.as_ref()) {
                 Ok(kf) => {
-                    let pk = kf.decrypt_key(passphrase);
-                    match Transaction::try_from(&params) {
-                        Ok(tr) => {
-                            url.request(&MethodParams(ClientMethod::EthSendRawTransaction,
-                                                      &tr.to_raw_params(pk.unwrap())))
+                    if let Ok(pk) = kf.decrypt_key(passphrase) {
+                        match Transaction::try_from(&params) {
+                            Ok(tr) => {
+                                url.request(&MethodParams(ClientMethod::EthSendRawTransaction,
+                                                          &tr.to_raw_params(pk)))
+                            }
+                            Err(err) => {
+                                futures::done(Err(JsonRpcError::invalid_params(err.to_string())))
+                                    .boxed()
+                            }
                         }
-                        Err(err) => {
-                            futures::done(Err(JsonRpcError::invalid_params(err.to_string())))
-                                .boxed()
-                        }
+                    } else {
+                        futures::failed(JsonRpcError::invalid_params("Invalid passphrase")).boxed()
                     }
                 }
 
