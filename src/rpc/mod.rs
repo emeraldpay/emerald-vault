@@ -261,7 +261,7 @@ pub fn start(addr: &SocketAddr,
                             }
                         }
                     } else {
-                        futures::failed(JsonRpcError::invalid_params("Invalid password")).boxed()
+                        futures::failed(JsonRpcError::invalid_params("Invalid passphrase")).boxed()
                     }
                 }
 
