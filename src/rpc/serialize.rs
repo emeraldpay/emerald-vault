@@ -90,9 +90,7 @@ impl From<Transaction> for SerializableTransaction {
 impl Transaction {
     /// Try to deserialize `Transaction` from request parameters
     pub fn try_from(p: &Params) -> Result<Transaction, Error> {
-        let data = p.clone()
-            .parse::<JValue>()
-            .expect("Expect to parse params");
+        let data = p.clone().parse::<JValue>().expect("Expect to parse params");
         let params: &Vec<Value> = data.as_array().expect("Expect to parse Value");
 
         let str: SerializableTransaction = serde_json::from_value(params[0].clone())?;
