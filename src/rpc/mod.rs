@@ -29,6 +29,9 @@ pub enum ClientMethod {
     /// [web3_clientVersion](https://github.com/ethereum/wiki/wiki/JSON-RPC#web3_clientversion)
     Version,
 
+    /// [net_version](https://github.com/ethereum/wiki/wiki/JSON-RPC#net_version)
+    NetVersion,
+
     /// [eth_syncing](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_syncing)
     EthSyncing,
 
@@ -123,6 +126,13 @@ pub fn start(addr: &SocketAddr,
 
         io.add_async_method("web3_clientVersion",
                             move |p| url.request(&MethodParams(ClientMethod::Version, &p)));
+    }
+
+    {
+        let url = url.clone();
+
+        io.add_async_method("net_version",
+                            move |p| url.request(&MethodParams(ClientMethod::NetVersion, &p)));
     }
 
     {

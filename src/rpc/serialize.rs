@@ -90,7 +90,9 @@ impl From<Transaction> for SerializableTransaction {
 impl Transaction {
     /// Try to deserialize `Transaction` from request parameters
     pub fn try_from(p: &Params) -> Result<Transaction, Error> {
-        let data = p.clone().parse::<JValue>().expect("Expect to parse params");
+        let data = p.clone()
+            .parse::<JValue>()
+            .expect("Expect to parse params");
         let params: &Vec<Value> = data.as_array().expect("Expect to parse Value");
 
         let str: SerializableTransaction = serde_json::from_value(params[0].clone())?;
@@ -113,6 +115,7 @@ impl<'a> Serialize for MethodParams<'a> {
     {
         match self.0 {
             ClientMethod::Version => serialize("web3_clientVersion", self.1, s),
+            ClientMethod::NetVersion => serialize("net_version", self.1, s),
             ClientMethod::EthSyncing => serialize("eth_syncing", self.1, s),
             ClientMethod::EthBlockNumber => serialize("eth_blockNumber", self.1, s),
             ClientMethod::EthAccounts => serialize("eth_accounts", self.1, s),
