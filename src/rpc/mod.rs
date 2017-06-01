@@ -23,6 +23,12 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+/// Main chain id
+pub const MAINNET_ID: u8 = 61;
+
+/// Test chain id
+pub const TESTNET_ID: u8 = 62;
+
 /// RPC methods
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum ClientMethod {
@@ -270,7 +276,7 @@ pub fn start(addr: &SocketAddr,
                         match Transaction::try_from(&params) {
                             Ok(tr) => {
                                 url.request(&MethodParams(ClientMethod::EthSendRawTransaction,
-                                                          &tr.to_raw_params(pk)))
+                                                          &tr.to_raw_params(pk, TESTNET_ID)))
                             }
                             Err(err) => {
                                 futures::done(Err(JsonRpcError::invalid_params(err.to_string())))
