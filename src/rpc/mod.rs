@@ -18,7 +18,7 @@ use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
 use rustc_serialize::hex::FromHex;
 use rustc_serialize::json;
-use serde_json::Value;
+use serde_json::{Map, Value};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -154,7 +154,14 @@ pub fn start(addr: &SocketAddr,
         let keystore_path = keystore_path.clone();
         let accounts_callback = move |_| match list_accounts(keystore_path.as_ref()) {
             Ok(list) => {
-                let accounts = list.iter().map(|s| Value::String(s.clone())).collect();
+                let accounts = list.iter()
+                    .map(|&(ref k, ref v)| {
+                             let mut m = Map::new();
+                             m.insert("name".to_string(), Value::String(k.clone()));
+                             m.insert("address".to_string(), Value::String(v.clone()));
+                             Value::Object(m)
+                         })
+                    .collect();
                 futures::done(Ok(Value::Array(accounts))).boxed()
             }
             Err(err) => futures::failed(JsonRpcError::invalid_params(err.to_string())).boxed(),
