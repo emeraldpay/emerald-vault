@@ -139,8 +139,8 @@ impl Encodable for KeyFile {
 ///
 /// * `path` - target directory
 ///
-pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<String>, Error> {
-    let mut accounts: Vec<String> = vec![];
+pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<(String, String)>, Error> {
+    let mut accounts: Vec<(String, String)> = vec![];
 
     for e in read_dir(path)? {
         if e.is_err() {
@@ -155,7 +155,12 @@ pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<String>, Error> {
             }
 
             match json::decode::<KeyFile>(&content) {
-                Ok(kf) => accounts.push(kf.address.to_string()),
+                Ok(kf) => {
+                    match kf.name {
+                        Some(name) => accounts.push((name, kf.address.to_string())),
+                        None => accounts.push(("".to_string(), kf.address.to_string())),
+                    }
+                }
                 Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
             }
         }
