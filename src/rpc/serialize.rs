@@ -98,8 +98,8 @@ impl Transaction {
     }
 
     /// Sign transaction and return as raw data
-    pub fn to_raw_params(&self, pk: PrivateKey) -> Params {
-        self.to_signed_raw(pk)
+    pub fn to_raw_params(&self, pk: PrivateKey, chain: u8) -> Params {
+        self.to_signed_raw(pk, chain)
             .map(|v| format!("0x{}", v.to_hex()))
             .map(|s| Params::Array(vec![JValue::String(s)]))
             .expect("Expect to sign a transaction")
