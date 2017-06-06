@@ -88,7 +88,7 @@ fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Res
                 }
 
                 let mut obj = v.unwrap().clone();
-                obj.insert("nonce".to_string(), Value::String(format!("{}", n)));
+                obj.insert("nonce".to_string(), Value::String(n.to_string()));
 
                 return Ok(Params::Array(vec![Value::Object(obj)]));
             }
