@@ -10,13 +10,12 @@ use super::contract::Contracts;
 use super::core::{self, Address, Transaction};
 use super::keystore::{KdfDepthLevel, KeyFile, list_accounts};
 use super::storage::{ChainStorage, Storages, default_keystore_path};
-use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_bytes, trim_hex};
+use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
-use rustc_serialize::hex::FromHex;
 use rustc_serialize::json;
 use serde_json::{Map, Value};
 use std::net::SocketAddr;
@@ -79,10 +78,7 @@ fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Res
                                                       Value::String("latest".to_string())])))
         .wait()?;
 
-    if let Some(s) = nonce.as_str() {
-        let arr = trim_hex(s).from_hex()?;
-
-        let val = to_u64(trim_bytes(&arr)) + 1;
+    if let Some(n) = nonce.as_str() {
         match *p {
             Params::Array(ref vec) => {
                 let v = vec.get(0).and_then(|v| v.as_object());
@@ -92,8 +88,7 @@ fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Res
                 }
 
                 let mut obj = v.unwrap().clone();
-                obj.insert("nonce".to_string(),
-                           Value::String(format!("0x{}", val.to_hex())));
+                obj.insert("nonce".to_string(), Value::String(format!("{}", n)));
 
                 return Ok(Params::Array(vec![Value::Object(obj)]));
             }
