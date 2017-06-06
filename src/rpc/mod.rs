@@ -342,14 +342,33 @@ pub fn start(addr: &SocketAddr,
                                .boxed();
                 }
                 let p = data.unwrap();
-
-                if p.as_str().is_none() {
-                    return futures::failed(JsonRpcError::invalid_params("Invalid password format"))
+                if p.get("password").is_none() {
+                    return futures::failed(JsonRpcError::invalid_params("Empty passphrase"))
                                .boxed();
                 }
-                let passwd = p.as_str().unwrap();
 
-                match KeyFile::new(passwd, &sec) {
+                let p_str = p.get("password").unwrap().as_str();
+                if p_str.is_none() {
+                    return futures::failed(JsonRpcError::invalid_params("Invalid passphrase \
+                                                                         format"))
+                                   .boxed();
+                }
+
+                let name = p.get("name").map(|n| {
+                    if n.as_str().is_some() {
+                        return Some(n.as_str().unwrap().to_string());
+                    }
+                    None
+                }).unwrap_or(None);
+
+                let description = p.get("description").map(|d| {
+                    if d.as_str().is_some() {
+                        return Some(d.as_str().unwrap().to_string());
+                    }
+                    None
+                }).unwrap_or(None);
+
+                match KeyFile::new(&p_str.unwrap(), &sec, name, description) {
                     Ok(kf) => {
                         let addr = kf.address.to_string();
                         match kf.flush(keystore_path.as_ref()) {
