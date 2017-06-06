@@ -73,13 +73,19 @@ impl KeyFile {
     ///
     /// * `passphrase` - password for key derivation function
     ///
-    pub fn new(passphrase: &str, sec_level: &KdfDepthLevel) -> Result<KeyFile, Error> {
+    pub fn new(passphrase: &str,
+               sec_level: &KdfDepthLevel,
+               name: Option<String>,
+               description: Option<String>)
+               -> Result<KeyFile, Error> {
         let mut rng = os_random();
 
         Self::new_custom(PrivateKey::gen_custom(&mut rng),
                          passphrase,
                          Kdf::from(*sec_level),
-                         &mut rng)
+                         &mut rng,
+                         name,
+                         description)
     }
 
     /// Creates a new `KeyFile` with specified `PrivateKey`, passphrase, key derivation function
@@ -95,10 +101,14 @@ impl KeyFile {
     pub fn new_custom<R: Rng>(pk: PrivateKey,
                               passphrase: &str,
                               kdf: Kdf,
-                              rng: &mut R)
+                              rng: &mut R,
+                              name: Option<String>,
+                              description: Option<String>)
                               -> Result<KeyFile, Error> {
         let mut kf = KeyFile {
             uuid: rng.gen::<Uuid>(),
+            name: name,
+            description: description,
             kdf: kdf,
             kdf_salt: rng.gen::<[u8; KDF_SALT_BYTES]>(),
             ..Default::default()
@@ -218,7 +228,8 @@ mod tests {
     fn should_create_keyfile() {
         let pk = PrivateKey::gen();
         let kdf = Kdf::from((8, 2, 1));
-        let kf = KeyFile::new_custom(pk, "1234567890", kdf, &mut rand::thread_rng()).unwrap();
+        let kf = KeyFile::new_custom(pk, "1234567890", kdf, &mut rand::thread_rng(), None, None)
+            .unwrap();
 
         assert_eq!(kf.kdf, kdf);
         assert_eq!(kf.decrypt_key("1234567890").unwrap(), pk);

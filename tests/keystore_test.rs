@@ -144,17 +144,17 @@ fn should_decode_keyfile_with_address() {
 #[test]
 fn should_use_security_level() {
     let sec = KdfDepthLevel::Normal;
-    let kf = KeyFile::new("1234567890", &sec).unwrap();
+    let kf = KeyFile::new("1234567890", &sec, None, None).unwrap();
     assert_eq!(kf.kdf, Kdf::from(sec));
 
     let sec = KdfDepthLevel::High;
-    let kf = KeyFile::new("1234567890", &sec).unwrap();
+    let kf = KeyFile::new("1234567890", &sec, Some("s".to_string()), None).unwrap();
     assert_eq!(kf.kdf, Kdf::from(sec));
 }
 
 #[test]
 fn should_flush_to_file() {
-    let kf = KeyFile::new("1234567890", &KdfDepthLevel::Normal).unwrap();
+    let kf = KeyFile::new("1234567890", &KdfDepthLevel::Normal, None, None).unwrap();
 
     assert!(kf.flush(temp_dir().as_path()).is_ok());
 }
