@@ -354,19 +354,23 @@ pub fn start(addr: &SocketAddr,
                                    .boxed();
                 }
 
-                let name = p.get("name").map(|n| {
-                    if n.as_str().is_some() {
-                        return Some(n.as_str().unwrap().to_string());
-                    }
-                    None
-                }).unwrap_or(None);
+                let name = p.get("name")
+                    .map(|n| {
+                             if n.as_str().is_some() {
+                                 return Some(n.as_str().unwrap().to_string());
+                             }
+                             None
+                         })
+                    .unwrap_or(None);
 
-                let description = p.get("description").map(|d| {
-                    if d.as_str().is_some() {
-                        return Some(d.as_str().unwrap().to_string());
-                    }
-                    None
-                }).unwrap_or(None);
+                let description = p.get("description")
+                    .map(|d| {
+                             if d.as_str().is_some() {
+                                 return Some(d.as_str().unwrap().to_string());
+                             }
+                             None
+                         })
+                    .unwrap_or(None);
 
                 match KeyFile::new(&p_str.unwrap(), &sec, name, description) {
                     Ok(kf) => {
