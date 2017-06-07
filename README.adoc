@@ -53,13 +53,17 @@ Ensure you have these dependencies installed:
 openssl gcc pkgconfig
 ----
 
+Also ensure that your installation of cargo (version 0.18) and rustc (version 1.17) is up to date.
+
+If your distribution or operating system does not have recent cargo and rustc binaries you can install them from: http://doc.crates.io/
+
 ----
 $ git clone https://github.com/ethereumproject/emerald-rs
 ----
 
 === Usage
 
-How to run emerald connector (on port '1920' by default) on top of ethereum classic node (we recommend link:https://github.com/ethereumproject/go-ethereum[Geth]):
+How to run emerald connector (on port '1920' by default) on top of ethereum classic node. We recommend: https://github.com/ethereumproject/go-ethereum[Geth]:
 
 ----
 $ RUST_LOG=emerald,rpc cargo run
