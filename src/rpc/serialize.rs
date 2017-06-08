@@ -116,6 +116,7 @@ impl<'a> Serialize for MethodParams<'a> {
             ClientMethod::NetVersion => serialize("net_version", self.1, s),
             ClientMethod::EthSyncing => serialize("eth_syncing", self.1, s),
             ClientMethod::EthBlockNumber => serialize("eth_blockNumber", self.1, s),
+            ClientMethod::EthGasPrice => serialize("eth_gasPrice", self.1, s),
             ClientMethod::EthAccounts => serialize("eth_accounts", self.1, s),
             ClientMethod::EthGetBalance => serialize("eth_getBalance", self.1, s),
             ClientMethod::EthGetTxCount => serialize("eth_getTransactionCount", self.1, s),
