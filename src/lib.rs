@@ -30,6 +30,7 @@ extern crate secp256k1;
 extern crate serde;
 extern crate serde_json;
 extern crate uuid;
+extern crate subprocess;
 
 mod core;
 pub mod addressbook;
@@ -38,6 +39,7 @@ pub mod contract;
 pub mod storage;
 pub mod rpc;
 mod util;
+mod node;
 
 pub use self::core::*;
 pub use self::util::*;
