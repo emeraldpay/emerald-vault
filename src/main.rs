@@ -72,6 +72,16 @@ fn main() {
         .parse::<SocketAddr>()
         .expect("Expect to parse client address");
 
+    let client_path_str = args.flag_client_path
+        .parse::<String>()
+        .expect("Expect to parse path to client executable");
+
+    let client_path = if !client_path_str.is_empty() {
+        Some(PathBuf::from(&client_path_str))
+    } else {
+        None
+    };
+
     let base_path_str = args.flag_base_path
         .parse::<String>()
         .expect("Expect to parse base path");
@@ -99,5 +109,5 @@ fn main() {
     };
     info!("security level set to '{}'", sec_level);
 
-    emerald::rpc::start(&addr, &client_addr, base_path, sec_level);
+    emerald::rpc::start(&addr, &client_addr, client_path, base_path, sec_level);
 }

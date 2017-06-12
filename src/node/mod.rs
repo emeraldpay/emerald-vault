@@ -5,8 +5,9 @@ mod geth_control;
 
 pub use self::error::Error;
 pub use self::geth_control::GethController;
-use super::util::timestamp;
+use super::util::{merge_vec, timestamp};
 use std::str::FromStr;
+
 /// Chain type
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Chain {
@@ -39,15 +40,6 @@ pub fn parse_chain(s: &str) -> Result<Chain, Error> {
     Chain::from_str(s)
 }
 
-/// File name for log file.
-/// client-<yyy-mm-ddThh-mm-ss>.log
-pub fn get_log_name() -> String {
-    let mut name = String::from("client-");
-    name.push_str(&timestamp());
-    name.push_str(".log");
-    name
-}
-
 impl FromStr for Chain {
     type Err = Error;
 
@@ -71,7 +63,4 @@ mod tests {
 
     #[test]
     fn should_fail_on_invalid_chain() {}
-
-    #[test]
-    fn should_generate_log_name() {}
 }
