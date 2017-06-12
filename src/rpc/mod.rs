@@ -45,6 +45,9 @@ pub enum ClientMethod {
     /// [eth_blockNumber](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_blocknumber)
     EthBlockNumber,
 
+    /// [eth_gasPrice](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gasprice)
+    EthGasPrice,
+
     /// [eth_accounts](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_accounts)
     EthAccounts,
 
@@ -164,6 +167,12 @@ pub fn start(addr: &SocketAddr,
                             move |p| url.request(&MethodParams(ClientMethod::EthBlockNumber, &p)));
     }
 
+    {
+        let url = url.clone();
+
+        io.add_async_method("eth_gasPrice",
+                            move |p| url.request(&MethodParams(ClientMethod::EthGasPrice, &p)));
+    }
 
     {
         let keystore_path = keystore_path.clone();
