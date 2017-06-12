@@ -38,8 +38,8 @@ pub mod keystore;
 pub mod contract;
 pub mod storage;
 pub mod rpc;
+pub mod node;
 mod util;
-mod node;
 
 pub use self::core::*;
 pub use self::util::*;

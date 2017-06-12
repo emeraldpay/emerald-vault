@@ -9,8 +9,10 @@ use super::addressbook::Addressbook;
 use super::contract::Contracts;
 use super::core::{self, Address, Transaction};
 use super::keystore::{KdfDepthLevel, KeyFile, list_accounts};
-use super::storage::{ChainStorage, Storages, default_keystore_path};
+use super::node::{NodeController, parse_chain};
+use super::storage::{ChainStorage, Storages, default_keystore_path, default_log_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
+use super::node::GethController;
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
@@ -18,9 +20,10 @@ use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
 use rustc_serialize::json;
 use serde_json::{Map, Value};
+use std::cell::RefCell;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 /// Main chain id
 pub const MAINNET_ID: u8 = 61;
@@ -413,6 +416,45 @@ pub fn start(addr: &SocketAddr,
         };
 
         io.add_async_method("backend_importWallet", callback);
+    }
+
+    let nodectl = match GethController::new(default_log_path(&chain.id)) {
+        Ok(ctrl) => ctrl,
+        Err(e) => {
+            panic!("Failed to initialized node controller: {}", e.to_string());
+        }
+    };
+    let nodectl = Arc::new(Mutex::new(nodectl));
+    {
+        let nctl = nodectl.clone();
+        let callback = move |p| match Params::parse::<Value>(p) {
+            Ok(ref v) => {
+                match v.get(0) {
+                    Some(v) => {
+                        if let Some(s) = v.as_str() {
+                            match parse_chain(s).and_then(|c| nodectl.lock().unwrap().switch(c)) {
+                                Ok(_) => return futures::done(Ok(Value::Bool(true))).boxed(),
+                                Err(e) => {
+                                    return futures::failed(
+                                        JsonRpcError::invalid_params(e.to_string())).boxed()
+                                }
+                            }
+                        }
+                        futures::failed(JsonRpcError::invalid_params("Invalid chain label \
+                                                                      format: required string"))
+                                .boxed()
+                    }
+                    None => {
+                        futures::failed(JsonRpcError::invalid_params("Invalid rpc call format: \
+                                                                      required parameters array"))
+                                .boxed()
+                    }
+                }
+            }
+            Err(_) => futures::failed(JsonRpcError::invalid_params("Can't switch chain")).boxed(),
+        };
+
+        io.add_async_method("backend_switchChain", callback);
     }
 
     let dir = chain

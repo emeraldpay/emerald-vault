@@ -1,73 +1,77 @@
 //! # Node managment
 
 mod error;
+mod geth_control;
 
-use subprocess::{self, Exec, Popen, Redirection, PopenConfig};
-use self::error::Error;
-
+pub use self::error::Error;
+pub use self::geth_control::GethController;
+use super::util::timestamp;
+use std::str::FromStr;
+/// Chain type
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Chain {
+    /// Main net
     Mainnet,
-    Testnet
+
+    /// Test net, aka. Morden
+    Testnet,
 }
 
-pub trait NodeControl {
-    ///
-    fn start(&mut self) -> Result<(), Error>;
+/// Control over local client
+pub trait NodeController {
+    /// Starts client with specified chain
+    fn start(&mut self, c: Chain) -> Result<(), Error>;
 
-    ///
+    /// Stops client
     fn stop(&mut self) -> Result<(), Error>;
 
+    /// Switch client to a new chain
+    /// Note: it will destroy previous client's process
     ///
-    fn switch (&mut self, c: Chain) -> Result<(), Error>;
+    /// # Arguments:
+    /// c - chain type
+    ///
+    fn switch(&mut self, c: Chain) -> Result<(), Error>;
 }
 
-static args: Vec<&str> = vec!["geth", "--fast", "--cache=1024"];
-
-struct GethControl {
-    pc: Popen
+/// Try to parse string into chain type
+pub fn parse_chain(s: &str) -> Result<Chain, Error> {
+    Chain::from_str(s)
 }
 
-impl NodeControl for GethControl  {
-    fn start(&mut self) -> Result<(), Error> {
-        self.pc = Popen::create(&args, PopenConfig {
-            stdout: Redirection::Pipe,
-            stderr: Redirection::Merge,
-            ..Default::default()
-        })?
-    }
+/// File name for log file.
+/// client-<yyy-mm-ddThh-mm-ss>.log
+pub fn get_log_name() -> String {
+    let mut name = String::from("client-");
+    name.push_str(&timestamp());
+    name.push_str(".log");
+    name
+}
 
-    fn stop(&mut self) -> Result<(), Error>{
-        self.pc.terminate()?
-    }
+impl FromStr for Chain {
+    type Err = Error;
 
-    fn switch(&mut self, c: Chain) -> Result<(), Error> {
-        match c {
-            Chain::Mainnet => {
-                self.start(Chain::Mainnet)
-            }
-
-            Chain::Testnet => {
-                self.start(Chain::Testnet)
-            }
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "MAINNET" => Ok(Chain::Mainnet),
+            "TESTNET" => Ok(Chain::Testnet),
+            v => Err(Error::InvalidChain(v.to_string())),
         }
     }
 }
 
-impl GethControl {
-    ///
-    fn new() -> Result<Self, Error> {
-        GethControl {
-            pc: Popen::create(&["geth", "--chain=morden", "fast"], PopenConfig {
-                stdout: Redirection::Pipe, ..Default::default()
-            })?
-        }
-    }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tests::*;
+
+    #[test]
+    fn should_parse_chain_type() {}
+
+    #[test]
+    fn should_fail_on_invalid_chain() {}
+
+    #[test]
+    fn should_generate_log_name() {}
 }
-
-///
-pub fn get_control<T: NodeControl>() -> T {
-    GethControl::new()
-}
-
-
-
