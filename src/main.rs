@@ -88,8 +88,8 @@ fn main() {
     }
 
     let sec_level: &str = &args.flag_security_level
-        .parse::<String>()
-        .expect("Expect to parse security level");
+                               .parse::<String>()
+                               .expect("Expect to parse security level");
     let sec_level = match KdfDepthLevel::from_str(sec_level) {
         Ok(sec) => sec,
         Err(e) => {

@@ -138,7 +138,9 @@ impl KeyFile {
         }
 
         Ok(PrivateKey(to_arr(&self.cipher
-                                 .encrypt(&self.cipher_text, &derived[0..16], &self.cipher_iv))))
+                                  .encrypt(&self.cipher_text,
+                                           &derived[0..16],
+                                           &self.cipher_iv))))
     }
 
     /// Encrypt a new private key for keystore file with a passphrase

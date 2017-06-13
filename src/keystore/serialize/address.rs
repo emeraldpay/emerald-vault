@@ -106,20 +106,14 @@ mod tests {
 
     #[test]
     fn should_extract_address_with_optional_fields() {
-        assert_eq!(
-            try_extract_address(
-                r#"  },
+        assert_eq!(try_extract_address(r#"  },
                      "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
                      "meta": "{}",
                      "name": "83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63",
-                   }"#,
-            ),
-            Some(
-                "0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
-                    .parse::<Address>()
-                    .unwrap(),
-            )
-        );
+                   }"#),
+                   Some("0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
+                            .parse::<Address>()
+                            .unwrap()));
     }
 
     #[test]
