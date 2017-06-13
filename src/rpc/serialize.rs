@@ -28,14 +28,14 @@ struct JsonData<'a> {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct SerializableTransaction {
-    #[serde(rename="gasPrice")]
+    #[serde(rename = "gasPrice")]
     gas_price: String,
     nonce: String,
     gas: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     to: Option<String>,
     value: String,
-    #[serde(skip_serializing_if = "Option::is_none", default="empty_data")]
+    #[serde(skip_serializing_if = "Option::is_none", default = "empty_data")]
     data: Option<String>,
 }
 

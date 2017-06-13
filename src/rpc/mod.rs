@@ -78,7 +78,8 @@ pub struct MethodParams<'a>(pub ClientMethod, pub &'a Params);
 fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Result<Params, Error> {
     let nonce = url.request(&MethodParams(ClientMethod::EthGetTxCount,
                                           &Params::Array(vec![Value::String(addr.to_string()),
-                                                      Value::String("latest".to_string())])))
+                                                              Value::String("latest"
+                                                                                .to_string())])))
         .wait()?;
 
     if let Some(n) = nonce.as_str() {
@@ -413,7 +414,7 @@ pub fn start(addr: &SocketAddr,
                     }
                     Err(_) => {
                         futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
-                                                                    format")))
+                                                                        format")))
                                 .boxed()
                     }
                 }
