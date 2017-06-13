@@ -9,7 +9,9 @@ use super::addressbook::Addressbook;
 use super::contract::Contracts;
 use super::core::{self, Address, Transaction};
 use super::keystore::{KdfDepthLevel, KeyFile, list_accounts};
-use super::storage::{ChainStorage, Storages, default_keystore_path};
+use super::node::{NodeController, parse_chain};
+use super::node::GethController;
+use super::storage::{ChainStorage, Storages, default_keystore_path, default_log_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
@@ -20,7 +22,7 @@ use rustc_serialize::json;
 use serde_json::{Map, Value};
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 /// Main chain id
 pub const MAINNET_ID: u8 = 61;
@@ -105,6 +107,7 @@ fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Res
 /// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr,
              client_addr: &SocketAddr,
+             client_path: Option<PathBuf>,
              base_path: Option<PathBuf>,
              sec_level: KdfDepthLevel) {
     let storage = match base_path {
@@ -122,9 +125,20 @@ pub fn start(addr: &SocketAddr,
     }
     let keystore_path = Arc::new(default_keystore_path(&chain.id));
 
+    let nodectl = match client_path {
+        Some(p) => {
+            match GethController::create(p, default_log_path(&chain.id)) {
+                Ok(ctrl) => Some(Arc::new(Mutex::new(ctrl))),
+                Err(e) => {
+                    panic!("Failed to initialized node controller: {}", e.to_string());
+                }
+            }
+        }
+        _ => None,
+    };
+
     let mut io = IoHandler::default();
     let url = Arc::new(http::AsyncWrapper::new(&format!("http://{}", client_addr)));
-
     {
         let url = url.clone();
 
@@ -376,7 +390,7 @@ pub fn start(addr: &SocketAddr,
                          })
                     .unwrap_or(None);
 
-                match KeyFile::new(&p_str.unwrap(), &sec, name, description) {
+                match KeyFile::new(p_str.unwrap(), &sec, name, description) {
                     Ok(kf) => {
                         let addr = kf.address.to_string();
                         match kf.flush(keystore_path.as_ref()) {
@@ -422,6 +436,41 @@ pub fn start(addr: &SocketAddr,
         };
 
         io.add_async_method("backend_importWallet", callback);
+    }
+
+    if nodectl.is_some() {
+        let nctl = nodectl.unwrap().clone();
+        let callback = move |p| match Params::parse::<Value>(p) {
+            Ok(ref v) => {
+                match v.get(0) {
+                    Some(v) => {
+                        if let Some(s) = v.as_str() {
+                            match parse_chain(s).and_then(|c| nctl.lock().unwrap().switch(c)) {
+                                Ok(_) => return futures::done(Ok(Value::Bool(true))).boxed(),
+                                Err(e) => {
+                                    return futures::failed(
+                                        JsonRpcError::invalid_params(e.to_string())).boxed()
+                                }
+                            }
+                        }
+                        futures::failed(JsonRpcError::invalid_params("Invalid chain label \
+                                                                  format: required string"))
+                            .boxed()
+                    }
+                    None => {
+                        futures::failed(JsonRpcError::invalid_params("Invalid rpc call \
+                                                                      format: required \
+                                                                      parameters array"))
+                            .boxed()
+                    }
+                }
+            }
+            Err(_) => {
+                futures::failed(JsonRpcError::invalid_params("Can't switch chain")).boxed()
+            }
+        };
+
+        io.add_async_method("backend_switchChain", callback);
     }
 
     let dir = chain

@@ -49,6 +49,7 @@ hyper = { version = "0.10", optional = true }
 reqwest = { version = "0.6", optional = true }
 clippy = {version = "0.0", optional = true}
 chrono = "0.3"
+subprocess = "0.1.10"
 
 [dev-dependencies]
 tempdir = "0.3"

@@ -46,6 +46,14 @@ pub fn default_keystore_path(chain_id: &str) -> PathBuf {
     path
 }
 
+/// Default path for log files.
+pub fn default_log_path(chain_id: &str) -> PathBuf {
+    let mut path = default_path();
+    path.push(chain_id);
+    path.push("log");
+    path
+}
+
 impl Storages {
     /// Create storage using user directory if specified, or default path in other case.
     pub fn new(path: PathBuf) -> Storages {
@@ -99,6 +107,11 @@ impl<'a> ChainStorage<'a> {
         let ks_path = default_keystore_path(&self.id);
         if !ks_path.exists() {
             fs::create_dir(ks_path.as_path())?
+        }
+
+        let log_path = default_log_path(&self.id);
+        if !log_path.exists() {
+            fs::create_dir(log_path.as_path())?
         }
 
         Ok(())

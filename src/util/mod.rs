@@ -153,6 +153,18 @@ pub fn timestamp() -> String {
         .to_string()
 }
 
+/// Append vector with slice
+/// Returns new vector
+///
+/// # Arguments:
+/// v1 - first vector
+/// v2 - second vector
+pub fn merge_vec<T: Clone>(v: &Vec<T>, s: &[T]) -> Vec<T> {
+    let mut vec = v.clone();
+    vec.extend(s.iter().cloned());
+    vec
+}
+
 
 #[cfg(test)]
 pub use self::tests::*;
