@@ -30,14 +30,14 @@ notifications:
     on_success: never
 before_install:
 #  - rustup target add $TARGET || true
-  - travis_wait cargo install rustfmt --force || true
+  - travis_wait cargo install rustfmt --force --vers 0.8.4 || true
 before_script:
   - export PATH="$PATH":~/.cargo/bin
   - echo "\$ rustfmt --version"
   - cargo fmt -- --version
 script:
   - export RUST_BACKTRACE=1
-# - cargo fmt -- --verbose --write-mode=diff
+  - cargo fmt -- --verbose --write-mode=diff
 #  - test "$TRAVIS_RUST_VERSION" == nightly || cargo test --target=$TARGET --verbose
 #  - test "$TRAVIS_RUST_VERSION" != nightly || cargo test --target=$TARGET --verbose --features "dev"
 # [Two different crates with name 'X' error only when using --target=](https://github.com/rust-lang/cargo/issues/3665)
