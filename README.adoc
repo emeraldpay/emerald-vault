@@ -17,7 +17,7 @@ Ethereum classic offline wallet written in Rust.
 
 Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of plain C library.
 
-If you want UI wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
+if you are looking for for a full-featured UI wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
 
 Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
