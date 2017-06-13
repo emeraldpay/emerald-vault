@@ -78,7 +78,8 @@ pub struct MethodParams<'a>(pub ClientMethod, pub &'a Params);
 fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Result<Params, Error> {
     let nonce = url.request(&MethodParams(ClientMethod::EthGetTxCount,
                                           &Params::Array(vec![Value::String(addr.to_string()),
-                                                      Value::String("latest".to_string())])))
+                                                              Value::String("latest"
+                                                                                .to_string())])))
         .wait()?;
 
     if let Some(n) = nonce.as_str() {
@@ -128,36 +129,41 @@ pub fn start(addr: &SocketAddr,
     {
         let url = url.clone();
 
-        io.add_async_method("web3_clientVersion",
-                            move |p| url.request(&MethodParams(ClientMethod::Version, &p)));
+        io.add_async_method("web3_clientVersion", move |p| {
+            url.request(&MethodParams(ClientMethod::Version, &p))
+        });
     }
 
     {
         let url = url.clone();
 
-        io.add_async_method("net_version",
-                            move |p| url.request(&MethodParams(ClientMethod::NetVersion, &p)));
+        io.add_async_method("net_version", move |p| {
+            url.request(&MethodParams(ClientMethod::NetVersion, &p))
+        });
     }
 
     {
         let url = url.clone();
 
-        io.add_async_method("eth_syncing",
-                            move |p| url.request(&MethodParams(ClientMethod::EthSyncing, &p)));
+        io.add_async_method("eth_syncing", move |p| {
+            url.request(&MethodParams(ClientMethod::EthSyncing, &p))
+        });
     }
 
     {
         let url = url.clone();
 
-        io.add_async_method("eth_blockNumber",
-                            move |p| url.request(&MethodParams(ClientMethod::EthBlockNumber, &p)));
+        io.add_async_method("eth_blockNumber", move |p| {
+            url.request(&MethodParams(ClientMethod::EthBlockNumber, &p))
+        });
     }
 
     {
         let url = url.clone();
 
-        io.add_async_method("eth_gasPrice",
-                            move |p| url.request(&MethodParams(ClientMethod::EthGasPrice, &p)));
+        io.add_async_method("eth_gasPrice", move |p| {
+            url.request(&MethodParams(ClientMethod::EthGasPrice, &p))
+        });
     }
 
     {
@@ -183,22 +189,25 @@ pub fn start(addr: &SocketAddr,
     {
         let url = url.clone();
 
-        io.add_async_method("eth_getBalance",
-                            move |p| url.request(&MethodParams(ClientMethod::EthGetBalance, &p)));
+        io.add_async_method("eth_getBalance", move |p| {
+            url.request(&MethodParams(ClientMethod::EthGetBalance, &p))
+        });
     }
 
     {
         let url = url.clone();
 
-        io.add_async_method("eth_getTransactionCount",
-                            move |p| url.request(&MethodParams(ClientMethod::EthGetTxCount, &p)));
+        io.add_async_method("eth_getTransactionCount", move |p| {
+            url.request(&MethodParams(ClientMethod::EthGetTxCount, &p))
+        });
     }
 
     {
         let url = url.clone();
 
-        io.add_async_method("eth_getTransactionByHash",
-                            move |p| url.request(&MethodParams(ClientMethod::EthGetTxByHash, &p)));
+        io.add_async_method("eth_getTransactionByHash", move |p| {
+            url.request(&MethodParams(ClientMethod::EthGetTxByHash, &p))
+        });
     }
 
     {
@@ -212,33 +221,33 @@ pub fn start(addr: &SocketAddr,
                     if s.is_none() {
                         return futures::failed(JsonRpcError::invalid_params("Invalid parameters \
                                                                              structure"))
-                                       .boxed();
+                            .boxed();
                     }
 
                     s = s.unwrap().get("from");
                     if s.is_none() {
                         return futures::failed(JsonRpcError::invalid_params("Can't parse sender \
                                                                              address"))
-                                       .boxed();
+                            .boxed();
                     }
                     let from = s.unwrap().as_str();
                     if from.is_none() {
                         return futures::failed(JsonRpcError::invalid_params("Invalid sender \
                                                                              address format"))
-                                       .boxed();
+                            .boxed();
                     };
 
                     let addr = from.unwrap().parse::<Address>();
                     if addr.is_err() {
                         return futures::failed(JsonRpcError::invalid_params("Can't parse sender \
                                                                              address"))
-                                       .boxed();
+                            .boxed();
                     }
                     addr.unwrap()
                 }
                 _ => {
                     return futures::failed(JsonRpcError::invalid_params("Invalid JSON object"))
-                               .boxed();
+                        .boxed();
                 }
             };
 
@@ -248,20 +257,20 @@ pub fn start(addr: &SocketAddr,
                     if s.is_none() {
                         return futures::failed(JsonRpcError::invalid_params("Invalid parameters \
                                                                              structure"))
-                                       .boxed();
+                            .boxed();
                     }
                     let pass = s.unwrap().as_str();
 
                     if pass.is_none() {
                         return futures::failed(JsonRpcError::invalid_params("Invalid sender \
                                                                              address format"))
-                                       .boxed();
+                            .boxed();
                     };
                     pass.unwrap()
                 }
                 _ => {
                     return futures::failed(JsonRpcError::invalid_params("Invalid JSON object"))
-                               .boxed();
+                        .boxed();
                 }
             };
 
@@ -312,8 +321,9 @@ pub fn start(addr: &SocketAddr,
     {
         let url = url.clone();
 
-        io.add_async_method("eth_call",
-                            move |p| url.request(&MethodParams(ClientMethod::EthCall, &p)));
+        io.add_async_method("eth_call", move |p| {
+            url.request(&MethodParams(ClientMethod::EthCall, &p))
+        });
     }
 
     {
@@ -325,7 +335,7 @@ pub fn start(addr: &SocketAddr,
                 }
                 _ => {
                     return futures::failed(JsonRpcError::invalid_params("Invalid JSON object"))
-                               .boxed();
+                        .boxed();
                 }
             };
 
@@ -343,19 +353,19 @@ pub fn start(addr: &SocketAddr,
                 let data = v.get(0);
                 if data.is_none() {
                     return futures::failed(JsonRpcError::invalid_params("Invalid JSON object"))
-                               .boxed();
+                        .boxed();
                 }
                 let p = data.unwrap();
                 if p.get("password").is_none() {
                     return futures::failed(JsonRpcError::invalid_params("Empty passphrase"))
-                               .boxed();
+                        .boxed();
                 }
 
                 let p_str = p.get("password").unwrap().as_str();
                 if p_str.is_none() {
                     return futures::failed(JsonRpcError::invalid_params("Invalid passphrase \
                                                                          format"))
-                                   .boxed();
+                        .boxed();
                 }
 
                 let name = p.get("name")
@@ -387,7 +397,7 @@ pub fn start(addr: &SocketAddr,
                     Err(_) => {
                         futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
                                                                         format")))
-                                .boxed()
+                            .boxed()
                     }
                 }
             }
@@ -413,8 +423,8 @@ pub fn start(addr: &SocketAddr,
                     }
                     Err(_) => {
                         futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
-                                                                    format")))
-                                .boxed()
+                                                                        format")))
+                            .boxed()
                     }
                 }
             }
@@ -433,8 +443,9 @@ pub fn start(addr: &SocketAddr,
     {
         let contracts = contracts.clone();
 
-        io.add_async_method("emerald_contracts",
-                            move |_| futures::finished(Value::Array(contracts.list())).boxed());
+        io.add_async_method("emerald_contracts", move |_| {
+            futures::finished(Value::Array(contracts.list())).boxed()
+        });
     }
 
     {
@@ -460,8 +471,9 @@ pub fn start(addr: &SocketAddr,
     {
         let addressbook = addressbook.clone();
 
-        io.add_async_method("emerald_addressBook",
-                            move |_| futures::finished(Value::Array(addressbook.list())).boxed());
+        io.add_async_method("emerald_addressBook", move |_| {
+            futures::finished(Value::Array(addressbook.list())).boxed()
+        });
     }
 
     {

@@ -305,7 +305,7 @@ mod tests {
          tristique, lorem libero aliquet arcu, non interdum tellus lectus sit amet \
          eros. Cras rhoncus, metus ac ornare cursus, dolor justo ultrices metus, \
          at ullamcorper volutpat"
-                .write_rlp(&mut buf);
+            .write_rlp(&mut buf);
         assert_eq!("b904004c6f72656d20697073756d20646f6c6f722073697420616d65742c2063\
                     6f6e73656374657475722061646970697363696e6720656c69742e2043757261\
                     6269747572206d6175726973206d61676e612c20737573636970697420736564\

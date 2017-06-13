@@ -28,7 +28,7 @@ fn should_add_contract() {
     let json = serde_json::from_str::<Value>("{\"version\": \"1.0\", \
                                               \"address\":\
                                               \"0x085fb4f24031eaedbc2b611aa528f22343eb52db\"}")
-            .unwrap();
+        .unwrap();
     c.add(&json).ok();
     let act = c.list();
     assert_eq!(act.len(), 1);
