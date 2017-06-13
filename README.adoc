@@ -17,7 +17,7 @@ Ethereum classic offline wallet written in Rust.
 
 Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of plain C library.
 
-if you are looking for for a full-featured UI wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
+If you are looking for for a full-featured UI wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
 
 Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
@@ -46,9 +46,9 @@ If your distribution or operating system does not have recent cargo and rustc bi
 $ git clone https://github.com/ethereumproject/emerald-rs
 ----
 
-=== Usage
+== Usage
 
-How to run emerald connector (on port '1920' by default):
+How to run emerald connector (by default on port '1920'):
 
 ----
 $ RUST_LOG=emerald,rpc cargo run
@@ -56,7 +56,7 @@ $ RUST_LOG=emerald,rpc cargo run
 
 For more details look at link:./usage.txt[usage].
 
-=== Examples
+== Examples
 
 ----
 extern crate emerald;
@@ -73,6 +73,10 @@ fn main() {
 ----
 
 For more see link:./examples[examples folder].
+
+== References
+
+=== <<docs/api.adoc#,JSON RPC API>>
 
 == License
 

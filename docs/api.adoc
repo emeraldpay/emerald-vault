@@ -1,0 +1,60 @@
+ifdef::env-github,env-browser[:outfilesuffix: .adoc]
+ifndef::rootdir[:rootdir: ../]
+:imagesdir: {rootdir}/images
+:toc:
+
+= JSON RPC API
+
+JSON-RPC is a remote procedure call protocol encoded in JSON. You must call the API with a POST HTTP request.
+
+We use the link:http://www.jsonrpc.org/specification[version 2 of the protocol].
+
+== emerald_currentVersion
+
+Returns the current version.
+
+Arguments: none
+
+Result:
+
+    * version - the current version
+
+== emerald_newAccount(name, desc, passphrase)
+
+Creates new keystore file and caches it.
+
+Arguments:
+
+    * name - name for account (optional)
+    * desc - free form description (optional)
+    * passphrase - passphrase used to encode keyfile
+
+Result:
+
+    * addr - address of created keyfile
+
+== emerald_importKeyfile(data, passphrase)
+
+Import previously created keystore file into connector.
+
+Arguments:
+
+    * data - keyfile to be imported into connector
+    * passphrase - passphrase used to encode keyfile
+
+Result:
+
+    * addr - address of imported keyfile
+
+== emerald_signTransaction(tr, passphrase)
+
+Signs transaction offline with private key from keystore file by given passphrase.
+
+Arguments:
+
+    * tr - given transaction
+    * pass - passphrase used to extract private key
+
+Result:
+
+    * tr_signed - signed transaction encoded into `RLP` format
