@@ -37,7 +37,7 @@ before_script:
   - cargo fmt -- --version
 script:
   - export RUST_BACKTRACE=1
-  - cargo fmt -- --verbose --write-mode=diff
+# - cargo fmt -- --verbose --write-mode=diff
 #  - test "$TRAVIS_RUST_VERSION" == nightly || cargo test --target=$TARGET --verbose
 #  - test "$TRAVIS_RUST_VERSION" != nightly || cargo test --target=$TARGET --verbose --features "dev"
 # [Two different crates with name 'X' error only when using --target=](https://github.com/rust-lang/cargo/issues/3665)
