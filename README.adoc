@@ -13,11 +13,11 @@ ifdef::badges[]
 = Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/dulanov/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/dulanov/emerald-rs"] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/ethereumproject/emerald-rs/blob/master/LICENSE"]
 endif::[]
 
-Ethereum classic web3 like connector written in Rust.
+Ethereum classic offline wallet written in Rust.
 
 Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of plain C library.
 
-As a reference dApp implementation take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
+If you want UI wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
 
 Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
@@ -26,24 +26,9 @@ Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 === General
 
 * [x] Accounts
-* [x] Address books
 * [x] Transactions signing
+* [ ] Smart contracts (ABI)
 * [ ] C interface (ABI)
-
-=== Transport
-
-* [ ] IPC
-* [x] HTTP
-
-== Roadmap
-
-=== Internal Beta (May'17, In Progress)
-
-Internal version with general features for testing and for early dApp adopters, to use only in testnet.
-
-=== Public Beta (July'17)
-
-First public release.
 
 == Installation
 
@@ -63,7 +48,7 @@ $ git clone https://github.com/ethereumproject/emerald-rs
 
 === Usage
 
-How to run emerald connector (on port '1920' by default) on top of ethereum classic node. We recommend: https://github.com/ethereumproject/go-ethereum[Geth]:
+How to run emerald connector (on port '1920' by default):
 
 ----
 $ RUST_LOG=emerald,rpc cargo run
@@ -83,11 +68,7 @@ fn main() {
         .parse::<SocketAddr>()
         .expect("Expect to parse address");
 
-    let client_addr = "127.0.0.1:8545"
-        .parse::<SocketAddr>()
-        .expect("Expect to parse client address");
-
-    emerald::start(&addr, &client_addr, None);
+    emerald::start(&addr, None);
 }
 ----
 
