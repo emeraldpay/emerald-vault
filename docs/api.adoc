@@ -12,11 +12,11 @@ We use the http://www.jsonrpc.org/specification[version 2 of the protocol].
 
 Identify if and when the originator fails or is no longer available.
 
-Parameters: none
+*Parameters*: none
 
-Result: timestamp (Number) - seconds since Jan 01 1970 (UTC)
+*Result*: `timestamp` (Number) - seconds since Jan 01 1970 (UTC)
 
-Examples:
+*Examples*:
 
 ----
 --> {"jsonrpc": "2.0", "method": "emerald_heartbeat", "params": [], "id": 1}
@@ -27,11 +27,11 @@ Examples:
 
 Returns the client current version.
 
-Parameters: none
+*Parameters*: none
 
-Result: version (String) - current version according http://semver.org/[Semantic Versioning]
+*Result*: `version` (String) - current version according http://semver.org/[Semantic Versioning]
 
-Examples:
+*Examples*:
 
 ----
 --> {"jsonrpc": "2.0", "method": "emerald_currentVersion", "params": [], "id": 1}
@@ -42,16 +42,16 @@ Examples:
 
 Creates new account and store it locally as an encoded by passphrase keystore file.
 
-Parameters:
+*Parameters*:
 
-    * account (Object, optional)
-    ** name (String) - account name
-    ** description (String, optional) - account description
-    * passphrase (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
+    * `account` (Object, optional)
+    ** `name` (String) - account name
+    ** `description` (String, optional) - account description
+    * `passphrase` (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
 
-Result: public address (String) - hex-encoded 20 bytes string
+*Result*: `address` (String) - hex-encoded 20 bytes public address
 
-Examples:
+*Examples*:
 
 .Simple format, only `passphrase`
 ----
@@ -75,21 +75,21 @@ Examples:
 
 Signs transaction offline with private key from keystore file by given passphrase.
 
-Parameters:
+*Parameters*:
 
-    * transaction (Object)
-    ** from (String) - the address the transaction is send from (hex-encoded 20 Bytes)
-    ** to (String, optional when creating new contract) - the address the transaction is directed to (hex-encoded 20 Bytes)
-    ** gas (String) - Hex-encoded integer of the gas provided for the transaction execution, it will return unused gas
-    ** gasPrice (String) - Hex-encoded integer of the gasPrice used for each paid gas
-    ** value (String, optional) - Hex-encoded integer of the value send with this transaction
-    ** data (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
-    ** nonce (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
-    * passphrase (String) - passphrase used to encode keyfile
+    * `transaction` (Object)
+    ** `from` (String) - the address the transaction is send from (hex-encoded 20 Bytes)
+    ** `to` (String, optional when creating new contract) - the address the transaction is directed to (hex-encoded 20 Bytes)
+    ** `gas` (String) - Hex-encoded integer of the gas provided for the transaction execution, it will return unused gas
+    ** `gasPrice` (String) - Hex-encoded integer of the gasPrice used for each paid gas
+    ** `value` (String, optional) - Hex-encoded integer of the value send with this transaction
+    ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
+    ** `nonce` (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
+    * `passphrase` (String) - passphrase used to encode keyfile
 
-Result: data (String) - hex-encoded signed raw transaction data
+*Result*: `data` (String) - hex-encoded signed raw transaction data
 
-Examples:
+*Examples*:
 
 ----
 --> {"jsonrpc": "2.0",
