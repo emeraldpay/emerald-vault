@@ -1,5 +1,7 @@
 //! # JSON RPC module
 
+#[macro_use]
+mod macros;
 mod http;
 mod serialize;
 mod error;
@@ -111,32 +113,6 @@ fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Res
 pub fn start(addr: &SocketAddr,
              base_path: Option<PathBuf>,
              sec_level: Option<KdfDepthLevel>) {
-    macro_rules! parse_params {
-        ( $p:ident : $t:ty ) => (
-            let $p: Result<$t, JsonRpcError> = $p.parse();
-            if $p.is_err() {
-                return futures::failed($p.err().unwrap()).boxed();
-            }
-            let $p = $p.unwrap();
-        );
-    }
-
-    macro_rules! put_result {
-        ( $p:expr ) => (
-            let value = to_value($p);
-            if value.is_err() {
-                return futures::failed(JsonRpcError::internal_error()).boxed();
-            }
-            return futures::finished(value.unwrap()).boxed();
-        )
-    }
-
-    macro_rules! put_error {
-        ( $p:expr ) => (
-            return futures::failed($p).boxed();
-        )
-    }
-
     let sec_level = sec_level.unwrap_or(KdfDepthLevel::default());
 
     let storage = match base_path {
