@@ -1,5 +1,4 @@
 //! # Ethereum Classic web3 like connector library
-
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
