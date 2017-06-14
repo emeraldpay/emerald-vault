@@ -41,6 +41,7 @@ mod util;
 
 pub use self::core::*;
 pub use self::util::*;
+pub use self::rpc::start;
 
 #[cfg(test)]
 mod tests {

@@ -106,7 +106,9 @@ fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Res
 /// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr,
              base_path: Option<PathBuf>,
-             sec_level: KdfDepthLevel) {
+             sec_level: Option<KdfDepthLevel>) {
+    let sec_level = sec_level.unwrap_or(KdfDepthLevel::default());
+
     let storage = match base_path {
         Some(p) => Storages::new(p),
         None => Storages::default(),

@@ -92,5 +92,5 @@ fn main() {
     };
     info!("security level set to '{}'", sec_level);
 
-    emerald::rpc::start(&addr, base_path, sec_level);
+    emerald::rpc::start(&addr, base_path, Some(sec_level));
 }
