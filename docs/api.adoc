@@ -8,7 +8,9 @@ ifndef::rootdir[:rootdir: ../]
 JSON-RPC is a remote procedure call protocol encoded in JSON.
 We use the http://www.jsonrpc.org/specification[version 2 of the protocol].
 
-== emerald_heartbeat
+== Methods
+
+=== emerald_heartbeat
 
 Identify if and when the originator fails or is no longer available.
 
@@ -23,7 +25,7 @@ Identify if and when the originator fails or is no longer available.
 <-- {"jsonrpc": "2.0", "result": 1497439590, "id": 1}
 ----
 
-== emerald_currentVersion
+=== emerald_currentVersion
 
 Returns the client current version.
 
@@ -38,13 +40,35 @@ Returns the client current version.
 <-- {"jsonrpc": "2.0", "result": "0.9", "id": 1}
 ----
 
-== emerald_listAccounts
+=== emerald_listAccounts
 
-Return the list of all accounts exist in the keystore.
+Return the list of all not hidden accounts from the keystore.
 
-TBD
+*Parameters*: none
 
-== emerald_newAccount
+*Result*:
+
+    * `accounts` (Array)
+    ** `account` (Object) - an account
+    *** `name` (String, optional) - account name
+    *** `description` (String, optional) - account description
+    *** `address` (String) - hex-encoded 20 bytes public address
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_listAccounts", "params": [], "id": 1}
+<-- {"jsonrpc": "2.0", "result": [
+        {"address": "0x5e97870f263700f46aa00d967821199b9bc5a120"},
+        {"name": "main",
+         "address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}],
+        {"name": "test",
+         "description": "A test account",
+         "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}],
+     "id": 1}
+----
+
+=== emerald_newAccount
 
 Creates new account and store it locally as an encoded by passphrase keystore file.
 
@@ -77,43 +101,178 @@ Creates new account and store it locally as an encoded by passphrase keystore fi
 <-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
 ----
 
-== emerald_updateAccount
+=== emerald_updateAccount
 
 Update not secured by passphrase account metadata, like `name` and `description`.
 
-TBD
+*Parameters*:
 
-== emerald_shakeAccount
+    * `account` (Object)
+    ** `name` (String, optional) - account name
+    ** `description` (String, optional) - account description
+    ** `address` (String) - hex-encoded 20 bytes public address
+
+*Result*: `accept` (Boolean) - `true` if required account exists
+
+*Examples*:
+
+.If required account exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_updateAccount", "params": {"name": "new", "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}, "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+.If required account doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_updateAccount", "params": {"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}, "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
+----
+
+=== emerald_shakeAccount
 
 Recreate account with the same public address, but with a different passphrase.
 
-TBD
+*Parameters*:
 
-== emerald_hideAccount
+    * `account` (Object, optional)
+    ** `address` (String) - hex-encoded 20 bytes public address
+    ** `passphrase` (String) - old passphrase used to encode keyfile
+    * `new_passphrase` (String) - new passphrase to recreate keyfile (recommend to use 8+ words with good entropy)
+
+*Result*: `accept` (Boolean) - `true` if required account exists
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_shakeAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "passphrase": "1234567890"}, "123"], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+=== emerald_hideAccount
 
 Hide an account from the list returned by `emerald_listAccounts`.
 
-TBD
+*Parameters*:
 
-== emerald_revealAccount
+    * `address` (String) - hex-encoded 20 bytes public address
 
-Reveal an account before that hidden by the command `emerald_hideAccount`.
+*Result*: `accept` (Boolean) - `true` if required account exists
 
-TBD
+*Examples*:
 
-== emerald_importKeyfile
+.If required account exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_hideAccount", "params": ["0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
 
-Import a new account from external keyfile.
+.If required account doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_hideAccount", "params": ["0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"], "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
+----
 
-TBD
+=== emerald_revealAccount
 
-== emerald_exportKeyfile
+Reveal an account that was hidden before by the command `emerald_hideAccount`.
 
-Returns a keyfile associated with the account.
+*Parameters*:
 
-TBD
+    * `address` (String) - hex-encoded 20 bytes public address
 
-== emerald_signTransaction
+*Result*: `accept` (Boolean) - `true` if required account exists
+
+*Examples*:
+
+.If required account exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_revealAccount", "params": ["0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+.If required account doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_revealAccount", "params": ["0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"], "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
+----
+
+=== emerald_importAccount
+
+Import a new account from an external keyfile.
+
+*Parameters*:
+
+    * `keyfile` (Object) - should be totally comply with the https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
+
+*Result*: `address` (String) - successfully imported hex-encoded 20 bytes public address
+
+*Examples*:
+
+.If required account exists
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_importAccount",
+     "params":
+        {"version": 3,
+         "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
+         "address": "0047201aed0b69875b24b614dda0270bcd9f11cc",
+         "crypto": {
+           "ciphertext": "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
+           "cipherparams": {
+             "iv": "9df1649dd1c50f2153917e3b9e7164e9"
+           },
+           "cipher": "aes-128-ctr",
+           "kdf": "scrypt",
+           "kdfparams": {
+             "dklen": 32,
+             "salt": "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
+             "n": 1024,
+             "r": 8,
+             "p": 1
+           },
+           "mac": "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"}},
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0x0047201aed0b69875b24b614dda0270bcd9f11cc", "id": 1}
+----
+
+=== emerald_exportAccount
+
+Returns an account keyfile associated with the account.
+
+*Parameters*:
+
+    * `address` (String) - hex-encoded 20 bytes public address
+
+*Result*: `keyfile` (Object) - account in https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_exportAccount", "params": ["0x0047201aed0b69875b24b614dda0270bcd9f11cc"], "id": 1}
+<-- {"jsonrpc": "2.0",
+     "result":
+        {"version": 3,
+         "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
+         "address": "0047201aed0b69875b24b614dda0270bcd9f11cc",
+         "crypto": {
+           "ciphertext": "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
+           "cipherparams": {
+             "iv": "9df1649dd1c50f2153917e3b9e7164e9"
+           },
+           "cipher": "aes-128-ctr",
+           "kdf": "scrypt",
+           "kdfparams": {
+             "dklen": 32,
+             "salt": "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
+             "n": 1024,
+             "r": 8,
+             "p": 1
+           },
+           "mac": "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"}},
+     "id": 1}
+----
+
+=== emerald_signTransaction
 
 Signs transaction offline with private key from keystore file by given passphrase.
 
@@ -148,3 +307,13 @@ Signs transaction offline with private key from keystore file by given passphras
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675", "id": 1}
 ----
+
+== Custom Errors
+
+|===
+|Code |Message |Meaning
+
+|-32000
+|Account doesn't exist
+|Nothing is found at the specified account public address
+|===
