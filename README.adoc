@@ -76,7 +76,7 @@ For more see link:./examples[examples folder].
 
 == References
 
-=== <<docs/api.adoc#,JSON RPC API>>
+=== <<docs/api.adoc#,JSON-RPC API>>
 
 == License
 

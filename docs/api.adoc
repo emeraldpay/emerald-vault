@@ -3,7 +3,7 @@ ifndef::rootdir[:rootdir: ../]
 :imagesdir: {rootdir}/images
 :toc:
 
-= JSON RPC API
+= JSON-RPC API
 
 JSON-RPC is a remote procedure call protocol encoded in JSON.
 We use the http://www.jsonrpc.org/specification[version 2 of the protocol].
