@@ -14,6 +14,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
 
+extern crate time;
 extern crate byteorder;
 extern crate chrono;
 extern crate crypto;
@@ -42,6 +43,11 @@ mod util;
 pub use self::core::*;
 pub use self::util::*;
 pub use self::rpc::start;
+
+/// Get the current Emerald version.
+pub fn version() -> &'static str {
+    "v0.0.1"
+}
 
 #[cfg(test)]
 mod tests {

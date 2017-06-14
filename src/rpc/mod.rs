@@ -4,6 +4,8 @@ mod http;
 mod serialize;
 mod error;
 
+use self::serialize::{RPCTransaction, RPCAccount};
+
 pub use self::error::Error;
 use super::addressbook::Addressbook;
 use super::contract::Contracts;
@@ -17,10 +19,12 @@ use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
 use rustc_serialize::json;
-use serde_json::{Map, Value};
+use serde_json::{to_value, Map, Value};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::str::FromStr;
+use time::get_time;
 
 /// Main chain id
 pub const MAINNET_ID: u8 = 61;
@@ -107,6 +111,32 @@ fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Res
 pub fn start(addr: &SocketAddr,
              base_path: Option<PathBuf>,
              sec_level: Option<KdfDepthLevel>) {
+    macro_rules! parse_params {
+        ( $p:ident : $t:ty ) => (
+            let $p: Result<$t, JsonRpcError> = $p.parse();
+            if $p.is_err() {
+                return futures::failed($p.err().unwrap()).boxed();
+            }
+            let $p = $p.unwrap();
+        );
+    }
+
+    macro_rules! put_result {
+        ( $p:expr ) => (
+            let value = to_value($p);
+            if value.is_err() {
+                return futures::failed(JsonRpcError::internal_error()).boxed();
+            }
+            return futures::finished(value.unwrap()).boxed();
+        )
+    }
+
+    macro_rules! put_error {
+        ( $p:expr ) => (
+            return futures::failed($p).boxed();
+        )
+    }
+
     let sec_level = sec_level.unwrap_or(KdfDepthLevel::default());
 
     let storage = match base_path {
@@ -127,173 +157,74 @@ pub fn start(addr: &SocketAddr,
     let mut io = IoHandler::default();
 
     {
+        io.add_async_method("emerald_currentVersion", move |p: Params| {
+            parse_params!(p: ());
+            put_result!(::version());
+        });
+    }
+
+    {
+        io.add_async_method("emerald_heartbeat", move |p: Params| {
+            parse_params!(p: ());
+            put_result!(get_time().sec);
+        });
+    }
+
+    {
         let sec = sec_level;
         let keystore_path = keystore_path.clone();
-        let callback = move |p| match Params::parse::<Value>(p) {
-            Ok(ref v) => {
-                let data = v.get(0);
-                if data.is_none() {
-                    return futures::failed(JsonRpcError::invalid_params("Invalid JSON object"))
-                               .boxed();
-                }
-                let p = data.unwrap();
-                if p.get("password").is_none() {
-                    return futures::failed(JsonRpcError::invalid_params("Empty passphrase"))
-                               .boxed();
-                }
 
-                let p_str = p.get("password").unwrap().as_str();
-                if p_str.is_none() {
-                    return futures::failed(JsonRpcError::invalid_params("Invalid passphrase \
-                                                                         format"))
-                                   .boxed();
-                }
-
-                let name = p.get("name")
-                    .map(|n| {
-                             if n.as_str().is_some() {
-                                 return Some(n.as_str().unwrap().to_string());
-                             }
-                             None
-                         })
-                    .unwrap_or(None);
-
-                let description = p.get("description")
-                    .map(|d| {
-                             if d.as_str().is_some() {
-                                 return Some(d.as_str().unwrap().to_string());
-                             }
-                             None
-                         })
-                    .unwrap_or(None);
-
-                match KeyFile::new(&p_str.unwrap(), &sec, name, description) {
-                    Ok(kf) => {
-                        let addr = kf.address.to_string();
-                        match kf.flush(keystore_path.as_ref()) {
-                            Ok(_) => futures::done(Ok(Value::String(addr))).boxed(),
-                            Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
-                        }
-                    }
-                    Err(_) => {
-                        futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
-                                                                        format")))
-                                .boxed()
-                    }
-                }
+        io.add_async_method("emerald_newAccount", move |p: Params| {
+            parse_params!(p: (RPCAccount, String));
+            if p.1.is_empty() {
+                put_error!(JsonRpcError::invalid_params("Empty passphrase"));
             }
-            Err(_) => {
-                futures::failed(JsonRpcError::invalid_params("Invalid password format")).boxed()
+            match KeyFile::new(&p.1, &sec, Some(p.0.name), Some(p.0.description)) {
+                Ok(kf) => {
+                    let addr = kf.address.to_string();
+                    match kf.flush(keystore_path.as_ref()) {
+                        Ok(_) => { put_result!(addr); },
+                        Err(_) => { put_error!(JsonRpcError::internal_error()); },
+                    }
+                },
+                Err(_) => {
+                    put_error!(JsonRpcError::invalid_params("Invalid Keyfile data \
+                                                             format"));
+                },
             }
-        };
-
-        io.add_async_method("personal_newAccount", callback);
+        });
     }
 
     {
         let keystore_path = keystore_path.clone();
-        let callback = move |p| match Params::parse::<Value>(p) {
-            Ok(ref v) => {
-                match json::decode::<KeyFile>(&v.to_string()) {
-                    Ok(kf) => {
-                        let addr = kf.address.to_string();
-                        match kf.flush(keystore_path.as_ref()) {
-                            Ok(_) => futures::done(Ok(Value::String(addr))).boxed(),
-                            Err(_) => futures::done(Err(JsonRpcError::internal_error())).boxed(),
+
+        io.add_async_method("emerald_signTransaction", move |p: Params| {
+            parse_params!(p: (RPCTransaction, String));
+            let addr = Address::from_str(&p.0.from);
+            if addr.is_err() {
+                put_error!(JsonRpcError::invalid_params("Invalid from address"));
+            }
+            let addr = addr.unwrap();
+
+            match KeyFile::search_by_address(&addr, keystore_path.as_ref()) {
+                Ok(kf) => {
+                    if let Ok(pk) = kf.decrypt_key(&p.1) {
+                        match p.0.try_into() {
+                            Ok(tr) => {
+                                put_result!(tr.to_raw_params(pk, TESTNET_ID));
+                            },
+                            Err(err) => {
+                                put_error!(JsonRpcError::invalid_params(err.to_string()));
+                            },
                         }
+                    } else {
+                        put_error!(JsonRpcError::invalid_params("Invalid passphrase"));
                     }
-                    Err(_) => {
-                        futures::done(Err(JsonRpcError::invalid_params("Invalid Keyfile data \
-                                                                        format")))
-                                .boxed()
-                    }
-                }
+                },
+                Err(_) => {
+                    put_error!(JsonRpcError::invalid_params("Can't find account"));
+                },
             }
-            Err(_) => futures::failed(JsonRpcError::invalid_params("Invalid JSON object")).boxed(),
-        };
-
-        io.add_async_method("backend_importWallet", callback);
-    }
-
-    let dir = chain
-        .get_path("contracts".to_string())
-        .expect("Expect directory for contracts");
-
-    let contracts = Arc::new(Contracts::new(dir));
-
-    {
-        let contracts = contracts.clone();
-
-        io.add_async_method("emerald_contracts",
-                            move |_| futures::finished(Value::Array(contracts.list())).boxed());
-    }
-
-    {
-        let contracts = contracts.clone();
-
-        io.add_async_method("emerald_addContract", move |p| match p {
-            Params::Array(ref vec) => {
-                match contracts.add(&vec[0]) {
-                    Ok(_) => futures::finished(Value::Bool(true)).boxed(),
-                    Err(_) => futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed(),
-                }
-            }
-            _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
-        });
-    }
-
-    let address_dir = chain
-        .get_path("addressbook".to_string())
-        .expect("Expect directory for address book");
-
-    let addressbook = Arc::new(Addressbook::new(address_dir));
-
-    {
-        let addressbook = addressbook.clone();
-
-        io.add_async_method("emerald_addressBook",
-                            move |_| futures::finished(Value::Array(addressbook.list())).boxed());
-    }
-
-    {
-        let addressbook = addressbook.clone();
-
-        io.add_async_method("emerald_addAddress", move |p| match p {
-            Params::Array(ref vec) => {
-                match addressbook.add(&vec[0]) {
-                    Ok(_) => futures::finished(Value::Bool(true)).boxed(),
-                    Err(_) => futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed(),
-                }
-            }
-            _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
-        });
-    }
-
-    {
-        let addressbook = addressbook.clone();
-
-        io.add_async_method("emerald_updateAddress", move |p| match p {
-            Params::Array(ref vec) => {
-                match addressbook.edit(&vec[0]) {
-                    Ok(_) => futures::finished(Value::Bool(true)).boxed(),
-                    Err(_) => futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed(),
-                }
-            }
-            _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
-        });
-    }
-
-    {
-        let addressbook = addressbook.clone();
-
-        io.add_async_method("emerald_deleteAddress", move |p| match p {
-            Params::Array(ref vec) => {
-                match addressbook.delete(&vec[0]) {
-                    Ok(_) => futures::finished(Value::Bool(true)).boxed(),
-                    Err(_) => futures::failed(JsonRpcError::new(ErrorCode::InternalError)).boxed(),
-                }
-            }
-            _ => futures::failed(JsonRpcError::new(ErrorCode::InvalidParams)).boxed(),
         });
     }
 
