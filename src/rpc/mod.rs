@@ -377,7 +377,7 @@ pub fn start(addr: &SocketAddr,
                          })
                     .unwrap_or(None);
 
-                match KeyFile::new(&p_str.unwrap(), &sec, name, description) {
+                match KeyFile::new(p_str.unwrap(), &sec, name, description) {
                     Ok(kf) => {
                         let addr = kf.address.to_string();
                         match kf.flush(keystore_path.as_ref()) {
