@@ -44,9 +44,11 @@ pub use self::core::*;
 pub use self::util::*;
 pub use self::rpc::start;
 
+const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
+
 /// Get the current Emerald version.
 pub fn version() -> &'static str {
-    "v0.0.1"
+    VERSION.unwrap_or("unknown")
 }
 
 #[cfg(test)]

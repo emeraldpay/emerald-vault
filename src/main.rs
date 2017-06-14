@@ -26,8 +26,6 @@ use std::str::FromStr;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
-const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
-
 #[derive(Debug, RustcDecodable)]
 struct Args {
     flag_version: bool,
@@ -57,7 +55,7 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     if args.flag_version {
-        println!("v{}", VERSION.unwrap_or("unknown"));
+        println!("v{}", emerald::version());
         exit(0);
     }
 
@@ -77,7 +75,7 @@ fn main() {
 
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}",
-              VERSION.unwrap_or("unknown"));
+              emerald::version());
     }
 
     let sec_level: &str = &args.flag_security_level
