@@ -49,7 +49,7 @@ Parameters:
     ** description (String, optional) - account description
     * passphrase (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
 
-Result: public address (String, hex-encoded 20 bytes string)
+Result: public address (String) - hex-encoded 20 bytes string
 
 Examples:
 
@@ -59,12 +59,13 @@ Examples:
 <-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
 ----
 
-.Full format, with optional parameters
+.Full format, with optional account object
 ----
 --> {"jsonrpc": "2.0",
      "method": "emerald_newAccount",
      "params": [
-        {"name": "test", "description": "A test account"},
+        {"name": "test",
+         "description": "A test account"},
         "1234567890"],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
