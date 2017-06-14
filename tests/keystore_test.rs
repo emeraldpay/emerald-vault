@@ -1,12 +1,16 @@
+#![feature(test)]
+
 extern crate emerald;
 
 extern crate rand;
 extern crate rustc_serialize;
 extern crate tempdir;
 extern crate uuid;
+extern crate test;
 
-use emerald::{Address, KECCAK256_BYTES};
-use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Prf};
+use emerald::{Address, KECCAK256_BYTES, PrivateKey};
+use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Prf,
+                        os_random};
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
 use std::fs::File;
@@ -14,6 +18,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use tempdir::TempDir;
+use test::Bencher;
 use uuid::Uuid;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
@@ -26,10 +31,40 @@ macro_rules! arr {
     })
 }
 
+
+fn temp_dir() -> PathBuf {
+    let dir = TempDir::new("emerald").unwrap();
+    File::create(dir.path()).ok();
+    dir.into_path()
+}
+
+fn file_content<P: AsRef<Path>>(path: P) -> String {
+    let mut text = String::new();
+
+    File::open(path)
+        .expect("Expect read file content")
+        .read_to_string(&mut text)
+        .ok();
+
+    text
+}
+
+fn keyfile_path(name: &str) -> PathBuf {
+    let mut path = keystore_path();
+    path.push(name);
+    path
+}
+
+fn keystore_path() -> PathBuf {
+    let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
+    buf.push("tests/keystore/serialize");
+    buf
+}
+
 #[test]
 fn should_decrypt_private_key_protected_by_scrypt() {
     let path = keyfile_path("UTC--2017-03-17T10-52-08.\
-                             229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
+                         229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
     let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
 
@@ -97,7 +132,7 @@ fn should_decode_keyfile_without_address() {
 #[test]
 fn should_decode_keyfile_with_address() {
     let path = keyfile_path("UTC--2017-03-17T10-52-08.\
-                             229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
+                         229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
     let exp = KeyFile {
         name: None,
@@ -171,31 +206,35 @@ fn should_search_by_address() {
                "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3".parse().unwrap());
 }
 
-fn temp_dir() -> PathBuf {
-    let dir = TempDir::new("emerald").unwrap();
-    File::create(dir.path()).ok();
-    dir.into_path()
+#[bench]
+fn bench_decrypt_scrypt(b: &mut Bencher) {
+    let path = keyfile_path("UTC--2017-03-17T10-52-08.\
+                         229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
+
+    let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
+
+    b.iter(|| keyfile.decrypt_key("12345e67890"));
 }
 
-fn file_content<P: AsRef<Path>>(path: P) -> String {
-    let mut text = String::new();
+#[bench]
+fn bench_decrypt_pbkdf2(b: &mut Bencher) {
+    let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
+    let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
 
-    File::open(path)
-        .expect("Expect read file content")
-        .read_to_string(&mut text)
-        .ok();
-
-    text
+    b.iter(|| keyfile.decrypt_key("1234567890"));
 }
 
-fn keyfile_path(name: &str) -> PathBuf {
-    let mut path = keystore_path();
-    path.push(name);
-    path
+
+#[bench]
+fn bench_encrypt_scrypt(b: &mut Bencher) {
+    let sec = KdfDepthLevel::Normal;
+    b.iter(|| KeyFile::new("1234567890", &sec, None, None));
 }
 
-fn keystore_path() -> PathBuf {
-    let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
-    buf.push("tests/keystore/serialize");
-    buf
+#[bench]
+fn bench_encrypt_pbkdf2(b: &mut Bencher) {
+    let mut rng = os_random();
+    let pk = PrivateKey::gen_custom(&mut rng);
+
+    b.iter(|| KeyFile::new_custom(pk, "1234567890", Kdf::from(10240), &mut rng, None, None));
 }

@@ -1,5 +1,4 @@
 //! # Crypto util functions
-
 use crypto::digest::Digest;
 use crypto::sha3::{Sha3, Sha3Mode};
 
@@ -20,6 +19,7 @@ pub fn keccak256(data: &[u8]) -> [u8; KECCAK256_BYTES] {
 mod tests {
     use super::*;
     use tests::*;
+    use tests::test::Bencher;
 
     #[test]
     fn should_calculate_empty_keccak256() {
@@ -37,5 +37,15 @@ mod tests {
     fn should_calculate_big_keccak256() {
         assert_eq!(keccak256(&[b'-'; 1024]),
                    to_32bytes("ea1da5135479c4eb22ed3743c379970895ed2d088fd5d79884b7493aaa49475b"));
+    }
+
+    #[bench]
+    fn bench_small_sha3(b: &mut Bencher) {
+        b.iter(|| keccak256(&[b'-'; 16]));
+    }
+
+    #[bench]
+    fn bench_big_sha3(b: &mut Bencher) {
+        b.iter(|| keccak256(&[b'-'; 1024]));
     }
 }

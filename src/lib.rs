@@ -1,5 +1,5 @@
 //! # Ethereum classic web3 like connector library
-
+#![feature(test)]
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 
@@ -30,6 +30,7 @@ extern crate secp256k1;
 extern crate serde;
 extern crate serde_json;
 extern crate uuid;
+extern crate test;
 
 mod core;
 pub mod addressbook;
