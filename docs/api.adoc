@@ -38,6 +38,12 @@ Returns the client current version.
 <-- {"jsonrpc": "2.0", "result": "0.9", "id": 1}
 ----
 
+== emerald_listAccounts
+
+Return the list of all accounts exist in the keystore.
+
+TBD
+
 == emerald_newAccount
 
 Creates new account and store it locally as an encoded by passphrase keystore file.
@@ -70,6 +76,42 @@ Creates new account and store it locally as an encoded by passphrase keystore fi
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
 ----
+
+== emerald_updateAccount
+
+Update not secured by passphrase account metadata, like `name` and `description`.
+
+TBD
+
+== emerald_shakeAccount
+
+Recreate account with the same public address, but with a different passphrase.
+
+TBD
+
+== emerald_hideAccount
+
+Hide an account from the list returned by `emerald_listAccounts`.
+
+TBD
+
+== emerald_revealAccount
+
+Reveal an account before that hidden by the command `emerald_hideAccount`.
+
+TBD
+
+== emerald_importKeyfile
+
+Import a new account from external keyfile.
+
+TBD
+
+== emerald_exportKeyfile
+
+Returns a keyfile associated with the account.
+
+TBD
 
 == emerald_signTransaction
 
