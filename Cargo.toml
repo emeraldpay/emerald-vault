@@ -1,12 +1,12 @@
 [package]
 name = "emerald"
 version = "0.0.1"
-authors = ["Dmitry Ulanov <dulanov@gmail.com>"]
-description = "Ethereum classic web3 like connector written in Rust"
+authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>"]
+description = "Ethereum Classic offline wallet written in Rust"
 homepage = "http://etcdevteam.com"
 repository = "https://github.com/ethereumproject/emerald-rs"
 documentation = "https://docs.rs/emerald-rs"
-keywords = ["rust", "bootstrap", "ethereum-classsic", "blockchain", "crypto-wallet", "web3"]
+keywords = ["rust", "ethereum-classsic", "blockchain", "crypto-wallet"]
 categories = ["ethereum-classic"]
 readme = "README.adoc"
 license = "Apache-2.0"
@@ -18,7 +18,7 @@ appveyor = { repository = "ethereumproject/emerald-rs" }
 [lib]
 name = "emerald"
 path = "src/lib.rs"
-#crate-type = ["dylib"]
+#crate-type = ["rlib", "cdylib"]
 
 [[bin]]
 name = "emerald-cli"

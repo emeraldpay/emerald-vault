@@ -1,0 +1,108 @@
+ifdef::env-github,env-browser[:outfilesuffix: .adoc]
+ifndef::rootdir[:rootdir: ../]
+:imagesdir: {rootdir}/images
+:toc:
+
+= JSON-RPC API
+
+JSON-RPC is a remote procedure call protocol encoded in JSON.
+We use the http://www.jsonrpc.org/specification[version 2 of the protocol].
+
+== emerald_heartbeat
+
+Identify if and when the originator fails or is no longer available.
+
+*Parameters*: none
+
+*Result*: `timestamp` (Number) - seconds since Jan 01 1970 (UTC)
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_heartbeat", "params": [], "id": 1}
+<-- {"jsonrpc": "2.0", "result": 1497439590, "id": 1}
+----
+
+== emerald_currentVersion
+
+Returns the client current version.
+
+*Parameters*: none
+
+*Result*: `version` (String) - current version according http://semver.org/[Semantic Versioning]
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_currentVersion", "params": [], "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0.9", "id": 1}
+----
+
+== emerald_newAccount
+
+Creates new account and store it locally as an encoded by passphrase keystore file.
+
+*Parameters*:
+
+    * `account` (Object, optional)
+    ** `name` (String) - account name
+    ** `description` (String, optional) - account description
+    * `passphrase` (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
+
+*Result*: `address` (String) - hex-encoded 20 bytes public address
+
+*Examples*:
+
+.Simple format, only `passphrase`
+----
+--> {"jsonrpc": "2.0", "method": "emerald_newAccount", "params": ["1234567890"], "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
+----
+
+.Full format, with optional account object
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_newAccount",
+     "params": [
+        {"name": "test",
+         "description": "A test account"},
+        "1234567890"],
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
+----
+
+== emerald_signTransaction
+
+Signs transaction offline with private key from keystore file by given passphrase.
+
+*Parameters*:
+
+    * `transaction` (Object)
+    ** `from` (String) - the address the transaction is send from (hex-encoded 20 Bytes)
+    ** `to` (String, optional when creating new contract) - the address the transaction is directed to (hex-encoded 20 Bytes)
+    ** `gas` (String) - Hex-encoded integer of the gas provided for the transaction execution, it will return unused gas
+    ** `gasPrice` (String) - Hex-encoded integer of the gasPrice used for each paid gas
+    ** `value` (String, optional) - Hex-encoded integer of the value send with this transaction
+    ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
+    ** `nonce` (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
+    * `passphrase` (String) - passphrase used to encode keyfile
+
+*Result*: `data` (String) - hex-encoded signed raw transaction data
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_signTransaction",
+     "params": [
+        {"from": "0xb60e8dd61c5d32be8058bb8eb970870f07233155",
+         "to": "0xd46e8dd67c5d32be8058bb8eb970870f07244567",
+         "gas": "0x76c0",
+         "gasPrice": "0x9184e72a000",
+         "value": "0x9184e72a",
+         "data": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675",
+         "nonce": "0x1000"},
+         "1234567890"],
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675", "id": 1}
+----
