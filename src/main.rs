@@ -1,4 +1,4 @@
-//! # CLI wrapper for ethereum classic web3 like connector
+//! # CLI wrapper for Ethereum Classic web3 like connector
 
 #![cfg(feature = "cli")]
 
