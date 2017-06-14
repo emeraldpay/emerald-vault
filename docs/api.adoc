@@ -40,7 +40,7 @@ Returns the client current version.
 
 == emerald_newAccount
 
-Creates new account and store it locally as an encoded by passphrase keystore file.
+Creates a new account and stores it locally as a passphrase-encoded keystore file.
 
 *Parameters*:
 
@@ -73,16 +73,16 @@ Creates new account and store it locally as an encoded by passphrase keystore fi
 
 == emerald_signTransaction
 
-Signs transaction offline with private key from keystore file by given passphrase.
+Signs transaction offline with private key from keystore file with given passphrase.
 
 *Parameters*:
 
     * `transaction` (Object)
-    ** `from` (String) - the address the transaction is send from (hex-encoded 20 Bytes)
+    ** `from` (String) - the address the transaction is sent from (hex-encoded 20 Bytes)
     ** `to` (String, optional when creating new contract) - the address the transaction is directed to (hex-encoded 20 Bytes)
     ** `gas` (String) - Hex-encoded integer of the gas provided for the transaction execution, it will return unused gas
     ** `gasPrice` (String) - Hex-encoded integer of the gasPrice used for each paid gas
-    ** `value` (String, optional) - Hex-encoded integer of the value send with this transaction
+    ** `value` (String, optional) - Hex-encoded integer of the value sent with this transaction
     ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
     ** `nonce` (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
     * `passphrase` (String) - passphrase used to encode keyfile
