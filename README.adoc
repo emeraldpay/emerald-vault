@@ -68,7 +68,7 @@ fn main() {
         .parse::<SocketAddr>()
         .expect("Expect to parse address");
 
-    emerald::start(&addr, None);
+    emerald::start(&addr, None, None);
 }
 ----
 
