@@ -1,7 +1,5 @@
 //! # JSON RPC module
 
-#[macro_use]
-mod macros;
 mod http;
 mod serialize;
 mod error;
