@@ -1,12 +1,12 @@
 [package]
 name = "emerald"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>"]
 description = "Ethereum Classic offline wallet written in Rust"
 homepage = "http://etcdevteam.com"
 repository = "https://github.com/ethereumproject/emerald-rs"
 documentation = "https://docs.rs/emerald-rs"
-keywords = ["rust", "ethereum-classsic", "blockchain", "crypto-wallet"]
+keywords = ["rust", "ethereum-classic", "blockchain", "crypto-wallet"]
 categories = ["ethereum-classic"]
 readme = "README.adoc"
 license = "Apache-2.0"
