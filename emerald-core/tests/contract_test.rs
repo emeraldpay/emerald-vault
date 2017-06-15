@@ -1,11 +1,11 @@
-extern crate emerald_core;
+extern crate emerald_core as emerald;
 
 extern crate serde;
 extern crate serde_json;
 extern crate tempdir;
 
 use self::serde_json::Value;
-use emerald_core::contract::{ContractError, Contracts};
+use emerald::contract::{ContractError, Contracts};
 use std::path::PathBuf;
 use tempdir::TempDir;
 

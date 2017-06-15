@@ -1,11 +1,11 @@
-extern crate emerald_core;
+extern crate emerald_core as emerald;
 extern crate rand;
 extern crate rustc_serialize;
 extern crate uuid;
 extern crate tempdir;
 
-use emerald_core::{Address, KECCAK256_BYTES};
-use emerald_core::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Prf};
+use emerald::{Address, KECCAK256_BYTES};
+use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Prf};
 
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;

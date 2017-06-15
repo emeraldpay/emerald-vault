@@ -1,10 +1,10 @@
-extern crate emerald_core;
+extern crate emerald_core as emerald;
 
 extern crate serde;
 extern crate serde_json;
 extern crate tempdir;
 
-use emerald_core::addressbook::{Addressbook, AddressbookError};
+use emerald::addressbook::{Addressbook, AddressbookError};
 use serde_json::Value;
 use std::path::PathBuf;
 use tempdir::TempDir;

@@ -10,12 +10,12 @@ extern crate log;
 
 extern crate docopt;
 extern crate env_logger;
-extern crate emerald_core;
+extern crate emerald_core as emerald;
 extern crate regex;
 extern crate rustc_serialize;
 
 use docopt::Docopt;
-use emerald_core::keystore::KdfDepthLevel;
+use emerald::keystore::KdfDepthLevel;
 use env_logger::LogBuilder;
 use log::{LogLevel, LogLevelFilter};
 use std::env;
@@ -55,7 +55,7 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     if args.flag_version {
-        println!("v{}", emerald_core::version());
+        println!("v{}", emerald::version());
         exit(0);
     }
 
@@ -74,7 +74,7 @@ fn main() {
     };
 
     if log_enabled!(LogLevel::Info) {
-        info!("Starting Emerald Connector - v{}", emerald_core::version());
+        info!("Starting Emerald Connector - v{}", emerald::version());
     }
 
     let sec_level: &str = &args.flag_security_level
@@ -89,5 +89,5 @@ fn main() {
     };
     info!("security level set to '{}'", sec_level);
 
-    emerald_core::rpc::start(&addr, base_path, Some(sec_level));
+    emerald::rpc::start(&addr, base_path, Some(sec_level));
 }
