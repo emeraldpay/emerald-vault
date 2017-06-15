@@ -90,34 +90,6 @@ fn to_value<T: Serialize>(value: T) -> Result<Value, JsonRpcError> {
     }
 }
 
-fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Result<Params, Error> {
-    let nonce = url.request(&MethodParams(ClientMethod::EthGetTxCount,
-                                          &Params::Array(vec![Value::String(addr.to_string()),
-                                                              Value::String("latest"
-                                                                                .to_string())])))
-        .wait()?;
-
-    if let Some(n) = nonce.as_str() {
-        match *p {
-            Params::Array(ref vec) => {
-                let v = vec.get(0).and_then(|v| v.as_object());
-                if v.is_none() {
-                    return Err(Error::InvalidDataFormat("Expected transaction formatted in JSON"
-                                                            .to_string()));
-                }
-
-                let mut obj = v.unwrap().clone();
-                obj.insert("nonce".to_string(), Value::String(n.to_string()));
-
-                return Ok(Params::Array(vec![Value::Object(obj)]));
-            }
-            _ => return Err(Error::InvalidDataFormat("Expected array of parameters".to_string())),
-        }
-    }
-
-    Err(Error::InvalidDataFormat(format!("Invalid `nonce` value for: {}", addr)))
-}
-
 /// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<KdfDepthLevel>) {
     let sec_level = sec_level.unwrap_or(KdfDepthLevel::default());
