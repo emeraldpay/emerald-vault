@@ -26,8 +26,6 @@ use std::str::FromStr;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
-const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
-
 #[derive(Debug, RustcDecodable)]
 struct Args {
     flag_version: bool,
@@ -35,9 +33,6 @@ struct Args {
     flag_quiet: bool,
     flag_host: String,
     flag_port: String,
-    flag_client_host: String,
-    flag_client_port: String,
-    flag_client_path: String,
     flag_base_path: String,
     flag_security_level: String,
 }
@@ -60,17 +55,13 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     if args.flag_version {
-        println!("v{}", VERSION.unwrap_or("unknown"));
+        println!("v{}", emerald::version());
         exit(0);
     }
 
     let addr = format!("{}:{}", args.flag_host, args.flag_port)
         .parse::<SocketAddr>()
         .expect("Expect to parse address");
-
-    let client_addr = format!("{}:{}", args.flag_client_host, args.flag_client_port)
-        .parse::<SocketAddr>()
-        .expect("Expect to parse client address");
 
     let base_path_str = args.flag_base_path
         .parse::<String>()
@@ -83,8 +74,7 @@ fn main() {
     };
 
     if log_enabled!(LogLevel::Info) {
-        info!("Starting Emerald Connector - v{}",
-              VERSION.unwrap_or("unknown"));
+        info!("Starting Emerald Connector - v{}", emerald::version());
     }
 
     let sec_level: &str = &args.flag_security_level
@@ -99,5 +89,5 @@ fn main() {
     };
     info!("security level set to '{}'", sec_level);
 
-    emerald::rpc::start(&addr, &client_addr, base_path, sec_level);
+    emerald::rpc::start(&addr, base_path, Some(sec_level));
 }
