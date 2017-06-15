@@ -21,7 +21,8 @@ use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
 use rustc_serialize::json;
-use serde_json::{Map, Value, to_value};
+use serde::Serialize;
+use serde_json::{self, Map, Value};
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -81,6 +82,14 @@ pub enum ClientMethod {
 #[derive(Clone, Debug, PartialEq)]
 pub struct MethodParams<'a>(pub ClientMethod, pub &'a Params);
 
+fn to_value<T: Serialize>(value: T) -> Result<Value, JsonRpcError> {
+    let result = serde_json::to_value(value);
+    match result {
+        Ok(value) => Ok(value),
+        Err(_) => Err(JsonRpcError::internal_error()),
+    }
+}
+
 fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Result<Params, Error> {
     let nonce = url.request(&MethodParams(ClientMethod::EthGetTxCount,
                                           &Params::Array(vec![Value::String(addr.to_string()),
@@ -131,16 +140,16 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
     let mut io = IoHandler::default();
 
     {
-        io.add_async_method("emerald_currentVersion", move |p: Params| {
-            parse_params!(p: ());
-            put_result!(::version());
+        io.add_method("emerald_currentVersion", move |p: Params| {
+            let _: () = p.parse()?;
+            to_value(::version())
         });
     }
 
     {
-        io.add_async_method("emerald_heartbeat", move |p: Params| {
-            parse_params!(p: ());
-            put_result!(get_time().sec);
+        io.add_method("emerald_heartbeat", move |p: Params| {
+            let _: () = p.parse()?;
+            to_value(get_time().sec)
         });
     }
 
@@ -155,8 +164,9 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let sec = sec_level;
         let keystore_path = keystore_path.clone();
 
-        io.add_async_method("emerald_newAccount", move |p: Params| {
-            parse_params!(p: CallParams);
+        io.add_method("emerald_newAccount", move |p: Params| {
+            let p: CallParams = p.parse()?;
+
             let (account, pass) = match p {
                 CallParams::PassOnly((pass,)) => {
                     (RPCAccount {
@@ -169,23 +179,23 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
             };
 
             if pass.is_empty() {
-                put_error!(JsonRpcError::invalid_params("Empty passphrase"));
+                return Err(JsonRpcError::invalid_params("Empty passphrase"));
             }
+
             match KeyFile::new(&pass, &sec, Some(account.name), Some(account.description)) {
                 Ok(kf) => {
                     let addr = kf.address.to_string();
                     match kf.flush(keystore_path.as_ref()) {
                         Ok(_) => {
-                            put_result!(addr);
+                            to_value(addr)
                         }
                         Err(_) => {
-                            put_error!(JsonRpcError::internal_error());
+                            Err(JsonRpcError::internal_error())
                         }
                     }
                 }
                 Err(_) => {
-                    put_error!(JsonRpcError::invalid_params("Invalid Keyfile data \
-                                                             format"));
+                    Err(JsonRpcError::invalid_params("Invalid Keyfile data format"))
                 }
             }
         });
@@ -194,11 +204,12 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
     {
         let keystore_path = keystore_path.clone();
 
-        io.add_async_method("emerald_signTransaction", move |p: Params| {
-            parse_params!(p: (RPCTransaction, String));
+        io.add_method("emerald_signTransaction", move |p: Params| {
+            let p: (RPCTransaction, String) = p.parse()?;
+
             let addr = Address::from_str(&p.0.from);
             if addr.is_err() {
-                put_error!(JsonRpcError::invalid_params("Invalid from address"));
+                return Err(JsonRpcError::invalid_params("Empty address"));
             }
             let addr = addr.unwrap();
 
@@ -207,18 +218,18 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
                     if let Ok(pk) = kf.decrypt_key(&p.1) {
                         match p.0.try_into() {
                             Ok(tr) => {
-                                put_result!(tr.to_raw_params(pk, TESTNET_ID));
+                                to_value(tr.to_raw_params(pk, TESTNET_ID))
                             }
                             Err(err) => {
-                                put_error!(JsonRpcError::invalid_params(err.to_string()));
+                                Err(JsonRpcError::invalid_params(err.to_string()))
                             }
                         }
                     } else {
-                        put_error!(JsonRpcError::invalid_params("Invalid passphrase"));
+                        Err(JsonRpcError::invalid_params("Invalid passphrase"))
                     }
                 }
                 Err(_) => {
-                    put_error!(JsonRpcError::invalid_params("Can't find account"));
+                    Err(JsonRpcError::invalid_params("Can't find account"))
                 }
             }
         });
