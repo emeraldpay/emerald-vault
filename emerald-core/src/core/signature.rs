@@ -74,7 +74,7 @@ impl PrivateKey {
     /// # Example
     ///
     /// ```
-    /// let pk = emerald::PrivateKey::try_from(&[0u8; emerald::PRIVATE_KEY_BYTES]).unwrap();
+    /// let pk = emerald_core::PrivateKey::try_from(&[0u8; emerald_core::PRIVATE_KEY_BYTES]).unwrap();
     /// assert_eq!(pk.to_string(),
     ///            "0x0000000000000000000000000000000000000000000000000000000000000000");
     /// ```
