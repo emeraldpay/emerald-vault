@@ -1,9 +1,7 @@
 //! # JSON RPC module
 
-mod http;
 mod serialize;
 mod error;
-
 
 pub use self::error::Error;
 use self::serialize::{RPCAccount, RPCTransaction};
@@ -32,53 +30,6 @@ pub const MAINNET_ID: u8 = 61;
 
 /// Test chain id
 pub const TESTNET_ID: u8 = 62;
-
-/// RPC methods
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
-pub enum ClientMethod {
-    /// [web3_clientVersion](https://github.com/ethereum/wiki/wiki/JSON-RPC#web3_clientversion)
-    Version,
-
-    /// [net_version](https://github.com/ethereum/wiki/wiki/JSON-RPC#net_version)
-    NetVersion,
-
-    /// [eth_syncing](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_syncing)
-    EthSyncing,
-
-    /// [eth_blockNumber](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_blocknumber)
-    EthBlockNumber,
-
-    /// [eth_gasPrice](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gasprice)
-    EthGasPrice,
-
-    /// [eth_accounts](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_accounts)
-    EthAccounts,
-
-    /// [eth_getBalance](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getbalance)
-    EthGetBalance,
-
-    /// [eth_getTransactionCount](
-    /// https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactioncount)
-    EthGetTxCount,
-
-    /// [eth_getTransactionByHash](
-    /// https://github.com/ethereumproject/wiki/wiki/JSON-RPC#eth_gettransactionbyhash)
-    EthGetTxByHash,
-
-    /// [eth_sendRawTransaction](
-    /// https://github.com/paritytech/parity/wiki/JSONRPC-eth-module#eth_sendrawtransaction)
-    EthSendRawTransaction,
-
-    /// [eth_call](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call)
-    EthCall,
-
-    /// [trace_call](https://github.com/ethereumproject/emerald-rs/issues/30#issuecomment-291987132)
-    EthTraceCall,
-}
-
-/// PRC method's parameters
-#[derive(Clone, Debug, PartialEq)]
-pub struct MethodParams<'a>(pub ClientMethod, pub &'a Params);
 
 fn to_value<T: Serialize>(value: T) -> Result<Value, JsonRpcError> {
     let result = serde_json::to_value(value);
