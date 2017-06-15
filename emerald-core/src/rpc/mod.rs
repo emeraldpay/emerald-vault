@@ -156,17 +156,11 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
                 Ok(kf) => {
                     let addr = kf.address.to_string();
                     match kf.flush(keystore_path.as_ref()) {
-                        Ok(_) => {
-                            to_value(addr)
-                        }
-                        Err(_) => {
-                            Err(JsonRpcError::internal_error())
-                        }
+                        Ok(_) => to_value(addr),
+                        Err(_) => Err(JsonRpcError::internal_error()),
                     }
                 }
-                Err(_) => {
-                    Err(JsonRpcError::invalid_params("Invalid Keyfile data format"))
-                }
+                Err(_) => Err(JsonRpcError::invalid_params("Invalid Keyfile data format")),
             }
         });
     }
@@ -187,20 +181,14 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
                 Ok(kf) => {
                     if let Ok(pk) = kf.decrypt_key(&p.1) {
                         match p.0.try_into() {
-                            Ok(tr) => {
-                                to_value(tr.to_raw_params(pk, TESTNET_ID))
-                            }
-                            Err(err) => {
-                                Err(JsonRpcError::invalid_params(err.to_string()))
-                            }
+                            Ok(tr) => to_value(tr.to_raw_params(pk, TESTNET_ID)),
+                            Err(err) => Err(JsonRpcError::invalid_params(err.to_string())),
                         }
                     } else {
                         Err(JsonRpcError::invalid_params("Invalid passphrase"))
                     }
                 }
-                Err(_) => {
-                    Err(JsonRpcError::invalid_params("Can't find account"))
-                }
+                Err(_) => Err(JsonRpcError::invalid_params("Can't find account")),
             }
         });
     }
