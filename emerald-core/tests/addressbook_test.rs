@@ -1,4 +1,4 @@
-extern crate emerald;
+extern crate emerald_core as emerald;
 
 extern crate serde;
 extern crate serde_json;

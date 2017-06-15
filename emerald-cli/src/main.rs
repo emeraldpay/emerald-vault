@@ -10,7 +10,7 @@ extern crate log;
 
 extern crate docopt;
 extern crate env_logger;
-extern crate emerald;
+extern crate emerald_core as emerald;
 extern crate regex;
 extern crate rustc_serialize;
 
@@ -24,7 +24,7 @@ use std::path::PathBuf;
 use std::process::*;
 use std::str::FromStr;
 
-const USAGE: &'static str = include_str!("../usage.txt");
+const USAGE: &'static str = include_str!("../../usage.txt");
 
 #[derive(Debug, RustcDecodable)]
 struct Args {

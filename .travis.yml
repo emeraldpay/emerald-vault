@@ -34,9 +34,14 @@ before_install:
 before_script:
   - export PATH="$PATH":~/.cargo/bin
   - echo "\$ rustfmt --version"
+  - cd emerald-core
   - cargo fmt -- --version
+  - cd ..
 script:
   - export RUST_BACKTRACE=1
+  - cd emerald-core
+  - cargo fmt -- --verbose --write-mode=diff
+  - cd ../emerald-cli
   - cargo fmt -- --verbose --write-mode=diff
 #  - test "$TRAVIS_RUST_VERSION" == nightly || cargo test --target=$TARGET --verbose
 #  - test "$TRAVIS_RUST_VERSION" != nightly || cargo test --target=$TARGET --verbose --features "dev"
