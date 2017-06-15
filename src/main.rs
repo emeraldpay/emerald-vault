@@ -74,8 +74,7 @@ fn main() {
     };
 
     if log_enabled!(LogLevel::Info) {
-        info!("Starting Emerald Connector - v{}",
-              emerald::version());
+        info!("Starting Emerald Connector - v{}", emerald::version());
     }
 
     let sec_level: &str = &args.flag_security_level

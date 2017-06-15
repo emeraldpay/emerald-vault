@@ -40,8 +40,8 @@ pub mod rpc;
 mod util;
 
 pub use self::core::*;
-pub use self::util::*;
 pub use self::rpc::start;
+pub use self::util::*;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 

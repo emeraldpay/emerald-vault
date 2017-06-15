@@ -41,13 +41,13 @@ impl RPCTransaction {
         let nonce = trim_hex(self.nonce.as_str()).from_hex()?;
 
         Ok(Transaction {
-            nonce: to_u64(&nonce),
-            gas_price: to_arr(&align_bytes(&gas_price, 32)),
-            gas_limit: to_u64(&gas_limit),
-            to: self.to.as_str().parse::<Address>().ok(),
-            value: to_arr(&align_bytes(&value, 32)),
-            data: trim_hex(self.data.as_str()).from_hex()?,
-        })
+               nonce: to_u64(&nonce),
+               gas_price: to_arr(&align_bytes(&gas_price, 32)),
+               gas_limit: to_u64(&gas_limit),
+               to: self.to.as_str().parse::<Address>().ok(),
+               value: to_arr(&align_bytes(&value, 32)),
+               data: trim_hex(self.data.as_str()).from_hex()?,
+           })
     }
 }
 

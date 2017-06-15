@@ -6,9 +6,9 @@ mod http;
 mod serialize;
 mod error;
 
-use self::serialize::{RPCTransaction, RPCAccount};
 
 pub use self::error::Error;
+use self::serialize::{RPCAccount, RPCTransaction};
 use super::addressbook::Addressbook;
 use super::contract::Contracts;
 use super::core::{self, Address, Transaction};
@@ -21,11 +21,11 @@ use jsonrpc_core::futures::Future;
 use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
 use log::LogLevel;
 use rustc_serialize::json;
-use serde_json::{to_value, Map, Value};
+use serde_json::{Map, Value, to_value};
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::str::FromStr;
+use std::sync::Arc;
 use time::get_time;
 
 /// Main chain id
@@ -110,9 +110,7 @@ fn inject_nonce(url: Arc<http::AsyncWrapper>, p: &Params, addr: &Address) -> Res
 }
 
 /// Start an HTTP RPC endpoint
-pub fn start(addr: &SocketAddr,
-             base_path: Option<PathBuf>,
-             sec_level: Option<KdfDepthLevel>) {
+pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<KdfDepthLevel>) {
     let sec_level = sec_level.unwrap_or(KdfDepthLevel::default());
 
     let storage = match base_path {
@@ -160,9 +158,13 @@ pub fn start(addr: &SocketAddr,
         io.add_async_method("emerald_newAccount", move |p: Params| {
             parse_params!(p: CallParams);
             let (account, pass) = match p {
-                CallParams::PassOnly((pass,)) => (RPCAccount {
-                    name: "".to_string(), description: "".to_string()
-                }, pass),
+                CallParams::PassOnly((pass,)) => {
+                    (RPCAccount {
+                         name: "".to_string(),
+                         description: "".to_string(),
+                     },
+                     pass)
+                }
                 CallParams::WithAccount((account, pass)) => (account, pass),
             };
 
@@ -173,14 +175,18 @@ pub fn start(addr: &SocketAddr,
                 Ok(kf) => {
                     let addr = kf.address.to_string();
                     match kf.flush(keystore_path.as_ref()) {
-                        Ok(_) => { put_result!(addr); },
-                        Err(_) => { put_error!(JsonRpcError::internal_error()); },
+                        Ok(_) => {
+                            put_result!(addr);
+                        }
+                        Err(_) => {
+                            put_error!(JsonRpcError::internal_error());
+                        }
                     }
-                },
+                }
                 Err(_) => {
                     put_error!(JsonRpcError::invalid_params("Invalid Keyfile data \
                                                              format"));
-                },
+                }
             }
         });
     }
@@ -202,18 +208,18 @@ pub fn start(addr: &SocketAddr,
                         match p.0.try_into() {
                             Ok(tr) => {
                                 put_result!(tr.to_raw_params(pk, TESTNET_ID));
-                            },
+                            }
                             Err(err) => {
                                 put_error!(JsonRpcError::invalid_params(err.to_string()));
-                            },
+                            }
                         }
                     } else {
                         put_error!(JsonRpcError::invalid_params("Invalid passphrase"));
                     }
-                },
+                }
                 Err(_) => {
                     put_error!(JsonRpcError::invalid_params("Can't find account"));
-                },
+                }
             }
         });
     }
