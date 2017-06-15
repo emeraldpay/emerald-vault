@@ -215,7 +215,8 @@ impl fmt::Display for KeyFile {
     }
 }
 
-fn os_random() -> OsRng {
+/// Create random number generator
+pub fn os_random() -> OsRng {
     OsRng::new().expect("Expect OS specific random number generator")
 }
 

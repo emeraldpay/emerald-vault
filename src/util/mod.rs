@@ -1,5 +1,4 @@
 //! # Util functions module
-
 mod crypto;
 mod rlp;
 

@@ -1,12 +1,12 @@
 extern crate emerald;
-
 extern crate rand;
 extern crate rustc_serialize;
-extern crate tempdir;
 extern crate uuid;
+extern crate tempdir;
 
 use emerald::{Address, KECCAK256_BYTES};
 use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Prf};
+
 use rustc_serialize::hex::{FromHex, ToHex};
 use rustc_serialize::json;
 use std::fs::File;
@@ -26,10 +26,40 @@ macro_rules! arr {
     })
 }
 
+
+pub fn temp_dir() -> PathBuf {
+    let dir = TempDir::new("emerald").unwrap();
+    File::create(dir.path()).ok();
+    dir.into_path()
+}
+
+pub fn file_content<P: AsRef<Path>>(path: P) -> String {
+    let mut text = String::new();
+
+    File::open(path)
+        .expect("Expect read file content")
+        .read_to_string(&mut text)
+        .ok();
+
+    text
+}
+
+pub fn keyfile_path(name: &str) -> PathBuf {
+    let mut path = keystore_path();
+    path.push(name);
+    path
+}
+
+pub fn keystore_path() -> PathBuf {
+    let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
+    buf.push("tests/keystore/serialize");
+    buf
+}
+
 #[test]
 fn should_decrypt_private_key_protected_by_scrypt() {
     let path = keyfile_path("UTC--2017-03-17T10-52-08.\
-                             229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
+                         229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
     let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
 
@@ -97,7 +127,7 @@ fn should_decode_keyfile_without_address() {
 #[test]
 fn should_decode_keyfile_with_address() {
     let path = keyfile_path("UTC--2017-03-17T10-52-08.\
-                             229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
+                         229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
     let exp = KeyFile {
         name: None,
@@ -169,33 +199,4 @@ fn should_search_by_address() {
 
     assert_eq!(kf.uuid,
                "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3".parse().unwrap());
-}
-
-fn temp_dir() -> PathBuf {
-    let dir = TempDir::new("emerald").unwrap();
-    File::create(dir.path()).ok();
-    dir.into_path()
-}
-
-fn file_content<P: AsRef<Path>>(path: P) -> String {
-    let mut text = String::new();
-
-    File::open(path)
-        .expect("Expect read file content")
-        .read_to_string(&mut text)
-        .ok();
-
-    text
-}
-
-fn keyfile_path(name: &str) -> PathBuf {
-    let mut path = keystore_path();
-    path.push(name);
-    path
-}
-
-fn keystore_path() -> PathBuf {
-    let mut buf = PathBuf::from(PRJ_DIR.expect("Expect project directory"));
-    buf.push("tests/keystore/serialize");
-    buf
 }
