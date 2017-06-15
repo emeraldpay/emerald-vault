@@ -2,6 +2,7 @@
 
 mod serialize;
 mod error;
+mod serves;
 
 pub use self::error::Error;
 use self::serialize::{RPCAccount, RPCTransaction};
@@ -23,15 +24,12 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
-use time::get_time;
 
-/// Main chain id
-pub const MAINNET_ID: u8 = 61;
-
-/// Test chain id
-pub const TESTNET_ID: u8 = 62;
-
-fn to_value<T: Serialize>(value: T) -> Result<Value, JsonRpcError> {
+fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
+    if value.is_err() {
+        return Err(JsonRpcError::internal_error());
+    }
+    let value = value.unwrap();
     let result = serde_json::to_value(value);
     match result {
         Ok(value) => Ok(value),
@@ -62,57 +60,22 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
 
     {
         io.add_method("emerald_currentVersion", move |p: Params| {
-            let _: () = p.parse()?;
-            to_value(::version())
+            wrapper(serves::current_version(p.parse()?))
         });
     }
 
     {
         io.add_method("emerald_heartbeat", move |p: Params| {
-            let _: () = p.parse()?;
-            to_value(get_time().sec)
+            wrapper(serves::heartbeat(p.parse()?))
         });
     }
 
     {
-        #[derive(Deserialize)]
-        #[serde(untagged)]
-        enum CallParams {
-            PassOnly((String,)),
-            WithAccount((RPCAccount, String)),
-        }
-
         let sec = sec_level;
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_newAccount", move |p: Params| {
-            let p: CallParams = p.parse()?;
-
-            let (account, pass) = match p {
-                CallParams::PassOnly((pass,)) => {
-                    (RPCAccount {
-                         name: "".to_string(),
-                         description: "".to_string(),
-                     },
-                     pass)
-                }
-                CallParams::WithAccount((account, pass)) => (account, pass),
-            };
-
-            if pass.is_empty() {
-                return Err(JsonRpcError::invalid_params("Empty passphrase"));
-            }
-
-            match KeyFile::new(&pass, &sec, Some(account.name), Some(account.description)) {
-                Ok(kf) => {
-                    let addr = kf.address.to_string();
-                    match kf.flush(keystore_path.as_ref()) {
-                        Ok(_) => to_value(addr),
-                        Err(_) => Err(JsonRpcError::internal_error()),
-                    }
-                }
-                Err(_) => Err(JsonRpcError::invalid_params("Invalid Keyfile data format")),
-            }
+            wrapper(serves::new_account(p.parse()?, &sec, &keystore_path))
         });
     }
 
@@ -120,27 +83,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_signTransaction", move |p: Params| {
-            let p: (RPCTransaction, String) = p.parse()?;
-
-            let addr = Address::from_str(&p.0.from);
-            if addr.is_err() {
-                return Err(JsonRpcError::invalid_params("Empty address"));
-            }
-            let addr = addr.unwrap();
-
-            match KeyFile::search_by_address(&addr, keystore_path.as_ref()) {
-                Ok(kf) => {
-                    if let Ok(pk) = kf.decrypt_key(&p.1) {
-                        match p.0.try_into() {
-                            Ok(tr) => to_value(tr.to_raw_params(pk, TESTNET_ID)),
-                            Err(err) => Err(JsonRpcError::invalid_params(err.to_string())),
-                        }
-                    } else {
-                        Err(JsonRpcError::invalid_params("Invalid passphrase"))
-                    }
-                }
-                Err(_) => Err(JsonRpcError::invalid_params("Can't find account")),
-            }
+            wrapper(serves::sign_transaction(p.parse()?, &keystore_path))
         });
     }
 
