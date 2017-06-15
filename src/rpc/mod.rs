@@ -147,15 +147,29 @@ pub fn start(addr: &SocketAddr,
     }
 
     {
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum CallParams {
+            PassOnly((String,)),
+            WithAccount((RPCAccount, String)),
+        }
+
         let sec = sec_level;
         let keystore_path = keystore_path.clone();
 
         io.add_async_method("emerald_newAccount", move |p: Params| {
-            parse_params!(p: (RPCAccount, String));
-            if p.1.is_empty() {
+            parse_params!(p: CallParams);
+            let (account, pass) = match p {
+                CallParams::PassOnly((pass,)) => (RPCAccount {
+                    name: "".to_string(), description: "".to_string()
+                }, pass),
+                CallParams::WithAccount((account, pass)) => (account, pass),
+            };
+
+            if pass.is_empty() {
                 put_error!(JsonRpcError::invalid_params("Empty passphrase"));
             }
-            match KeyFile::new(&p.1, &sec, Some(p.0.name), Some(p.0.description)) {
+            match KeyFile::new(&pass, &sec, Some(account.name), Some(account.description)) {
                 Ok(kf) => {
                     let addr = kf.address.to_string();
                     match kf.flush(keystore_path.as_ref()) {
