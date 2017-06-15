@@ -13,6 +13,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
 
+extern crate time;
 extern crate byteorder;
 extern crate chrono;
 extern crate crypto;
@@ -39,7 +40,15 @@ pub mod rpc;
 mod util;
 
 pub use self::core::*;
+pub use self::rpc::start;
 pub use self::util::*;
+
+const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
+
+/// Get the current Emerald version.
+pub fn version() -> &'static str {
+    VERSION.unwrap_or("unknown")
+}
 
 #[cfg(test)]
 mod tests {
