@@ -152,6 +152,17 @@ pub fn timestamp() -> String {
         .to_string()
 }
 
+pub fn to_16bytes(hex: &str) -> [u8; 16] {
+    to_arr(&hex.from_hex().unwrap())
+}
+
+pub fn to_20bytes(hex: &str) -> [u8; 20] {
+    to_arr(&hex.from_hex().unwrap())
+}
+
+pub fn to_32bytes(hex: &str) -> [u8; 32] {
+    to_arr(&hex.from_hex().unwrap())
+}
 
 #[cfg(test)]
 pub use self::tests::*;
@@ -161,17 +172,17 @@ mod tests {
     use super::*;
     use tests::*;
 
-    pub fn to_16bytes(hex: &str) -> [u8; 16] {
-        to_arr(&hex.from_hex().unwrap())
-    }
-
-    pub fn to_20bytes(hex: &str) -> [u8; 20] {
-        to_arr(&hex.from_hex().unwrap())
-    }
-
-    pub fn to_32bytes(hex: &str) -> [u8; 32] {
-        to_arr(&hex.from_hex().unwrap())
-    }
+//    pub fn to_16bytes(hex: &str) -> [u8; 16] {
+//        to_arr(&hex.from_hex().unwrap())
+//    }
+//
+//    pub fn to_20bytes(hex: &str) -> [u8; 20] {
+//        to_arr(&hex.from_hex().unwrap())
+//    }
+//
+//    pub fn to_32bytes(hex: &str) -> [u8; 32] {
+//        to_arr(&hex.from_hex().unwrap())
+//    }
 
     #[test]
     fn should_convert_zero_string_into_16bytes() {
