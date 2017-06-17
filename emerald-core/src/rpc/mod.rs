@@ -59,15 +59,13 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
     let mut io = IoHandler::default();
 
     {
-        io.add_method("emerald_currentVersion", move |p: Params| {
-            wrapper(serves::current_version(p.parse()?))
-        });
+        io.add_method("emerald_currentVersion",
+                      move |p: Params| wrapper(serves::current_version(p.parse()?)));
     }
 
     {
-        io.add_method("emerald_heartbeat", move |p: Params| {
-            wrapper(serves::heartbeat(p.parse()?))
-        });
+        io.add_method("emerald_heartbeat",
+                      move |p: Params| wrapper(serves::heartbeat(p.parse()?)));
     }
 
     {

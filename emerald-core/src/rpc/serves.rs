@@ -1,11 +1,11 @@
 use super::Error;
 use super::serialize::{RPCAccount, RPCTransaction};
+use core::Address;
 use jsonrpc_core::{self, Params};
-use std::path::PathBuf;
-use std::str::FromStr;
 
 use keystore::{KdfDepthLevel, KeyFile, list_accounts};
-use core::Address;
+use std::path::PathBuf;
+use std::str::FromStr;
 
 /// Main chain id
 pub const MAINNET_ID: u8 = 61;
@@ -29,13 +29,16 @@ pub enum NewAccountParams {
     WithAccount((RPCAccount, String)),
 }
 
-pub fn new_account(params: NewAccountParams, sec: &KdfDepthLevel, keystore_path: &PathBuf) -> Result<String, Error> {
+pub fn new_account(params: NewAccountParams,
+                   sec: &KdfDepthLevel,
+                   keystore_path: &PathBuf)
+                   -> Result<String, Error> {
     let (account, pass) = match params {
         NewAccountParams::PassOnly((pass,)) => {
             (RPCAccount {
-                name: "".to_string(),
-                description: "".to_string(),
-            },
+                 name: "".to_string(),
+                 description: "".to_string(),
+             },
              pass)
         }
         NewAccountParams::WithAccount((account, pass)) => (account, pass),
@@ -57,7 +60,9 @@ pub fn new_account(params: NewAccountParams, sec: &KdfDepthLevel, keystore_path:
     }
 }
 
-pub fn sign_transaction(params: (RPCTransaction, String), keystore_path: &PathBuf) -> Result<Params, Error> {
+pub fn sign_transaction(params: (RPCTransaction, String),
+                        keystore_path: &PathBuf)
+                        -> Result<Params, Error> {
     let addr = Address::from_str(&params.0.from)?;
 
     match KeyFile::search_by_address(&addr, keystore_path) {
