@@ -78,6 +78,7 @@ For more see link:./examples[examples folder].
 
 == References
 
+=== <<docs/cli.adoc#,CLI API>>
 === <<docs/api.adoc#,JSON-RPC API>>
 
 == License

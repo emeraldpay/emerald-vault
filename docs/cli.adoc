@@ -1,0 +1,22 @@
+ifdef::env-github,env-browser[:outfilesuffix: .adoc]
+ifndef::rootdir[:rootdir: ../]
+:imagesdir: {rootdir}/images
+:includedir: includes
+:toc:
+
+= CLI API
+
+Usage help description is based on http://docopt.org/[DOCOPT]:
+
+[source,txt]
+----
+include::../usage.txt[]
+----
+
+== Environment variables
+
+TBD
+
+== Examples
+
+TBD
