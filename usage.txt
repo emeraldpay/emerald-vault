@@ -1,25 +1,30 @@
-Emerald wallet command line interface.
+Emerald offline wallet command line interface.
 
 Usage:
-    emerald-cli [options]
-    emerald-cli (-h | --help)
-    emerald-cli (-V | --version)
+  emerald server [--port <port>] [--host <host>]
+  emerald account list [--chain <name>] [--chain-id <id>]
+  emerald account new [--chain <name>] [--chain-id <id>] [<name> [<description>]]
+  emerald account update [--chain <name>] [--chain-id <id>] (<uuid>|<address>) [<name> [<description>]]
+  emerald account shake [--chain <name>] [--chain-id <id>] (<uuid>|<address>)
+  emerald account hide [--chain <name>] [--chain-id <id>] <uuid>|<address>
+  emerald account reveal [--chain <name>] [--chain-id <id>] <uuid>|<address>
+  emerald account import [--chain <name>] [--chain-id <id>] [<path>...]
+  emerald account export [--chain <name>] [--chain-id <id>] <uuid>|<address>
+  emerald transaction sign [--chain <name>] [--chain-id <id>] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>)
+  emerald -V | --version
+  emerald -h | --help
 
 Options:
-    -h, --help                  Show this message.
-    -V, --version               Show current version.
-    -v, --verbose ...           Use verbose output (-vv very verbose output)
-    -q, --quiet                 No output printed to stdout
-    --host HOST                 Emerald wallet listen host [default: 127.0.0.1]
-    --port PORT                 Emerald wallet listen port [default: 1920]
-    --client-host HOST          Ethereum client connect to host [default: 127.0.0.1]
-    --client-port PORT          Ethereum client connect to port [default: 8545]
-    --client-path PATH          Path to Ethereum's executable node client
-    --base-path PATH            Base directory path.
-                                    If omitted default os-specific value will be used:
-                                        + Mac OS X: ~/Library/Emerald
-                                        + Linux: ~/.emerald
-                                        + Windows: %USERDIR%\.emerald
-    --security-level LEVEL      Defines level of security for cryptographic operations  [default: normal]
-                                ('normal', 'high', 'ultra')
-                                Note: higher level consumes more computation time.
+  -h, --help                                Show this message
+  -V, --version                             Show current version
+  -v, --verbose...                          Use verbose output (-vv very verbose output)
+  -q, --quiet                               No output printed to stdout
+      --host <host>                         Listen host [default: 127.0.0.1]
+      --port <port>                         Listen port [default: 1920]
+      --base-path <path>                    Base directory path, if omitted default os-specific value will be used:
+                                              + Mac OS X: ~/Library/Emerald
+                                              + Linux: ~/.emerald
+                                              + Windows: %USERDIR%\.emerald
+      --security-level normal|high|ultra    Level of security for cryptographic operations [default: normal]
+  -c, --chain mainnet|testnet               Chain name [default: mainnet]
+      --chain-id <id>                       Chain id [default: 61]
