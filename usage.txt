@@ -1,16 +1,16 @@
 Emerald offline wallet command line interface.
 
 Usage:
-  emerald server [--port <port>] [--host <host>]
-  emerald account list [--chain <name>] [--chain-id <id>]
-  emerald account new [--chain <name>] [--chain-id <id>] [<name> [<description>]]
-  emerald account update [--chain <name>] [--chain-id <id>] (<uuid>|<address>) [<name> [<description>]]
-  emerald account shake [--chain <name>] [--chain-id <id>] (<uuid>|<address>)
-  emerald account hide [--chain <name>] [--chain-id <id>] <uuid>|<address>
-  emerald account reveal [--chain <name>] [--chain-id <id>] <uuid>|<address>
-  emerald account import [--chain <name>] [--chain-id <id>] [<path>...]
-  emerald account export [--chain <name>] [--chain-id <id>] <uuid>|<address>
-  emerald transaction sign [--chain <name>] [--chain-id <id>] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>)
+  emerald server [options] [--port <port>] [--host <host>]
+  emerald account list [options]
+  emerald account new [options] [--security-level normal|high|ultra] [<name> [<description>]]
+  emerald account shake [options] [--security-level normal|high|ultra] (<uuid>|<address>)
+  emerald account update [options] (<uuid>|<address>) [<name> [<description>]]
+  emerald account hide [options] <uuid>|<address>
+  emerald account reveal [options] <uuid>|<address>
+  emerald account import [options] [<path>...]
+  emerald account export [options] <uuid>|<address>
+  emerald transaction sign [options] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>)
   emerald -V | --version
   emerald -h | --help
 
