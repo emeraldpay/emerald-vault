@@ -15,9 +15,9 @@ endif::[]
 
 Ethereum Classic offline wallet written in Rust.
 
-Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of plain C library.
+Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of a shared object.
 
-If you are looking for for a full-featured UI wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
+If you are looking for for a fully-featured UI wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
 
 Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
@@ -35,16 +35,18 @@ Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 Ensure you have these dependencies installed:
 
 ----
-openssl gcc pkgconfig
+openssl pkgconfig rustc cargo
 ----
 
-Also ensure that your installation of cargo (version 0.18) and rustc (version 1.17) is up to date.
+`cargo` and `rustc` should be at least versions 0.18 and 1.17 respectively.
 
-If your distribution or operating system does not have recent cargo and rustc binaries you can install them from: http://doc.crates.io/
+Should your distribution or operating system not have a recent cargo and rustc binaries you can install them from: http://doc.crates.io/
 
 ----
 $ git clone https://github.com/ethereumproject/emerald-rs
 ----
+
+If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` command in your cloned repository and all dependencies will be made available in your environment automatically.
 
 == Usage
 
