@@ -1,6 +1,7 @@
 ifdef::env-github,env-browser[:outfilesuffix: .adoc]
 ifndef::rootdir[:rootdir: ../]
 :imagesdir: {rootdir}/images
+:includedir: includes
 :toc:
 
 = JSON-RPC API
@@ -46,7 +47,7 @@ Return the list of all not hidden accounts from the keystore.
 
 *Parameters*:
 
-include::includes/api_additional_parameters.adoc[]
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*:
 
@@ -80,7 +81,7 @@ Creates a new account and stores it locally as a passphrase-encoded keystore fil
     ** `name` (String, optional) - account name
     ** `description` (String, optional) - account description
     ** `passphrase` (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
-include::includes/api_additional_parameters.adoc[]
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `address` (String) - hex-encoded 20 bytes public address
 
@@ -115,7 +116,7 @@ Update not secured by passphrase account metadata, like `name` and `description`
     ** `name` (String, optional) - account name
     ** `description` (String, optional) - account description
     ** `address` (String) - hex-encoded 20 bytes public address
-include::includes/api_additional_parameters.adoc[]
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -143,7 +144,7 @@ Recreate account with the same public address, but with a different passphrase.
     ** `address` (String) - hex-encoded 20 bytes public address
     ** `old_passphrase` (String) - old passphrase used to encode keyfile
     ** `new_passphrase` (String) - new passphrase to recreate keyfile (recommend to use 8+ words with good entropy)
-include::includes/api_additional_parameters.adoc[]
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -162,7 +163,7 @@ Hide an account from the list returned by `emerald_listAccounts`.
 
     * `account` (Object)
     ** `address` (String) - hex-encoded 20 bytes public address
-include::includes/api_additional_parameters.adoc[]
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -188,7 +189,7 @@ Reveal an account that was hidden before by the command `emerald_hideAccount`.
 
     * `account` (Object)
     ** `address` (String) - hex-encoded 20 bytes public address
-include::includes/api_additional_parameters.adoc[]
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -213,7 +214,7 @@ Import a new account from an external keyfile.
 *Parameters*:
 
     * `keyfile` (Object) - should be totally comply with the https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
-include::includes/api_additional_parameters.adoc[]
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `address` (String) - successfully imported hex-encoded 20 bytes public address
 
@@ -253,7 +254,7 @@ Returns an account keyfile associated with the account.
 
     * `account` (Object)
     ** `address` (String) - hex-encoded 20 bytes public address
-include::includes/api_additional_parameters.adoc[]
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `keyfile` (Object) - account in https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
 
@@ -299,7 +300,7 @@ Signs transaction offline with private key from keystore file with given passphr
     ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
     ** `nonce` (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
     ** `passphrase` (String) - passphrase used to encode keyfile
-include::includes/api_additional_parameters.adoc[]
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `data` (String) - hex-encoded signed raw transaction data
 
