@@ -28,6 +28,6 @@ Options:
                                               + Windows: %USERDIR%\.emerald
       --show-hidden                         Show also hidden accounts
   -r, --raw                                 Expect raw private key instead of a random one or extracted by given passphrase
-      --disable-passphrase-substitutions    Disable the passphrase substitution mechanism
+  -d, --disable-passphrase-substitutions    Disable the passphrase substitution mechanism
   -c, --chain mainnet|testnet               Chain name [default: mainnet]
       --chain-id <id>                       Chain id [default: 61]
