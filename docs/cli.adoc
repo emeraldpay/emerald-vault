@@ -6,6 +6,8 @@ ifndef::rootdir[:rootdir: ../]
 
 = CLI API
 
+== Usage
+
 Usage help description is based on http://docopt.org/[DOCOPT]:
 
 [source,txt]

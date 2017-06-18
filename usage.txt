@@ -3,12 +3,12 @@ Emerald offline wallet command line interface.
 Usage:
   emerald server [OPTION] [--port <port>] [--host <host>]
   emerald account list [OPTION] [--show-hidden]
-  emerald account [un]hide [OPTION] (<uuid> | <address>)...
+  emerald account [un]hide [OPTION] (<uuid> | <address>)
   emerald account new [OPTION] [--security-level <level>] [--raw] [<name> [<description>]] [FILE]
   emerald account strip [OPTION] (<uuid> | <address>) [FILE]
   emerald account update [OPTION] (<uuid> | <address>) [<name> [<description>]]
-  emerald account import [OPTION] [FILE]...
-  emerald account export [OPTION] [<uuid> | <address>]... [FILE]...
+  emerald account import [OPTION] [FILE]
+  emerald account export [OPTION] [<uuid> | <address>] [FILE]
   emerald transaction sign [OPTION] [--raw] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>) [FILE]
   emerald -V | --version
   emerald -h | --help
