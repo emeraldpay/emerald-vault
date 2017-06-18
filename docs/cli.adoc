@@ -40,7 +40,7 @@ emerald server --host 127.0.0.1 --port 1920
 emerald account list --chain testnet --show-hidden
 ----
 
-=== How to exclude some account from the showing list
+=== How to exclude some accounts from the showing list
 
 ----
 emerald hide --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4
@@ -55,20 +55,20 @@ emerald unhide --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4
 === How to create new account
 
 ----
-emerald new --chain testnet --security-level high "Test account" < echo "1234567890"
+emerald new --chain testnet --security-level high "Test account" < echo "secret passphrase"
 ----
 
 === How to show private key
 
 ----
-emerald strip --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4
+emerald strip --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4 < echo "secret passphrase"
 ----
 
 === How to change `passphrase`
 
 ----
-emerald strip --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4 < echo "old passphrase" > <temp_file>
-emerald new --chain testnet --raw < <temp_file> < echo "new passphrase"
+emerald strip --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4 < echo "old passphrase" \
+  | emerald new --chain testnet --raw < echo "new passphrase"
 ----
 
 === How to change account name
