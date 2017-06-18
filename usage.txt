@@ -3,9 +3,9 @@ Emerald offline wallet command line interface.
 Usage:
   emerald server [OPTION] [--port <port>] [--host <host>]
   emerald account list [OPTION] [--show-hidden]
-  emerald account new [OPTION]  [--raw] [--security-level normal|high|ultra] [<name> [<description>]] [FILE]
-  emerald account shake [OPTION] [--raw] [--security-level normal|high|ultra] (<uuid> | <address>) [FILE...]
+  emerald account new [OPTION]  [--raw] [<name> [<description>]] [FILE]
   emerald account update [OPTION] (<uuid>|<address>) [<name> [<description>]]
+  emerald account shake [OPTION] (<uuid> | <address>) [FILE...]
   emerald account hide [OPTION] (<uuid> | <address>)...
   emerald account reveal [OPTION] (<uuid> | <address>)...
   emerald account import [OPTION] [FILE...]
@@ -26,7 +26,7 @@ Options:
                                               + Linux: ~/.emerald
                                               + Windows: %USERDIR%\.emerald
       --show-hidden                         Show also hidden accounts
-      --security-level normal|high|ultra    Level of security for cryptographic operations [default: normal]
   -r, --raw                                 Expect raw private key instead of passphrase
+      --disable-passphrase-substitutions    Disable the passphrase substitution mechanism
   -c, --chain mainnet|testnet               Chain name [default: mainnet]
       --chain-id <id>                       Chain id [default: 61]
