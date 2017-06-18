@@ -1,16 +1,16 @@
 Emerald offline wallet command line interface.
 
 Usage:
-  emerald server [options] [--port <port>] [--host <host>]
-  emerald account list [options]
-  emerald account new [options] [--security-level normal|high|ultra] [<name> [<description>]]
-  emerald account shake [options] [--security-level normal|high|ultra] (<uuid>|<address>)
-  emerald account update [options] (<uuid>|<address>) [<name> [<description>]]
-  emerald account hide [options] <uuid>|<address>
-  emerald account reveal [options] <uuid>|<address>
-  emerald account import [options] [<path>...]
-  emerald account export [options] <uuid>|<address>
-  emerald transaction sign [options] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>)
+  emerald server [OPTION] [--port <port>] [--host <host>]
+  emerald account list [OPTION] [--show-hidden]
+  emerald account new [OPTION] [--security-level normal|high|ultra] [<name> [<description>]] [FILE]
+  emerald account shake [OPTION] [--security-level normal|high|ultra] (<uuid>|<address>) [FILE...]
+  emerald account update [OPTION] (<uuid>|<address>) [<name> [<description>]]
+  emerald account hide [OPTION] (<uuid> | <address>)...
+  emerald account reveal [OPTION] (<uuid> | <address>)...
+  emerald account import [OPTION] [FILE...]
+  emerald account export [OPTION] (<uuid> | <address>)... [FILE...]
+  emerald transaction sign [OPTION] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>)
   emerald -V | --version
   emerald -h | --help
 
@@ -25,6 +25,7 @@ Options:
                                               + Mac OS X: ~/Library/Emerald
                                               + Linux: ~/.emerald
                                               + Windows: %USERDIR%\.emerald
+      --show-hidden                         Show also hidden accounts
       --security-level normal|high|ultra    Level of security for cryptographic operations [default: normal]
   -c, --chain mainnet|testnet               Chain name [default: mainnet]
       --chain-id <id>                       Chain id [default: 61]
