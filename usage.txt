@@ -3,14 +3,14 @@ Emerald offline wallet command line interface.
 Usage:
   emerald server [OPTION] [--port <port>] [--host <host>]
   emerald account list [OPTION] [--show-hidden]
-  emerald account new [OPTION] [--security-level normal|high|ultra] [<name> [<description>]] [FILE]
-  emerald account shake [OPTION] [--security-level normal|high|ultra] (<uuid>|<address>) [FILE...]
+  emerald account new [OPTION] [--security-level normal|high|ultra] [--raw <pk>] [<name> [<description>]] [FILE]
+  emerald account shake [OPTION] [--security-level normal|high|ultra] [--raw <pk>] (<uuid> | <address>) [FILE...]
   emerald account update [OPTION] (<uuid>|<address>) [<name> [<description>]]
   emerald account hide [OPTION] (<uuid> | <address>)...
   emerald account reveal [OPTION] (<uuid> | <address>)...
   emerald account import [OPTION] [FILE...]
   emerald account export [OPTION] (<uuid> | <address>)... [FILE...]
-  emerald transaction sign [OPTION] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>)
+  emerald transaction sign [OPTION] [--raw <pk>] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>)
   emerald -V | --version
   emerald -h | --help
 
@@ -27,5 +27,6 @@ Options:
                                               + Windows: %USERDIR%\.emerald
       --show-hidden                         Show also hidden accounts
       --security-level normal|high|ultra    Level of security for cryptographic operations [default: normal]
+  -r, --raw <pk>                            Use current private key instead of create a new one or extract from account
   -c, --chain mainnet|testnet               Chain name [default: mainnet]
       --chain-id <id>                       Chain id [default: 61]
