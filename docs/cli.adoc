@@ -8,7 +8,7 @@ ifndef::rootdir[:rootdir: ..]
 
 == Usage
 
-Usage help description is based on http://docopt.org/[DOCOPT]: <<../usage.txt#,`usage.txt`>>.
+Usage help description is based on http://docopt.org/[DOCOPT]: link:{rootdir}/usage.txt#[`usage.txt`].
 
 == Environment variables
 
