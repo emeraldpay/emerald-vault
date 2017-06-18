@@ -15,7 +15,14 @@ include::../usage.txt[]
 
 == Environment variables
 
-TBD
+Environment variables allow you to redefine the default settings:
+
+* `EMERALD_BASE_PATH` - base directory path
+* `EMERALD_HOST` - listen host
+* `EMERALD_PORT` - listen port
+* `EMERALD_SECURITY_LEVEL` - security level (`normal` | `high` | `ultra`)
+* `EMERALD_CHAIN` - chain name (`mainnet` | `testnet`), has a higher priority relative to `EMERALD_CHAIN_ID`
+* `EMERALD_CHAIN_ID` - chain id number, has a lower priority relative to `EMERALD_CHAIN`
 
 == Examples
 

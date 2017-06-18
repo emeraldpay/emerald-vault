@@ -9,7 +9,7 @@ Usage:
   emerald account update [OPTION] (<uuid> | <address>) [<name> [<description>]]
   emerald account import [OPTION] [FILE]...
   emerald account export [OPTION] [<uuid> | <address>]... [FILE]...
-  emerald transaction sign [OPTION] [--raw] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>)
+  emerald transaction sign [OPTION] [--raw] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>) [FILE]
   emerald -V | --version
   emerald -h | --help
 
@@ -28,4 +28,4 @@ Options:
       --raw                                 Expect raw private key instead of a random one or extracted by given passphrase
       --security-level normal|high|ultra    Level of security for cryptographic operations [default: normal]
   -c, --chain mainnet|testnet               Chain name [default: mainnet]
-      --chain-id <id>                       Chain id [default: 61]
+      --chain-id <id>                       Chain id number [default: 61]
