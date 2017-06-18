@@ -12,7 +12,7 @@ Usage help description is based on http://docopt.org/[DOCOPT]:
 
 [source,txt]
 ----
-include::../usage.txt[]
+include::{rootdir}/usage.txt[]
 ----
 
 == Environment variables
