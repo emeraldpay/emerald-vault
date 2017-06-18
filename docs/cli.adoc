@@ -10,7 +10,6 @@ ifndef::rootdir[:rootdir: ..]
 
 Usage help description is based on http://docopt.org/[DOCOPT]:
 
-[source,txt]
 ----
 include::../usage.txt[]
 ----
