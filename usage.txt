@@ -3,14 +3,12 @@ Emerald offline wallet command line interface.
 Usage:
   emerald server [OPTION] [--port <port>] [--host <host>]
   emerald account list [OPTION] [--show-hidden]
-  emerald account new [OPTION]  [--raw] [<name> [<description>]] [FILE]
-  emerald account update [OPTION] (<uuid>|<address>) [<name> [<description>]]
-  emerald account strip [OPTION] (<uuid> | <address>) [FILE...]
-  emerald account shake [OPTION] (<uuid> | <address>) [FILE...]
-  emerald account hide [OPTION] (<uuid> | <address>)...
-  emerald account reveal [OPTION] (<uuid> | <address>)...
-  emerald account import [OPTION] [FILE...]
-  emerald account export [OPTION] (<uuid> | <address>)... [FILE...]
+  emerald account [un]hide [OPTION] (<uuid> | <address>)...
+  emerald account new [OPTION] [--security-level <level>] [--raw] [<name> [<description>]] [FILE]
+  emerald account strip [OPTION] (<uuid> | <address>) [FILE]
+  emerald account update [OPTION] (<uuid> | <address>) [<name> [<description>]]
+  emerald account import [OPTION] [FILE]...
+  emerald account export [OPTION] [<uuid> | <address>]... [FILE]...
   emerald transaction sign [OPTION] [--raw] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>)
   emerald -V | --version
   emerald -h | --help
@@ -27,7 +25,7 @@ Options:
                                               + Linux: ~/.emerald
                                               + Windows: %USERDIR%\.emerald
       --show-hidden                         Show also hidden accounts
-  -r, --raw                                 Expect raw private key instead of a random one or extracted by given passphrase
-  -d, --disable-passphrase-substitutions    Disable the passphrase substitution mechanism
+      --raw                                 Expect raw private key instead of a random one or extracted by given passphrase
+      --security-level normal|high|ultra    Level of security for cryptographic operations [default: normal]
   -c, --chain mainnet|testnet               Chain name [default: mainnet]
       --chain-id <id>                       Chain id [default: 61]
