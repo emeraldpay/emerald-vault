@@ -1,6 +1,7 @@
 ifdef::env-github,env-browser[:outfilesuffix: .adoc]
 ifndef::rootdir[:rootdir: ../]
 :imagesdir: {rootdir}/images
+:includedir: includes
 :toc:
 
 = JSON-RPC API
@@ -46,9 +47,8 @@ Return the list of all not hidden accounts from the keystore.
 
 *Parameters*:
 
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+include::{includedir}/api_additional_parameters.adoc[]
+    ** `show_hidden` (Boolean, optional) - also show hidden accounts
 
 *Result*:
 
@@ -72,96 +72,6 @@ Return the list of all not hidden accounts from the keystore.
      "id": 1}
 ----
 
-=== emerald_newAccount
-
-Creates a new account and stores it locally as a passphrase-encoded keystore file.
-
-*Parameters*:
-
-    * `account` (Object)
-    ** `name` (String, optional) - account name
-    ** `description` (String, optional) - account description
-    ** `passphrase` (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
-
-*Result*: `address` (String) - hex-encoded 20 bytes public address
-
-*Examples*:
-
-.Simple format, only `passphrase`
-----
---> {"jsonrpc": "2.0", "method": "emerald_newAccount", "params": [{"passphrase": "1234567890"}], "id": 1}
-<-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
-----
-
-.Full format, with optional account object for `testnet` (`62` id)
-----
---> {"jsonrpc": "2.0",
-     "method": "emerald_newAccount",
-     "params":
-       [{"name": "test",
-         "description": "A test account"
-         "passphrase": "1234567890"},
-        {"chain": "testnet"}],
-     "id": 1}
-<-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
-----
-
-=== emerald_updateAccount
-
-Update not secured by passphrase account metadata, like `name` and `description`.
-
-*Parameters*:
-
-    * `account` (Object)
-    ** `name` (String, optional) - account name
-    ** `description` (String, optional) - account description
-    ** `address` (String) - hex-encoded 20 bytes public address
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
-
-*Result*: `accept` (Boolean) - `true` if required account exists
-
-*Examples*:
-
-.If required account exists
-----
---> {"jsonrpc": "2.0", "method": "emerald_updateAccount", "params": [{"name": "new", "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
-<-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
-
-.If required account doesn't exist
-----
---> {"jsonrpc": "2.0", "method": "emerald_updateAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
-<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
-----
-
-=== emerald_shakeAccount
-
-Recreate account with the same public address, but with a different passphrase.
-
-*Parameters*:
-
-    * `account` (Object)
-    ** `address` (String) - hex-encoded 20 bytes public address
-    ** `old_passphrase` (String) - old passphrase used to encode keyfile
-    ** `new_passphrase` (String) - new passphrase to recreate keyfile (recommend to use 8+ words with good entropy)
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
-
-*Result*: `accept` (Boolean) - `true` if required account exists
-
-*Examples*:
-
-----
---> {"jsonrpc": "2.0", "method": "emerald_shakeAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "old_passphrase": "1234567890", "new_passphrase": "123"}], "id": 1}
-<-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
-
 === emerald_hideAccount
 
 Hide an account from the list returned by `emerald_listAccounts`.
@@ -170,9 +80,7 @@ Hide an account from the list returned by `emerald_listAccounts`.
 
     * `account` (Object)
     ** `address` (String) - hex-encoded 20 bytes public address
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -190,17 +98,15 @@ Hide an account from the list returned by `emerald_listAccounts`.
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
 ----
 
-=== emerald_revealAccount
+=== emerald_unhideAccount
 
-Reveal an account that was hidden before by the command `emerald_hideAccount`.
+Show an account that was hidden before by the command `emerald_hideAccount`.
 
 *Parameters*:
 
     * `account` (Object)
     ** `address` (String) - hex-encoded 20 bytes public address
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -218,6 +124,90 @@ Reveal an account that was hidden before by the command `emerald_hideAccount`.
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
 ----
 
+=== emerald_newAccount
+
+Creates a new account and stores it locally as a passphrase-encoded keystore file.
+
+*Parameters*:
+
+    * `account` (Object)
+    ** `name` (String, optional) - account name
+    ** `description` (String, optional) - account description
+    ** `passphrase` (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
+include::{includedir}/api_additional_parameters.adoc[]
+
+*Result*: `address` (String) - hex-encoded 20 bytes public address
+
+*Examples*:
+
+.Simple format, only `passphrase`
+----
+--> {"jsonrpc": "2.0", "method": "emerald_newAccount", "params": [{"passphrase": "1234567890"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
+----
+
+.Full format with all optional parameters for `testnet` (id: `62`)
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_newAccount",
+     "params":
+       [{"name": "test",
+         "description": "A test account"
+         "passphrase": "1234567890"},
+        {"chain": "testnet"}],
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
+----
+
+=== emerald_shakeAccount
+
+Recreate account with the same public address, but with a different passphrase.
+
+*Parameters*:
+
+    * `account` (Object)
+    ** `address` (String) - hex-encoded 20 bytes public address
+    ** `old_passphrase` (String) - old passphrase used to encode keyfile
+    ** `new_passphrase` (String) - new passphrase to recreate keyfile (recommend to use 8+ words with good entropy)
+include::{includedir}/api_additional_parameters.adoc[]
+
+*Result*: `accept` (Boolean) - `true` if required account exists
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_shakeAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "old_passphrase": "1234567890", "new_passphrase": "123"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+=== emerald_updateAccount
+
+Update not secured by passphrase account metadata, like `name` and `description`.
+
+*Parameters*:
+
+    * `account` (Object)
+    ** `name` (String, optional) - account name
+    ** `description` (String, optional) - account description
+    ** `address` (String) - hex-encoded 20 bytes public address
+include::{includedir}/api_additional_parameters.adoc[]
+
+*Result*: `accept` (Boolean) - `true` if required account exists
+
+*Examples*:
+
+.If required account exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_updateAccount", "params": [{"name": "new", "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+.If required account doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_updateAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
+----
+
 === emerald_importAccount
 
 Import a new account from an external keyfile.
@@ -225,9 +215,7 @@ Import a new account from an external keyfile.
 *Parameters*:
 
     * `keyfile` (Object) - should be totally comply with the https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `address` (String) - successfully imported hex-encoded 20 bytes public address
 
@@ -267,9 +255,7 @@ Returns an account keyfile associated with the account.
 
     * `account` (Object)
     ** `address` (String) - hex-encoded 20 bytes public address
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `keyfile` (Object) - account in https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
 
@@ -315,9 +301,7 @@ Signs transaction offline with private key from keystore file with given passphr
     ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
     ** `nonce` (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
     ** `passphrase` (String) - passphrase used to encode keyfile
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+include::{includedir}/api_additional_parameters.adoc[]
 
 *Result*: `data` (String) - hex-encoded signed raw transaction data
 
@@ -335,7 +319,7 @@ Signs transaction offline with private key from keystore file with given passphr
          "data": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675",
          "nonce": "0x1000",
          "passphrase": 1234567890"},
-         {"chain": "testnet"}],
+        {"chain": "testnet"}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675", "id": 1}
 ----

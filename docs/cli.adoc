@@ -1,0 +1,98 @@
+ifdef::env-github,env-browser[:outfilesuffix: .adoc]
+ifndef::rootdir[:rootdir: ../]
+:imagesdir: {rootdir}/images
+:includedir: includes
+:toc:
+
+= CLI API
+
+== Usage
+
+Usage help description is based on http://docopt.org/[DOCOPT]:
+
+[source,txt]
+----
+include::../usage.txt[]
+----
+
+== Environment variables
+
+Environment variables allow you to redefine the default settings:
+
+* `EMERALD_BASE_PATH` - base directory path
+* `EMERALD_HOST` - listen host
+* `EMERALD_PORT` - listen port
+* `EMERALD_SECURITY_LEVEL` - security level (`normal` | `high` | `ultra`)
+* `EMERALD_CHAIN` - chain name (`mainnet` | `testnet`), has a higher priority relative to `EMERALD_CHAIN_ID`
+* `EMERALD_CHAIN_ID` - chain id number, has a lower priority relative to `EMERALD_CHAIN`
+
+== HOWTO
+
+=== How to run <<cli.adoc#,`JSON-RPC`>> endpoint
+
+----
+emerald server --host 127.0.0.1 --port 1920
+----
+
+=== How to show all available accounts
+
+----
+emerald account list --chain testnet --show-hidden
+----
+
+=== How to exclude some account from the showing list
+
+----
+emerald hide --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4
+----
+
+To undo in the future:
+
+----
+emerald unhide --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4
+----
+
+=== How to create new account
+
+----
+emerald new --chain testnet --security-level high "Test account" < echo "1234567890"
+----
+
+=== How to show private key
+
+----
+emerald strip --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4
+----
+
+=== How to change `passphrase`
+
+----
+emerald strip --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4 < echo "old passphrase" > <temp_file>
+emerald new --chain testnet --raw < <temp_file> < echo "new passphrase"
+----
+
+=== How to change account name
+
+----
+emerald update --chain testnet 0x0e7c045110b8dbf29765047380898919c5cb56f4 "New name" "A new description"
+----
+
+=== How to export & import all accounts
+
+----
+emerald import all_accounts.json
+emerald export all_accounts.json
+----
+
+=== How to sign transaction (offline)
+
+----
+emerald transaction sign \
+  0x0e7c045110b8dbf29765047380898919c5cb56f4 \
+  0x1000 \
+  0x0e7c045110b8dbf29765047380898919c5cb56f4 \
+  0x5208 \
+  0x04e3b29200 \
+  0x0de0b6b3a7640000 \
+  < echo "secret passphrase"
+----
