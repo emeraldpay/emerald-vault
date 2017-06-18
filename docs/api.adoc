@@ -48,6 +48,7 @@ Return the list of all not hidden accounts from the keystore.
 *Parameters*:
 
 include::{includedir}/api_additional_parameters.adoc[]
+    ** `show_hidden` (Boolean, optional) - also show hidden accounts
 
 *Result*:
 
@@ -69,6 +70,58 @@ include::{includedir}/api_additional_parameters.adoc[]
         "description": "A test account",
         "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}],
      "id": 1}
+----
+
+=== emerald_hideAccount
+
+Hide an account from the list returned by `emerald_listAccounts`.
+
+*Parameters*:
+
+    * `account` (Object)
+    ** `address` (String) - hex-encoded 20 bytes public address
+include::{includedir}/api_additional_parameters.adoc[]
+
+*Result*: `accept` (Boolean) - `true` if required account exists
+
+*Examples*:
+
+.If required account exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_hideAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+.If required account doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_hideAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
+----
+
+=== emerald_unhideAccount
+
+Show an account that was hidden before by the command `emerald_hideAccount`.
+
+*Parameters*:
+
+    * `account` (Object)
+    ** `address` (String) - hex-encoded 20 bytes public address
+include::{includedir}/api_additional_parameters.adoc[]
+
+*Result*: `accept` (Boolean) - `true` if required account exists
+
+*Examples*:
+
+.If required account exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_revealAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+.If required account doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_revealAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
 ----
 
 === emerald_newAccount
@@ -106,6 +159,27 @@ include::{includedir}/api_additional_parameters.adoc[]
 <-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
 ----
 
+=== emerald_shakeAccount
+
+Recreate account with the same public address, but with a different passphrase.
+
+*Parameters*:
+
+    * `account` (Object)
+    ** `address` (String) - hex-encoded 20 bytes public address
+    ** `old_passphrase` (String) - old passphrase used to encode keyfile
+    ** `new_passphrase` (String) - new passphrase to recreate keyfile (recommend to use 8+ words with good entropy)
+include::{includedir}/api_additional_parameters.adoc[]
+
+*Result*: `accept` (Boolean) - `true` if required account exists
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_shakeAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "old_passphrase": "1234567890", "new_passphrase": "123"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
 === emerald_updateAccount
 
 Update not secured by passphrase account metadata, like `name` and `description`.
@@ -131,79 +205,6 @@ include::{includedir}/api_additional_parameters.adoc[]
 .If required account doesn't exist
 ----
 --> {"jsonrpc": "2.0", "method": "emerald_updateAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
-<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
-----
-
-=== emerald_shakeAccount
-
-Recreate account with the same public address, but with a different passphrase.
-
-*Parameters*:
-
-    * `account` (Object)
-    ** `address` (String) - hex-encoded 20 bytes public address
-    ** `old_passphrase` (String) - old passphrase used to encode keyfile
-    ** `new_passphrase` (String) - new passphrase to recreate keyfile (recommend to use 8+ words with good entropy)
-include::{includedir}/api_additional_parameters.adoc[]
-
-*Result*: `accept` (Boolean) - `true` if required account exists
-
-*Examples*:
-
-----
---> {"jsonrpc": "2.0", "method": "emerald_shakeAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "old_passphrase": "1234567890", "new_passphrase": "123"}], "id": 1}
-<-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
-
-=== emerald_hideAccount
-
-Hide an account from the list returned by `emerald_listAccounts`.
-
-*Parameters*:
-
-    * `account` (Object)
-    ** `address` (String) - hex-encoded 20 bytes public address
-include::{includedir}/api_additional_parameters.adoc[]
-
-*Result*: `accept` (Boolean) - `true` if required account exists
-
-*Examples*:
-
-.If required account exists
-----
---> {"jsonrpc": "2.0", "method": "emerald_hideAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
-<-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
-
-.If required account doesn't exist
-----
---> {"jsonrpc": "2.0", "method": "emerald_hideAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
-<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
-----
-
-=== emerald_revealAccount
-
-Reveal an account that was hidden before by the command `emerald_hideAccount`.
-
-*Parameters*:
-
-    * `account` (Object)
-    ** `address` (String) - hex-encoded 20 bytes public address
-include::{includedir}/api_additional_parameters.adoc[]
-
-*Result*: `accept` (Boolean) - `true` if required account exists
-
-*Examples*:
-
-.If required account exists
-----
---> {"jsonrpc": "2.0", "method": "emerald_revealAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
-<-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
-
-.If required account doesn't exist
-----
---> {"jsonrpc": "2.0", "method": "emerald_revealAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
 ----
 
