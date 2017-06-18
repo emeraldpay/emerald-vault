@@ -5,7 +5,7 @@ Usage:
   emerald account list [OPTION] [--show-hidden]
   emerald account new [OPTION]  [--raw] [<name> [<description>]] [FILE]
   emerald account update [OPTION] (<uuid>|<address>) [<name> [<description>]]
-  emerald account disclose [OPTION] (<uuid> | <address>) [FILE...]
+  emerald account strip [OPTION] (<uuid> | <address>) [FILE...]
   emerald account shake [OPTION] (<uuid> | <address>) [FILE...]
   emerald account hide [OPTION] (<uuid> | <address>)...
   emerald account reveal [OPTION] (<uuid> | <address>)...
