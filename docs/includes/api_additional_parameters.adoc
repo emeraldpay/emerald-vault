@@ -1,3 +1,0 @@
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`

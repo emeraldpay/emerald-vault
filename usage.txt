@@ -1,15 +1,15 @@
 Emerald offline wallet command line interface.
 
 Usage:
-  emerald server [OPTION] [--port <port>] [--host <host>]
-  emerald account list [OPTION] [--show-hidden]
-  emerald account [un]hide [OPTION] [<uuid> | <address>]
-  emerald account new [OPTION] [--security-level <level>] [--raw] [<name> [<description>]] [FILE]
-  emerald account strip [OPTION] (<uuid> | <address>) [FILE]
-  emerald account update [OPTION] (<uuid> | <address>) [<name> [<description>]]
-  emerald account import [OPTION] [FILE]
-  emerald account export [OPTION] [<uuid> | <address>] [FILE]
-  emerald transaction sign [OPTION] [--raw] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>) [FILE]
+  emerald server [options] [--port <port>] [--host <host>]
+  emerald account list [options] [--show-hidden]
+  emerald account [un]hide [options] [<uuid>|<address>]
+  emerald account new [options] [--security-level <level>] [--raw] [<name> [<description>]] [<passphrase-file>|-]
+  emerald account strip [options] (<uuid>|<address>) [<passphrase-file>|-]
+  emerald account update [options] (<uuid>|<address>) [<name> [<description>]]
+  emerald account import [options] [<keyfile>|-]
+  emerald account export [options] [<uuid>|<address>] [<keyfile>|-]
+  emerald transaction sign [options] [--raw] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>) [<passphrase-file>|-]
   emerald -V | --version
   emerald -h | --help
 

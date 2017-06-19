@@ -1,7 +1,6 @@
 ifdef::env-github,env-browser[:outfilesuffix: .adoc]
-ifndef::rootdir[:rootdir: ../]
+ifndef::rootdir[:rootdir: ..]
 :imagesdir: {rootdir}/images
-:includedir: includes
 :toc:
 
 = JSON-RPC API
@@ -47,7 +46,9 @@ Return the list of all not hidden accounts from the keystore.
 
 *Parameters*:
 
-include::{includedir}/api_additional_parameters.adoc[]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
     ** `show_hidden` (Boolean, optional) - also show hidden accounts
 
 *Result*:
@@ -80,7 +81,9 @@ Hide an account from the list returned by `emerald_listAccounts`.
 
     * `account` (Object)
     ** `address` (String) - hex-encoded 20 bytes public address
-include::{includedir}/api_additional_parameters.adoc[]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -106,7 +109,9 @@ Show an account that was hidden before by the command `emerald_hideAccount`.
 
     * `account` (Object)
     ** `address` (String) - hex-encoded 20 bytes public address
-include::{includedir}/api_additional_parameters.adoc[]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -134,7 +139,9 @@ Creates a new account and stores it locally as a passphrase-encoded keystore fil
     ** `name` (String, optional) - account name
     ** `description` (String, optional) - account description
     ** `passphrase` (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
-include::{includedir}/api_additional_parameters.adoc[]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
 *Result*: `address` (String) - hex-encoded 20 bytes public address
 
@@ -169,7 +176,9 @@ Recreate account with the same public address, but with a different passphrase.
     ** `address` (String) - hex-encoded 20 bytes public address
     ** `old_passphrase` (String) - old passphrase used to encode keyfile
     ** `new_passphrase` (String) - new passphrase to recreate keyfile (recommend to use 8+ words with good entropy)
-include::{includedir}/api_additional_parameters.adoc[]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -190,7 +199,9 @@ Update not secured by passphrase account metadata, like `name` and `description`
     ** `name` (String, optional) - account name
     ** `description` (String, optional) - account description
     ** `address` (String) - hex-encoded 20 bytes public address
-include::{includedir}/api_additional_parameters.adoc[]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
 *Result*: `accept` (Boolean) - `true` if required account exists
 
@@ -215,7 +226,9 @@ Import a new account from an external keyfile.
 *Parameters*:
 
     * `keyfile` (Object) - should be totally comply with the https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
-include::{includedir}/api_additional_parameters.adoc[]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
 *Result*: `address` (String) - successfully imported hex-encoded 20 bytes public address
 
@@ -255,7 +268,9 @@ Returns an account keyfile associated with the account.
 
     * `account` (Object)
     ** `address` (String) - hex-encoded 20 bytes public address
-include::{includedir}/api_additional_parameters.adoc[]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
 *Result*: `keyfile` (Object) - account in https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
 
@@ -301,7 +316,9 @@ Signs transaction offline with private key from keystore file with given passphr
     ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
     ** `nonce` (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
     ** `passphrase` (String) - passphrase used to encode keyfile
-include::{includedir}/api_additional_parameters.adoc[]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
 *Result*: `data` (String) - hex-encoded signed raw transaction data
 
