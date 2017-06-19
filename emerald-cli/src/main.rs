@@ -7,12 +7,14 @@
 
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
 
 extern crate docopt;
 extern crate env_logger;
 extern crate emerald_core as emerald;
 extern crate regex;
-extern crate rustc_serialize;
 
 use docopt::Docopt;
 use emerald::keystore::KdfDepthLevel;
@@ -26,10 +28,9 @@ use std::str::FromStr;
 
 const USAGE: &'static str = include_str!("../../usage.txt");
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Debug, Deserialize)]
 struct Args {
     flag_version: bool,
-    flag_verbose: usize,
     flag_quiet: bool,
     flag_host: String,
     flag_port: String,
@@ -54,7 +55,7 @@ fn main() {
     log_builder.init().expect("Expect to initialize logger");
 
     let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
+        .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
     if args.flag_version {

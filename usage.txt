@@ -12,12 +12,10 @@ Usage:
   emerald transaction sign [options] [--raw] [--gas <limit>] [--gas-cost <cost>] <from> <nonce> [<to> [<dec>]] [<data>] [-- <pfile>]
   emerald -V | --version
   emerald -h | --help
-  emerald [-v | -vv | -vvv]
 
 Options:
   -h, --help                                Show this message
   -V, --version                             Show current version
-  -v, --verbose                             Use verbose output (-vvv very verbose output)
   -q, --quiet                               No output printed to stdout
       --host <host>                         Listen host [default: 127.0.0.1]
       --port <port>                         Listen port [default: 1920]
