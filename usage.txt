@@ -26,6 +26,6 @@ Options:
                                               + Windows: %USERDIR%\.emerald
       --show-hidden                         Show also hidden accounts
       --raw                                 Expect raw private key instead of a random one or extracted by given passphrase
-      --security-level normal|high|ultra    Level of security for cryptographic operations [default: normal]
-  -c, --chain mainnet|testnet               Chain name [default: mainnet]
+      --security-level <normal|high|ultra>    Level of security for cryptographic operations [default: normal]
+  -c, --chain <mainnet|testnet>               Chain name [default: mainnet]
       --chain-id <id>                       Chain id number [default: 61]
