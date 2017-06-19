@@ -62,7 +62,7 @@ Return the list of all not hidden accounts from the keystore.
 *Examples*:
 
 ----
---> {"jsonrpc": "2.0", "method": "emerald_listAccounts", "params": [{"chain": "testnet"}], "id": 1}
+--> {"jsonrpc": "2.0", "method": "emerald_listAccounts", "params": [{"chain": "testnet", "show_hidden": true}], "id": 1}
 <-- {"jsonrpc": "2.0", "result":
       [{"address": "0x5e97870f263700f46aa00d967821199b9bc5a120"},
        {"name": "main",

@@ -2,14 +2,14 @@ Emerald offline wallet command line interface.
 
 Usage:
   emerald server [options] [--port <port>] [--host <host>]
-  emerald account list [options] [--show-hidden]
-  emerald account [un]hide [options] [<uuid>|<address>]
-  emerald account new [options] [--security-level <level>] [--raw] [<name> [<description>]] [<passphrase-file>|-]
-  emerald account strip [options] (<uuid>|<address>) [<passphrase-file>|-]
+  emerald account list [options] [--all]
+  emerald account [un]hide [options] [--all] [<uuid>|<address>]
+  emerald account strip [options] (<uuid>|<address>) [-- <pfile>]
+  emerald account new [options] [--raw] [--security-level <level>] [<name> [<description>]] [-- <pfile>]
   emerald account update [options] (<uuid>|<address>) [<name> [<description>]]
-  emerald account import [options] [<keyfile>|-]
-  emerald account export [options] [<uuid>|<address>] [<keyfile>|-]
-  emerald transaction sign [options] [--raw] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>) [<passphrase-file>|-]
+  emerald account import [options] [-- <keyfile>]
+  emerald account export [options] [--all] [<uuid>|<address>] [-- <keyfile>]
+  emerald transaction sign [options] [--raw] [--gas <limit>] [--gas-cost <cost>] <from> <nonce> [<to> [<dec>]] [<data>] [-- <pfile>]
   emerald -V | --version
   emerald -h | --help
   emerald [-v | -vv | -vvv]
@@ -25,8 +25,10 @@ Options:
                                               + Mac OS X: ~/Library/Emerald
                                               + Linux: ~/.emerald
                                               + Windows: %USERDIR%\.emerald
-      --show-hidden                         Show also hidden accounts
-      --raw                                 Expect raw private key instead of a random one or extracted by given passphrase
-      --security-level <normal|high|ultra>    Level of security for cryptographic operations [default: normal]
-  -c, --chain <mainnet|testnet>               Chain name [default: mainnet]
+      --all                                 Process all existing accounts, also hidden
+      --raw                                 Use private key in raw plaintext format
+      --security-level <normal|high|ultra>  Level of security for cryptographic operations [default: normal]
+      --gas <limit>                         Maximum gas limit to use by transaction [default: 90000]
+      --gas-cost <cost>                     Gas cost to use by transaction expressed in Gwei [default: 20]
+  -c, --chain <mainnet|testnet>             Chain name [default: mainnet]
       --chain-id <id>                       Chain id number [default: 61]
