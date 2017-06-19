@@ -12,11 +12,12 @@ Usage:
   emerald transaction sign [options] [--raw] <from> <nonce> [<to> [<dec-value>]] [<hex-data>] [-- <passphrase-file>]
   emerald -V | --version
   emerald -h | --help
+  emerald [-v | -vv | -vvv]
 
 Options:
   -h, --help                                Show this message
   -V, --version                             Show current version
-  -v, --verbose...                          Use verbose output (-vv very verbose output)
+  -v, --verbose                             Use verbose output (-vvv very verbose output)
   -q, --quiet                               No output printed to stdout
       --host <host>                         Listen host [default: 127.0.0.1]
       --port <port>                         Listen port [default: 1920]
@@ -26,6 +27,6 @@ Options:
                                               + Windows: %USERDIR%\.emerald
       --all                                 Process all existing accounts, also hidden
       --raw                                 Expect raw private key instead of a random one or extracted by given passphrase
-      --security-level normal|high|ultra    Level of security for cryptographic operations [default: normal]
-  -c, --chain mainnet|testnet               Chain name [default: mainnet]
+      --security-level <normal|high|ultra>    Level of security for cryptographic operations [default: normal]
+  -c, --chain <mainnet|testnet>               Chain name [default: mainnet]
       --chain-id <id>                       Chain id number [default: 61]
