@@ -29,7 +29,7 @@ const USAGE: &'static str = include_str!("../../usage.txt");
 #[derive(Debug, RustcDecodable)]
 struct Args {
     flag_version: bool,
-    flag_verbose: bool,
+    flag_verbose: usize,
     flag_quiet: bool,
     flag_host: String,
     flag_port: String,
