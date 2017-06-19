@@ -19,8 +19,8 @@ Environment variables allow you to redefine the default settings:
 * `EMERALD_PORT` - listen port
 * `EMERALD_CHAIN` - chain name (`mainnet` | `testnet`), has a higher priority relative to `EMERALD_CHAIN_ID`
 * `EMERALD_CHAIN_ID` - chain id number, has a lower priority relative to `EMERALD_CHAIN`
-* `EMERALD_GAS_MAXIMUM` - gas maximum limit to use by default by transaction
-* `EMERALD_GAS_COST` - gas cost to use by default by transaction
+* `EMERALD_GAS` - maximum gas limit to use by transaction
+* `EMERALD_GAS_COST` - gas cost to use by transaction
 * `EMERALD_SECURITY_LEVEL` - security level (`normal` | `high` | `ultra`)
 
 == HOWTO
