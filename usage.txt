@@ -29,6 +29,6 @@ Options:
       --raw                                 Use private key in raw plaintext
       --security-level <normal|high|ultra>    Level of security for cryptographic operations [default: normal]
       --gas <limit>                         Maximum gas limit to use by transaction [default: 90000]
-      --gas-cost <cost>                     Gas cost to use by transaction in Gwei [default: 20]
+      --gas-cost <cost>                     Gas cost to use by transaction defined in Gwei [default: 20]
   -c, --chain <mainnet|testnet>               Chain name [default: mainnet]
       --chain-id <id>                       Chain id number [default: 61]

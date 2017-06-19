@@ -20,7 +20,7 @@ Environment variables allow you to redefine the default settings:
 * `EMERALD_CHAIN` - chain name (`mainnet` | `testnet`), has a higher priority relative to `EMERALD_CHAIN_ID`
 * `EMERALD_CHAIN_ID` - chain id number, has a lower priority relative to `EMERALD_CHAIN`
 * `EMERALD_GAS` - maximum gas limit to use by transaction
-* `EMERALD_GAS_COST` - gas cost to use Gwei by transaction
+* `EMERALD_GAS_COST` - gas cost to use by transaction (in Gwei)
 * `EMERALD_SECURITY_LEVEL` - security level (`normal` | `high` | `ultra`)
 
 == HOWTO
