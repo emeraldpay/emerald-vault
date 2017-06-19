@@ -5,7 +5,7 @@ Usage:
   emerald account list [options] [--all]
   emerald account [un]hide [options] [--all] [<uuid>|<address>]
   emerald account new [options] [--raw] [--security-level <level>] [<name> [<description>]] [-- <pfile>]
-  emerald account strip [options] (<uuid>|<address>) [-- <passphrase-file>]
+  emerald account strip [options] (<uuid>|<address>) [-- <pfile>]
   emerald account update [options] (<uuid>|<address>) [<name> [<description>]]
   emerald account import [options] [-- <keyfile>]
   emerald account export [options] [--all] [<uuid>|<address>] [-- <keyfile>]
