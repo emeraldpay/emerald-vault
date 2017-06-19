@@ -2,14 +2,14 @@ Emerald offline wallet command line interface.
 
 Usage:
   emerald server [options] [--port <port>] [--host <host>]
-  emerald account list [options] [--show-hidden]
-  emerald account [un]hide [options] [<uuid>|<address>]
-  emerald account new [options] [--security-level <level>] [--raw] [<name> [<description>]] [<passphrase-file>|-]
-  emerald account strip [options] (<uuid>|<address>) [<passphrase-file>|-]
+  emerald account list [options] [--all]
+  emerald account [un]hide [options] [--all] [<uuid>|<address>]
+  emerald account new [options] [--security-level <level>] [--raw] [<name> [<description>]] [-- <passphrase-file>]
+  emerald account strip [options] (<uuid>|<address>) [-- <passphrase-file>]
   emerald account update [options] (<uuid>|<address>) [<name> [<description>]]
-  emerald account import [options] [<keyfile>|-]
-  emerald account export [options] [<uuid>|<address>] [<keyfile>|-]
-  emerald transaction sign [options] [--raw] <from> <nonce> <to> <gas> <gas-price> (<value>|<data>) [<passphrase-file>|-]
+  emerald account import [options] [-- <keyfile>]
+  emerald account export [options] [--all] [<uuid>|<address>] [-- <keyfile>]
+  emerald transaction sign [options] [--raw] <from> <nonce> [<to> [<dec-value>]] [<hex-data>] [-- <passphrase-file>]
   emerald -V | --version
   emerald -h | --help
 
@@ -24,7 +24,7 @@ Options:
                                               + Mac OS X: ~/Library/Emerald
                                               + Linux: ~/.emerald
                                               + Windows: %USERDIR%\.emerald
-      --show-hidden                         Show also hidden accounts
+      --all                                 Process all existing accounts, also hidden
       --raw                                 Expect raw private key instead of a random one or extracted by given passphrase
       --security-level normal|high|ultra    Level of security for cryptographic operations [default: normal]
   -c, --chain mainnet|testnet               Chain name [default: mainnet]
