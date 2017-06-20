@@ -1,5 +1,5 @@
 use super::Error;
-use super::serialize::{RPCAccount, RPCTransaction};
+use super::serialize::RPCTransaction;
 use core::Address;
 use jsonrpc_core::{self, Params, Value};
 

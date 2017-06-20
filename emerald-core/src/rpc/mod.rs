@@ -5,7 +5,7 @@ mod error;
 mod serves;
 
 pub use self::error::Error;
-use self::serialize::{RPCAccount, RPCTransaction};
+use self::serialize::RPCTransaction;
 use super::addressbook::Addressbook;
 use super::contract::Contracts;
 use super::core::{self, Address, Transaction};
