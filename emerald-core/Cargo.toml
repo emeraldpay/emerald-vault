@@ -8,7 +8,7 @@ repository = "https://github.com/ethereumproject/emerald-rs"
 documentation = "https://docs.rs/emerald-rs"
 keywords = ["rust", "ethereum-classic", "blockchain", "crypto-wallet"]
 categories = ["ethereum-classic"]
-readme = "README.adoc"
+readme = "../README.adoc"
 license = "Apache-2.0"
 
 [badges]
