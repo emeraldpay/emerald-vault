@@ -1,25 +1,34 @@
-Emerald wallet command line interface.
+Emerald offline wallet command line interface.
 
 Usage:
-    emerald-cli [options]
-    emerald-cli (-h | --help)
-    emerald-cli (-V | --version)
+  emerald server [options] [--port <port>] [--host <host>]
+  emerald account list [options] [--all]
+  emerald account [un]hide [options] [--all] [<uuid>|<address>]
+  emerald account strip [options] (<uuid>|<address>) [-- <pfile>]
+  emerald account new [options] [--raw] [--security-level <level>] [<name> [<description>]] [-- <pfile>]
+  emerald account update [options] (<uuid>|<address>) [<name> [<description>]]
+  emerald account import [options] [-- <keyfile>]
+  emerald account export [options] [--all] [<uuid>|<address>] [-- <keyfile>]
+  emerald transaction sign [options] [--raw] [--gas <limit>] [--gas-cost <cost>] <from> <nonce> [<to> [<dec>]] [<data>] [-- <pfile>]
+  emerald -V | --version
+  emerald -h | --help
+  emerald [-v | -vv | -vvv]
 
 Options:
-    -h, --help                  Show this message.
-    -V, --version               Show current version.
-    -v, --verbose ...           Use verbose output (-vv very verbose output)
-    -q, --quiet                 No output printed to stdout
-    --host HOST                 Emerald wallet listen host [default: 127.0.0.1]
-    --port PORT                 Emerald wallet listen port [default: 1920]
-    --client-host HOST          Ethereum client connect to host [default: 127.0.0.1]
-    --client-port PORT          Ethereum client connect to port [default: 8545]
-    --client-path PATH          Path to Ethereum's executable node client
-    --base-path PATH            Base directory path.
-                                    If omitted default os-specific value will be used:
-                                        + Mac OS X: ~/Library/Emerald
-                                        + Linux: ~/.emerald
-                                        + Windows: %USERDIR%\.emerald
-    --security-level LEVEL      Defines level of security for cryptographic operations  [default: normal]
-                                ('normal', 'high', 'ultra')
-                                Note: higher level consumes more computation time.
+  -h, --help                                Show this message
+  -V, --version                             Show current version
+  -v, --verbose                             Use verbose output (-vvv very verbose output)
+  -q, --quiet                               No output printed to stdout
+      --host <host>                         Listen host [default: 127.0.0.1]
+      --port <port>                         Listen port [default: 1920]
+      --base-path <path>                    Base directory path, if omitted default os-specific value will be used:
+                                              + Mac OS X: ~/Library/Emerald
+                                              + Linux: ~/.emerald
+                                              + Windows: %USERDIR%\.emerald
+      --all                                 Process all existing accounts, also hidden
+      --raw                                 Use private key in raw plaintext format
+      --security-level <normal|high|ultra>  Level of security for cryptographic operations [default: normal]
+      --gas <limit>                         Maximum gas limit to use by transaction [default: 90000]
+      --gas-cost <cost>                     Gas cost to use by transaction expressed in Gwei [default: 20]
+  -c, --chain <mainnet|testnet>             Chain name [default: mainnet]
+      --chain-id <id>                       Chain id number [default: 61]

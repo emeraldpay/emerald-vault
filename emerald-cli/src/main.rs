@@ -29,12 +29,15 @@ const USAGE: &'static str = include_str!("../../usage.txt");
 #[derive(Debug, RustcDecodable)]
 struct Args {
     flag_version: bool,
-    flag_verbose: bool,
+    flag_verbose: usize,
     flag_quiet: bool,
     flag_host: String,
     flag_port: String,
     flag_base_path: String,
     flag_security_level: String,
+    cmd_server: bool,
+    cmd_account: bool,
+    cmd_transaction: bool,
 }
 
 fn main() {
@@ -59,20 +62,6 @@ fn main() {
         exit(0);
     }
 
-    let addr = format!("{}:{}", args.flag_host, args.flag_port)
-        .parse::<SocketAddr>()
-        .expect("Expect to parse address");
-
-    let base_path_str = args.flag_base_path
-        .parse::<String>()
-        .expect("Expect to parse base path");
-
-    let base_path = if !base_path_str.is_empty() {
-        Some(PathBuf::from(&base_path_str))
-    } else {
-        None
-    };
-
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}", emerald::version());
     }
@@ -89,5 +78,21 @@ fn main() {
     };
     info!("security level set to '{}'", sec_level);
 
-    emerald::rpc::start(&addr, base_path, Some(sec_level));
+    if args.cmd_server {
+        let addr = format!("{}:{}", args.flag_host, args.flag_port)
+            .parse::<SocketAddr>()
+            .expect("Expect to parse address");
+
+        let base_path_str = args.flag_base_path
+            .parse::<String>()
+            .expect("Expect to parse base path");
+
+        let base_path = if !base_path_str.is_empty() {
+            Some(PathBuf::from(&base_path_str))
+        } else {
+            None
+        };
+        emerald::rpc::start(&addr, base_path, Some(sec_level));
+    }
+
 }
