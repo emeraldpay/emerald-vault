@@ -1,11 +1,46 @@
 use super::Error;
 use super::serialize::{RPCAccount, RPCTransaction};
 use core::Address;
-use jsonrpc_core::{self, Params};
+use jsonrpc_core::{self, Params, Value};
 
-use keystore::{KdfDepthLevel, KeyFile, list_accounts};
+use addressbook::Addressbook;
+use keystore::{KdfDepthLevel, KeyFile};
 use std::path::PathBuf;
 use std::str::FromStr;
+
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum Either<T, U> {
+    Left(T),
+    Right(U)
+}
+
+impl<T, U: Default> Either<T, U> {
+    pub fn into_right(self) -> U {
+        match self {
+            Either::Left(t) => U::default(),
+            Either::Right(u) => u,
+        }
+    }
+}
+
+impl<T: Default, U> Either<T, U> {
+    pub fn into_left(self) -> T {
+        match self {
+            Either::Left(t) => t,
+            Either::Right(u) => T::default(),
+        }
+    }
+}
+
+impl<T, U: Default> Either<(T,), (T, U)> {
+    fn into_full(self) -> (T, U) {
+        match self {
+            Either::Left((t,)) => (t, U::default()),
+            Either::Right((t, u)) => (t, u),
+        }
+    }
+}
 
 /// Main chain id
 pub const MAINNET_ID: u8 = 61;
@@ -23,32 +58,50 @@ pub fn heartbeat(params: ()) -> Result<i64, Error> {
 }
 
 #[derive(Deserialize)]
-#[serde(untagged)]
-pub enum NewAccountParams {
-    PassOnly((String,)),
-    WithAccount((RPCAccount, String)),
+pub struct ListAccountsAdditional {
+    #[serde(default)]
+    chain: String,
+    #[serde(default)]
+    chain_id: Option<usize>,
+    #[serde(default)]
+    show_hidden: bool,
 }
 
-pub fn new_account(params: NewAccountParams,
+pub fn list_accounts(params: Either<(), (ListAccountsAdditional,)>,
+                     keystore_path: &PathBuf)
+                     -> Result<Vec<Value>, Error> {
+    let address_book = Addressbook::new(keystore_path.clone());
+    Ok(address_book.list())
+}
+
+#[derive(Deserialize)]
+pub struct NewAccountAccount {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    description: String,
+    passphrase: String,
+}
+
+#[derive(Deserialize, Default)]
+pub struct NewAccountAdditional {
+    #[serde(default)]
+    chain: String,
+    #[serde(default)]
+    chain_id: Option<usize>,
+}
+
+pub fn new_account(params: Either<(NewAccountAccount,), (NewAccountAccount, NewAccountAdditional)>,
                    sec: &KdfDepthLevel,
                    keystore_path: &PathBuf)
                    -> Result<String, Error> {
-    let (account, pass) = match params {
-        NewAccountParams::PassOnly((pass,)) => {
-            (RPCAccount {
-                 name: "".to_string(),
-                 description: "".to_string(),
-             },
-             pass)
-        }
-        NewAccountParams::WithAccount((account, pass)) => (account, pass),
-    };
+    let (account, additional) = params.into_full();
 
-    if pass.is_empty() {
+    if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
     }
 
-    match KeyFile::new(&pass, &sec, Some(account.name), Some(account.description)) {
+    match KeyFile::new(&account.passphrase, &sec, Some(account.name), Some(account.description)) {
         Ok(kf) => {
             let addr = kf.address.to_string();
             match kf.flush(keystore_path) {
