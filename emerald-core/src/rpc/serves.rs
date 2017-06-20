@@ -8,6 +8,18 @@ use keystore::{KdfDepthLevel, KeyFile};
 use std::path::PathBuf;
 use std::str::FromStr;
 
+fn to_chain_id(chain: String, chain_id: Option<usize>) -> u8 {
+    if chain_id.is_some() {
+        chain_id.unwrap() as u8
+    } else if chain == "mainnet" {
+        61
+    } else if chain == "testnet" {
+        62
+    } else {
+        61
+    }
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Either<T, U> {
