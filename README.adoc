@@ -13,7 +13,7 @@ ifdef::badges[]
 = Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/dulanov/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/dulanov/emerald-rs"] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/ethereumproject/emerald-rs/blob/master/LICENSE"]
 endif::[]
 
-Ethereum Classic offline wallet written in Rust.
+Ethereum Classic offline wallet is written in Rust.
 
 Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of a shared object.
 
@@ -50,18 +50,18 @@ If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` comman
 
 == Usage
 
-How to run emerald connector (by default on port '1920'):
+How to run `emerald` (by default on port '1920'):
 
 ----
-$ RUST_LOG=emerald,rpc cargo run
+$ RUST_LOG=emerald,rpc cargo run -- server
 ----
 
-For more details look at link:./usage.txt[usage].
+For more details look at link:./emerald-cli/usage.txt[usage].
 
 == Examples
 
 ----
-extern crate emerald;
+extern crate emerald_core as emerald;
 
 use std::net::SocketAddr;
 
