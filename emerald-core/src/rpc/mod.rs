@@ -69,6 +69,34 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
     }
 
     {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_listAccounts",
+                      move |p: Params| wrapper(serves::list_accounts(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_hideAccount",
+                      move |p: Params| wrapper(serves::hide_account(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_unhideAccount",
+                      move |p: Params| wrapper(serves::unhide_account(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_shakeAccount",
+                      move |p: Params| wrapper(serves::shake_account(p.parse()?, &keystore_path)));
+    }
+
+    {
         let sec = sec_level;
         let keystore_path = keystore_path.clone();
 
