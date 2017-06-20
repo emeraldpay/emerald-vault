@@ -20,7 +20,7 @@ extern crate crypto;
 extern crate futures;
 extern crate glob;
 extern crate jsonrpc_core;
-extern crate jsonrpc_minihttp_server;
+extern crate jsonrpc_http_server;
 extern crate hyper;
 extern crate rand;
 extern crate regex;
