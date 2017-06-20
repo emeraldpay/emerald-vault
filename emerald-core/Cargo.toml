@@ -8,7 +8,7 @@ repository = "https://github.com/ethereumproject/emerald-rs"
 documentation = "https://docs.rs/emerald-rs"
 keywords = ["rust", "ethereum-classic", "blockchain", "crypto-wallet"]
 categories = ["ethereum-classic"]
-readme = "README.adoc"
+readme = "../README.adoc"
 license = "Apache-2.0"
 
 [badges]
@@ -23,8 +23,8 @@ path = "src/lib.rs"
 [dependencies]
 time = "0.1"
 futures = "0.1"
-jsonrpc-core = { git = "https://github.com/paritytech/jsonrpc.git",  branch="master" }
-jsonrpc-minihttp-server = { git = "https://github.com/paritytech/jsonrpc.git", branch="master" }
+jsonrpc-core = "7.0.1"
+jsonrpc-http-server = "7.0.1"
 lazy_static = "0.2"
 log = "0.3"
 regex = "0.2"

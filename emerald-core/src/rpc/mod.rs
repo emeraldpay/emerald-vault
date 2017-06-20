@@ -15,7 +15,7 @@ use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
-use jsonrpc_minihttp_server::{DomainsValidation, ServerBuilder, cors};
+use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::LogLevel;
 use rustc_serialize::json;
 use serde::Serialize;
@@ -86,8 +86,8 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
     }
 
     let server = ServerBuilder::new(io)
-        .cors(DomainsValidation::AllowOnly(vec![cors::AccessControlAllowOrigin::Any,
-                                                cors::AccessControlAllowOrigin::Null]))
+        .cors(DomainsValidation::AllowOnly(vec![AccessControlAllowOrigin::Any,
+                                                AccessControlAllowOrigin::Null]))
         .start_http(addr)
         .expect("Expect to build HTTP RPC server");
 
@@ -95,5 +95,5 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         info!("Connector started on http://{}", server.address());
     }
 
-    server.wait().expect("Expect to start HTTP RPC server");
+    server.wait();
 }
