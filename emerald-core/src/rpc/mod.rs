@@ -5,7 +5,7 @@ mod error;
 mod serves;
 
 pub use self::error::Error;
-use self::serialize::{RPCAccount, RPCTransaction};
+use self::serialize::RPCTransaction;
 use super::addressbook::Addressbook;
 use super::contract::Contracts;
 use super::core::{self, Address, Transaction};
@@ -66,6 +66,34 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
     {
         io.add_method("emerald_heartbeat",
                       move |p: Params| wrapper(serves::heartbeat(p.parse()?)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_listAccounts",
+                      move |p: Params| wrapper(serves::list_accounts(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_hideAccount",
+                      move |p: Params| wrapper(serves::hide_account(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_unhideAccount",
+                      move |p: Params| wrapper(serves::unhide_account(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_shakeAccount",
+                      move |p: Params| wrapper(serves::shake_account(p.parse()?, &keystore_path)));
     }
 
     {

@@ -1,5 +1,6 @@
 //! # Serialize keystore files (UTC / JSON) module errors
 
+use rpc;
 use rustc_serialize::json;
 use std::{error, fmt, io};
 
@@ -20,6 +21,12 @@ pub enum Error {
 
     /// `KeyFile` wasn't found
     NotFound,
+}
+
+impl From<Error> for rpc::Error {
+    fn from(err: Error) -> Self {
+        rpc::Error::InvalidDataFormat("Invalid serialization for keystore".to_string())
+    }
 }
 
 impl From<io::Error> for Error {
