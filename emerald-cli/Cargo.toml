@@ -8,7 +8,7 @@ repository = "https://github.com/ethereumproject/emerald-rs"
 documentation = "https://docs.rs/emerald-rs"
 keywords = ["rust", "ethereum-classic", "blockchain", "crypto-wallet"]
 categories = ["ethereum-classic"]
-readme = "README.adoc"
+readme = "../README.adoc"
 license = "Apache-2.0"
 
 [badges]
@@ -25,7 +25,7 @@ docopt = "0.8"
 serde = "1.0"
 serde_derive = "1.0"
 env_logger = { version = "0.4", optional = true }
-emerald-core = "1.0"
+emerald-core = "0.1"
 regex = "0.2"
 clippy = {version = "0.0", optional = true}
 
