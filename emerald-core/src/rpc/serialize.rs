@@ -1,7 +1,6 @@
 //! # Serialize JSON RPC parameters
 
-use super::{ClientMethod, Error, MethodParams};
-use super::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
+use super::{Error, ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value as JValue};
 use rustc_serialize::hex::FromHex;
@@ -51,22 +50,6 @@ impl RPCTransaction {
     }
 }
 
-lazy_static! {
-    static ref REQ_ID: Arc<AtomicUsize> = Arc::new(AtomicUsize::new(1));
-}
-
-fn empty_data() -> Option<String> {
-    None
-}
-
-#[derive(Clone, Debug, Serialize)]
-struct JsonData<'a> {
-    jsonrpc: &'static str,
-    method: &'static str,
-    params: &'a Params,
-    id: usize,
-}
-
 impl Transaction {
     /// Sign transaction and return as raw data
     pub fn to_raw_params(&self, pk: PrivateKey, chain: u8) -> Params {
@@ -77,56 +60,10 @@ impl Transaction {
     }
 }
 
-
-impl<'a> Serialize for MethodParams<'a> {
-    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
-    {
-        match self.0 {
-            ClientMethod::Version => serialize("web3_clientVersion", self.1, s),
-            ClientMethod::NetVersion => serialize("net_version", self.1, s),
-            ClientMethod::EthSyncing => serialize("eth_syncing", self.1, s),
-            ClientMethod::EthBlockNumber => serialize("eth_blockNumber", self.1, s),
-            ClientMethod::EthGasPrice => serialize("eth_gasPrice", self.1, s),
-            ClientMethod::EthAccounts => serialize("eth_accounts", self.1, s),
-            ClientMethod::EthGetBalance => serialize("eth_getBalance", self.1, s),
-            ClientMethod::EthGetTxCount => serialize("eth_getTransactionCount", self.1, s),
-            ClientMethod::EthGetTxByHash => serialize("eth_getTransactionByHash", self.1, s),
-            ClientMethod::EthSendRawTransaction => serialize("eth_sendRawTransaction", self.1, s),
-            ClientMethod::EthCall => serialize("eth_call", self.1, s),
-            ClientMethod::EthTraceCall => serialize("eth_traceCall", self.1, s),
-        }
-    }
-}
-
-fn serialize<S>(method: &'static str, params: &Params, serializer: S) -> Result<S::Ok, S::Error>
-    where S: Serializer
-{
-    to_json_data(method, params).serialize(serializer)
-}
-
-fn to_json_data<'a>(method: &'static str, params: &'a Params) -> JsonData<'a> {
-    let id = REQ_ID.fetch_add(1, Ordering::SeqCst);
-
-    JsonData {
-        jsonrpc: "2.0",
-        method: method,
-        params: params,
-        id: id,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use jsonrpc_core::Params;
     use serde_json;
     use std::str::FromStr;
-
-    #[test]
-    fn should_increase_request_ids() {
-        assert_eq!(to_json_data("", &Params::None).id, 1);
-        assert_eq!(to_json_data("", &Params::None).id, 2);
-        assert_eq!(to_json_data("", &Params::None).id, 3);
-    }
 }
