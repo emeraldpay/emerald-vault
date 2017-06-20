@@ -26,7 +26,7 @@ use std::path::PathBuf;
 use std::process::*;
 use std::str::FromStr;
 
-const USAGE: &'static str = include_str!("../../usage.txt");
+const USAGE: &'static str = include_str!("../usage.txt");
 
 #[derive(Debug, Deserialize)]
 struct Args {
