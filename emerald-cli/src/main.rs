@@ -37,8 +37,6 @@ struct Args {
     flag_base_path: String,
     flag_security_level: String,
     cmd_server: bool,
-    cmd_account: bool,
-    cmd_transaction: bool,
 }
 
 fn main() {
