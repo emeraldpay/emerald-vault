@@ -1,17 +1,58 @@
 use super::Error;
-use super::serialize::{RPCAccount, RPCTransaction};
-use core::Address;
-use jsonrpc_core::{self, Params};
+use super::serialize::RPCTransaction;
 
-use keystore::{KdfDepthLevel, KeyFile, list_accounts};
+use addressbook::Addressbook;
+use core::Address;
+use jsonrpc_core::{self, Params, Value};
+use keystore::{KdfDepthLevel, KeyFile};
 use std::path::PathBuf;
 use std::str::FromStr;
 
-/// Main chain id
-pub const MAINNET_ID: u8 = 61;
+fn to_chain_id(chain: String, chain_id: Option<usize>) -> u8 {
+    if chain_id.is_some() {
+        chain_id.unwrap() as u8
+    } else if chain == "mainnet" {
+        61
+    } else if chain == "testnet" {
+        62
+    } else {
+        61
+    }
+}
 
-/// Test chain id
-pub const TESTNET_ID: u8 = 62;
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum Either<T, U> {
+    Left(T),
+    Right(U),
+}
+
+impl<T, U: Default> Either<T, U> {
+    pub fn into_right(self) -> U {
+        match self {
+            Either::Left(t) => U::default(),
+            Either::Right(u) => u,
+        }
+    }
+}
+
+impl<T: Default, U> Either<T, U> {
+    pub fn into_left(self) -> T {
+        match self {
+            Either::Left(t) => t,
+            Either::Right(u) => T::default(),
+        }
+    }
+}
+
+impl<T, U: Default> Either<(T,), (T, U)> {
+    fn into_full(self) -> (T, U) {
+        match self {
+            Either::Left((t,)) => (t, U::default()),
+            Either::Right((t, u)) => (t, u),
+        }
+    }
+}
 
 pub fn current_version(params: ()) -> Result<&'static str, Error> {
     Ok(::version())
@@ -23,53 +64,150 @@ pub fn heartbeat(params: ()) -> Result<i64, Error> {
 }
 
 #[derive(Deserialize)]
-#[serde(untagged)]
-pub enum NewAccountParams {
-    PassOnly((String,)),
-    WithAccount((RPCAccount, String)),
+pub struct ListAccountsAdditional {
+    #[serde(default)]
+    chain: String,
+    #[serde(default)]
+    chain_id: Option<usize>,
+    #[serde(default)]
+    show_hidden: bool,
 }
 
-pub fn new_account(params: NewAccountParams,
+pub fn list_accounts(params: Either<(), (ListAccountsAdditional,)>,
+                     keystore_path: &PathBuf)
+                     -> Result<Vec<Value>, Error> {
+    let address_book = Addressbook::new(keystore_path.clone());
+    Ok(address_book.list())
+}
+
+#[derive(Deserialize, Default)]
+pub struct CommonAdditional {
+    #[serde(default)]
+    chain: String,
+    #[serde(default)]
+    chain_id: Option<usize>,
+}
+
+#[derive(Deserialize)]
+pub struct HideAccountAccount {
+    address: String,
+}
+
+pub fn hide_account(params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
+                    keystore_path: &PathBuf)
+                    -> Result<bool, Error> {
+    let (account, additional) = params.into_full();
+    unimplemented!();
+}
+
+#[derive(Deserialize)]
+pub struct UnhideAccountAccount {
+    address: String,
+}
+
+pub fn unhide_account(params: Either<(UnhideAccountAccount,),
+                                     (UnhideAccountAccount, CommonAdditional)>,
+                      keystore_path: &PathBuf)
+                      -> Result<bool, Error> {
+    let (account, additional) = params.into_full();
+    unimplemented!();
+}
+
+#[derive(Deserialize)]
+pub struct ShakeAccountAccount {
+    address: String,
+    old_passphrase: String,
+    new_passphrase: String,
+}
+
+pub fn shake_account(params: Either<(ShakeAccountAccount,),
+                                    (ShakeAccountAccount, CommonAdditional)>,
+                     keystore_path: &PathBuf)
+                     -> Result<bool, Error> {
+    use keystore::os_random;
+
+    let (account, additional) = params.into_full();
+    let addr = Address::from_str(&account.address)?;
+
+    let kf = KeyFile::search_by_address(&addr, keystore_path)?;
+    let pk = kf.decrypt_key(&account.old_passphrase)?;
+    let new_kf = KeyFile::new_custom(pk,
+                                     &account.new_passphrase,
+                                     kf.kdf,
+                                     &mut os_random(),
+                                     kf.name,
+                                     kf.description)?;
+    new_kf.flush(keystore_path)?;
+    Ok(true)
+}
+
+#[derive(Deserialize)]
+pub struct NewAccountAccount {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    description: String,
+    passphrase: String,
+}
+
+pub fn new_account(params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
                    sec: &KdfDepthLevel,
                    keystore_path: &PathBuf)
                    -> Result<String, Error> {
-    let (account, pass) = match params {
-        NewAccountParams::PassOnly((pass,)) => {
-            (RPCAccount {
-                 name: "".to_string(),
-                 description: "".to_string(),
-             },
-             pass)
-        }
-        NewAccountParams::WithAccount((account, pass)) => (account, pass),
-    };
+    let (account, additional) = params.into_full();
 
-    if pass.is_empty() {
+    if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
     }
 
-    match KeyFile::new(&pass, &sec, Some(account.name), Some(account.description)) {
-        Ok(kf) => {
-            let addr = kf.address.to_string();
-            match kf.flush(keystore_path) {
-                Ok(_) => Ok(addr),
-                Err(_) => Err(Error::RPC(jsonrpc_core::Error::internal_error())),
-            }
-        }
-        Err(_) => Err(Error::InvalidDataFormat("Invalid Keyfile data format".to_string())),
-    }
+    let kf = KeyFile::new(&account.passphrase,
+                          &sec,
+                          Some(account.name),
+                          Some(account.description))?;
+    let addr = kf.address.to_string();
+    kf.flush(keystore_path)?;
+
+    Ok(addr)
 }
 
-pub fn sign_transaction(params: (RPCTransaction, String),
+#[derive(Deserialize)]
+pub struct SignTransactionTransaction {
+    pub from: String,
+    pub to: String,
+    pub gas: String,
+    #[serde(rename="gasPrice")]
+    pub gas_price: String,
+    #[serde(default)]
+    pub value: String,
+    #[serde(default)]
+    pub data: String,
+    pub nonce: String,
+    pub passphrase: String,
+}
+
+pub fn sign_transaction(params: Either<(SignTransactionTransaction,),
+                                       (SignTransactionTransaction, CommonAdditional)>,
                         keystore_path: &PathBuf)
                         -> Result<Params, Error> {
-    let addr = Address::from_str(&params.0.from)?;
+    let (transaction, additional) = params.into_full();
+    let addr = Address::from_str(&transaction.from)?;
 
     match KeyFile::search_by_address(&addr, keystore_path) {
         Ok(kf) => {
-            if let Ok(pk) = kf.decrypt_key(&params.1) {
-                match params.0.try_into() {
-                    Ok(tr) => Ok(tr.to_raw_params(pk, TESTNET_ID)),
+            if let Ok(pk) = kf.decrypt_key(&transaction.passphrase) {
+                let transaction = RPCTransaction {
+                    from: transaction.from,
+                    to: transaction.to,
+                    gas: transaction.gas,
+                    gas_price: transaction.gas_price,
+                    value: transaction.value,
+                    data: transaction.data,
+                    nonce: transaction.nonce,
+                };
+                match transaction.try_into() {
+                    Ok(tr) => {
+                        Ok(tr.to_raw_params(pk, to_chain_id(additional.chain, additional.chain_id)))
+                    }
                     Err(err) => Err(Error::InvalidDataFormat(err.to_string())),
                 }
             } else {

@@ -10,12 +10,6 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Deserialize, Debug)]
-pub struct RPCAccount {
-    pub name: String,
-    pub description: String,
-}
-
-#[derive(Deserialize, Debug)]
 pub struct RPCTransaction {
     pub from: String,
     pub to: String,
