@@ -15,7 +15,7 @@ use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
-use jsonrpc_http_server::{DomainsValidation, ServerBuilder, AccessControlAllowOrigin};
+use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::LogLevel;
 use rustc_serialize::json;
 use serde::Serialize;
