@@ -60,16 +60,12 @@ impl Decodable for Crypto {
         d.read_struct("Crypto", 6, |d| {
             let cipher = d.read_struct_field("cipher", 0, |d| decode_str(d))?;
 
-            let cipher_params = d.read_struct_field(
-                "cipherparams",
-                1,
-                |d| CipherParams::decode(d),
-            )?;
+            let cipher_params =
+                d.read_struct_field("cipherparams", 1, |d| CipherParams::decode(d))?;
 
             let cipher_text = d.read_struct_field("ciphertext", 2, |d| {
-                d.read_str().and_then(|s| {
-                    s.from_hex().map_err(|e| d.error(&e.to_string()))
-                })
+                d.read_str()
+                    .and_then(|s| s.from_hex().map_err(|e| d.error(&e.to_string())))
             })?;
 
             let mut kdf = d.read_struct_field("kdf", 3, |d| decode_str(d))?;
@@ -110,14 +106,14 @@ impl Decodable for Crypto {
             let mac = d.read_struct_field("mac", 5, |d| Mac::decode(d))?;
 
             Ok(Crypto {
-                cipher: cipher,
-                cipher_text: cipher_text,
-                cipher_params: cipher_params,
-                kdf: kdf,
-                kdfparams_dklen: dklen,
-                kdfparams_salt: salt,
-                mac: mac,
-            })
+                   cipher: cipher,
+                   cipher_text: cipher_text,
+                   cipher_params: cipher_params,
+                   kdf: kdf,
+                   kdfparams_dklen: dklen,
+                   kdfparams_salt: salt,
+                   mac: mac,
+               })
         })
     }
 }
@@ -125,44 +121,16 @@ impl Decodable for Crypto {
 impl Encodable for Crypto {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         s.emit_struct("Crypto", 6, |s| {
-            s.emit_struct_field(
-                "cipher",
-                0,
-                |s| s.emit_str(&self.cipher.to_string()),
-            )?;
-            s.emit_struct_field(
-                "cipherparams",
-                1,
-                |s| self.cipher_params.encode(s),
-            )?;
-            s.emit_struct_field(
-                "ciphertext",
-                2,
-                |s| self.cipher_text.to_hex().encode(s),
-            )?;
-            s.emit_struct_field(
-                "kdf",
-                3,
-                |s| s.emit_str(&self.kdf.to_string()),
-            )?;
+            s.emit_struct_field("cipher", 0, |s| s.emit_str(&self.cipher.to_string()))?;
+            s.emit_struct_field("cipherparams", 1, |s| self.cipher_params.encode(s))?;
+            s.emit_struct_field("ciphertext", 2, |s| self.cipher_text.to_hex().encode(s))?;
+            s.emit_struct_field("kdf", 3, |s| s.emit_str(&self.kdf.to_string()))?;
             s.emit_struct_field("kdfparams", 4, |s| match self.kdf {
                 Kdf::Pbkdf2 { prf, c } => {
                     s.emit_struct("KdfParams", 4, |s| {
-                        s.emit_struct_field(
-                            "dklen",
-                            0,
-                            |s| s.emit_usize(self.kdfparams_dklen),
-                        )?;
-                        s.emit_struct_field(
-                            "salt",
-                            1,
-                            |s| self.kdfparams_salt.encode(s),
-                        )?;
-                        s.emit_struct_field(
-                            "prf",
-                            2,
-                            |s| s.emit_str(&prf.to_string()),
-                        )?;
+                        s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen))?;
+                        s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s))?;
+                        s.emit_struct_field("prf", 2, |s| s.emit_str(&prf.to_string()))?;
                         s.emit_struct_field("c", 3, |s| s.emit_u32(c))?;
 
                         Ok(())
@@ -170,16 +138,8 @@ impl Encodable for Crypto {
                 }
                 Kdf::Scrypt { n, r, p } => {
                     s.emit_struct("KdfParams", 5, |s| {
-                        s.emit_struct_field(
-                            "dklen",
-                            0,
-                            |s| s.emit_usize(self.kdfparams_dklen),
-                        )?;
-                        s.emit_struct_field(
-                            "salt",
-                            1,
-                            |s| self.kdfparams_salt.encode(s),
-                        )?;
+                        s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen))?;
+                        s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s))?;
                         s.emit_struct_field("n", 2, |s| s.emit_u32(n))?;
                         s.emit_struct_field("r", 3, |s| s.emit_u32(r))?;
                         s.emit_struct_field("p", 4, |s| s.emit_u32(p))?;
@@ -197,12 +157,10 @@ impl Encodable for Crypto {
 
 #[inline]
 pub fn decode_str<T: FromStr, D: Decoder>(d: &mut D) -> Result<T, D::Error>
-where
-    <T as FromStr>::Err: ::std::fmt::Display,
+    where <T as FromStr>::Err: ::std::fmt::Display
 {
-    d.read_str().and_then(|s| {
-        T::from_str(&s).map_err(|e| d.error(&e.to_string()))
-    })
+    d.read_str()
+        .and_then(|s| T::from_str(&s).map_err(|e| d.error(&e.to_string())))
 }
 
 #[cfg(test)]
@@ -259,12 +217,12 @@ mod tests {
                 c: 10240,
             },
             kdfparams_dklen: 32,
-            kdfparams_salt: json::decode(
-                "\"095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b\"",
-            ).unwrap(),
-            mac: json::decode(
-                "\"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63\"",
-            ).unwrap(),
+            kdfparams_salt:
+                json::decode("\"095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b\"")
+                    .unwrap(),
+            mac:
+                json::decode("\"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63\"")
+                    .unwrap(),
         };
 
         // just first encoding
@@ -292,12 +250,12 @@ mod tests {
                 p: 1,
             },
             kdfparams_dklen: 32,
-            kdfparams_salt: json::decode(
-                "\"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4\"",
-            ).unwrap(),
-            mac: json::decode(
-                "\"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5\"",
-            ).unwrap(),
+            kdfparams_salt:
+                json::decode("\"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4\"")
+                    .unwrap(),
+            mac:
+                json::decode("\"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5\"")
+                    .unwrap(),
         };
 
         // just first encoding

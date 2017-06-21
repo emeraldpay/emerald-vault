@@ -251,10 +251,8 @@ mod tests {
             .unwrap()
             .as_slice()
             .write_rlp(&mut buf);
-        assert_eq!(
-            "9c0100020003000400050006000700080009000a000b000c000d000e01",
-            buf.to_hex()
-        );
+        assert_eq!("9c0100020003000400050006000700080009000a000b000c000d000e01",
+                   buf.to_hex());
     }
 
     #[test]
@@ -400,10 +398,8 @@ mod tests {
         let mut buf = Vec::new();
         let list = vec!["cat".to_string(), "dog".to_string()];
         list.write_rlp(&mut buf);
-        assert_eq!(
-            [0xc8, 0x83, b'c', b'a', b't', 0x83, b'd', b'o', b'g'],
-            buf.as_slice()
-        );
+        assert_eq!([0xc8, 0x83, b'c', b'a', b't', 0x83, b'd', b'o', b'g'],
+                   buf.as_slice());
     }
 
     #[test]
@@ -422,9 +418,7 @@ mod tests {
         item2.push(&item21);
         list.push(&item2);
         list.write_rlp(&mut buf);
-        assert_eq!(
-            [0xc7, 0xc0, 0xc1, 0xc0, 0xc3, 0xc0, 0xc1, 0xc0],
-            buf.as_slice()
-        );
+        assert_eq!([0xc7, 0xc0, 0xc1, 0xc0, 0xc3, 0xc0, 0xc1, 0xc0],
+                   buf.as_slice());
     }
 }

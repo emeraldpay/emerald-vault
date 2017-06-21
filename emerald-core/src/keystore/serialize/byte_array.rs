@@ -59,18 +59,14 @@ mod tests {
 
     #[test]
     fn should_encode_default_byte_array() {
-        assert_eq!(
-            json::encode(&Hex8::default()).unwrap(),
-            "\"0000000000000000\""
-        );
+        assert_eq!(json::encode(&Hex8::default()).unwrap(),
+                   "\"0000000000000000\"");
     }
 
     #[test]
     fn should_decode_zero_byte_array() {
-        assert_eq!(
-            json::decode::<Hex8>("\"0000000000000000\"").unwrap(),
-            Hex8::default()
-        );
+        assert_eq!(json::decode::<Hex8>("\"0000000000000000\"").unwrap(),
+                   Hex8::default());
     }
 
     #[test]
