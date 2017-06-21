@@ -8,6 +8,7 @@ Usage:
 Options:
   -h, --help                                Show this message
   -V, --version                             Show current version
+  -v, --verbose LEVEL                       Show extra log output; -v 1 (info), -v 2 (debug), -v 3 (warn), -v 4 (debug), -v 5 (trace)
   -q, --quiet                               No output printed to stdout
       --host <host>                         Listen host [default: 127.0.0.1]
       --port <port>                         Listen port [default: 1920]
