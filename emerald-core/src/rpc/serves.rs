@@ -73,9 +73,10 @@ pub struct ListAccountsAdditional {
     show_hidden: bool,
 }
 
-pub fn list_accounts(params: Either<(), (ListAccountsAdditional,)>,
-                     keystore_path: &PathBuf)
-                     -> Result<Vec<Value>, Error> {
+pub fn list_accounts(
+    params: Either<(), (ListAccountsAdditional,)>,
+    keystore_path: &PathBuf,
+) -> Result<Vec<Value>, Error> {
     let address_book = Addressbook::new(keystore_path.clone());
     Ok(address_book.list())
 }
@@ -93,9 +94,10 @@ pub struct HideAccountAccount {
     address: String,
 }
 
-pub fn hide_account(params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
-                    keystore_path: &PathBuf)
-                    -> Result<bool, Error> {
+pub fn hide_account(
+    params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
+    keystore_path: &PathBuf,
+) -> Result<bool, Error> {
     let (account, additional) = params.into_full();
     unimplemented!();
 }
@@ -105,10 +107,10 @@ pub struct UnhideAccountAccount {
     address: String,
 }
 
-pub fn unhide_account(params: Either<(UnhideAccountAccount,),
-                                     (UnhideAccountAccount, CommonAdditional)>,
-                      keystore_path: &PathBuf)
-                      -> Result<bool, Error> {
+pub fn unhide_account(
+    params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
+    keystore_path: &PathBuf,
+) -> Result<bool, Error> {
     let (account, additional) = params.into_full();
     unimplemented!();
 }
@@ -120,10 +122,10 @@ pub struct ShakeAccountAccount {
     new_passphrase: String,
 }
 
-pub fn shake_account(params: Either<(ShakeAccountAccount,),
-                                    (ShakeAccountAccount, CommonAdditional)>,
-                     keystore_path: &PathBuf)
-                     -> Result<bool, Error> {
+pub fn shake_account(
+    params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
+    keystore_path: &PathBuf,
+) -> Result<bool, Error> {
     use keystore::os_random;
 
     let (account, additional) = params.into_full();
@@ -131,12 +133,14 @@ pub fn shake_account(params: Either<(ShakeAccountAccount,),
 
     let kf = KeyFile::search_by_address(&addr, keystore_path)?;
     let pk = kf.decrypt_key(&account.old_passphrase)?;
-    let new_kf = KeyFile::new_custom(pk,
-                                     &account.new_passphrase,
-                                     kf.kdf,
-                                     &mut os_random(),
-                                     kf.name,
-                                     kf.description)?;
+    let new_kf = KeyFile::new_custom(
+        pk,
+        &account.new_passphrase,
+        kf.kdf,
+        &mut os_random(),
+        kf.name,
+        kf.description,
+    )?;
     new_kf.flush(keystore_path)?;
     Ok(true)
 }
@@ -150,20 +154,23 @@ pub struct NewAccountAccount {
     passphrase: String,
 }
 
-pub fn new_account(params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
-                   sec: &KdfDepthLevel,
-                   keystore_path: &PathBuf)
-                   -> Result<String, Error> {
+pub fn new_account(
+    params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
+    sec: &KdfDepthLevel,
+    keystore_path: &PathBuf,
+) -> Result<String, Error> {
     let (account, additional) = params.into_full();
 
     if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
     }
 
-    let kf = KeyFile::new(&account.passphrase,
-                          &sec,
-                          Some(account.name),
-                          Some(account.description))?;
+    let kf = KeyFile::new(
+        &account.passphrase,
+        &sec,
+        Some(account.name),
+        Some(account.description),
+    )?;
     let addr = kf.address.to_string();
     kf.flush(keystore_path)?;
 
@@ -175,7 +182,7 @@ pub struct SignTransactionTransaction {
     pub from: String,
     pub to: String,
     pub gas: String,
-    #[serde(rename="gasPrice")]
+    #[serde(rename = "gasPrice")]
     pub gas_price: String,
     #[serde(default)]
     pub value: String,
@@ -185,10 +192,10 @@ pub struct SignTransactionTransaction {
     pub passphrase: String,
 }
 
-pub fn sign_transaction(params: Either<(SignTransactionTransaction,),
-                                       (SignTransactionTransaction, CommonAdditional)>,
-                        keystore_path: &PathBuf)
-                        -> Result<Params, Error> {
+pub fn sign_transaction(
+    params: Either<(SignTransactionTransaction,), (SignTransactionTransaction, CommonAdditional)>,
+    keystore_path: &PathBuf,
+) -> Result<Params, Error> {
     let (transaction, additional) = params.into_full();
     let addr = Address::from_str(&transaction.from)?;
 
@@ -206,7 +213,10 @@ pub fn sign_transaction(params: Either<(SignTransactionTransaction,),
                 };
                 match transaction.try_into() {
                     Ok(tr) => {
-                        Ok(tr.to_raw_params(pk, to_chain_id(additional.chain, additional.chain_id)))
+                        Ok(tr.to_raw_params(
+                            pk,
+                            to_chain_id(additional.chain, additional.chain_id),
+                        ))
                     }
                     Err(err) => Err(Error::InvalidDataFormat(err.to_string())),
                 }

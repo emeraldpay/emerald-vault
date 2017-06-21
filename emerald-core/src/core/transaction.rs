@@ -110,8 +110,9 @@ mod tests {
         }
         */
 
-        let pk = PrivateKey(
-            to_32bytes("c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4"));
+        let pk = PrivateKey(to_32bytes(
+            "c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4",
+        ));
 
         assert_eq!(tx.to_signed_raw(pk, 61 /*MAINNET_ID*/).unwrap().to_hex(),
                    "f86d\
