@@ -6,14 +6,14 @@ extern crate rand;
 extern crate uuid;
 extern crate tempdir;
 
+use emerald_core::PrivateKey;
+use emerald_core::keccak256;
+use emerald_core::keystore::{Kdf, KdfDepthLevel, KeyFile, os_random};
 use rustc_serialize::json;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use tempdir::TempDir;
-use emerald_core::PrivateKey;
-use emerald_core::keccak256;
-use emerald_core::keystore::{Kdf, KdfDepthLevel, KeyFile, os_random};
 use test::Bencher;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
