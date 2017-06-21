@@ -65,9 +65,10 @@ fn main() {
         info!("Starting Emerald Connector - v{}", emerald::version());
     }
 
-    let sec_level: &str = &args.flag_security_level
-                               .parse::<String>()
-                               .expect("Expect to parse security level");
+    let sec_level: &str = &args.flag_security_level.parse::<String>().expect(
+        "Expect to parse \
+         security level",
+    );
     let sec_level = match KdfDepthLevel::from_str(sec_level) {
         Ok(sec) => sec,
         Err(e) => {
@@ -82,9 +83,10 @@ fn main() {
             .parse::<SocketAddr>()
             .expect("Expect to parse address");
 
-        let base_path_str = args.flag_base_path
-            .parse::<String>()
-            .expect("Expect to parse base path");
+        let base_path_str = args.flag_base_path.parse::<String>().expect(
+            "Expect to parse base \
+             path",
+        );
 
         let base_path = if !base_path_str.is_empty() {
             Some(PathBuf::from(&base_path_str))

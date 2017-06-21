@@ -196,32 +196,48 @@ mod tests {
 
     #[test]
     fn should_convert_into_address() {
-        let key = PrivateKey(
-            to_32bytes("00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf"));
+        let key = PrivateKey(to_32bytes(
+            "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf",
+        ));
 
-        assert_eq!(key.to_address().unwrap().to_string(),
-                   "0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26");
+        assert_eq!(
+            key.to_address().unwrap().to_string(),
+            "0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
+        );
     }
 
     #[test]
     fn should_sign_hash() {
-        let key = PrivateKey(
-            to_32bytes("3c9229289a6125f7fdf1885a77bb12c37a8d3b4962d936f7e3084dece32a3ca1"));
+        let key = PrivateKey(to_32bytes(
+            "3c9229289a6125f7fdf1885a77bb12c37a8d3b4962d936f7e3084dece32a3ca1",
+        ));
 
-        let s = key.sign_hash(
-            to_32bytes("82ff40c0a986c6a5cfad4ddf4c3aa6996f1a7837f9c398e17e5de5cbd5a12b28"))
-            .unwrap();
+        let s = key.sign_hash(to_32bytes(
+            "82ff40c0a986c6a5cfad4ddf4c3aa6996f1a7837f9c398e17e5de5cbd5a12b28",
+        )).unwrap();
 
         assert_eq!(s.v, 27);
-        assert_eq!(s.r,
-                   to_32bytes("99e71a99cb2270b8cac5254f9e99b6210c6c10224a1579cf389ef88b20a1abe9"));
-        assert_eq!(s.s,
-                   to_32bytes("129ff05af364204442bdb53ab6f18a99ab48acc9326fa689f228040429e3ca66"));
+        assert_eq!(
+            s.r,
+            to_32bytes(
+                "99e71a99cb2270b8cac5254f9e99b6210c6c10224a1579cf389ef88b20a1abe9",
+            )
+        );
+        assert_eq!(
+            s.s,
+            to_32bytes(
+                "129ff05af364204442bdb53ab6f18a99ab48acc9326fa689f228040429e3ca66",
+            )
+        );
     }
 
     #[test]
     fn should_calculate_message_hash() {
-        assert_eq!(message_hash("Hello world"),
-                   to_32bytes("8144a6fa26be252b86456491fbcd43c1de7e022241845ffea1c3df066f7cfede"));
+        assert_eq!(
+            message_hash("Hello world"),
+            to_32bytes(
+                "8144a6fa26be252b86456491fbcd43c1de7e022241845ffea1c3df066f7cfede",
+            )
+        );
     }
 }

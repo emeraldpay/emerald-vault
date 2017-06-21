@@ -61,7 +61,9 @@ mod tests {
         let key = to_16bytes("2b7e151628aed2a6abf7158809cf4f3c");
         let iv = to_16bytes("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
 
-        assert_eq!(Cipher::Aes128Ctr.encrypt(&data, &key, &iv),
-                   "874d6191b620e3261bef6864990db6ce".from_hex().unwrap());
+        assert_eq!(
+            Cipher::Aes128Ctr.encrypt(&data, &key, &iv),
+            "874d6191b620e3261bef6864990db6ce".from_hex().unwrap()
+        );
     }
 }
