@@ -19,7 +19,7 @@ extern crate regex;
 use docopt::Docopt;
 use emerald::keystore::KdfDepthLevel;
 use env_logger::LogBuilder;
-use log::{LogLevel, LogLevelFilter};
+use log::LogLevel;
 use std::env;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -31,6 +31,7 @@ const USAGE: &'static str = include_str!("../usage.txt");
 #[derive(Debug, Deserialize)]
 struct Args {
     flag_version: bool,
+    flag_verbose: usize,
     flag_quiet: bool,
     flag_host: String,
     flag_port: String,
@@ -42,20 +43,26 @@ struct Args {
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
 
+    let args: Args = Docopt::new(USAGE)
+        .and_then(|d| d.deserialize())
+        .unwrap_or_else(|e| e.exit());
+
+    let verbosity: String = match args.flag_verbose {
+        0 => "off".into(),
+        1 => "info".into(),
+        2 => "warn".into(),
+        3 => "error".into(),
+        4 => "debug".into(),
+        5 => "trace".into(),
+        _ => "off".into(),
+    };
+    &env::set_var("RUST_LOG", verbosity);
     let mut log_builder = LogBuilder::new();
-
-    log_builder.filter(None, LogLevelFilter::Info);
-
     if env::var("RUST_LOG").is_ok() {
         log_builder.parse(&env::var("RUST_LOG").unwrap());
     }
 
     log_builder.init().expect("Expect to initialize logger");
-
-    let args: Args = Docopt::new(USAGE)
-        .and_then(|d| d.deserialize())
-        .unwrap_or_else(|e| e.exit());
-
     if args.flag_version {
         println!("v{}", emerald::version());
         exit(0);
