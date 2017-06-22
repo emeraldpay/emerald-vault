@@ -4,7 +4,7 @@ use super::serialize::RPCTransaction;
 use addressbook::Addressbook;
 use core::Address;
 use jsonrpc_core::{self, Params, Value};
-use keystore::{KdfDepthLevel, KeyFile};
+use keystore::{self, KdfDepthLevel, KeyFile};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::path::PathBuf;
@@ -65,6 +65,12 @@ pub fn heartbeat(params: ()) -> Result<i64, Error> {
     Ok(get_time().sec)
 }
 
+#[derive(Serialize)]
+pub struct ListAccountAccount {
+    name: String,
+    address: String,
+}
+
 #[derive(Deserialize)]
 pub struct ListAccountsAdditional {
     #[serde(default)]
@@ -77,9 +83,16 @@ pub struct ListAccountsAdditional {
 
 pub fn list_accounts(params: Either<(), (ListAccountsAdditional,)>,
                      keystore_path: &PathBuf)
-                     -> Result<Vec<Value>, Error> {
-    let address_book = Addressbook::new(keystore_path.clone());
-    Ok(address_book.list())
+                     -> Result<Vec<ListAccountAccount>, Error> {
+    Ok(keystore::list_accounts(keystore_path)?
+           .iter()
+           .map(|&(ref name, ref address)| {
+                    ListAccountAccount {
+                        name: name.clone(),
+                        address: address.clone(),
+                    }
+                })
+           .collect())
 }
 
 #[derive(Deserialize, Default)]
