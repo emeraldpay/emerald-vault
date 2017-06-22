@@ -7,9 +7,9 @@ use std::str::FromStr;
 
 impl Decodable for Address {
     fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
-        d.read_str().map(|s| format!("0x{}", s)).and_then(|s| {
-            Address::from_str(&s).map_err(|e| d.error(&e.to_string()))
-        })
+        d.read_str()
+            .map(|s| format!("0x{}", s))
+            .and_then(|s| Address::from_str(&s).map_err(|e| d.error(&e.to_string())))
     }
 }
 
@@ -38,84 +38,34 @@ mod tests {
 
     #[test]
     fn should_encode_default_address() {
-        assert_eq!(
-            json::encode(&Address::default()).unwrap(),
-            "\"0000000000000000000000000000000000000000\""
-        );
+        assert_eq!(json::encode(&Address::default()).unwrap(),
+                   "\"0000000000000000000000000000000000000000\"");
     }
 
     #[test]
     fn should_decode_zero_address() {
-        assert_eq!(
-            json::decode::<Address>("\"0000000000000000000000000000000000000000\"").unwrap(),
-            Address::default()
-        );
+        assert_eq!(json::decode::<Address>("\"0000000000000000000000000000000000000000\"")
+                       .unwrap(),
+                   Address::default());
     }
 
     #[test]
     fn should_encode_real_address() {
-        let addr = Address(
-            [
-                0x0e,
-                0x7c,
-                0x04,
-                0x51,
-                0x10,
-                0xb8,
-                0xdb,
-                0xf2,
-                0x97,
-                0x65,
-                0x04,
-                0x73,
-                0x80,
-                0x89,
-                0x89,
-                0x19,
-                0xc5,
-                0xcb,
-                0x56,
-                0xf4,
-            ],
-        );
+        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04,
+                            0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
-        assert_eq!(
-            json::encode(&addr).unwrap(),
-            "\"0e7c045110b8dbf29765047380898919c5cb56f4\""
-        );
+        assert_eq!(json::encode(&addr).unwrap(),
+                   "\"0e7c045110b8dbf29765047380898919c5cb56f4\"");
     }
 
     #[test]
     fn should_decode_real_address() {
-        let addr = Address(
-            [
-                0x0e,
-                0x7c,
-                0x04,
-                0x51,
-                0x10,
-                0xb8,
-                0xdb,
-                0xf2,
-                0x97,
-                0x65,
-                0x04,
-                0x73,
-                0x80,
-                0x89,
-                0x89,
-                0x19,
-                0xc5,
-                0xcb,
-                0x56,
-                0xf4,
-            ],
-        );
+        let addr = Address([0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04,
+                            0x73, 0x80, 0x89, 0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4]);
 
-        assert_eq!(
-            json::decode::<Address>("\"0e7c045110b8dbf29765047380898919c5cb56f4\"").unwrap(),
-            addr
-        );
+        assert_eq!(json::decode::<Address>("\"0e7c045110b8dbf29765047380898919c5cb56f4\"")
+                       .unwrap(),
+                   addr);
     }
 
     #[test]
@@ -140,14 +90,10 @@ mod tests {
 
     #[test]
     fn should_extract_address_single_quoted() {
-        assert_eq!(
-            try_extract_address(r#"address: '008aeeda4d805471df9b2a5b0f38a0c3bcba786b',"#),
-            Some(
-                "0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b"
-                    .parse::<Address>()
-                    .unwrap(),
-            )
-        );
+        assert_eq!(try_extract_address(r#"address: '008aeeda4d805471df9b2a5b0f38a0c3bcba786b',"#),
+                   Some("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b"
+                            .parse::<Address>()
+                            .unwrap()));
     }
 
     #[test]
@@ -164,20 +110,14 @@ mod tests {
 
     #[test]
     fn should_extract_address_with_optional_fields() {
-        assert_eq!(
-            try_extract_address(
-                r#"  },
+        assert_eq!(try_extract_address(r#"  },
                      "address": "3f4e0668c20e100d7c2a27d4b177ac65b2875d26",
                      "meta": "{}",
                      "name": "83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63",
-                   }"#,
-            ),
-            Some(
-                "0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
-                    .parse::<Address>()
-                    .unwrap(),
-            )
-        );
+                   }"#),
+                   Some("0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
+                            .parse::<Address>()
+                            .unwrap()));
     }
 
     #[test]

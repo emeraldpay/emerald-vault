@@ -4,7 +4,7 @@ use super::core;
 use jsonrpc_core;
 use keystore;
 use reqwest;
-use rustc_serialize::hex;
+use rustc_serialize::{self, hex};
 use serde_json;
 use std::{error, fmt};
 
@@ -17,6 +17,18 @@ pub enum Error {
     RPC(jsonrpc_core::Error),
     /// Invalid data format
     InvalidDataFormat(String),
+}
+
+impl From<rustc_serialize::json::EncoderError> for Error {
+    fn from(err: rustc_serialize::json::EncoderError) -> Self {
+        Error::InvalidDataFormat("encoder error".to_string())
+    }
+}
+
+impl From<rustc_serialize::json::DecoderError> for Error {
+    fn from(err: rustc_serialize::json::DecoderError) -> Self {
+        Error::InvalidDataFormat("decoder error".to_string())
+    }
 }
 
 impl From<keystore::Error> for Error {
