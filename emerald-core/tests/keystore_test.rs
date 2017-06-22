@@ -58,39 +58,30 @@ pub fn keystore_path() -> PathBuf {
 
 #[test]
 fn should_decrypt_private_key_protected_by_scrypt() {
-    let path = keyfile_path(
-        "UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc",
-    );
+    let path = keyfile_path("UTC--2017-03-17T10-52-08.\
+                             229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
     let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
 
     assert!(keyfile.decrypt_key("_").is_err());
-    assert_eq!(
-        keyfile.decrypt_key("1234567890").unwrap().to_hex(),
-        "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f"
-    );
+    assert_eq!(keyfile.decrypt_key("1234567890").unwrap().to_hex(),
+               "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f");
 }
 
 #[test]
 fn should_decrypt_private_key_protected_by_pbkdf2() {
-    let path = keyfile_path(
-        "UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9",
-    );
+    let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
 
     let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
 
     assert!(keyfile.decrypt_key("_").is_err());
-    assert_eq!(
-        keyfile.decrypt_key("1234567890").unwrap().to_hex(),
-        "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf"
-    );
+    assert_eq!(keyfile.decrypt_key("1234567890").unwrap().to_hex(),
+               "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf");
 }
 
 #[test]
 fn should_decode_keyfile_without_address() {
-    let path = keyfile_path(
-        "UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9",
-    );
+    let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
 
     let exp = KeyFile {
         name: Some("".to_string()),
@@ -102,26 +93,20 @@ fn should_decode_keyfile_without_address() {
             prf: Prf::default(),
             c: 10240,
         },
-        kdf_salt: arr!(
-            &"095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b"
-                .from_hex()
-                .unwrap(),
-            KDF_SALT_BYTES
-        ),
+        kdf_salt: arr!(&"095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b"
+                            .from_hex()
+                            .unwrap(),
+                       KDF_SALT_BYTES),
         cipher: Cipher::default(),
         cipher_text: "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126"
             .from_hex()
             .unwrap(),
-        cipher_iv: arr!(
-            &"58d54158c3e27131b0a0f2b91201aedc".from_hex().unwrap(),
-            CIPHER_IV_BYTES
-        ),
-        keccak256_mac: arr!(
-            &"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63"
-                .from_hex()
-                .unwrap(),
-            KECCAK256_BYTES
-        ),
+        cipher_iv: arr!(&"58d54158c3e27131b0a0f2b91201aedc".from_hex().unwrap(),
+                        CIPHER_IV_BYTES),
+        keccak256_mac: arr!(&"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63"
+                                 .from_hex()
+                                 .unwrap(),
+                            KECCAK256_BYTES),
     };
 
     // just first encoding
@@ -141,9 +126,8 @@ fn should_decode_keyfile_without_address() {
 
 #[test]
 fn should_decode_keyfile_with_address() {
-    let path = keyfile_path(
-        "UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc",
-    );
+    let path = keyfile_path("UTC--2017-03-17T10-52-08.\
+                             229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
     let exp = KeyFile {
         name: None,
@@ -156,26 +140,20 @@ fn should_decode_keyfile_with_address() {
             r: 8,
             p: 1,
         },
-        kdf_salt: arr!(
-            &"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
-                .from_hex()
-                .unwrap(),
-            KDF_SALT_BYTES
-        ),
+        kdf_salt: arr!(&"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
+                            .from_hex()
+                            .unwrap(),
+                       KDF_SALT_BYTES),
         cipher: Cipher::default(),
         cipher_text: "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
             .from_hex()
             .unwrap(),
-        cipher_iv: arr!(
-            &"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap(),
-            CIPHER_IV_BYTES
-        ),
-        keccak256_mac: arr!(
-            &"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
-                .from_hex()
-                .unwrap(),
-            KECCAK256_BYTES
-        ),
+        cipher_iv: arr!(&"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap(),
+                        CIPHER_IV_BYTES),
+        keccak256_mac: arr!(&"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
+                                 .from_hex()
+                                 .unwrap(),
+                            KECCAK256_BYTES),
     };
 
     // just first encoding
@@ -219,8 +197,6 @@ fn should_search_by_address() {
 
     let kf = KeyFile::search_by_address(&addr, &keystore_path()).unwrap();
 
-    assert_eq!(
-        kf.uuid,
-        "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3".parse().unwrap()
-    );
+    assert_eq!(kf.uuid,
+               "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3".parse().unwrap());
 }

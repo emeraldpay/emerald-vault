@@ -13,7 +13,8 @@ pub struct Storages {
 }
 
 /// Default path (*nix)
-#[cfg(all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android")))]
+#[cfg(all(unix, not(target_os = "macos"), not(target_os = "ios"),
+            not(target_os = "android")))]
 pub fn default_path() -> PathBuf {
     let mut config_dir = env::home_dir().expect("Expect path to home dir");
     config_dir.push(".emerald");

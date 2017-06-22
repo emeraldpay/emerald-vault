@@ -58,47 +58,62 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
     let mut io = IoHandler::default();
 
     {
-        io.add_method("emerald_currentVersion", move |p: Params| {
-            wrapper(serves::current_version(p.parse()?))
-        });
+        io.add_method("emerald_currentVersion",
+                      move |p: Params| wrapper(serves::current_version(p.parse()?)));
     }
 
     {
-        io.add_method("emerald_heartbeat", move |p: Params| {
-            wrapper(serves::heartbeat(p.parse()?))
-        });
-    }
-
-    {
-        let keystore_path = keystore_path.clone();
-
-        io.add_method("emerald_listAccounts", move |p: Params| {
-            wrapper(serves::list_accounts(p.parse()?, &keystore_path))
-        });
+        io.add_method("emerald_heartbeat",
+                      move |p: Params| wrapper(serves::heartbeat(p.parse()?)));
     }
 
     {
         let keystore_path = keystore_path.clone();
 
-        io.add_method("emerald_hideAccount", move |p: Params| {
-            wrapper(serves::hide_account(p.parse()?, &keystore_path))
-        });
+        io.add_method("emerald_listAccounts",
+                      move |p: Params| wrapper(serves::list_accounts(p.parse()?, &keystore_path)));
     }
 
     {
         let keystore_path = keystore_path.clone();
 
-        io.add_method("emerald_unhideAccount", move |p: Params| {
-            wrapper(serves::unhide_account(p.parse()?, &keystore_path))
-        });
+        io.add_method("emerald_hideAccount",
+                      move |p: Params| wrapper(serves::hide_account(p.parse()?, &keystore_path)));
     }
 
     {
         let keystore_path = keystore_path.clone();
 
-        io.add_method("emerald_shakeAccount", move |p: Params| {
-            wrapper(serves::shake_account(p.parse()?, &keystore_path))
-        });
+        io.add_method("emerald_unhideAccount",
+                      move |p: Params| wrapper(serves::unhide_account(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_shakeAccount",
+                      move |p: Params| wrapper(serves::shake_account(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_updateAccount",
+                      move |p: Params| wrapper(serves::update_account(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_importAccount",
+                      move |p: Params| wrapper(serves::import_account(p.parse()?, &keystore_path)));
+    }
+
+    {
+        let keystore_path = keystore_path.clone();
+
+        io.add_method("emerald_exportAccount",
+                      move |p: Params| wrapper(serves::export_account(p.parse()?, &keystore_path)));
     }
 
     {
@@ -119,10 +134,8 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
     }
 
     let server = ServerBuilder::new(io)
-        .cors(DomainsValidation::AllowOnly(vec![
-            AccessControlAllowOrigin::Any,
-            AccessControlAllowOrigin::Null,
-        ]))
+        .cors(DomainsValidation::AllowOnly(vec![AccessControlAllowOrigin::Any,
+                                                AccessControlAllowOrigin::Null]))
         .start_http(addr)
         .expect("Expect to build HTTP RPC server");
 

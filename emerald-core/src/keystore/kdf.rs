@@ -143,9 +143,9 @@ impl FromStr for Kdf {
         match s {
             _ if s == PBKDF2_KDF_NAME => {
                 Ok(Kdf::Pbkdf2 {
-                    prf: Prf::default(),
-                    c: 262144,
-                })
+                       prf: Prf::default(),
+                       c: 262144,
+                   })
             }
             _ if s == SCRYPT_KDF_NAME => Ok(Kdf::default()),
             _ => Err(Error::UnsupportedKdf(s.to_string())),
@@ -169,27 +169,21 @@ pub mod tests {
 
     #[test]
     fn should_derive_key_via_pbkdf2() {
-        let kdf_salt = to_32bytes(
-            "ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd",
-        );
+        let kdf_salt =
+            to_32bytes("ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd");
 
-        assert_eq!(
-            Kdf::from(8).derive(32, &kdf_salt, "testpassword").to_hex(),
-            "031dc7e0f4f375f6d6fdab7ad8d71834d844e39a6b62f9fb98d942bab76db0f9"
-        );
+        assert_eq!(Kdf::from(8).derive(32, &kdf_salt, "testpassword").to_hex(),
+                   "031dc7e0f4f375f6d6fdab7ad8d71834d844e39a6b62f9fb98d942bab76db0f9");
     }
 
     #[test]
     fn should_derive_key_via_scrypt() {
-        let kdf_salt = to_32bytes(
-            "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
-        );
+        let kdf_salt =
+            to_32bytes("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4");
 
-        assert_eq!(
-            Kdf::from((2, 8, 1))
-                .derive(32, &kdf_salt, "1234567890")
-                .to_hex(),
-            "52a5dacfcf80e5111d2c7fbed177113a1b48a882b066a017f2c856086680fac7"
-        );
+        assert_eq!(Kdf::from((2, 8, 1))
+                       .derive(32, &kdf_salt, "1234567890")
+                       .to_hex(),
+                   "52a5dacfcf80e5111d2c7fbed177113a1b48a882b066a017f2c856086680fac7");
     }
 }

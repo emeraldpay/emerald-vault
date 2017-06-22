@@ -71,9 +71,8 @@ impl KeyFile {
     /// * `addr` - a public address (optional)
     ///
     pub fn flush<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
-        let path = dir.as_ref().join(
-            &generate_filename(&self.uuid.to_string()),
-        );
+        let path = dir.as_ref()
+            .join(&generate_filename(&self.uuid.to_string()));
         let sf = SerializableKeyFile::from(self.clone());
         let json = json::encode(&sf)?;
         let mut file = File::create(&path)?;
@@ -293,8 +292,6 @@ mod tests {
     fn should_generate_filename() {
         let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
 
-        assert!(re.is_match(
-            &generate_filename("9bec4728-37f9-4444-9990-2ba70ee038e9"),
-        ));
+        assert!(re.is_match(&generate_filename("9bec4728-37f9-4444-9990-2ba70ee038e9")));
     }
 }

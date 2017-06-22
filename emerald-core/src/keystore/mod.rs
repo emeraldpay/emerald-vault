@@ -76,22 +76,19 @@ impl KeyFile {
     ///
     /// * `passphrase` - password for key derivation function
     ///
-    pub fn new(
-        passphrase: &str,
-        sec_level: &KdfDepthLevel,
-        name: Option<String>,
-        description: Option<String>,
-    ) -> Result<KeyFile, Error> {
+    pub fn new(passphrase: &str,
+               sec_level: &KdfDepthLevel,
+               name: Option<String>,
+               description: Option<String>)
+               -> Result<KeyFile, Error> {
         let mut rng = os_random();
 
-        Self::new_custom(
-            PrivateKey::gen_custom(&mut rng),
-            passphrase,
-            Kdf::from(*sec_level),
-            &mut rng,
-            name,
-            description,
-        )
+        Self::new_custom(PrivateKey::gen_custom(&mut rng),
+                         passphrase,
+                         Kdf::from(*sec_level),
+                         &mut rng,
+                         name,
+                         description)
     }
 
     /// Creates a new `KeyFile` with specified `PrivateKey`, passphrase, key derivation function
@@ -104,14 +101,13 @@ impl KeyFile {
     /// * `kdf` - customized key derivation function
     /// * `rnd` - predefined random number generator
     ///
-    pub fn new_custom<R: Rng>(
-        pk: PrivateKey,
-        passphrase: &str,
-        kdf: Kdf,
-        rng: &mut R,
-        name: Option<String>,
-        description: Option<String>,
-    ) -> Result<KeyFile, Error> {
+    pub fn new_custom<R: Rng>(pk: PrivateKey,
+                              passphrase: &str,
+                              kdf: Kdf,
+                              rng: &mut R,
+                              name: Option<String>,
+                              description: Option<String>)
+                              -> Result<KeyFile, Error> {
         let mut kf = KeyFile {
             uuid: rng.gen::<Uuid>(),
             name: name,
@@ -144,11 +140,10 @@ impl KeyFile {
             return Err(Error::FailedMacValidation);
         }
 
-        Ok(PrivateKey(to_arr(&self.cipher.encrypt(
-            &self.cipher_text,
-            &derived[0..16],
-            &self.cipher_iv,
-        ))))
+        Ok(PrivateKey(to_arr(&self.cipher
+                                  .encrypt(&self.cipher_text,
+                                           &derived[0..16],
+                                           &self.cipher_iv))))
     }
 
     /// Encrypt a new private key for keystore file with a passphrase
