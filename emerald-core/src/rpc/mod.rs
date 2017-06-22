@@ -19,10 +19,9 @@ use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBui
 use log::LogLevel;
 use rustc_serialize::json;
 use serde::Serialize;
-use serde_json::{self, Map, Value};
+use serde_json::{self, Value};
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::Arc;
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {

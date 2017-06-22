@@ -18,7 +18,6 @@ use std::io::{Read, Write};
 use std::path::Path;
 use uuid::Uuid;
 
-
 /// Keystore file current version used for serializing
 pub const CURRENT_VERSION: u8 = 3;
 
@@ -33,6 +32,7 @@ struct SerializableKeyFile {
     address: Address,
     name: Option<String>,
     description: Option<String>,
+    visible: Option<bool>,
     crypto: Crypto,
 }
 
@@ -44,6 +44,7 @@ impl From<KeyFile> for SerializableKeyFile {
             address: key_file.address,
             name: key_file.name.clone(),
             description: key_file.description.clone(),
+            visible: key_file.visible,
             crypto: Crypto::from(key_file),
         }
     }
@@ -143,7 +144,7 @@ impl Encodable for KeyFile {
 pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<(String, String)>, Error> {
     let mut accounts: Vec<(String, String)> = vec![];
 
-    for e in read_dir(path)? {
+    for e in read_dir(&path)? {
         if e.is_err() {
             continue;
         }
@@ -157,9 +158,11 @@ pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<(String, String)>, E
 
             match json::decode::<KeyFile>(&content) {
                 Ok(kf) => {
-                    match kf.name {
-                        Some(name) => accounts.push((name, kf.address.to_string())),
-                        None => accounts.push(("".to_string(), kf.address.to_string())),
+                    if kf.visible.is_none() || kf.visible.unwrap() {
+                        match kf.name {
+                            Some(name) => accounts.push((name, kf.address.to_string())),
+                            None => accounts.push(("".to_string(), kf.address.to_string())),
+                        }
                     }
                 }
                 Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
@@ -169,6 +172,69 @@ pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<(String, String)>, E
 
     Ok(accounts)
 }
+
+///
+pub fn hide_account<P: AsRef<Path>>(addr: &Address, path: P) -> Result<(), Error> {
+    for e in read_dir(&path)? {
+        if e.is_err() {
+            continue;
+        }
+        let entry = e.unwrap();
+
+        let mut content = String::new();
+        if let Ok(mut keyfile) = File::open(entry.path()) {
+            if keyfile.read_to_string(&mut content).is_err() {
+                continue;
+            }
+            match json::decode::<KeyFile>(&content) {
+                Ok(mut kf) => {
+                    if kf.address == *addr {
+                        kf.visible = Some(false);
+                        kf.flush(&path);
+                        return Ok(());
+                    }
+                }
+                Err(_) => {
+                    return Err(Error::NotFound);
+                },
+            }
+        }
+    }
+
+    Err(Error::NotFound)
+}
+
+///
+pub fn unhide_account<P: AsRef<Path>>(addr: &Address, path: P) -> Result<(), Error> {
+    for e in read_dir(&path)? {
+        if e.is_err() {
+            continue;
+        }
+        let entry = e.unwrap();
+
+        let mut content = String::new();
+        if let Ok(mut keyfile) = File::open(entry.path()) {
+            if keyfile.read_to_string(&mut content).is_err() {
+                continue;
+            }
+            match json::decode::<KeyFile>(&content) {
+                Ok(mut kf) => {
+                    if kf.address == *addr {
+                        kf.visible = Some(true);
+                        kf.flush(&path);
+                        return Ok(());
+                    }
+                }
+                Err(_) => {
+                    return Err(Error::NotFound);
+                },
+            }
+        }
+    }
+
+    Err(Error::NotFound)
+}
+
 
 /// Creates filename for keystore file in format:
 /// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
