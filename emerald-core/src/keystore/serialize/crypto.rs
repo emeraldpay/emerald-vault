@@ -64,44 +64,44 @@ impl Decodable for Crypto {
                 d.read_struct_field("cipherparams", 1, |d| CipherParams::decode(d))?;
 
             let cipher_text = d.read_struct_field("ciphertext", 2, |d| {
-                d.read_str()
-                    .and_then(|s| s.from_hex().map_err(|e| d.error(&e.to_string())))
-            })?;
+                    d.read_str()
+                        .and_then(|s| s.from_hex().map_err(|e| d.error(&e.to_string())))
+                })?;
 
             let mut kdf = d.read_struct_field("kdf", 3, |d| decode_str(d))?;
 
             let (dklen, salt) = d.read_struct_field("kdfparams", 4, |d| match kdf {
-                Kdf::Pbkdf2 {
-                    ref mut prf,
-                    ref mut c,
-                } => {
-                    d.read_struct("KdfParams", 4, |d| {
-                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
-                        let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
+                    Kdf::Pbkdf2 {
+                        ref mut prf,
+                        ref mut c,
+                    } => {
+                        d.read_struct("KdfParams", 4, |d| {
+                            let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
+                            let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
 
-                        *prf = d.read_struct_field("prf", 2, |d| decode_str(d))?;
-                        *c = d.read_struct_field("c", 3, |d| d.read_u32())?;
+                            *prf = d.read_struct_field("prf", 2, |d| decode_str(d))?;
+                            *c = d.read_struct_field("c", 3, |d| d.read_u32())?;
 
-                        Ok((dklen, salt))
-                    })
-                }
-                Kdf::Scrypt {
-                    ref mut n,
-                    ref mut r,
-                    ref mut p,
-                } => {
-                    d.read_struct("KdfParams", 5, |d| {
-                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
-                        let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
+                            Ok((dklen, salt))
+                        })
+                    }
+                    Kdf::Scrypt {
+                        ref mut n,
+                        ref mut r,
+                        ref mut p,
+                    } => {
+                        d.read_struct("KdfParams", 5, |d| {
+                            let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
+                            let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
 
-                        *n = d.read_struct_field("n", 2, |d| d.read_u32())?;
-                        *r = d.read_struct_field("r", 3, |d| d.read_u32())?;
-                        *p = d.read_struct_field("p", 4, |d| d.read_u32())?;
+                            *n = d.read_struct_field("n", 2, |d| d.read_u32())?;
+                            *r = d.read_struct_field("r", 3, |d| d.read_u32())?;
+                            *p = d.read_struct_field("p", 4, |d| d.read_u32())?;
 
-                        Ok((dklen, salt))
-                    })
-                }
-            })?;
+                            Ok((dklen, salt))
+                        })
+                    }
+                })?;
 
             let mac = d.read_struct_field("mac", 5, |d| Mac::decode(d))?;
 
@@ -126,28 +126,32 @@ impl Encodable for Crypto {
             s.emit_struct_field("ciphertext", 2, |s| self.cipher_text.to_hex().encode(s))?;
             s.emit_struct_field("kdf", 3, |s| s.emit_str(&self.kdf.to_string()))?;
             s.emit_struct_field("kdfparams", 4, |s| match self.kdf {
-                Kdf::Pbkdf2 { prf, c } => {
-                    s.emit_struct("KdfParams", 4, |s| {
-                        s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen))?;
-                        s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s))?;
-                        s.emit_struct_field("prf", 2, |s| s.emit_str(&prf.to_string()))?;
-                        s.emit_struct_field("c", 3, |s| s.emit_u32(c))?;
+                    Kdf::Pbkdf2 { prf, c } => {
+                        s.emit_struct("KdfParams", 4, |s| {
+                                s.emit_struct_field("dklen",
+                                                       0,
+                                                       |s| s.emit_usize(self.kdfparams_dklen))?;
+                                s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s))?;
+                                s.emit_struct_field("prf", 2, |s| s.emit_str(&prf.to_string()))?;
+                                s.emit_struct_field("c", 3, |s| s.emit_u32(c))?;
 
-                        Ok(())
-                    })
-                }
-                Kdf::Scrypt { n, r, p } => {
-                    s.emit_struct("KdfParams", 5, |s| {
-                        s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen))?;
-                        s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s))?;
-                        s.emit_struct_field("n", 2, |s| s.emit_u32(n))?;
-                        s.emit_struct_field("r", 3, |s| s.emit_u32(r))?;
-                        s.emit_struct_field("p", 4, |s| s.emit_u32(p))?;
+                                Ok(())
+                            })
+                    }
+                    Kdf::Scrypt { n, r, p } => {
+                        s.emit_struct("KdfParams", 5, |s| {
+                                s.emit_struct_field("dklen",
+                                                       0,
+                                                       |s| s.emit_usize(self.kdfparams_dklen))?;
+                                s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s))?;
+                                s.emit_struct_field("n", 2, |s| s.emit_u32(n))?;
+                                s.emit_struct_field("r", 3, |s| s.emit_u32(r))?;
+                                s.emit_struct_field("p", 4, |s| s.emit_u32(p))?;
 
-                        Ok(())
-                    })
-                }
-            })?;
+                                Ok(())
+                            })
+                    }
+                })?;
             s.emit_struct_field("mac", 5, |s| self.mac.encode(s))?;
 
             Ok(())
