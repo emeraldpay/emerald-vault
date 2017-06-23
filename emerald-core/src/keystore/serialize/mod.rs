@@ -72,8 +72,9 @@ impl KeyFile {
     /// * `addr` - a public address (optional)
     ///
     pub fn flush<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
-        let path = dir.as_ref()
-            .join(&generate_filename(&self.uuid.to_string()));
+        let path = dir.as_ref().join(
+            &generate_filename(&self.uuid.to_string()),
+        );
 
         Ok(write(&self, path)?)
     }
@@ -85,9 +86,10 @@ impl KeyFile {
     ///
     /// * `path` - path with keystore files
     ///
-    pub fn search_by_address<P: AsRef<Path>>(addr: &Address,
-                                             path: P)
-                                             -> Result<(PathBuf, KeyFile), Error> {
+    pub fn search_by_address<P: AsRef<Path>>(
+        addr: &Address,
+        path: P,
+    ) -> Result<(PathBuf, KeyFile), Error> {
         let entries = fs::read_dir(path)?;
 
         for entry in entries {
@@ -160,9 +162,10 @@ pub fn write<P: AsRef<Path>>(kf: &KeyFile, p: P) -> Result<(), Error> {
 /// * `path` - target directory
 /// * `showHidden` - flag to show hidden `Keystore` files
 ///
-pub fn list_accounts<P: AsRef<Path>>(path: P,
-                                     showHidden: bool)
-                                     -> Result<Vec<(String, String)>, Error> {
+pub fn list_accounts<P: AsRef<Path>>(
+    path: P,
+    showHidden: bool,
+) -> Result<Vec<(String, String)>, Error> {
     let mut accounts: Vec<(String, String)> = vec![];
     for e in read_dir(&path)? {
         if e.is_err() {
@@ -281,6 +284,8 @@ mod tests {
     fn should_generate_filename() {
         let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
 
-        assert!(re.is_match(&generate_filename("9bec4728-37f9-4444-9990-2ba70ee038e9")));
+        assert!(re.is_match(
+            &generate_filename("9bec4728-37f9-4444-9990-2ba70ee038e9"),
+        ));
     }
 }
