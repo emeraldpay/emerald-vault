@@ -25,10 +25,10 @@ fn should_add_entry() {
     let act = a.list();
     assert_eq!(act.len(), 0);
 
-    let json =
-        serde_json::from_str::<Value>("{\"id\":\"0x000000000031eaedbc2b611aa528f22343eb52db\", \
-                                       \"name\":\"elaine\", \"description\":\"drug money\"}")
-                .unwrap();
+    let json = serde_json::from_str::<Value>(
+        "{\"id\":\"0x000000000031eaedbc2b611aa528f22343eb52db\", \"name\":\"elaine\", \
+         \"description\":\"drug money\"}",
+    ).unwrap();
     a.add(&json).ok();
     let act = a.list();
     assert_eq!(act.len(), 1);

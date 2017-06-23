@@ -104,9 +104,9 @@ impl Addressbook {
 
     /// Delete address entry in addressbook storage (address cannot change)
     pub fn delete(&self, entry: &serde_json::Value) -> Result<(), AddressbookError> {
-        let addr = entry
-            .as_str()
-            .expect("Expect id be convertible to a string");
+        let addr = entry.as_str().expect(
+            "Expect id be convertible to a string",
+        );
         let mut filename: PathBuf = self.dir.clone();
         filename.push(format!("{}.json", addr));
         match remove_file(filename) {
