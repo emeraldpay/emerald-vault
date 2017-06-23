@@ -71,7 +71,7 @@ pub struct ListAccountAccount {
     address: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default, Debug)]
 pub struct ListAccountsAdditional {
     #[serde(default)]
     chain: String,
@@ -84,7 +84,8 @@ pub struct ListAccountsAdditional {
 pub fn list_accounts(params: Either<(), (ListAccountsAdditional,)>,
                      keystore_path: &PathBuf)
                      -> Result<Vec<ListAccountAccount>, Error> {
-    Ok(keystore::list_accounts(keystore_path)?
+    let (additional,) = params.into_right();
+    Ok(keystore::list_accounts(keystore_path, additional.show_hidden)?
            .iter()
            .map(|&(ref name, ref address)| {
                     ListAccountAccount {
@@ -95,7 +96,7 @@ pub fn list_accounts(params: Either<(), (ListAccountsAdditional,)>,
            .collect())
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 pub struct CommonAdditional {
     #[serde(default)]
     chain: String,
@@ -112,7 +113,8 @@ pub fn hide_account(params: Either<(HideAccountAccount,), (HideAccountAccount, C
                     keystore_path: &PathBuf)
                     -> Result<bool, Error> {
     let (account, additional) = params.into_full();
-    unimplemented!();
+    let addr = Address::from_str(&account.address)?;
+    Ok(keystore::hide(&addr, keystore_path)?)
 }
 
 #[derive(Deserialize)]
@@ -125,7 +127,8 @@ pub fn unhide_account(params: Either<(UnhideAccountAccount,),
                       keystore_path: &PathBuf)
                       -> Result<bool, Error> {
     let (account, additional) = params.into_full();
-    unimplemented!();
+    let addr = Address::from_str(&account.address)?;
+    Ok(keystore::unhide(&addr, keystore_path)?)
 }
 
 #[derive(Deserialize)]
@@ -144,7 +147,7 @@ pub fn shake_account(params: Either<(ShakeAccountAccount,),
     let (account, additional) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let kf = KeyFile::search_by_address(&addr, keystore_path)?;
+    let (_, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
     let pk = kf.decrypt_key(&account.old_passphrase)?;
     let new_kf = KeyFile::new_custom(pk,
                                      &account.new_passphrase,
@@ -172,7 +175,7 @@ pub fn update_account(params: Either<(UpdateAccountAccount,),
     let (account, additional) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let mut kf = KeyFile::search_by_address(&addr, keystore_path)?;
+    let (_, mut kf) = KeyFile::search_by_address(&addr, keystore_path)?;
     if !account.name.is_empty() {
         kf.name = Some(account.name);
     }
@@ -211,7 +214,7 @@ pub fn export_account(params: Either<(ExportAccountAccount,),
     Ok(value)
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct NewAccountAccount {
     #[serde(default)]
     name: String,
@@ -225,7 +228,6 @@ pub fn new_account(params: Either<(NewAccountAccount,), (NewAccountAccount, Comm
                    keystore_path: &PathBuf)
                    -> Result<String, Error> {
     let (account, additional) = params.into_full();
-
     if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
     }
@@ -263,7 +265,7 @@ pub fn sign_transaction(params: Either<(SignTransactionTransaction,),
     let addr = Address::from_str(&transaction.from)?;
 
     match KeyFile::search_by_address(&addr, keystore_path) {
-        Ok(kf) => {
+        Ok((_, kf)) => {
             if let Ok(pk) = kf.decrypt_key(&transaction.passphrase) {
                 let transaction = RPCTransaction {
                     from: transaction.from,

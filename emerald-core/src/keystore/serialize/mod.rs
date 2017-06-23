@@ -15,9 +15,8 @@ use super::util;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
 use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
-
 
 /// Keystore file current version used for serializing
 pub const CURRENT_VERSION: u8 = 3;
@@ -33,6 +32,7 @@ struct SerializableKeyFile {
     address: Address,
     name: Option<String>,
     description: Option<String>,
+    visible: Option<bool>,
     crypto: Crypto,
 }
 
@@ -44,6 +44,7 @@ impl From<KeyFile> for SerializableKeyFile {
             address: key_file.address,
             name: key_file.name.clone(),
             description: key_file.description.clone(),
+            visible: key_file.visible,
             crypto: Crypto::from(key_file),
         }
     }
@@ -55,6 +56,7 @@ impl Into<KeyFile> for SerializableKeyFile {
             name: self.name,
             description: self.description,
             address: self.address,
+            visible: self.visible,
             uuid: self.id,
             ..self.crypto.into()
         }
@@ -72,20 +74,20 @@ impl KeyFile {
     pub fn flush<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
         let path = dir.as_ref()
             .join(&generate_filename(&self.uuid.to_string()));
-        let sf = SerializableKeyFile::from(self.clone());
-        let json = json::encode(&sf)?;
-        let mut file = File::create(&path)?;
-        file.write_all(json.as_ref()).ok();
-        Ok(())
+
+        Ok(write(&self, path)?)
     }
 
     /// Search of `KeyFile` by specified `Address`
+    /// Returns set of filepath and `Keyfile`
     ///
     /// # Arguments
     ///
     /// * `path` - path with keystore files
     ///
-    pub fn search_by_address<P: AsRef<Path>>(addr: &Address, path: P) -> Result<KeyFile, Error> {
+    pub fn search_by_address<P: AsRef<Path>>(addr: &Address,
+                                             path: P)
+                                             -> Result<(PathBuf, KeyFile), Error> {
         let entries = fs::read_dir(path)?;
 
         for entry in entries {
@@ -95,7 +97,7 @@ impl KeyFile {
                 continue;
             }
 
-            let mut file = fs::File::open(path)?;
+            let mut file = fs::File::open(&path)?;
             let mut content = String::new();
 
             if file.read_to_string(&mut content).is_err() {
@@ -104,7 +106,8 @@ impl KeyFile {
 
             match try_extract_address(&content) {
                 Some(a) if a == *addr => {
-                    return Ok(json::decode::<KeyFile>(&content)?);
+                    let kf = json::decode::<KeyFile>(&content)?;
+                    return Ok((path.to_owned(), kf));
                 }
                 _ => continue,
             }
@@ -132,17 +135,36 @@ impl Encodable for KeyFile {
     }
 }
 
-/// Lists addresses for all `Keystore` files
-/// in specified folder
+
+/// Writes out `Keyfile` into disk
+/// accordingly to `p` path
+///
+/// #Arguments:
+/// kf - `Keyfile` to be written
+/// p - destination route (path + filename)
+///
+pub fn write<P: AsRef<Path>>(kf: &KeyFile, p: P) -> Result<(), Error> {
+    let sf = SerializableKeyFile::from(kf.clone());
+    let json = json::encode(&sf)?;
+    let mut file = File::create(&p)?;
+    file.write_all(json.as_ref()).ok();
+
+    Ok(())
+}
+
+/// Lists addresses for `Keystore` files
+/// in specified folder. Can include hidden files if flag set
 ///
 /// # Arguments
 ///
 /// * `path` - target directory
+/// * `showHidden` - flag to show hidden `Keystore` files
 ///
-pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<(String, String)>, Error> {
+pub fn list_accounts<P: AsRef<Path>>(path: P,
+                                     showHidden: bool)
+                                     -> Result<Vec<(String, String)>, Error> {
     let mut accounts: Vec<(String, String)> = vec![];
-
-    for e in read_dir(path)? {
+    for e in read_dir(&path)? {
         if e.is_err() {
             continue;
         }
@@ -156,9 +178,11 @@ pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<(String, String)>, E
 
             match json::decode::<KeyFile>(&content) {
                 Ok(kf) => {
-                    match kf.name {
-                        Some(name) => accounts.push((name, kf.address.to_string())),
-                        None => accounts.push(("".to_string(), kf.address.to_string())),
+                    if kf.visible.is_none() || kf.visible.unwrap() || showHidden {
+                        match kf.name {
+                            Some(name) => accounts.push((name, kf.address.to_string())),
+                            None => accounts.push(("".to_string(), kf.address.to_string())),
+                        }
                     }
                 }
                 Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
@@ -168,6 +192,37 @@ pub fn list_accounts<P: AsRef<Path>>(path: P) -> Result<Vec<(String, String)>, E
 
     Ok(accounts)
 }
+
+/// Hides account for given address from being listed
+///
+/// #Arguments
+/// addr - target address
+/// path - folder with keystore files
+///
+pub fn hide<P: AsRef<Path>>(addr: &Address, path: P) -> Result<bool, Error> {
+    let (p, mut kf) = KeyFile::search_by_address(addr, &path)?;
+
+    kf.visible = Some(false);
+    write(&kf, &p)?;
+
+    return Ok(true);
+}
+
+/// Unhides account for given address from being listed
+///
+/// #Arguments
+/// addr - target address
+/// path - folder with keystore files
+///
+pub fn unhide<P: AsRef<Path>>(addr: &Address, path: P) -> Result<bool, Error> {
+    let (p, mut kf) = KeyFile::search_by_address(addr, &path)?;
+
+    kf.visible = Some(true);
+    write(&kf, &p)?;
+
+    return Ok(true);
+}
+
 
 /// Creates filename for keystore file in format:
 /// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`

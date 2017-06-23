@@ -19,10 +19,9 @@ use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBui
 use log::LogLevel;
 use rustc_serialize::json;
 use serde::Serialize;
-use serde_json::{self, Map, Value};
+use serde_json::{self, Value};
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::Arc;
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
@@ -122,7 +121,8 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_newAccount", move |p: Params| {
-            wrapper(serves::new_account(p.parse()?, &sec, &keystore_path))
+            let params = p.parse()?;
+            wrapper(serves::new_account(params, &sec, &keystore_path))
         });
     }
 

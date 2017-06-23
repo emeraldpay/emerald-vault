@@ -13,7 +13,7 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::{Kdf, KdfDepthLevel};
 pub use self::prf::Prf;
-pub use self::serialize::list_accounts;
+pub use self::serialize::{hide, list_accounts, unhide};
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
 use rand::{OsRng, Rng};
@@ -32,6 +32,9 @@ pub const CIPHER_IV_BYTES: usize = 16;
 /// A keystore file (account private core encrypted with a passphrase)
 #[derive(Clone, Debug, Eq)]
 pub struct KeyFile {
+    /// Specifies if `Keyfile` is visible
+    pub visible: Option<bool>,
+
     /// User specified name
     pub name: Option<String>,
 
@@ -167,6 +170,7 @@ impl KeyFile {
 impl Default for KeyFile {
     fn default() -> Self {
         KeyFile {
+            visible: Some(true),
             name: None,
             description: None,
             address: Address::default(),
