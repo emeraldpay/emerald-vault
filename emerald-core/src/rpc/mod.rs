@@ -121,7 +121,8 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_newAccount", move |p: Params| {
-            wrapper(serves::new_account(p.parse()?, &sec, &keystore_path))
+            let params = p.parse()?;
+            wrapper(serves::new_account(params, &sec, &keystore_path))
         });
     }
 
