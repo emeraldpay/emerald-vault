@@ -6,7 +6,7 @@ use crypto::pbkdf2::pbkdf2;
 
 //TODO: solve `mmap` call on windows for `rust-scrypt`
 #[cfg(target_os = "windows")]
-use crypto::scrypt::{ScryptParams as SParams, scrypt};
+use crypto::scrypt::{ScryptParams, scrypt};
 
 #[cfg(all(unix))]
 use rust_scrypt::{ScryptParams, scrypt};
