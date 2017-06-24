@@ -3,6 +3,12 @@
 use super::Error;
 use super::prf::Prf;
 use crypto::pbkdf2::pbkdf2;
+
+//TODO: solve `mmap` call on windows for `rust-scrypt`
+#[cfg(target_os = "windows")]
+use crypto::scrypt::{ScryptParams as SParams, scrypt};
+
+#[cfg(all(unix))]
 use rust_scrypt::{ScryptParams, scrypt};
 use std::fmt;
 use std::str::FromStr;
@@ -91,6 +97,13 @@ impl Kdf {
                 let mut hmac = prf.hmac(passphrase);
                 pbkdf2(&mut hmac, kdf_salt, c, &mut key);
             }
+            #[cfg(target_os = "windows")]
+            Kdf::Scrypt { n, r, p } => {
+                let log_n = (n as f64).log2().round() as u8;
+                let params = ScryptParams::new(log_n, r, p);
+                scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key);
+            }
+            #[cfg(all(unix))]
             Kdf::Scrypt { n, r, p } => {
                 let params = ScryptParams::new(n as u64, r, p);
                 scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key);
