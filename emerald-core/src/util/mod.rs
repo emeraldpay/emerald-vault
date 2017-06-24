@@ -5,7 +5,7 @@ mod rlp;
 pub use self::crypto::{KECCAK256_BYTES, keccak256};
 pub use self::rlp::{RLPList, WriteRLP};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use chrono::prelude::UTC;
+use chrono::prelude::Utc;
 use std::io::Cursor;
 use std::mem::transmute;
 
@@ -146,7 +146,7 @@ pub fn to_bytes(x: u64, len: u8) -> Vec<u8> {
 /// Time stamp in format `yyy-mm-ddThh-mm-ss`
 pub fn timestamp() -> String {
     // `2017-05-01T20:21:10.163281100+00:00` -> `2017-05-01T20-21-10`
-    str::replace(&UTC::now().to_rfc3339(), ":", "-")
+    str::replace(&Utc::now().to_rfc3339(), ":", "-")
         .split('.')
         .next()
         .unwrap()
