@@ -9,13 +9,15 @@ use serde_json;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-fn to_chain_id(chain: &str, chain_id: Option<usize>) -> u8 {
+fn to_chain_id(chain: &str, chain_id: Option<usize>, default_id: u8) -> u8 {
     if chain_id.is_some() {
-        chain_id.unwrap() as u8
-    } else if chain == "testnet" {
-        62
-    } else {
-        61
+        return chain_id.unwrap() as u8;
+    }
+
+    match chain {
+        "mainnet" => 61,
+        "testnet" => 62,
+        _ => default_id,
     }
 }
 
@@ -258,6 +260,7 @@ pub struct SignTransactionTransaction {
 pub fn sign_transaction(
     params: Either<(SignTransactionTransaction,), (SignTransactionTransaction, CommonAdditional)>,
     keystore_path: &PathBuf,
+    default_chain: u8,
 ) -> Result<Params, Error> {
     let (transaction, additional) = params.into_full();
     let addr = Address::from_str(&transaction.from)?;
@@ -278,7 +281,11 @@ pub fn sign_transaction(
                     Ok(tr) => {
                         Ok(tr.to_raw_params(
                             pk,
-                            to_chain_id(&additional.chain, additional.chain_id),
+                            to_chain_id(
+                                &additional.chain,
+                                additional.chain_id,
+                                default_chain,
+                            ),
                         ))
                     }
                     Err(err) => Err(Error::InvalidDataFormat(err.to_string())),

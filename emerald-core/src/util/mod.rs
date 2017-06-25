@@ -36,6 +36,32 @@ impl ToHex for u64 {
     }
 }
 
+/// Get chain name by chain id
+///
+/// # Arguments:
+/// * `id` - target chain id
+///
+pub fn to_chain_name(id: u8) -> String {
+    match id {
+        61 => "mainnet".to_string(),
+        62 => "testnet".to_string(),
+        _ => "mainnet".to_string(),
+    }
+}
+
+/// Get chain id by chain name
+///
+/// # Arguments:
+/// * `name` - target chain name
+///
+pub fn to_chain_id(name: &str) -> u8 {
+    match name {
+        "mainnet" => 61,
+        "testnet" => 62,
+        _ => 61,
+    }
+}
+
 /// Convert byte array into `u64`
 ///
 /// # Arguments
