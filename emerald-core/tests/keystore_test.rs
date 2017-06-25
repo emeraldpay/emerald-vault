@@ -93,6 +93,7 @@ fn should_decode_keyfile_without_address() {
     );
 
     let exp = KeyFile {
+        visible: None,
         name: Some("".to_string()),
         description: None,
         address: Address::from_str("0x4c4cfc6470a1dc26916585ef03dfec42deb936ff").unwrap(),
@@ -146,6 +147,7 @@ fn should_decode_keyfile_with_address() {
     );
 
     let exp = KeyFile {
+        visible: None,
         name: None,
         description: None,
         address: Address::from_str("0x0047201aed0b69875b24b614dda0270bcd9f11cc").unwrap(),
@@ -217,7 +219,7 @@ fn should_search_by_address() {
         .parse::<Address>()
         .unwrap();
 
-    let kf = KeyFile::search_by_address(&addr, &keystore_path()).unwrap();
+    let (_, kf) = KeyFile::search_by_address(&addr, &keystore_path()).unwrap();
 
     assert_eq!(
         kf.uuid,

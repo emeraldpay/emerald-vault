@@ -164,7 +164,7 @@ pub fn write<P: AsRef<Path>>(kf: &KeyFile, p: P) -> Result<(), Error> {
 ///
 pub fn list_accounts<P: AsRef<Path>>(
     path: P,
-    showHidden: bool,
+    show_hidden: bool,
 ) -> Result<Vec<(String, String)>, Error> {
     let mut accounts: Vec<(String, String)> = vec![];
     for e in read_dir(&path)? {
@@ -181,7 +181,7 @@ pub fn list_accounts<P: AsRef<Path>>(
 
             match json::decode::<KeyFile>(&content) {
                 Ok(kf) => {
-                    if kf.visible.is_none() || kf.visible.unwrap() || showHidden {
+                    if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
                         match kf.name {
                             Some(name) => accounts.push((name, kf.address.to_string())),
                             None => accounts.push(("".to_string(), kf.address.to_string())),
