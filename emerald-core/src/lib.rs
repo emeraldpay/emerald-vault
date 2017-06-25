@@ -17,7 +17,6 @@ extern crate time;
 extern crate byteorder;
 extern crate chrono;
 extern crate crypto;
-extern crate rust_scrypt;
 extern crate futures;
 extern crate glob;
 extern crate jsonrpc_core;
@@ -26,6 +25,8 @@ extern crate hyper;
 extern crate rand;
 extern crate regex;
 extern crate reqwest;
+#[cfg(all(unix))]
+extern crate rust_scrypt;
 extern crate rustc_serialize;
 extern crate secp256k1;
 extern crate serde;

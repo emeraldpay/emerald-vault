@@ -1,5 +1,5 @@
 [workspace]
 members = [
-  "./emerald-cli",
-  "./emerald-core",
+  "emerald-cli",
+  "emerald-core",
 ]

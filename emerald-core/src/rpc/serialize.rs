@@ -4,10 +4,6 @@ use super::{Error, ToHex, align_bytes, to_arr, to_u64, trim_hex};
 use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value as JValue};
 use rustc_serialize::hex::FromHex;
-use serde::{Serialize, Serializer};
-use serde_json::{self, Value};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Deserialize, Debug)]
 pub struct RPCTransaction {
@@ -52,12 +48,4 @@ impl Transaction {
             .map(|s| Params::Array(vec![JValue::String(s)]))
             .expect("Expect to sign a transaction")
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use jsonrpc_core::Params;
-    use serde_json;
-    use std::str::FromStr;
 }

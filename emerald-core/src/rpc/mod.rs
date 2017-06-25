@@ -5,19 +5,13 @@ mod error;
 mod serves;
 
 pub use self::error::Error;
-use self::serialize::RPCTransaction;
-use super::addressbook::Addressbook;
-use super::contract::Contracts;
-use super::core::{self, Address, Transaction};
-use super::keystore::{KdfDepthLevel, KeyFile, list_accounts};
+use super::core;
+use super::keystore::KdfDepthLevel;
 use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
-use futures;
-use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
-use jsonrpc_core::futures::Future;
+use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::LogLevel;
-use rustc_serialize::json;
 use serde::Serialize;
 use serde_json::{self, Value};
 use std::net::SocketAddr;
@@ -38,7 +32,7 @@ fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError>
 
 /// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<KdfDepthLevel>) {
-    let sec_level = sec_level.unwrap_or(KdfDepthLevel::default());
+    let sec_level = sec_level.unwrap_or_default();
 
     let storage = match base_path {
         Some(p) => Storages::new(p),

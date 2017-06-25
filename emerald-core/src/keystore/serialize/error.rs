@@ -24,7 +24,7 @@ pub enum Error {
 }
 
 impl From<Error> for rpc::Error {
-    fn from(err: Error) -> Self {
+    fn from(_err: Error) -> Self {
         rpc::Error::InvalidDataFormat("Invalid serialization for keystore".to_string())
     }
 }
