@@ -126,3 +126,4 @@ cache:
 test_script:
   - set RUST_BACKTRACE=1
   - cargo test --all --verbose %cargoflags%
+  - cargo build --all --release
