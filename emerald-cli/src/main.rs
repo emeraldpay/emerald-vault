@@ -65,8 +65,8 @@ fn main() {
     }
 
     log_builder.format(|record: &LogRecord| {
-         format!("[{}]\t{}", record.level(), record.args())
-     });
+        format!("[{}]\t{}", record.level(), record.args())
+    });
 
     log_builder.init().expect("Expect to initialize logger");
     if args.flag_version {
