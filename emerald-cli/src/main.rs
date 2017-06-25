@@ -18,8 +18,9 @@ extern crate regex;
 
 use docopt::Docopt;
 use emerald::keystore::KdfDepthLevel;
+use emerald::to_chain_id;
 use env_logger::LogBuilder;
-use log::LogLevel;
+use log::{LogLevel, LogRecord};
 use std::env;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -37,6 +38,8 @@ struct Args {
     flag_port: String,
     flag_base_path: String,
     flag_security_level: String,
+    flag_chain: String,
+    flag_chain_id: u8,
     cmd_server: bool,
 }
 
@@ -61,6 +64,10 @@ fn main() {
         log_builder.parse(&env::var("RUST_LOG").unwrap());
     }
 
+    log_builder.format(|record: &LogRecord| {
+        format!("[{}]\t{}", record.level(), record.args())
+    });
+
     log_builder.init().expect("Expect to initialize logger");
     if args.flag_version {
         println!("v{}", emerald::version());
@@ -69,6 +76,16 @@ fn main() {
 
     if log_enabled!(LogLevel::Info) {
         info!("Starting Emerald Connector - v{}", emerald::version());
+    }
+
+    let chain = match args.flag_chain.parse::<String>() {
+        Ok(c) => c,
+        Err(_) => "mainnet".to_string(),
+    };
+
+    if to_chain_id(&chain) != args.flag_chain_id {
+        error!("Inconsistent `--chain-id` and `--chain` arguments!");
+        exit(1);
     }
 
     let sec_level: &str = &args.flag_security_level.parse::<String>().expect(
@@ -99,7 +116,8 @@ fn main() {
         } else {
             None
         };
-        emerald::rpc::start(&addr, base_path, Some(sec_level));
+
+        emerald::rpc::start(&addr, args.flag_chain_id, base_path, Some(sec_level));
     }
 
 }
