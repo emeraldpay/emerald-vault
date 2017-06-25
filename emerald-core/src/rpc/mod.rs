@@ -8,11 +8,12 @@ pub use self::error::Error;
 use super::core;
 use super::keystore::KdfDepthLevel;
 use super::storage::{ChainStorage, Storages, default_keystore_path};
-use super::util::{ToHex, align_bytes, to_arr, to_even, to_u64, trim_hex};
+use super::util::{ToHex, align_bytes, to_arr, to_even_str, to_u64, trim_hex};
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::LogLevel;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -20,15 +21,27 @@ use std::sync::Arc;
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
     if value.is_err() {
-        return Err(JsonRpcError::internal_error());
+        return Err(JsonRpcError::invalid_params(
+            value.err().unwrap().to_string(),
+        ));
     }
     let value = value.unwrap();
     let result = serde_json::to_value(value);
     match result {
         Ok(value) => Ok(value),
-        Err(_) => Err(JsonRpcError::internal_error()),
+        Err(e) => Err(JsonRpcError::invalid_params(e.to_string())),
     }
 }
+
+fn parse<T>(p: Params) -> Result<T, JsonRpcError>
+where
+    T: DeserializeOwned,
+{
+    p.parse().map_err(|_| {
+        JsonRpcError::invalid_params("Corrupted input parameters".to_string())
+    })
+}
+
 
 /// Start an HTTP RPC endpoint
 pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<KdfDepthLevel>) {
@@ -53,13 +66,13 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
 
     {
         io.add_method("emerald_currentVersion", move |p: Params| {
-            wrapper(serves::current_version(p.parse()?))
+            wrapper(serves::current_version(parse(p)?))
         });
     }
 
     {
         io.add_method("emerald_heartbeat", move |p: Params| {
-            wrapper(serves::heartbeat(p.parse()?))
+            wrapper(serves::heartbeat(parse(p)?))
         });
     }
 
@@ -67,7 +80,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_listAccounts", move |p: Params| {
-            wrapper(serves::list_accounts(p.parse()?, &keystore_path))
+            wrapper(serves::list_accounts(parse(p)?, &keystore_path))
         });
     }
 
@@ -75,7 +88,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_hideAccount", move |p: Params| {
-            wrapper(serves::hide_account(p.parse()?, &keystore_path))
+            wrapper(serves::hide_account(parse(p)?, &keystore_path))
         });
     }
 
@@ -83,7 +96,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_unhideAccount", move |p: Params| {
-            wrapper(serves::unhide_account(p.parse()?, &keystore_path))
+            wrapper(serves::unhide_account(parse(p)?, &keystore_path))
         });
     }
 
@@ -91,7 +104,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_shakeAccount", move |p: Params| {
-            wrapper(serves::shake_account(p.parse()?, &keystore_path))
+            wrapper(serves::shake_account(parse(p)?, &keystore_path))
         });
     }
 
@@ -99,7 +112,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_updateAccount", move |p: Params| {
-            wrapper(serves::update_account(p.parse()?, &keystore_path))
+            wrapper(serves::update_account(parse(p)?, &keystore_path))
         });
     }
 
@@ -107,7 +120,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_importAccount", move |p: Params| {
-            wrapper(serves::import_account(p.parse()?, &keystore_path))
+            wrapper(serves::import_account(parse(p)?, &keystore_path))
         });
     }
 
@@ -115,7 +128,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_exportAccount", move |p: Params| {
-            wrapper(serves::export_account(p.parse()?, &keystore_path))
+            wrapper(serves::export_account(parse(p)?, &keystore_path))
         });
     }
 
@@ -124,8 +137,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_newAccount", move |p: Params| {
-            let params = p.parse()?;
-            wrapper(serves::new_account(params, &sec, &keystore_path))
+            wrapper(serves::new_account(parse(p)?, &sec, &keystore_path))
         });
     }
 
@@ -133,7 +145,7 @@ pub fn start(addr: &SocketAddr, base_path: Option<PathBuf>, sec_level: Option<Kd
         let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_signTransaction", move |p: Params| {
-            wrapper(serves::sign_transaction(p.parse()?, &keystore_path))
+            wrapper(serves::sign_transaction(parse(p)?, &keystore_path))
         });
     }
 

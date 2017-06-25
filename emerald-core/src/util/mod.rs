@@ -99,15 +99,20 @@ pub fn align_bytes(data: &[u8], len: usize) -> Vec<u8> {
     v
 }
 
-/// Padding high bytes with `O` to get even length
+/// Padding hex string with `O` to get even length
 ///
 /// # Arguments
 ///
 /// * `data` - data to be aligned
 ///
-pub fn to_even(data: &[u8]) -> Vec<u8> {
-    let len = data.len();
-    align_bytes(data, len + len % 2)
+pub fn to_even_str(data: &str) -> String {
+    if data.len() % 2 == 0 {
+        return String::from(data);
+    }
+
+    let mut v = String::from("0");
+    v.push_str(data);
+    v
 }
 
 /// Trim all high zero bytes
@@ -308,19 +313,13 @@ mod tests {
     }
 
     #[test]
-    fn should_align_to_even() {
-        assert_eq!(
-            to_even(&[1, 2, 3, 4, 5, 6, 7]),
-            vec![1, 2, 3, 4, 5, 6, 7, 8]
-        );
+    fn should_align_to_even_str() {
+        assert_eq!(to_even_str("100"), String::from("0100"));
     }
 
     #[test]
-    fn should_skip_already_even() {
-        assert_eq!(
-            to_even(&[1, 2, 3, 4, 5, 6, 7, 8]),
-            vec![1, 2, 3, 4, 5, 6, 7, 8]
-        );
+    fn should_skip_already_even_str() {
+        assert_eq!(to_even_str("100012"), String::from("100012"));
     }
 
     #[test]

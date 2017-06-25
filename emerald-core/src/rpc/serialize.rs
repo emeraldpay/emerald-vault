@@ -1,6 +1,6 @@
 //! # Serialize JSON RPC parameters
 
-use super::{Error, ToHex, align_bytes, to_arr, to_even, to_u64, trim_hex};
+use super::{Error, ToHex, align_bytes, to_arr, to_even_str, to_u64, trim_hex};
 use super::core::{Address, PrivateKey, Transaction};
 use jsonrpc_core::{Params, Value as JValue};
 use rustc_serialize::hex::FromHex;
@@ -27,9 +27,7 @@ impl RPCTransaction {
         let gas_limit = trim_hex(self.gas.as_str()).from_hex()?;
         let gas_price = gp_str.from_hex()?;
         let value = v_str.from_hex()?;
-
-        let v = trim_hex(self.nonce.as_str()).from_hex()?;
-        let nonce = to_even(&v);
+        let nonce = to_even_str(trim_hex(self.nonce.as_str())).from_hex()?;
 
         Ok(Transaction {
             nonce: to_u64(&nonce),
