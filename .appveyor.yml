@@ -125,4 +125,4 @@ cache:
 # environment variable.
 test_script:
   - set RUST_BACKTRACE=1
-  - cargo test --verbose %cargoflags%
+  - cargo test --all --verbose %cargoflags%
