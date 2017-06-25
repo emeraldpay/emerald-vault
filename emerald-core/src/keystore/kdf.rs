@@ -10,6 +10,7 @@ use crypto::scrypt::{ScryptParams, scrypt};
 
 #[cfg(all(unix))]
 use rust_scrypt::{ScryptParams, scrypt};
+
 use std::fmt;
 use std::str::FromStr;
 
