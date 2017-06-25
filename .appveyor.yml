@@ -129,15 +129,15 @@ install:
 cache:
   - '%USERPROFILE%\.cargo'
 
+# Uses 'cargo build' to build. Alternatively, the project may call rustc directly or perform other
+# build commands. Rust will automatically be placed in the PATH environment variable.
+build_script:
+  - set RUST_BACKTRACE=1
+  - cargo build --all --verbose --release
+
 # Uses 'cargo test' to run tests and build. Alternatively, the project may call compiled programs
 # directly or perform other testing commands. Rust will automatically be placed in the PATH
 # environment variable.
 test_script:
   - set RUST_BACKTRACE=1
   - cargo test --all --verbose %cargoflags%
-
-# Uses 'cargo build' to build. Alternatively, the project may call rustc directly or perform other
-# build commands. Rust will automatically be placed in the PATH environment variable.
-build_script:
-  - set RUST_BACKTRACE=1
-  - cargo build --all --verbose --release
