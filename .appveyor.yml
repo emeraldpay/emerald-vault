@@ -93,6 +93,12 @@ matrix:
 # If you only care about stable channel build failures, uncomment the following line:
     #- channel: beta
 
+### GNU Toolchains ###
+  # 64-bit GNU
+    - target: x86_64-pc-windows-gnu
+  # 32-bit GNU
+    - target: i686-pc-windows-gnu
+
 ## Install Script ##
 
 # This is the most important part of the Appveyor configuration. This installs the version of Rust
@@ -113,17 +119,25 @@ install:
 
 ## Build Script ##
 
-# 'cargo test' takes care of building for us, so disable Appveyor's build stage. This prevents
-# the "directory does not contain a project or solution file" error.
-build: false
-
 cache:
   - '%USERPROFILE%\.cargo'
 
 # Uses 'cargo test' to run tests and build. Alternatively, the project may call compiled programs
-#directly or perform other testing commands. Rust will automatically be placed in the PATH
+# directly or perform other testing commands. Rust will automatically be placed in the PATH
 # environment variable.
 test_script:
   - set RUST_BACKTRACE=1
   - cargo test --all --verbose %cargoflags%
-  - cargo build --all --release
+
+# Uses 'cargo build' to build. Alternatively, the project may call rustc directly or perform other
+# build commands. Rust will automatically be placed in the PATH environment variable.
+build_script:
+  - set RUST_BACKTRACE=1
+  - cargo build --all --verbose --release
+
+# Only build against the branches that will have pull requests built against them (master).
+# Otherwise creating feature branches on this repository and a pull requests against them will
+# cause each commit to be tested twice, once for the branch and once for the pull request.
+branches:
+  only:
+    - master
