@@ -141,3 +141,7 @@ build_script:
 test_script:
   - set RUST_BACKTRACE=1
   - cargo test --all --verbose %cargoflags%
+
+artifacts:
+  - path: target\release\emerald.exe
+    name: emerald-cli
