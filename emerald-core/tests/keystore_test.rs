@@ -93,6 +93,7 @@ fn should_decode_keyfile_without_address() {
     );
 
     let exp = KeyFile {
+        visible: None,
         name: Some("".to_string()),
         visible: None,
         description: None,
@@ -148,6 +149,7 @@ fn should_decode_keyfile_with_address() {
     );
 
     let exp = KeyFile {
+        visible: None,
         name: None,
         description: None,
         visible: None,

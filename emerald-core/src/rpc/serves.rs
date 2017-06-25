@@ -1,20 +1,17 @@
 use super::Error;
 use super::serialize::RPCTransaction;
 
-use addressbook::Addressbook;
 use core::Address;
-use jsonrpc_core::{self, Params, Value};
+use jsonrpc_core::{Params, Value};
 use keystore::{self, KdfDepthLevel, KeyFile};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-fn to_chain_id(chain: String, chain_id: Option<usize>) -> u8 {
+fn to_chain_id(chain: &str, chain_id: Option<usize>) -> u8 {
     if chain_id.is_some() {
         chain_id.unwrap() as u8
-    } else if chain == "mainnet" {
-        61
     } else if chain == "testnet" {
         62
     } else {
@@ -32,17 +29,8 @@ pub enum Either<T, U> {
 impl<T, U: Default> Either<T, U> {
     pub fn into_right(self) -> U {
         match self {
-            Either::Left(t) => U::default(),
+            Either::Left(_) => U::default(),
             Either::Right(u) => u,
-        }
-    }
-}
-
-impl<T: Default, U> Either<T, U> {
-    pub fn into_left(self) -> T {
-        match self {
-            Either::Left(t) => t,
-            Either::Right(u) => T::default(),
         }
     }
 }
@@ -56,11 +44,11 @@ impl<T, U: Default> Either<(T,), (T, U)> {
     }
 }
 
-pub fn current_version(params: ()) -> Result<&'static str, Error> {
+pub fn current_version(_params: ()) -> Result<&'static str, Error> {
     Ok(::version())
 }
 
-pub fn heartbeat(params: ()) -> Result<i64, Error> {
+pub fn heartbeat(_params: ()) -> Result<i64, Error> {
     use time::get_time;
     Ok(get_time().sec)
 }
@@ -116,7 +104,7 @@ pub fn hide_account(
     params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
     keystore_path: &PathBuf,
 ) -> Result<bool, Error> {
-    let (account, additional) = params.into_full();
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
     Ok(keystore::hide(&addr, keystore_path)?)
 }
@@ -130,7 +118,7 @@ pub fn unhide_account(
     params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
     keystore_path: &PathBuf,
 ) -> Result<bool, Error> {
-    let (account, additional) = params.into_full();
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
     Ok(keystore::unhide(&addr, keystore_path)?)
 }
@@ -148,7 +136,7 @@ pub fn shake_account(
 ) -> Result<bool, Error> {
     use keystore::os_random;
 
-    let (account, additional) = params.into_full();
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
     let (_, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
@@ -178,7 +166,7 @@ pub fn update_account(
     params: Either<(UpdateAccountAccount,), (UpdateAccountAccount, CommonAdditional)>,
     keystore_path: &PathBuf,
 ) -> Result<bool, Error> {
-    let (account, additional) = params.into_full();
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
     let (_, mut kf) = KeyFile::search_by_address(&addr, keystore_path)?;
@@ -196,7 +184,7 @@ pub fn import_account(
     params: Either<(Value,), (Value, CommonAdditional)>,
     keystore_path: &PathBuf,
 ) -> Result<String, Error> {
-    let (raw, additional) = params.into_full();
+    let (raw, _) = params.into_full();
     let raw = serde_json::to_string(&raw)?;
     let kf: KeyFile = rustc_json::decode(&raw)?;
     kf.flush(keystore_path)?;
@@ -212,7 +200,7 @@ pub fn export_account(
     params: Either<(ExportAccountAccount,), (ExportAccountAccount, CommonAdditional)>,
     keystore_path: &PathBuf,
 ) -> Result<Value, Error> {
-    let (account, additional) = params.into_full();
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
     let kf = KeyFile::search_by_address(&addr, keystore_path)?;
@@ -235,14 +223,14 @@ pub fn new_account(
     sec: &KdfDepthLevel,
     keystore_path: &PathBuf,
 ) -> Result<String, Error> {
-    let (account, additional) = params.into_full();
+    let (account, _) = params.into_full();
     if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
     }
 
     let kf = KeyFile::new(
         &account.passphrase,
-        &sec,
+        sec,
         Some(account.name),
         Some(account.description),
     )?;
@@ -290,7 +278,7 @@ pub fn sign_transaction(
                     Ok(tr) => {
                         Ok(tr.to_raw_params(
                             pk,
-                            to_chain_id(additional.chain, additional.chain_id),
+                            to_chain_id(&additional.chain, additional.chain_id),
                         ))
                     }
                     Err(err) => Err(Error::InvalidDataFormat(err.to_string())),
