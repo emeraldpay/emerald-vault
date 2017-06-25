@@ -52,11 +52,11 @@ environment:
   # Nightly 64-bit MSVC
     - channel: nightly
       target: x86_64-pc-windows-msvc
-      cargoflags: --all --features "dev"
+      cargoflags: --features "dev"
   # Nightly 32-bit MSVC
     - channel: nightly
       target: i686-pc-windows-msvc
-      cargoflags: --all --features "dev"
+      cargoflags: --features "dev"
 
 ### GNU Toolchains ###
 
@@ -75,11 +75,11 @@ environment:
   # Nightly 64-bit GNU
     - channel: nightly
       target: x86_64-pc-windows-gnu
-      cargoflags: --all  --features "dev"
+      cargoflags:  --features "dev"
   # Nightly 32-bit GNU
     - channel: nightly
       target: i686-pc-windows-gnu
-      cargoflags: --all --features "dev"
+      cargoflags:  --features "dev"
 
 ### Allowed failures ###
 
