@@ -11,7 +11,7 @@ use super::contract::Contracts;
 use super::core::{self, Address, Transaction};
 use super::keystore::{KdfDepthLevel, KeyFile, list_accounts};
 use super::storage::{ChainStorage, Storages, default_keystore_path};
-use super::util::{ToHex, align_bytes, to_arr, to_u64, trim_hex};
+use super::util::{ToHex, align_bytes, to_arr, to_even, to_u64, trim_hex};
 use futures;
 use jsonrpc_core::{Error as JsonRpcError, ErrorCode, IoHandler, Params};
 use jsonrpc_core::futures::Future;
