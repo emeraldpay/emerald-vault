@@ -99,6 +99,13 @@ matrix:
   # 32-bit GNU
     - target: i686-pc-windows-gnu
 
+# Only build against the branches that will have pull requests built against them (master).
+# Otherwise creating feature branches on this repository and a pull requests against them will
+# cause each commit to be tested twice, once for the branch and once for the pull request.
+branches:
+  only:
+    - master
+
 ## Install Script ##
 
 # This is the most important part of the Appveyor configuration. This installs the version of Rust
@@ -134,10 +141,3 @@ test_script:
 build_script:
   - set RUST_BACKTRACE=1
   - cargo build --all --verbose --release
-
-# Only build against the branches that will have pull requests built against them (master).
-# Otherwise creating feature branches on this repository and a pull requests against them will
-# cause each commit to be tested twice, once for the branch and once for the pull request.
-branches:
-  only:
-    - master
