@@ -138,6 +138,7 @@ fn should_decode_keyfile_without_address() {
     assert_eq!(key.cipher_text, exp.cipher_text);
     assert_eq!(key.cipher_iv, exp.cipher_iv);
     assert_eq!(key.keccak256_mac, exp.keccak256_mac);
+    assert_eq!(key.visible, exp.visible);
 }
 
 #[test]
@@ -193,6 +194,7 @@ fn should_decode_keyfile_with_address() {
     assert_eq!(key.cipher_text, exp.cipher_text);
     assert_eq!(key.cipher_iv, exp.cipher_iv);
     assert_eq!(key.keccak256_mac, exp.keccak256_mac);
+    assert_eq!(key.visible, exp.visible);
 }
 
 #[test]

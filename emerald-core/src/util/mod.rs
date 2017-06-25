@@ -64,6 +64,8 @@ pub fn trim_hex(val: &str) -> &str {
     s
 }
 
+
+
 /// Convert a slice into array
 ///
 /// # Arguments
@@ -88,8 +90,28 @@ where
 /// * `len` - length of required array
 ///
 pub fn align_bytes(data: &[u8], len: usize) -> Vec<u8> {
+    if data.len() >= len {
+        return data.to_vec();
+    }
+
     let mut v = vec![0u8; len - data.len()];
     v.extend_from_slice(data);
+    v
+}
+
+/// Padding hex string with `O` to get even length
+///
+/// # Arguments
+///
+/// * `data` - data to be aligned
+///
+pub fn to_even_str(data: &str) -> String {
+    if data.len() % 2 == 0 {
+        return String::from(data);
+    }
+
+    let mut v = String::from("0");
+    v.push_str(data);
     v
 }
 
@@ -280,6 +302,24 @@ mod tests {
             align_bytes(&[1, 2, 3, 4, 5, 6, 7, 8], 8),
             vec![1, 2, 3, 4, 5, 6, 7, 8]
         );
+    }
+
+    #[test]
+    fn should_skip_smaller_length() {
+        assert_eq!(
+            align_bytes(&[1, 2, 3, 4, 5, 6, 7, 8], 6),
+            vec![1, 2, 3, 4, 5, 6, 7, 8]
+        );
+    }
+
+    #[test]
+    fn should_align_to_even_str() {
+        assert_eq!(to_even_str("100"), String::from("0100"));
+    }
+
+    #[test]
+    fn should_skip_already_even_str() {
+        assert_eq!(to_even_str("100012"), String::from("100012"));
     }
 
     #[test]
