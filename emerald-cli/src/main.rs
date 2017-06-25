@@ -48,7 +48,6 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     let verbosity: String = match args.flag_verbose {
-        0 => "off".into(),
         1 => "info".into(),
         2 => "warn".into(),
         3 => "error".into(),
@@ -56,7 +55,7 @@ fn main() {
         5 => "trace".into(),
         _ => "off".into(),
     };
-    &env::set_var("RUST_LOG", verbosity);
+    env::set_var("RUST_LOG", verbosity);
     let mut log_builder = LogBuilder::new();
     if env::var("RUST_LOG").is_ok() {
         log_builder.parse(&env::var("RUST_LOG").unwrap());

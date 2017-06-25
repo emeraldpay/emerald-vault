@@ -76,7 +76,7 @@ impl KeyFile {
             &generate_filename(&self.uuid.to_string()),
         );
 
-        Ok(write(&self, path)?)
+        Ok(write(self, path)?)
     }
 
     /// Search of `KeyFile` by specified `Address`
@@ -208,7 +208,7 @@ pub fn hide<P: AsRef<Path>>(addr: &Address, path: P) -> Result<bool, Error> {
     kf.visible = Some(false);
     write(&kf, &p)?;
 
-    return Ok(true);
+    Ok(true)
 }
 
 /// Unhides account for given address from being listed
@@ -223,7 +223,7 @@ pub fn unhide<P: AsRef<Path>>(addr: &Address, path: P) -> Result<bool, Error> {
     kf.visible = Some(true);
     write(&kf, &p)?;
 
-    return Ok(true);
+    Ok(true)
 }
 
 

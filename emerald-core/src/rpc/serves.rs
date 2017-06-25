@@ -9,11 +9,9 @@ use serde_json;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-fn to_chain_id(chain: String, chain_id: Option<usize>) -> u8 {
+fn to_chain_id(chain: &str, chain_id: Option<usize>) -> u8 {
     if chain_id.is_some() {
         chain_id.unwrap() as u8
-    } else if chain == "mainnet" {
-        61
     } else if chain == "testnet" {
         62
     } else {
@@ -232,7 +230,7 @@ pub fn new_account(
 
     let kf = KeyFile::new(
         &account.passphrase,
-        &sec,
+        sec,
         Some(account.name),
         Some(account.description),
     )?;
@@ -280,7 +278,7 @@ pub fn sign_transaction(
                     Ok(tr) => {
                         Ok(tr.to_raw_params(
                             pk,
-                            to_chain_id(additional.chain, additional.chain_id),
+                            to_chain_id(&additional.chain, additional.chain_id),
                         ))
                     }
                     Err(err) => Err(Error::InvalidDataFormat(err.to_string())),
