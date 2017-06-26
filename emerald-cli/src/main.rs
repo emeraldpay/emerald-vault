@@ -50,10 +50,7 @@ fn main() {
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
-    let flags = vec![
-        (args.flag_verbose, "trace"),
-        (args.flag_quiet, "off"),
-    ];
+    let flags = vec![(args.flag_verbose, "trace"), (args.flag_quiet, "error")];
 
     let (_, verbosity) = *flags
         .into_iter()

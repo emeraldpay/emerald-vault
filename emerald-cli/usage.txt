@@ -8,8 +8,8 @@ Usage:
 Options:
   -h, --help                                  Show this message
   -V, --version                               Show current version
-  -q, --quiet                                 Switch off logging
-  -v, --verbose                               Verbose logging
+  -q, --quiet                                 Only errors printed to the output
+  -v, --verbose                               Verbose output
       --host <host>                           Listen host [default: 127.0.0.1]
       --port <port>                           Listen port [default: 1920]
       --base-path <path>                      Base directory path, if omitted default os-specific value will be used:
