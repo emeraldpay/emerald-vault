@@ -83,7 +83,7 @@ fn main() {
         Err(_) => "mainnet".to_string(),
     };
 
-    if to_chain_id(&chain) != args.flag_chain_id {
+    if to_chain_id(&chain).unwrap_or(61) != args.flag_chain_id {
         error!("Inconsistent `--chain-id` and `--chain` arguments!");
         exit(1);
     }

@@ -41,11 +41,11 @@ impl ToHex for u64 {
 /// # Arguments:
 /// * `id` - target chain id
 ///
-pub fn to_chain_name(id: u8) -> String {
+pub fn to_chain_name(id: u8) -> Option<String> {
     match id {
-        61 => "mainnet".to_string(),
-        62 => "testnet".to_string(),
-        _ => "mainnet".to_string(),
+        61 => Some("mainnet".to_string()),
+        62 => Some("testnet".to_string()),
+        _ => None,
     }
 }
 
@@ -54,11 +54,11 @@ pub fn to_chain_name(id: u8) -> String {
 /// # Arguments:
 /// * `name` - target chain name
 ///
-pub fn to_chain_id(name: &str) -> u8 {
+pub fn to_chain_id(name: &str) -> Option<u8> {
     match name {
-        "mainnet" => 61,
-        "testnet" => 62,
-        _ => 61,
+        "mainnet" => Some(61),
+        "testnet" => Some(62),
+        _ => None,
     }
 }
 
