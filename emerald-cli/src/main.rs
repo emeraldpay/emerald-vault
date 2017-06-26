@@ -32,8 +32,8 @@ const USAGE: &'static str = include_str!("../usage.txt");
 #[derive(Debug, Deserialize)]
 struct Args {
     flag_version: bool,
-    flag_verbose: usize,
     flag_quiet: bool,
+    flag_verbose: bool,
     flag_host: String,
     flag_port: String,
     flag_base_path: String,
@@ -50,25 +50,26 @@ fn main() {
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
-    let verbosity: String = match args.flag_verbose {
-        1 => "info".into(),
-        2 => "warn".into(),
-        3 => "error".into(),
-        4 => "debug".into(),
-        5 => "trace".into(),
-        _ => "off".into(),
-    };
+    let flags = vec![(args.flag_verbose, "trace"), (args.flag_quiet, "error")];
+
+    let (_, verbosity) = *flags
+        .into_iter()
+        .filter(|&(flag, _)| flag)
+        .collect::<Vec<(bool, &str)>>()
+        .last()
+        .unwrap_or(&(true, "emerald=info"));
+
     env::set_var("RUST_LOG", verbosity);
+
     let mut log_builder = LogBuilder::new();
     if env::var("RUST_LOG").is_ok() {
         log_builder.parse(&env::var("RUST_LOG").unwrap());
     }
-
     log_builder.format(|record: &LogRecord| {
         format!("[{}]\t{}", record.level(), record.args())
     });
-
     log_builder.init().expect("Expect to initialize logger");
+
     if args.flag_version {
         println!("v{}", emerald::version());
         exit(0);
@@ -88,11 +89,12 @@ fn main() {
         exit(1);
     }
 
-    let sec_level: &str = &args.flag_security_level.parse::<String>().expect(
+    let sec_level_str: &str = &args.flag_security_level.parse::<String>().expect(
         "Expect to parse \
          security level",
     );
-    let sec_level = match KdfDepthLevel::from_str(sec_level) {
+
+    let sec_level = match KdfDepthLevel::from_str(sec_level_str) {
         Ok(sec) => sec,
         Err(e) => {
             error!("{}", e.to_string());

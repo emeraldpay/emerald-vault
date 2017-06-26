@@ -49,10 +49,13 @@ pub fn current_version(_params: ()) -> Result<&'static str, Error> {
 
 pub fn heartbeat(_params: ()) -> Result<i64, Error> {
     use time::get_time;
-    Ok(get_time().sec)
+    let res = get_time().sec;
+    debug!("Emerald heartbeat: {}", res);
+
+    Ok(res)
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct ListAccountAccount {
     name: String,
     address: String,
@@ -73,17 +76,22 @@ pub fn list_accounts(
     keystore_path: &PathBuf,
 ) -> Result<Vec<ListAccountAccount>, Error> {
     let (additional,) = params.into_right();
-    Ok(
-        keystore::list_accounts(keystore_path, additional.show_hidden)?
-            .iter()
-            .map(|&(ref name, ref address)| {
-                ListAccountAccount {
-                    name: name.clone(),
-                    address: address.clone(),
-                }
-            })
-            .collect(),
-    )
+    let res = keystore::list_accounts(keystore_path, additional.show_hidden)?
+        .iter()
+        .map(|&(ref name, ref address)| {
+            ListAccountAccount {
+                name: name.clone(),
+                address: address.clone(),
+            }
+        })
+        .collect();
+    debug!(
+        "Accounts listed with `show_hidden`: {}\n\t{:?}",
+        additional.show_hidden,
+        res
+    );
+
+    Ok(res)
 }
 
 #[derive(Deserialize, Default, Debug)]
@@ -105,7 +113,10 @@ pub fn hide_account(
 ) -> Result<bool, Error> {
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
-    Ok(keystore::hide(&addr, keystore_path)?)
+    let res = keystore::hide(&addr, keystore_path)?;
+    debug!("Account hided: {}", addr);
+
+    Ok(res)
 }
 
 #[derive(Deserialize)]
@@ -119,7 +130,10 @@ pub fn unhide_account(
 ) -> Result<bool, Error> {
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
-    Ok(keystore::unhide(&addr, keystore_path)?)
+    let res = keystore::unhide(&addr, keystore_path)?;
+    debug!("Account unhided: {}", addr);
+
+    Ok(res)
 }
 
 #[derive(Deserialize)]
@@ -149,6 +163,8 @@ pub fn shake_account(
         kf.description,
     )?;
     new_kf.flush(keystore_path)?;
+    debug!("Account shaked: {}", kf.address);
+
     Ok(true)
 }
 
@@ -176,6 +192,13 @@ pub fn update_account(
         kf.description = Some(account.description);
     }
     kf.flush(keystore_path)?;
+    debug!(
+        "Account {} updated with name: {}, description: {}",
+        kf.address,
+        kf.name.unwrap_or_else(|| "".to_string()),
+        kf.description.unwrap_or_else(|| "".to_string())
+    );
+
     Ok(true)
 }
 
@@ -187,6 +210,8 @@ pub fn import_account(
     let raw = serde_json::to_string(&raw)?;
     let kf: KeyFile = rustc_json::decode(&raw)?;
     kf.flush(keystore_path)?;
+    debug!("Account imported: {}", kf.address);
+
     Ok(format!("{}", kf.address))
 }
 
@@ -202,9 +227,11 @@ pub fn export_account(
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let kf = KeyFile::search_by_address(&addr, keystore_path)?;
+    let (_, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
     let raw = rustc_json::encode(&kf)?;
     let value = serde_json::to_value(&raw)?;
+    debug!("Account exported: {}", kf.address);
+
     Ok(value)
 }
 
@@ -233,8 +260,10 @@ pub fn new_account(
         Some(account.name),
         Some(account.description),
     )?;
+
     let addr = kf.address.to_string();
     kf.flush(keystore_path)?;
+    debug!("New account generated: {}", kf.address);
 
     Ok(addr)
 }
@@ -274,16 +303,20 @@ pub fn sign_transaction(
                     data: transaction.data,
                     nonce: transaction.nonce,
                 };
+                debug!(
+                    "Signed transaction from: {} to: {}",
+                    transaction.from,
+                    transaction.to
+                );
                 match transaction.try_into() {
                     Ok(tr) => {
-                        Ok(tr.to_raw_params(
-                            pk,
-                            to_chain_id(
-                                &additional.chain,
-                                additional.chain_id,
-                                default_chain,
-                            ),
-                        ))
+                        let signed =
+                            tr.to_raw_params(
+                                pk,
+                                to_chain_id(&additional.chain, additional.chain_id, default_chain),
+                            );
+                        debug!("\n\t raw: {:?}", signed);
+                        Ok(signed)
                     }
                     Err(err) => Err(Error::InvalidDataFormat(err.to_string())),
                 }
