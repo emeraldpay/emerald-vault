@@ -1,30 +1,12 @@
 language: rust
 cache: cargo
-rust: stable
-env:
-  global:
-    - TARGET=x86_64-unknown-linux-gnu
-matrix:
-  include:
-    - rust: beta
-    - rust: nightly
-    - env: TARGET=i686-unknown-linux-gnu
-      addons:
-        apt:
-          packages:
-            - gcc-multilib
-    - os: osx
-      env: TARGET=x86_64-apple-darwin
-    - os: osx
-      env: TARGET=i686-apple-darwin
-    - os: osx
-      rust: beta
-      env: TARGET=x86_64-apple-darwin
-    - os: osx
-      rust: beta
-      env: TARGET=i686-apple-darwin
-  allow_failures:
-    - rust: nightly
+rust:
+  - stable
+  - beta
+  - nightly
+os:
+  - linux
+  - osx
 notifications:
   email:
     on_success: never
@@ -45,4 +27,3 @@ script:
   - cargo fmt -- --verbose --write-mode=diff
   - cargo test --all --target=$TARGET --verbose
   - cargo build --all --target=$TARGET --verbose --release
-#  - cargo doc --no-deps
