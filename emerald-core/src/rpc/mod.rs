@@ -63,7 +63,7 @@ pub fn start(
 
     let chain = ChainStorage::new(
         &storage,
-        to_chain_name(chain_id).unwrap_or("mainnet".to_string()),
+        to_chain_name(chain_id).unwrap_or_else(|| "mainnet".to_string()),
     );
     if chain.init().is_err() {
         panic!("Unable to initialize chain");

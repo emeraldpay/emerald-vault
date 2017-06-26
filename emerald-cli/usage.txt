@@ -6,16 +6,16 @@ Usage:
   emerald -h | --help
 
 Options:
-  -h, --help                                Show this message
-  -V, --version                             Show current version
-  -v, --verbose LEVEL                       Show extra log output; -v 1 (info), -v 2 (debug), -v 3 (warn), -v 4 (debug), -v 5 (trace)
-  -q, --quiet                               No output printed to stdout
-      --host <host>                         Listen host [default: 127.0.0.1]
-      --port <port>                         Listen port [default: 1920]
-      --base-path <path>                    Base directory path, if omitted default os-specific value will be used:
-                                              + Mac OS X: ~/Library/Emerald
-                                              + Linux: ~/.emerald
-                                              + Windows: %USERDIR%\.emerald
-      --security-level <normal|high|ultra>  Level of security for cryptographic operations [default: normal]
-  -c, --chain <mainnet|testnet>             Chain name [default: mainnet]
-      --chain-id <id>                       Chain id number [default: 61]
+  -h, --help                                  Show this message
+  -V, --version                               Show current version
+  -q, --quiet                                 Only errors printed to the output
+  -v, --verbose                               Verbose output
+      --host <host>                           Listen host [default: 127.0.0.1]
+      --port <port>                           Listen port [default: 1920]
+      --base-path <path>                      Base directory path, if omitted default os-specific value will be used:
+                                                  + Mac OS X: ~/Library/Emerald
+                                                  + Linux: ~/.emerald
+                                                  + Windows: %USERDIR%\.emerald
+      --security-level <normal|high|ultra>    Level of security for cryptographic operations [default: normal]
+  -c, --chain <mainnet|testnet>               Chain name [default: mainnet]
+      --chain-id <id>                         Chain id number [default: 61]
