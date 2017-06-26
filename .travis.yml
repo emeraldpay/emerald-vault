@@ -15,7 +15,7 @@ before_install:
 before_script:
   - export PATH="$PATH":~/.cargo/bin
   - echo "\$ rustfmt --version"
-  - cargo fmt -- --version
+  - cargo fmt --all -- --version
 script:
   - export RUST_BACKTRACE=1
   - cargo fmt --all -- --verbose --write-mode=diff
