@@ -19,5 +19,5 @@ before_script:
 script:
   - export RUST_BACKTRACE=1
   - cargo fmt --all -- --verbose --write-mode=diff
-  - cargo test --all --target=$TARGET --verbose
-  - cargo build --all --target=$TARGET --verbose --release
+  - cargo test --all --verbose
+  - cargo build --all --verbose --release
