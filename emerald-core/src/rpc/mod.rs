@@ -61,7 +61,10 @@ pub fn start(
         panic!("Unable to initialize storage");
     }
 
-    let chain = ChainStorage::new(&storage, to_chain_name(chain_id));
+    let chain = ChainStorage::new(
+        &storage,
+        to_chain_name(chain_id).unwrap_or("mainnet".to_string()),
+    );
     if chain.init().is_err() {
         panic!("Unable to initialize chain");
     }

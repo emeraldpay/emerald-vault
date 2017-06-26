@@ -8,17 +8,14 @@ use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::path::PathBuf;
 use std::str::FromStr;
+use util;
 
 fn to_chain_id(chain: &str, chain_id: Option<usize>, default_id: u8) -> u8 {
     if chain_id.is_some() {
         return chain_id.unwrap() as u8;
     }
 
-    match chain {
-        "mainnet" => 61,
-        "testnet" => 62,
-        _ => default_id,
-    }
+    util::to_chain_id(chain).unwrap_or(default_id)
 }
 
 #[derive(Deserialize, Debug)]
