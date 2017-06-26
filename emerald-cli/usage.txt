@@ -18,4 +18,3 @@ Options:
                                                   + Windows: %USERDIR%\.emerald
       --security-level <normal|high|ultra>    Level of security for cryptographic operations [default: normal]
   -c, --chain <mainnet|testnet>               Chain name [default: mainnet]
-      --chain-id <id>                         Chain id number [default: 61]

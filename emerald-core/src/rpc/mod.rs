@@ -8,7 +8,7 @@ pub use self::error::Error;
 use super::core;
 use super::keystore::KdfDepthLevel;
 use super::storage::{ChainStorage, Storages, default_keystore_path};
-use super::util::{ToHex, align_bytes, to_arr, to_chain_name, to_even_str, to_u64, trim_hex};
+use super::util::{ToHex, align_bytes, to_arr, to_chain_id, to_even_str, to_u64, trim_hex};
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::LogLevel;
@@ -46,7 +46,7 @@ where
 /// Start an HTTP RPC endpoint
 pub fn start(
     addr: &SocketAddr,
-    chain_id: u8,
+    chain_name: &str,
     base_path: Option<PathBuf>,
     sec_level: Option<KdfDepthLevel>,
 ) {
@@ -61,10 +61,7 @@ pub fn start(
         panic!("Unable to initialize storage");
     }
 
-    let chain = ChainStorage::new(
-        &storage,
-        to_chain_name(chain_id).unwrap_or("mainnet".to_string()),
-    );
+    let chain = ChainStorage::new(&storage, chain_name.to_string());
     if chain.init().is_err() {
         panic!("Unable to initialize chain");
     }
@@ -151,7 +148,7 @@ pub fn start(
 
     {
         let keystore_path = keystore_path.clone();
-
+        let chain_id = to_chain_id(chain_name).unwrap();
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,

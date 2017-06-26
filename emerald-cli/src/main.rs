@@ -18,7 +18,6 @@ extern crate regex;
 
 use docopt::Docopt;
 use emerald::keystore::KdfDepthLevel;
-use emerald::to_chain_id;
 use env_logger::LogBuilder;
 use log::{LogLevel, LogRecord};
 use std::env;
@@ -39,7 +38,6 @@ struct Args {
     flag_base_path: String,
     flag_security_level: String,
     flag_chain: String,
-    flag_chain_id: u8,
     cmd_server: bool,
 }
 
@@ -50,10 +48,7 @@ fn main() {
         .and_then(|d| d.deserialize())
         .unwrap_or_else(|e| e.exit());
 
-    let flags = vec![
-        (args.flag_verbose, "trace"),
-        (args.flag_quiet, "off"),
-    ];
+    let flags = vec![(args.flag_verbose, "trace"), (args.flag_quiet, "off")];
 
     let (_, verbosity) = *flags
         .into_iter()
@@ -84,13 +79,12 @@ fn main() {
 
     let chain = match args.flag_chain.parse::<String>() {
         Ok(c) => c,
-        Err(_) => "mainnet".to_string(),
+        Err(e) => {
+            error!("{}", e.to_string());
+            "mainnet".to_string()
+        }
     };
-
-    if to_chain_id(&chain).unwrap_or(61) != args.flag_chain_id {
-        error!("Inconsistent `--chain-id` and `--chain` arguments!");
-        exit(1);
-    }
+    info!("chain set to '{}'", chain);
 
     let sec_level_str: &str = &args.flag_security_level.parse::<String>().expect(
         "Expect to parse \
@@ -122,7 +116,7 @@ fn main() {
             None
         };
 
-        emerald::rpc::start(&addr, args.flag_chain_id, base_path, Some(sec_level));
+        emerald::rpc::start(&addr, &chain, base_path, Some(sec_level));
     }
 
 }
