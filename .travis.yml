@@ -23,7 +23,5 @@ script:
   - export RUST_BACKTRACE=1
   - cd emerald-core
   - cargo fmt -- --verbose --write-mode=diff
-  - cd ../emerald-cli
-  - cargo fmt -- --verbose --write-mode=diff
   - cargo test --all --target=$TARGET --verbose
   - cargo build --all --target=$TARGET --verbose --release
