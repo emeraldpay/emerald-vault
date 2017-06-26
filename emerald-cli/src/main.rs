@@ -33,9 +33,7 @@ const USAGE: &'static str = include_str!("../usage.txt");
 struct Args {
     flag_version: bool,
     flag_quiet: bool,
-    flag_info: bool,
-    flag_debug: bool,
-    flag_trace: bool,
+    flag_verbose: bool,
     flag_host: String,
     flag_port: String,
     flag_base_path: String,
@@ -53,9 +51,7 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     let flags = vec![
-        (args.flag_info, "info"),
-        (args.flag_debug, "debug"),
-        (args.flag_trace, "trace"),
+        (args.flag_verbose, "trace"),
         (args.flag_quiet, "off"),
     ];
 
