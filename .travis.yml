@@ -29,3 +29,4 @@ deploy:
   on:
     repo: ethereumproject/emerald-rs
     branch: master
+    tags: true
