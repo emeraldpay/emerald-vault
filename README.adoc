@@ -18,7 +18,7 @@ Ethereum Classic link:https://en.bitcoin.it/wiki/Cold_storage[cold storage] is w
 [NOTE]
 ====
 An offline wallet, also known as cold storage, provides the highest level of security for savings.
-It involves storing a wallet in a secured place that is not connected to the network (air gap).
+It involves storing a wallet in a secured place that is not connected to the network (air-gapped).
 When done properly, it can offer a very good protection against computer vulnerabilities.
 ====
 
