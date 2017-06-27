@@ -1,6 +1,6 @@
 [package]
 name = "emerald-core"
-version = "0.1.0"
+version = "0.9.0"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>"]
 description = "Ethereum Classic offline wallet written in Rust"
 homepage = "http://etcdevteam.com"
