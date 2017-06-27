@@ -2,11 +2,11 @@
 name = "emerald-cli"
 version = "0.9.0"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>"]
-description = "Ethereum Classic offline wallet written in Rust"
+description = "Ethereum Classic cold storage written in Rust"
 homepage = "http://etcdevteam.com"
 repository = "https://github.com/ethereumproject/emerald-rs"
 documentation = "https://docs.rs/emerald-core"
-keywords = ["command-line-interface", "command-line-utilities"]
+keywords = ["ethereum-classsic", "blockchain", "cli", "crypto-wallet", "cold-storage"]
 categories = ["ethereum-classic"]
 readme = "../README.adoc"
 license = "Apache-2.0"

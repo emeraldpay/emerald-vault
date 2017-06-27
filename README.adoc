@@ -10,14 +10,21 @@ ifndef::badges[]
 endif::[]
 
 ifdef::badges[]
-= Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/dulanov/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/dulanov/emerald-rs"] image:https://img.shields.io/crates/v/emerald-core.svg?style=flat-square["Crates", link="https://crates.io/crates/emerald-core"] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/ethereumproject/emerald-rs/blob/master/LICENSE"]
+= Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/dulanov/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/dulanov/emerald-rs"] image:https://img.shields.io/crates/v/emerald-cli.svg?style=flat-square["Crates", link="https://crates.io/crates/emerald-cli"] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/ethereumproject/emerald-rs/blob/master/LICENSE"]
 endif::[]
 
-Ethereum Classic offline wallet is written in Rust.
+Ethereum Classic link:https://en.bitcoin.it/wiki/Cold_storage[cold storage] is written in Rust.
+
+[NOTE]
+====
+An offline wallet, also known as cold storage, provides the highest level of security for savings.
+It involves storing a wallet in a secured place that is not connected to the network (air gap).
+When done properly, it can offer a very good protection against computer vulnerabilities.
+====
 
 Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of a shared object.
 
-If you are looking for for a fully-featured UI wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
+If you are looking for for a fully-featured UI online wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
 
 Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
