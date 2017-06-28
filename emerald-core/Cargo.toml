@@ -1,8 +1,8 @@
 [package]
 name = "emerald-core"
 version = "0.9.0"
-authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>"]
-description = "Ethereum Classic cold storage core library"
+authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
+description = "Ethereum Classic safety vault core library"
 homepage = "http://etcdevteam.com"
 repository = "https://github.com/ethereumproject/emerald-rs"
 documentation = "https://docs.rs/emerald-core"
