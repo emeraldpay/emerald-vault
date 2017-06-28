@@ -47,10 +47,10 @@ openssl pkgconfig rustc cargo
 
 `cargo` and `rustc` should be at least versions 0.18 and 1.17 respectively.
 
-Should your distribution or operating system not have a recent cargo and rustc binaries you can install them from: http://doc.crates.io/
+Should your distribution or operating system not have a recent cargo and rustc binaries you can install them from: http://doc.crates.io/.
 
 ----
-$ git clone https://github.com/ethereumproject/emerald-rs
+$ cargo install emerald-cli
 ----
 
 If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` command in your cloned repository and all dependencies will be made available in your environment automatically.
@@ -60,7 +60,7 @@ If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` comman
 How to run `emerald` (by default on port '1920'):
 
 ----
-$ RUST_LOG=emerald,rpc cargo run -- server
+$ emerald server
 ----
 
 For more details look at link:./emerald-cli/usage.txt[usage].
