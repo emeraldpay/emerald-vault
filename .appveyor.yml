@@ -95,3 +95,4 @@ test_script:
 artifacts:
   - path: target\release\emerald.exe
     name: emerald-cli
+
