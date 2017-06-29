@@ -33,3 +33,4 @@ deploy:
     repo: r8d8/emerald-rs
     branch: master
     tags: true
+  
