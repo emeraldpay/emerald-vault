@@ -33,6 +33,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate uuid;
 extern crate csv;
+extern crate hex;
 
 mod core;
 pub mod addressbook;
@@ -56,7 +57,7 @@ pub fn version() -> &'static str {
 #[cfg(test)]
 mod tests {
     pub use super::*;
+    pub use hex::{FromHex, ToHex};
     pub use regex::Regex;
-    pub use rustc_serialize::hex::{FromHex, ToHex};
     pub use rustc_serialize::json;
 }

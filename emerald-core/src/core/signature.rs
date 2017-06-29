@@ -3,8 +3,8 @@
 use super::Address;
 use super::Error;
 use super::util::{KECCAK256_BYTES, keccak256, to_arr};
+use hex::{FromHex, ToHex};
 use rand::{OsRng, Rng};
-use rustc_serialize::hex::{FromHex, ToHex};
 use secp256k1::{ContextFlag, Message, Secp256k1};
 use secp256k1::key::{PublicKey, SecretKey};
 use std::{fmt, ops, str};
@@ -160,7 +160,7 @@ impl str::FromStr for PrivateKey {
             s
         };
 
-        PrivateKey::try_from(&value.from_hex()?)
+        PrivateKey::try_from(Vec::from_hex(&value)?.as_slice())
     }
 }
 
