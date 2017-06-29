@@ -22,10 +22,10 @@ script:
 - sed -E 's/v([[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]-([[:digit:]]+).+/v\1.\2/' version.txt > version-only.txt
 - sed -E 's/v([[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]-([[:digit:]]+).+/v\1.x/' version.txt > version-base.txt
 - zip emerald-$TRAVIS_OS_NAME-$(cat version-app.txt).zip emerald
-- sed -E "s/APPVERSION/$(cat version-base.txt)/" bintray.tpl.json > bintray.json
+- sed -E "s/APPVERSION/$(cat version-base.txt)/" bintray.tpl.json > bintray.tlp.json
 deploy:
   provider: bintray
-  file: bintray.json
+  file: bintray.tlp.json
   user: r8d8
   key:
     secure: UGwkaD25kh8hmBSYMxUnklUNdXdLFXRHGxPc3ll0B9y/RqkRTI/sr+2SI0aC280JrfgnW8G+5u7gKi80X4nshLeBp1PTZrBjaAjV05zuHvREISBdcoXes5CQnFGkG3J0jpRWqs4H4W+26ef2oiMqY4BFjkMhH3vn9fPcgv817QRHYzsN4PcMw28hzh9FXHE+S4GsRxTk7mlfTsWVLnjVzWvsyYvlguur8QGd6iP0/xH9x30PigTai+cLa8IZtOKaye8yqpCIb5G5A2D0wQOMdZeLZDqGJ/RJU9E8Us1KWKwkYqxDTFIRjJqd2miIwQ32CAytMSRMKS+/TXYti+QtxPK+MWWd8z4boyibJoKi48o6KuxSIT91cpaxdJOTQXFaZzgslXWPtucJbFiTa7mPAfF/Bc4HFPNMqKzdwZCGOUS7q9mf1SbPhgzObOR6QfDN4gOx/ClgXyUWB12Au+T6TVRJf4huHO9oLG3zxp53iPqnMhkEVykt5pkVBDs605GVVpP+hBLQtmtELFyS73vjcwzaY7+/unpaVzEjK6Zx/gvP4kyapYEL/qZe2hG42ResA7dMOtC4Vk+f1UUfPpeN3+tR+vl4GzX0rcso5jQJ1XBiNbWLk/Qhwb6FpW2d41vaCpDFjamYgj9zV1cKY3V3vUAIfB18Q/0g7tZamNm6CMY=
