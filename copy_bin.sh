@@ -2,7 +2,8 @@
 
 PLATFORM='$(uname -m)'
 NAME='$(uname -s)'
+FILENAME='emerald-${TRAVIS_OS_NAME}'
 
 mkdir /tmp/.emerald/
-mv /target/release/emerald /tmp/.emerald/emerald-${TRAVIS_OS_NAME}
-echo "moved release file ${TRAVIS_OS_NAME}"
+mv /target/release/emerald /tmp/.emerald/${FILENAME}
+echo "moved release file ${FILENAME}"
