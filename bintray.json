@@ -1,0 +1,18 @@
+{
+  "package": {
+    "name": "emerald-rs",
+    "repo": "EmeraldVault",
+    "subject": "ethereumproject"
+  },
+
+  "version": {
+    "name": "APPVERSION",
+    "attributes": [],
+    "gpgSign": false
+  },
+
+  "files": [
+    {"includePattern": "./(emerald.+\\.zip)", "uploadPattern": "/$1"}
+  ],
+  "publish": true
+}

@@ -16,20 +16,19 @@ before_script:
 - cargo fmt --all -- --version
 script:
 - export RUST_BACKTRACE=1
-#- cargo fmt --all -- --verbose --write-mode=diff
-#- cargo test --all --verbose
 - cargo build --all --verbose --release
-after_success:
-  ./copy_bin.sh
+- git describe --tags --always > version.txt
+- sed -E 's/v([[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]-([[:digit:]]+)-g([a-f0-9]+)/v\1.\2+\3/' version.txt > version-app.txt
+- sed -E 's/v([[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]-([[:digit:]]+).+/v\1.\2/' version.txt > version-only.txt
+- sed -E 's/v([[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]-([[:digit:]]+).+/v\1.x/' version.txt > version-base.txt
+- zip emerald-$TRAVIS_OS_NAME-$(cat version-app.txt).zip emerald
+- sed -E "s/APPVERSION/$(cat version-base.txt)/" bintray.tpl.json > bintray.json
 deploy:
-  provider: releases
-  skip_cleanup: true
-  api_key:
-    secure: qXqFCva/yJfwdJzLUazv3AUqvnbUWWEvCOoZHMkByK7/OP1yGdB/q7R24IRAf5SvfEk9TR8a81i+tiy/3iLfgrrBPLc077cLB4q6q1O1yBIrRTg61ggUDyiKaZDZqHtuvI2ocTnFM5jXTuEXVVGt0HA1IO3ezogmcVi9UrQp5rDDCWqPcNviTVweTICLb9PAWKmhbGrGmR3BVuNjmBCDJr25qnW6wors93xfCrpePepnl92gvPrp30WmQ2E+bgV+Hoeu9gJjCIjRU8bTmDWEdkBa3Qe8xIMU+SAw7CBUWRALh5q1HX0M7RYpg3zOEdVdWZ+OwDTO0mc40UdaV5rkx029ird4mC96bkHHemYITJJrDrwjoni9wSbnhZaNefZeKf8pAGLUO/+NwtcYbj8ogYdnsweAMRiZUvA15/tzk6kMQqBILjL605YayPWt9XvdU06gLjWtEd8qlOqt+xBPat3dKw15Xkb8XPM8bc6+YBHDvJC9tF4vozOsj9Sh4b/RV9+tB0xrjniY/ZRMtGe6JJO+7+7naszekz+F9lZJocmAhbX7XUsgyvjhmVn/1+IKnJQ/iqIn7FNQa+7y9ONmQxke4aibKdM3vTicgwwPD4IY2i9MGLCBDUFIiu70k8pJ2Gy4xa8E0LupcHui4uysG2ukqJhPU/4rN9v7HZznE3Y=
-  file_glob: true
-  file: /tmp/.emerald/emerald-linux
-  file: /tmp/.emerald/emerald-osx
+  provider: bintray
+  file: bintray.json
+  user: r8d8
+  key:
+    secure: UGwkaD25kh8hmBSYMxUnklUNdXdLFXRHGxPc3ll0B9y/RqkRTI/sr+2SI0aC280JrfgnW8G+5u7gKi80X4nshLeBp1PTZrBjaAjV05zuHvREISBdcoXes5CQnFGkG3J0jpRWqs4H4W+26ef2oiMqY4BFjkMhH3vn9fPcgv817QRHYzsN4PcMw28hzh9FXHE+S4GsRxTk7mlfTsWVLnjVzWvsyYvlguur8QGd6iP0/xH9x30PigTai+cLa8IZtOKaye8yqpCIb5G5A2D0wQOMdZeLZDqGJ/RJU9E8Us1KWKwkYqxDTFIRjJqd2miIwQ32CAytMSRMKS+/TXYti+QtxPK+MWWd8z4boyibJoKi48o6KuxSIT91cpaxdJOTQXFaZzgslXWPtucJbFiTa7mPAfF/Bc4HFPNMqKzdwZCGOUS7q9mf1SbPhgzObOR6QfDN4gOx/ClgXyUWB12Au+T6TVRJf4huHO9oLG3zxp53iPqnMhkEVykt5pkVBDs605GVVpP+hBLQtmtELFyS73vjcwzaY7+/unpaVzEjK6Zx/gvP4kyapYEL/qZe2hG42ResA7dMOtC4Vk+f1UUfPpeN3+tR+vl4GzX0rcso5jQJ1XBiNbWLk/Qhwb6FpW2d41vaCpDFjamYgj9zV1cKY3V3vUAIfB18Q/0g7tZamNm6CMY=
   on:
-    repo: r8d8/emerald-rs
     branch: master
-    tags: true
+  tags: true
