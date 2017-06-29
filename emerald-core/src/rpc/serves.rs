@@ -18,6 +18,18 @@ fn to_chain_id(chain: &str, chain_id: Option<usize>, default_id: u8) -> u8 {
     util::to_chain_id(chain).unwrap_or(default_id)
 }
 
+fn check_chain_params(chain: &str, chain_id: usize) -> Result<(), Error> {
+    if let Some(id) = util::to_chain_id(chain) {
+        if id as usize != chain_id {
+            return Err(Error::InvalidDataFormat(
+                "Inconsistent chain parameters".to_string(),
+            ));
+        }
+    };
+
+    Ok(())
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Either<T, U> {
@@ -286,10 +298,14 @@ pub struct SignTransactionTransaction {
 pub fn sign_transaction(
     params: Either<(SignTransactionTransaction,), (SignTransactionTransaction, CommonAdditional)>,
     keystore_path: &PathBuf,
-    default_chain: u8,
+    default_chain_id: u8,
 ) -> Result<Params, Error> {
     let (transaction, additional) = params.into_full();
     let addr = Address::from_str(&transaction.from)?;
+
+    if additional.chain_id.is_some() {
+        check_chain_params(&additional.chain, additional.chain_id.unwrap())?;
+    }
 
     match KeyFile::search_by_address(&addr, keystore_path) {
         Ok((_, kf)) => {
@@ -310,11 +326,14 @@ pub fn sign_transaction(
                 );
                 match transaction.try_into() {
                     Ok(tr) => {
-                        let signed =
-                            tr.to_raw_params(
-                                pk,
-                                to_chain_id(&additional.chain, additional.chain_id, default_chain),
-                            );
+                        let signed = tr.to_raw_params(
+                            pk,
+                            to_chain_id(
+                                &additional.chain,
+                                additional.chain_id,
+                                default_chain_id,
+                            ),
+                        );
                         debug!("\n\t raw: {:?}", signed);
                         Ok(signed)
                     }
