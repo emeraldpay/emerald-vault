@@ -10,14 +10,21 @@ ifndef::badges[]
 endif::[]
 
 ifdef::badges[]
-= Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/dulanov/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/dulanov/emerald-rs"] image:https://img.shields.io/crates/v/emerald-core.svg?style=flat-square["Crates", link="https://crates.io/crates/emerald-core"] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/ethereumproject/emerald-rs/blob/master/LICENSE"]
+= Emerald-rs image:https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square["Build Status", link="https://travis-ci.org/ethereumproject/emerald-rs"] image:https://img.shields.io/appveyor/ci/dulanov/emerald-rs/master.svg?style=flat-square["Build Status", link="https://ci.appveyor.com/project/dulanov/emerald-rs"] image:https://img.shields.io/crates/v/emerald-cli.svg?style=flat-square["Crates", link="https://crates.io/crates/emerald-cli"] image:https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000["License", link="https://github.com/ethereumproject/emerald-rs/blob/master/LICENSE"]
 endif::[]
 
-Ethereum Classic offline wallet is written in Rust.
+Secure account management for Ethereum Classic.
 
-Distributed as a command line tool (CLI), as a Rust crate or you can use it in the form of a shared object.
+[NOTE]
+====
+An offline wallet, also known as cold storage, provides the highest level of security for savings.
+It involves storing a wallet in a secured place that is not connected to the network (air-gapped).
+When done properly, it can offer a very good protection against computer vulnerabilities.
+====
 
-If you are looking for for a fully-featured UI wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
+Distributed as a command line tool (CLI), as a Rust crate or can be embedded via foreign function interface (FFI).
+
+If you are looking for for a fully-featured UI online wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
 
 Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
@@ -40,10 +47,10 @@ openssl pkgconfig rustc cargo
 
 `cargo` and `rustc` should be at least versions 0.18 and 1.17 respectively.
 
-Should your distribution or operating system not have a recent cargo and rustc binaries you can install them from: http://doc.crates.io/
+Should your distribution or operating system not have a recent cargo and rustc binaries you can install them from: http://doc.crates.io/.
 
 ----
-$ git clone https://github.com/ethereumproject/emerald-rs
+$ cargo install emerald-cli
 ----
 
 If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` command in your cloned repository and all dependencies will be made available in your environment automatically.
@@ -53,7 +60,7 @@ If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` comman
 How to run `emerald` (by default on port '1920'):
 
 ----
-$ RUST_LOG=emerald,rpc cargo run -- server
+$ emerald server
 ----
 
 For more details look at link:./emerald-cli/usage.txt[usage].
