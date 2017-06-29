@@ -19,7 +19,6 @@ script:
 - cargo fmt --all -- --verbose --write-mode=diff
 - cargo test --all --verbose
 - cargo build --all --verbose --release
-- mkdir /tmp/.cargo/ &&
 after_success:
   ./deploy.sh
 deploy:
