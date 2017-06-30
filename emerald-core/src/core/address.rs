@@ -2,7 +2,7 @@
 
 use super::Error;
 use super::util::to_arr;
-use rustc_serialize::hex::{FromHex, ToHex};
+use hex::{FromHex, ToHex};
 use std::{fmt, ops};
 use std::str::FromStr;
 
@@ -63,7 +63,7 @@ impl FromStr for Address {
             s
         };
 
-        Address::try_from(&value.from_hex()?)
+        Address::try_from(Vec::from_hex(&value)?.as_slice())
     }
 }
 

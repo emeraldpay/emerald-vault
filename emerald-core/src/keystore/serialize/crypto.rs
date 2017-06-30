@@ -2,8 +2,8 @@
 
 use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::util::KECCAK256_BYTES;
+use hex::{FromHex, ToHex};
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-use rustc_serialize::hex::{FromHex, ToHex};
 use std::str::FromStr;
 
 byte_array_struct!(Salt, KDF_SALT_BYTES);
@@ -68,7 +68,7 @@ impl Decodable for Crypto {
 
             let cipher_text = d.read_struct_field("ciphertext", 2, |d| {
                 d.read_str().and_then(|s| {
-                    s.from_hex().map_err(|e| d.error(&e.to_string()))
+                    Vec::from_hex(s).map_err(|e| d.error(&e.to_string()))
                 })
             })?;
 
@@ -248,9 +248,9 @@ mod tests {
     fn should_serialize_pbkdf2_crypto() {
         let exp = Crypto {
             cipher: Cipher::default(),
-            cipher_text: "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126"
-                .from_hex()
-                .unwrap(),
+            cipher_text: Vec::from_hex(
+                "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126",
+            ).unwrap(),
             cipher_params: CipherParams {
                 iv: json::decode("\"58d54158c3e27131b0a0f2b91201aedc\"").unwrap(),
             },
@@ -280,9 +280,9 @@ mod tests {
     fn should_serialize_scrypt_crypto() {
         let exp = Crypto {
             cipher: Cipher::default(),
-            cipher_text: "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
-                .from_hex()
-                .unwrap(),
+            cipher_text: Vec::from_hex(
+                "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
+            ).unwrap(),
             cipher_params: CipherParams {
                 iv: json::decode("\"9df1649dd1c50f2153917e3b9e7164e9\"").unwrap(),
             },

@@ -63,7 +63,7 @@ mod tests {
 
         assert_eq!(
             Cipher::Aes128Ctr.encrypt(&data, &key, &iv),
-            "874d6191b620e3261bef6864990db6ce".from_hex().unwrap()
+            Vec::from_hex("874d6191b620e3261bef6864990db6ce").unwrap()
         );
     }
 }

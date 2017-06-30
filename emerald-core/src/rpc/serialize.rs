@@ -2,8 +2,8 @@
 
 use super::{Error, ToHex, align_bytes, to_arr, to_even_str, to_u64, trim_hex};
 use super::core::{Address, PrivateKey, Transaction};
+use hex::FromHex;
 use jsonrpc_core::{Params, Value as JValue};
-use rustc_serialize::hex::FromHex;
 
 #[derive(Deserialize, Debug)]
 pub struct RPCTransaction {
@@ -24,10 +24,10 @@ impl RPCTransaction {
         let gp_str = trim_hex(self.gas_price.as_str());
         let v_str = trim_hex(self.value.as_str());
 
-        let gas_limit = trim_hex(self.gas.as_str()).from_hex()?;
-        let gas_price = gp_str.from_hex()?;
-        let value = v_str.from_hex()?;
-        let nonce = to_even_str(trim_hex(self.nonce.as_str())).from_hex()?;
+        let gas_limit = Vec::from_hex(trim_hex(self.gas.as_str()))?;
+        let gas_price = Vec::from_hex(gp_str)?;
+        let value = Vec::from_hex(v_str)?;
+        let nonce = Vec::from_hex(to_even_str(trim_hex(self.nonce.as_str())))?;
 
         Ok(Transaction {
             nonce: to_u64(&nonce),
@@ -35,7 +35,7 @@ impl RPCTransaction {
             gas_limit: to_u64(&gas_limit),
             to: self.to.as_str().parse::<Address>().ok(),
             value: to_arr(&align_bytes(&value, 32)),
-            data: trim_hex(self.data.as_str()).from_hex()?,
+            data: Vec::from_hex(trim_hex(self.data.as_str()))?,
         })
     }
 }

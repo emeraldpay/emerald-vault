@@ -207,19 +207,19 @@ pub use self::tests::*;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rustc_serialize::hex::FromHex;
+    use hex::FromHex;
     use tests::*;
 
     pub fn to_16bytes(hex: &str) -> [u8; 16] {
-        to_arr(&hex.from_hex().unwrap())
+        to_arr(Vec::from_hex(&hex).unwrap().as_slice())
     }
 
     pub fn to_20bytes(hex: &str) -> [u8; 20] {
-        to_arr(&hex.from_hex().unwrap())
+        to_arr(Vec::from_hex(&hex).unwrap().as_slice())
     }
 
     pub fn to_32bytes(hex: &str) -> [u8; 32] {
-        to_arr(&hex.from_hex().unwrap())
+        to_arr(Vec::from_hex(&hex).unwrap().as_slice())
     }
 
     #[test]
