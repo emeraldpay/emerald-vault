@@ -21,7 +21,7 @@ script:
 - sed -E 's/v([[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]-([[:digit:]]+)-g([a-f0-9]+)/v\1.\2+\3/' version.txt > version-app.txt
 - sed -E 's/v([[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]-([[:digit:]]+).+/v\1.\2/' version.txt > version-only.txt
 - sed -E 's/v([[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]-([[:digit:]]+).+/v\1.x/' version.txt > version-base.txt
-- zip emerald-$TRAVIS_OS_NAME-$(cat version-app.txt).zip emerald
+- zip emerald-$TRAVIS_OS_NAME-$(cat version-app.txt).zip target/release/emerald
 - sed -E "s/APPVERSION/$(cat version-base.txt)/" bintray.tpl.json > bintray.tpl.json
 deploy:
   provider: bintray
