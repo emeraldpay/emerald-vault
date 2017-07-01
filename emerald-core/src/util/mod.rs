@@ -57,7 +57,7 @@ pub fn to_chain_name(id: u8) -> Option<String> {
 pub fn to_chain_id(name: &str) -> Option<u8> {
     match name {
         "mainnet" => Some(61),
-        "testnet" => Some(62),
+        "testnet" | "morden" => Some(62),
         _ => None,
     }
 }
@@ -432,5 +432,11 @@ mod tests {
         let re = Regex::new(r"^\d{4}-\d{2}-\d{2}[T]\d{2}-\d{2}-\d{2}").unwrap();
 
         assert!(re.is_match(&timestamp()));
+    }
+
+    #[test]
+    fn should_convert_to_chain_id() {
+        assert_eq!(to_chain_id("testnet"), Some(62));
+        assert_eq!(to_chain_id("testnet"), to_chain_id("morden"));
     }
 }
