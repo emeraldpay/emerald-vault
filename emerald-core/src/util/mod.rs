@@ -57,7 +57,7 @@ pub fn to_chain_name(id: u8) -> Option<String> {
 pub fn to_chain_id(name: &str) -> Option<u8> {
     match name {
         "mainnet" => Some(61),
-        "testnet" => Some(62),
+        "testnet" | "morden" => Some(62),
         _ => None,
     }
 }
@@ -207,19 +207,19 @@ pub use self::tests::*;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rustc_serialize::hex::FromHex;
+    use hex::FromHex;
     use tests::*;
 
     pub fn to_16bytes(hex: &str) -> [u8; 16] {
-        to_arr(&hex.from_hex().unwrap())
+        to_arr(Vec::from_hex(&hex).unwrap().as_slice())
     }
 
     pub fn to_20bytes(hex: &str) -> [u8; 20] {
-        to_arr(&hex.from_hex().unwrap())
+        to_arr(Vec::from_hex(&hex).unwrap().as_slice())
     }
 
     pub fn to_32bytes(hex: &str) -> [u8; 32] {
-        to_arr(&hex.from_hex().unwrap())
+        to_arr(Vec::from_hex(&hex).unwrap().as_slice())
     }
 
     #[test]
@@ -432,5 +432,11 @@ mod tests {
         let re = Regex::new(r"^\d{4}-\d{2}-\d{2}[T]\d{2}-\d{2}-\d{2}").unwrap();
 
         assert!(re.is_match(&timestamp()));
+    }
+
+    #[test]
+    fn should_convert_to_chain_id() {
+        assert_eq!(to_chain_id("testnet"), Some(62));
+        assert_eq!(to_chain_id("testnet"), to_chain_id("morden"));
     }
 }

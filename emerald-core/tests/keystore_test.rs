@@ -1,13 +1,14 @@
 extern crate emerald_core as emerald;
 extern crate rand;
 extern crate rustc_serialize;
+extern crate hex;
 extern crate uuid;
 extern crate tempdir;
 
 use emerald::{Address, KECCAK256_BYTES};
 use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Prf};
 
-use rustc_serialize::hex::{FromHex, ToHex};
+use hex::FromHex;
 use rustc_serialize::json;
 use std::fs::File;
 use std::io::Read;
@@ -66,8 +67,8 @@ fn should_decrypt_private_key_protected_by_scrypt() {
 
     assert!(keyfile.decrypt_key("_").is_err());
     assert_eq!(
-        keyfile.decrypt_key("1234567890").unwrap().to_hex(),
-        "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f"
+        keyfile.decrypt_key("1234567890").unwrap().to_string(),
+        "0xfa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f"
     );
 }
 
@@ -81,8 +82,8 @@ fn should_decrypt_private_key_protected_by_pbkdf2() {
 
     assert!(keyfile.decrypt_key("_").is_err());
     assert_eq!(
-        keyfile.decrypt_key("1234567890").unwrap().to_hex(),
-        "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf"
+        keyfile.decrypt_key("1234567890").unwrap().to_string(),
+        "0x00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf"
     );
 }
 
@@ -104,23 +105,23 @@ fn should_decode_keyfile_without_address() {
             c: 10240,
         },
         kdf_salt: arr!(
-            &"095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b"
-                .from_hex()
-                .unwrap(),
+            &Vec::from_hex(
+                "095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b",
+            ).unwrap(),
             KDF_SALT_BYTES
         ),
         cipher: Cipher::default(),
-        cipher_text: "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126"
-            .from_hex()
-            .unwrap(),
+        cipher_text: Vec::from_hex(
+            "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126",
+        ).unwrap(),
         cipher_iv: arr!(
-            &"58d54158c3e27131b0a0f2b91201aedc".from_hex().unwrap(),
+            &Vec::from_hex("58d54158c3e27131b0a0f2b91201aedc").unwrap(),
             CIPHER_IV_BYTES
         ),
         keccak256_mac: arr!(
-            &"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63"
-                .from_hex()
-                .unwrap(),
+            &Vec::from_hex(
+                "83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63",
+            ).unwrap(),
             KECCAK256_BYTES
         ),
     };
@@ -160,23 +161,23 @@ fn should_decode_keyfile_with_address() {
             p: 1,
         },
         kdf_salt: arr!(
-            &"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4"
-                .from_hex()
-                .unwrap(),
+            &Vec::from_hex(
+                "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
+            ).unwrap(),
             KDF_SALT_BYTES
         ),
         cipher: Cipher::default(),
-        cipher_text: "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1"
-            .from_hex()
-            .unwrap(),
+        cipher_text: Vec::from_hex(
+            "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
+        ).unwrap(),
         cipher_iv: arr!(
-            &"9df1649dd1c50f2153917e3b9e7164e9".from_hex().unwrap(),
+            &Vec::from_hex("9df1649dd1c50f2153917e3b9e7164e9").unwrap(),
             CIPHER_IV_BYTES
         ),
         keccak256_mac: arr!(
-            &"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
-                .from_hex()
-                .unwrap(),
+            &Vec::from_hex(
+                "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5",
+            ).unwrap(),
             KECCAK256_BYTES
         ),
     };

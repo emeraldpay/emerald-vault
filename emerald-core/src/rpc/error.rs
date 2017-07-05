@@ -1,10 +1,11 @@
 //! # JSON RPC module errors
 
 use super::core;
+use hex;
 use jsonrpc_core;
 use keystore;
 use reqwest;
-use rustc_serialize::{self, hex};
+use rustc_serialize;
 use serde_json;
 use std::{error, fmt};
 

@@ -1,6 +1,6 @@
 //! # Core domain logic module errors
 
-use rustc_serialize::hex;
+use hex;
 use secp256k1;
 use std::{error, fmt};
 

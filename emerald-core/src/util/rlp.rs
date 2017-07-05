@@ -235,8 +235,7 @@ mod tests {
     #[test]
     fn encode_mediumint4() {
         let mut buf = Vec::new();
-        "102030405060708090a0b0c0d0e0f2"
-            .from_hex()
+        Vec::from_hex("102030405060708090a0b0c0d0e0f2")
             .unwrap()
             .as_slice()
             .write_rlp(&mut buf);
@@ -246,8 +245,7 @@ mod tests {
     #[test]
     fn encode_mediumint5() {
         let mut buf = Vec::new();
-        "0100020003000400050006000700080009000a000b000c000d000e01"
-            .from_hex()
+        Vec::from_hex("0100020003000400050006000700080009000a000b000c000d000e01")
             .unwrap()
             .as_slice()
             .write_rlp(&mut buf);
