@@ -42,7 +42,7 @@ Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 Ensure you have these dependencies installed:
 
 ----
-openssl pkgconfig rustc cargo
+openssl pkg-config rustc cargo
 ----
 
 `cargo` and `rustc` should be at least versions 0.18 and 1.17 respectively.
@@ -60,7 +60,7 @@ If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` comman
 How to run `emerald` (by default on port '1920'):
 
 ----
-$ emerald server
+$ target/debug/emerald server
 ----
 
 For more details look at link:./emerald-cli/usage.txt[usage].
