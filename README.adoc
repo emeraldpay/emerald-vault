@@ -42,7 +42,7 @@ Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 Ensure you have these dependencies installed:
 
 ----
-openssl pkgconfig rustc cargo
+openssl pkg-config rustc cargo
 ----
 
 `cargo` and `rustc` should be at least versions 0.18 and 1.17 respectively.
