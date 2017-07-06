@@ -60,7 +60,7 @@ If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` comman
 How to run `emerald` (by default on port '1920'):
 
 ----
-$ emerald server
+$ target/debug/emerald server
 ----
 
 For more details look at link:./emerald-cli/usage.txt[usage].
