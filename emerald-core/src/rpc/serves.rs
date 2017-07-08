@@ -2,6 +2,7 @@ use super::Error;
 use super::serialize::RPCTransaction;
 
 use core::Address;
+use core::Contract;
 use jsonrpc_core::{Params, Value};
 use keystore::{self, KdfDepthLevel, KeyFile};
 use rustc_serialize::json as rustc_json;
@@ -345,4 +346,18 @@ pub fn sign_transaction(
         }
         Err(_) => Err(Error::InvalidDataFormat("Can't find account".to_string())),
     }
+}
+
+#[derive(Deserialize, Default, Debug)]
+pub struct FunctionParams {
+    pub values: Vec<String>,
+    pub types: Vec<String>,
+}
+
+pub fn encode_function_call(
+    params: Either<(Value,), (Value, FunctionParams)>,
+) -> Result<String, Error> {
+    let (function, inputs) = params.into_full();
+
+    Contract::serialize_params(inputs.types, inputs.values).map_err(From::from)
 }

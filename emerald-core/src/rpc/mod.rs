@@ -158,6 +158,12 @@ pub fn start(
         });
     }
 
+    {
+        io.add_method("emerald_encodeFunctionCall", move |p: Params| {
+            wrapper(serves::encode_function_call(parse(p)?))
+        });
+    }
+
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![
             AccessControlAllowOrigin::Any,
