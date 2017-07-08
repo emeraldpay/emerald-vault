@@ -1,8 +1,10 @@
 //! # Contract
 
-use ethabi;
-use ethabi::{Function, Interface};
-use ethabi::token::Token;
+use super::Error;
+use ethabi::{Encoder, Function, Interface};
+use ethabi::spec::param_type::{ParamType, Reader};
+use ethabi::token::{LenientTokenizer, Token, Tokenizer};
+use hex::ToHex;
 use std::fmt;
 
 /// Contract specification
@@ -29,7 +31,7 @@ impl Contract {
     ///            "Interface([Function(Function { name: \"name\", inputs: [],\
     ///             outputs: [Param { name: \"\", kind: String }] })])");
     /// ```
-    pub fn from(data: &[u8]) -> Result<Self, ethabi::spec::Error> {
+    pub fn from(data: &[u8]) -> Result<Self, Error> {
         let abi = Interface::load(data)?;
         Ok(Contract { abi: abi })
     }
@@ -43,15 +45,33 @@ impl Contract {
     }
 
     /// Encode ABI function call with input params
-    pub fn function_encode(
+    pub fn serialize_function_call(
         &self,
         name: String,
         params: Vec<Token>,
-    ) -> Result<Vec<u8>, ethabi::Error> {
-        match self.function(name) {
-            Some(f) => f.encode_call(params),
-            None => Err(ethabi::Error::InvalidName),
-        }
+    ) -> Result<Vec<u8>, Error> {
+        let f = self.function(name).unwrap();
+        f.encode_call(params).map_err(From::from)
+    }
+
+    /// Encode ABI input params to hex string
+    pub fn serialize_params(types: Vec<String>, values: Vec<String>) -> Result<String, Error> {
+        let types: Result<Vec<ParamType>, _> = types.iter().map(|s| Reader::read(s)).collect();
+
+        let types = try!(types);
+
+        let params: Vec<_> = types.into_iter().zip(values.into_iter()).collect();
+
+        let tokens = params
+            .iter()
+            .map(|&(ref param, ref value)| {
+                LenientTokenizer::tokenize(param, value)
+            })
+            .collect::<Result<_, _>>()?;
+
+        let result = Encoder::encode(tokens);
+
+        Ok(result.to_hex())
     }
 }
 
