@@ -1,11 +1,13 @@
 //! # Core domain logic module
 
 mod address;
+mod contract;
 mod error;
 mod signature;
 mod transaction;
 
 pub use self::address::{ADDRESS_BYTES, Address};
+pub use self::contract::Contract;
 pub use self::error::Error;
 pub use self::signature::{ECDSA_SIGNATURE_BYTES, PRIVATE_KEY_BYTES, PrivateKey, Signature};
 pub use self::transaction::Transaction;
