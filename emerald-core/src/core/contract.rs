@@ -28,7 +28,7 @@ impl Contract {
     ///             \"payable\":false,\"type\":\"function\"}]";
     /// let contract = emerald_core::Contract::from(DATA).unwrap();
     /// assert_eq!(contract.to_string(),
-    ///            "Interface([Function(Function { name: \"name\", inputs: [],\
+    ///            "Interface([Function(Function { name: \"name\", inputs: [], \
     ///             outputs: [Param { name: \"\", kind: String }] })])");
     /// ```
     pub fn from(data: &[u8]) -> Result<Self, Error> {
