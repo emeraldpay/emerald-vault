@@ -32,8 +32,10 @@ extern crate secp256k1;
 extern crate serde;
 extern crate serde_json;
 extern crate uuid;
-extern crate csv;
 extern crate hex;
+extern crate hidapi;
+extern crate libusb;
+
 
 mod core;
 pub mod addressbook;
