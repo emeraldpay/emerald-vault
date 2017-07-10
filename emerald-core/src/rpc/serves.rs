@@ -156,9 +156,9 @@ pub struct UnhideAccountAccount {
 pub fn unhide_account(
     params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
     default_keystore: &PathBuf,
-    storage: &Storages
+    storage: &Storages,
 ) -> Result<bool, Error> {
-    let (account, additional) =  params.into_full();
+    let (account, additional) = params.into_full();
     let path = get_path!(additional.chain, default_keystore.clone(), storage);
 
     let addr = Address::from_str(&account.address)?;
@@ -178,7 +178,7 @@ pub struct ShakeAccountAccount {
 pub fn shake_account(
     params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
     default_keystore: &PathBuf,
-    storage: &Storages
+    storage: &Storages,
 ) -> Result<bool, Error> {
     use keystore::os_random;
 
@@ -214,7 +214,7 @@ pub struct UpdateAccountAccount {
 pub fn update_account(
     params: Either<(UpdateAccountAccount,), (UpdateAccountAccount, CommonAdditional)>,
     default_keystore: &PathBuf,
-    storage: &Storages
+    storage: &Storages,
 ) -> Result<bool, Error> {
     let (account, additional) = params.into_full();
     let path = get_path!(additional.chain, default_keystore.clone(), storage);
@@ -263,9 +263,9 @@ pub struct ExportAccountAccount {
 pub fn export_account(
     params: Either<(ExportAccountAccount,), (ExportAccountAccount, CommonAdditional)>,
     default_keystore: &PathBuf,
-    storage: &Storages
+    storage: &Storages,
 ) -> Result<Value, Error> {
-    let (account, additional) =  params.into_full();
+    let (account, additional) = params.into_full();
     let path = get_path!(additional.chain, default_keystore.clone(), storage);
     let addr = Address::from_str(&account.address)?;
 
@@ -290,7 +290,7 @@ pub fn new_account(
     params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
     sec: &KdfDepthLevel,
     default_keystore: &PathBuf,
-    storage: &Storages
+    storage: &Storages,
 ) -> Result<String, Error> {
     let (account, additional) = params.into_full();
     let path = get_path!(additional.chain, default_keystore.clone(), storage);
@@ -332,7 +332,7 @@ pub fn sign_transaction(
     params: Either<(SignTransactionTransaction,), (SignTransactionTransaction, CommonAdditional)>,
     default_keystore: &PathBuf,
     default_chain_id: u8,
-    storage: &Storages
+    storage: &Storages,
 ) -> Result<Params, Error> {
     let (transaction, additional) = params.into_full();
     let path = get_path!(additional.chain, default_keystore.clone(), storage);

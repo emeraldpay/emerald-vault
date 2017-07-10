@@ -86,7 +86,11 @@ pub fn start(
         let default_keystore = keystore_path.clone();
 
         io.add_method("emerald_listAccounts", move |p: Params| {
-            wrapper(serves::list_accounts(parse(p)?, &default_keystore, &storage))
+            wrapper(serves::list_accounts(
+                parse(p)?,
+                &default_keystore,
+                &storage,
+            ))
         });
     }
 
@@ -104,7 +108,11 @@ pub fn start(
         let storage = storage.clone();
 
         io.add_method("emerald_unhideAccount", move |p: Params| {
-            wrapper(serves::unhide_account(parse(p)?, &default_keystore, &storage))
+            wrapper(serves::unhide_account(
+                parse(p)?,
+                &default_keystore,
+                &storage,
+            ))
         });
     }
 
@@ -113,7 +121,11 @@ pub fn start(
         let storage = storage.clone();
 
         io.add_method("emerald_shakeAccount", move |p: Params| {
-            wrapper(serves::shake_account(parse(p)?, &default_keystore, &storage))
+            wrapper(serves::shake_account(
+                parse(p)?,
+                &default_keystore,
+                &storage,
+            ))
         });
     }
 
@@ -122,7 +134,11 @@ pub fn start(
         let storage = storage.clone();
 
         io.add_method("emerald_updateAccount", move |p: Params| {
-            wrapper(serves::update_account(parse(p)?, &default_keystore, &storage))
+            wrapper(serves::update_account(
+                parse(p)?,
+                &default_keystore,
+                &storage,
+            ))
         });
     }
 
@@ -131,7 +147,11 @@ pub fn start(
         let storage = storage.clone();
 
         io.add_method("emerald_importAccount", move |p: Params| {
-            wrapper(serves::import_account(parse(p)?, &default_keystore, &storage))
+            wrapper(serves::import_account(
+                parse(p)?,
+                &default_keystore,
+                &storage,
+            ))
         });
     }
 
@@ -140,7 +160,11 @@ pub fn start(
         let storage = storage.clone();
 
         io.add_method("emerald_exportAccount", move |p: Params| {
-            wrapper(serves::export_account(parse(p)?, &default_keystore, &storage))
+            wrapper(serves::export_account(
+                parse(p)?,
+                &default_keystore,
+                &storage,
+            ))
         });
     }
 
@@ -150,7 +174,12 @@ pub fn start(
         let storage = storage.clone();
 
         io.add_method("emerald_newAccount", move |p: Params| {
-            wrapper(serves::new_account(parse(p)?, &sec, &default_keystore, &storage))
+            wrapper(serves::new_account(
+                parse(p)?,
+                &sec,
+                &default_keystore,
+                &storage,
+            ))
         });
     }
 
@@ -163,7 +192,7 @@ pub fn start(
                 parse(p)?,
                 &default_keystore,
                 chain_id,
-                &storage
+                &storage,
             ))
         });
     }
