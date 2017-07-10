@@ -7,7 +7,7 @@ use keystore;
 use reqwest;
 use rustc_serialize;
 use serde_json;
-use std::{error, fmt};
+use std::{error, fmt, io};
 
 /// JSON RPC errors
 #[derive(Debug)]
@@ -35,6 +35,12 @@ impl From<rustc_serialize::json::DecoderError> for Error {
 impl From<keystore::Error> for Error {
     fn from(_err: keystore::Error) -> Self {
         Error::InvalidDataFormat("keystore error".to_string())
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Self {
+        Error::InvalidDataFormat(e.to_string())
     }
 }
 
