@@ -67,10 +67,11 @@ impl Storages {
     pub fn get_keystore_path(&self, chain_name: &str) -> Result<PathBuf, Error> {
         for entry in fs::read_dir(&self.base_dir)? {
             let entry = entry?;
-            let path = entry.path();
+            let mut path = entry.path();
 
             if path.is_dir() && path.file_name().is_some() {
                 if path.file_name().unwrap() == chain_name {
+                    path.push("keystore");
                     return Ok(path);
                 }
             }
