@@ -172,7 +172,6 @@ pub fn list_accounts<P: AsRef<Path>>(
             continue;
         }
         let entry = e.unwrap();
-
         let mut content = String::new();
         if let Ok(mut keyfile) = File::open(entry.path()) {
             if keyfile.read_to_string(&mut content).is_err() {

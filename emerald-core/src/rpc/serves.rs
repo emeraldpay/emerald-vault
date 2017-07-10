@@ -100,8 +100,9 @@ pub fn list_accounts(
         })
         .collect();
     debug!(
-        "Accounts listed with `show_hidden`: {}\n\t{:?}",
+        "Accounts listed with `show_hidden`: {} for path: {:?}\n\t{:?}",
         additional.show_hidden,
+        keystore_path,
         res
     );
 
