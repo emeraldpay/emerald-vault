@@ -53,8 +53,8 @@ pub fn start(
     let sec_level = sec_level.unwrap_or_default();
 
     let storage = match base_path {
-        Some(p) => Storages::new(p),
-        None => Storages::default(),
+        Some(p) => Arc::new(Storages::new(p)),
+        None => Arc::new(Storages::default()),
     };
 
     if storage.init().is_err() {
@@ -82,10 +82,10 @@ pub fn start(
     }
 
     {
-        let keystore_path = keystore_path.clone();
+        let storage = storage.clone();
 
         io.add_method("emerald_listAccounts", move |p: Params| {
-            wrapper(serves::list_accounts(parse(p)?, &keystore_path))
+            wrapper(serves::list_accounts(parse(p)?, &storage))
         });
     }
 
