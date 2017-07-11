@@ -341,6 +341,106 @@ Signs transaction offline with private key from keystore file with given passphr
 <-- {"jsonrpc": "2.0", "result": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675", "id": 1}
 ----
 
+=== emerald_addContract
+
+Add a new contract and store the Application Binary Interface (ABI) locally.
+
+*Parameters*:
+
+    * `abi` (Array) - JSON format for a contract ABI, should be an array of function and/or event descriptions as defined https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI[here]
+    ** `name` (String) - the name of the function
+    ** `inputs` (Array) - an array of objects, each of which contains a name and a type
+    ** `outputs` (Array) - an array of objects, each of which contains a name and a type
+    * `name` (String, optional)
+    * `address` (String) - hex-encoded 20 bytes public address
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+*Result*: `accept` (Boolean) - `true` if successful
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_addContract",
+     "params":
+       [{
+         "address": "0047201aed0b69875b24b614dda0270bcd9f11cc",
+         "name": "ERC20 token",
+         "abi": [{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"standard","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"inputs":[{"name":"initialSupply","type":"uint256"},{"name":"tokenName","type":"string"},{"name":"decimalUnits","type":"uint8"},{"name":"tokenSymbol","type":"string"}],"payable":false,"type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}],
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+=== emerald_listContracts
+
+Return the list of all not hidden contracts from the contract storage directory.
+
+*Parameters*:
+
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+    ** `show_hidden` (Boolean, optional) - also show hidden accounts
+
+*Result*:
+
+    * `contracts` (Array)
+    ** `contract` (Object) - a contract object
+    *** `name` (String, optional) - account name
+    *** `abi` (Array) - JSON format for a contract ABI
+    *** `address` (String) - hex-encoded 20 bytes contract address
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_listContracts", "params": [{"chain": "testnet", "show_hidden": true}], "id": 1}
+<-- {"jsonrpc": "2.0", "result":
+      [
+       {"name": "BitEther",
+        "address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db",
+        "abi": [{"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}]},{"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}]},{"inputs":[{"name":"from","type":"address"},{"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"Transfer"}]
+        }
+      ],
+     "id": 1}
+----
+
+=== emerald_encodeFunctionCall
+
+Encode contract function call.
+
+*Parameters*:
+
+    * `address` (String) - hex-encoded 20 bytes contract address
+    * `name` (String) - the name of the function
+    ** `inputs` (Array) - an array of objects, each of which contains a name and a value
+    *** `name` (String) 
+    *** `value` (String)
+
+*Result*: `data` (String) - hex-encoded unsigned raw transaction data
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_encodeFunctionCall",
+     "params":
+       [{
+         "address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db",
+         "name": "transfer",
+         "inputs": [{ 
+            name: '_to', 
+            value: '0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc' 
+            },{ 
+            name: '_value', 
+            value: '10' }]
+        }],
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0xa9059cbb000000000000000000000000aa00000000bbbb000000000000000000000000aa000000000000000000000000000000000000000000000000000000000000000a", "id": 1}
+----
+
+
 == Custom Errors
 
 |===
