@@ -1,4 +1,5 @@
 use super::Error;
+use super::Storages;
 use super::serialize::RPCTransaction;
 
 use core::Address;
@@ -85,10 +86,11 @@ pub struct ListAccountsAdditional {
 
 pub fn list_accounts(
     params: Either<(), (ListAccountsAdditional,)>,
-    keystore_path: &PathBuf,
+    storage: &Storages,
 ) -> Result<Vec<ListAccountAccount>, Error> {
     let (additional,) = params.into_right();
-    let res = keystore::list_accounts(keystore_path, additional.show_hidden)?
+    let keystore_path = storage.get_keystore_path(&additional.chain)?;
+    let res = keystore::list_accounts(&keystore_path, additional.show_hidden)?
         .iter()
         .map(|&(ref name, ref address)| {
             ListAccountAccount {
@@ -98,8 +100,9 @@ pub fn list_accounts(
         })
         .collect();
     debug!(
-        "Accounts listed with `show_hidden`: {}\n\t{:?}",
+        "Accounts listed with `show_hidden`: {} for path: {:?}\n\t{:?}",
         additional.show_hidden,
+        keystore_path,
         res
     );
 

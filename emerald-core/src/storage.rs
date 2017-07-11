@@ -2,7 +2,7 @@
 
 use log::LogLevel;
 use std::{env, fs};
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
@@ -61,6 +61,26 @@ impl Storages {
             fs::create_dir(self.base_dir.as_path())?
         }
         Ok(())
+    }
+
+    /// Get keystore storage by chain name
+    pub fn get_keystore_path(&self, chain_name: &str) -> Result<PathBuf, Error> {
+        for entry in fs::read_dir(&self.base_dir)? {
+            let entry = entry?;
+            let mut path = entry.path();
+
+            if path.is_dir() && path.file_name().is_some() {
+                if path.file_name().unwrap() == chain_name {
+                    path.push("keystore");
+                    return Ok(path);
+                }
+            }
+        }
+
+        Err(Error::new(
+            ErrorKind::InvalidInput,
+            "No keystorage for specified chain name",
+        ))
     }
 }
 
