@@ -119,13 +119,13 @@ Show an account that was hidden before by the command `emerald_hideAccount`.
 
 .If required account exists
 ----
---> {"jsonrpc": "2.0", "method": "emerald_revealAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
+--> {"jsonrpc": "2.0", "method": "emerald_unhideAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
 ----
 
 .If required account doesn't exist
 ----
---> {"jsonrpc": "2.0", "method": "emerald_revealAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
+--> {"jsonrpc": "2.0", "method": "emerald_unhideAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
 ----
 
@@ -411,6 +411,62 @@ Return the list of all not hidden contracts from the contract storage directory.
      "id": 1}
 ----
 
+=== emerald_hideContract
+
+Hide a contract from the list returned by `emerald_listContracts`.
+
+*Parameters*:
+
+    * `contract` (Object)
+    ** `address` (String) - hex-encoded 20 bytes public contract address
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+*Result*: `accept` (Boolean) - `true` if required contract exists
+
+*Examples*:
+
+.If required contract exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_hideContract", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+.If required contract doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_hideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
+----
+
+=== emerald_unhideContract
+
+Show a contract that was hidden before by the command `emerald_hideContract`.
+
+*Parameters*:
+
+    * `contract` (Object)
+    ** `address` (String) - hex-encoded 20 bytes public address
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+*Result*: `accept` (Boolean) - `true` if required contract exists
+
+*Examples*:
+
+.If required contract exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_unhideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+.If required contract doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_unhideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
+----
+
 === emerald_importContract
 
 Add a new contract and store the Application Binary Interface (ABI) locally.
@@ -439,7 +495,7 @@ Add a new contract and store the Application Binary Interface (ABI) locally.
      "method": "emerald_importContract",
      "params":
        [{
-         "address": "0047201aed0b69875b24b614dda0270bcd9f11cc",
+         "address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc",
          "name": "ERC20 token",
          "abi": [{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"standard","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"inputs":[{"name":"initialSupply","type":"uint256"},{"name":"tokenName","type":"string"},{"name":"decimalUnits","type":"uint8"},{"name":"tokenSymbol","type":"string"}],"payable":false,"type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}],
      "id": 1}
