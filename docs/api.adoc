@@ -408,15 +408,19 @@ Return the list of all not hidden contracts from the contract storage directory.
 
 === emerald_encodeFunctionCall
 
-Encode contract function call.
+Encode contract function call. The function can either be loaded from a stored ABI using `address` and `name`, or the function can be passed directly as an object.
 
 *Parameters*:
 
-    * `address` (String) - hex-encoded 20 bytes contract address
-    * `name` (String) - the name of the function
-    ** `inputs` (Array) - an array of objects, each of which contains a name and a value
-    *** `name` (String) 
-    *** `value` (String)
+    * `address` (String, optional) - hex-encoded 20 bytes contract address
+    * `name` (String, optional) - the name of the function
+    * `function` (Object, optional) - the function object, if `name`/`address` are not used.
+    * `inputs` (Array) - an array of objects, each of which contains a name and a value
+    ** `name` (String) 
+    ** `value` (String)
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`    
 
 *Result*: `data` (String) - hex-encoded unsigned raw transaction data
 
@@ -435,6 +439,32 @@ Encode contract function call.
             },{ 
             name: '_value', 
             value: '10' }]
+        }],
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0xa9059cbb000000000000000000000000aa00000000bbbb000000000000000000000000aa000000000000000000000000000000000000000000000000000000000000000a", "id": 1}
+----
+
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_encodeFunctionCall",
+     "params":
+       [{
+         "function":  {
+            constant: false,
+            inputs: [{ name: '_to', type: 'address' }, { name: '_value', type: 'uint256' }],
+            name: 'transfer',
+            outputs: [{ name: 'success', type: 'bool' }],
+            payable: false,
+            type: 'function',
+        },
+        "inputs": [
+            { 
+                name: '_to', 
+                value: '0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc' 
+            },{ 
+                name: '_value', 
+                value: '10' 
+            }]
         }],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0xa9059cbb000000000000000000000000aa00000000bbbb000000000000000000000000aa000000000000000000000000000000000000000000000000000000000000000a", "id": 1}
