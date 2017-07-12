@@ -33,8 +33,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate uuid;
 extern crate hex;
-extern crate hidapi;
-extern crate libusb;
+extern crate u2fhid;
 
 
 mod core;

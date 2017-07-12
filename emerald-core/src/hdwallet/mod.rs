@@ -1,14 +1,14 @@
-//! # Module to work with `HD Wallets `
+//! # Module to work with `HD Wallets`
 //!
 //! `HD(Hierarchical Deterministic) Wallet` specified in
 //! [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.medёiawiki)
 
 
 mod error;
-mod u2f_hid;
 mod apdu;
 mod hd_keystore;
 
+pub use u2fhid;
 pub use self::error::Error;
 use self::apdu;
 
@@ -18,7 +18,7 @@ pub enum HDWallet_Type {
 }
 
 
-/// Sign rlp encoded transaction with HD wallet
+/// Sign `RLP` encoded transaction with HD wallet
 pub fn sign_tr(rlp_tr: Vec<u8>) -> Result<Vec<u8>, Error> {
 
 }
