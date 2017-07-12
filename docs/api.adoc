@@ -303,7 +303,7 @@ Returns an account keyfile associated with the account.
 
 === emerald_signTransaction
 
-Signs transaction offline with private key from keystore file with given passphrase.
+Signs transaction offline with private key from keystore file with given passphrase. If `function` and `arguments` are provided, they will be encoded and used in the `data` field of the transaction.
 
 *Parameters*:
 
@@ -314,8 +314,7 @@ Signs transaction offline with private key from keystore file with given passphr
     ** `gasPrice` (String) - Hex-encoded integer of the gasPrice used for each paid gas
     ** `value` (String, optional) - Hex-encoded integer of the value sent with this transaction
     ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
-    ** `function` (Object, optional) - Smart contract function abi selector to encode and use as `data`
-    *** `name` (String) - Not constant function to change smart contract internal state
+    ** `function` (String, optional) - Name of a not-constant smart contract function to encode and use as `data`
     ** `arguments` (Array) - an array of objects, each of which contains a name and a value
     *** `name` (String) 
     *** `value` (String)
@@ -390,9 +389,9 @@ Return the list of all not hidden contracts from the contract storage directory.
 
     * `contracts` (Array) - array of contract objects
     ** `contract` (Object) - a contract object
+    *** `address` (String) - hex-encoded 20 bytes contract address
     *** `name` (String, optional) - contract name
     *** `description` (String, optional) - contract name
-    *** `address` (String, optional) - hex-encoded 20 bytes contract address
 
 *Examples*:
 
@@ -419,9 +418,9 @@ Add a new contract and store the Application Binary Interface (ABI) locally.
 *Parameters*:
 
     * `contract` (Object) - JSON contract object defined here
+    ** `address` (String) - hex-encoded 20 bytes public address
     ** `name` (String, optional) - contract name
     ** `description` (String, optional) - contract description
-    ** `address` (String, optional) - hex-encoded 20 bytes public address
     ** `bytecode` (String, optional) - hex-encoded compiled contract
     ** `abi` (Array) - JSON format for a contract ABI, should be an array of function and/or event descriptions as defined https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI[here]. Each operator should have the following properties:
     *** `name` (String) - the name of the function
@@ -453,7 +452,7 @@ Encode contract function call. The function can either be loaded from a stored A
 
 *Parameters*:
 
-    * `address` (String, optional) - hex-encoded 20 bytes contract address
+    * `address` (String) - hex-encoded 20 bytes contract address
     * `name` (String, optional) - the name of the function
     * `function` (Object, optional) - the function object, if `name`/`address` are not used.
     * `inputs` (Array) - an array of objects, each of which contains a name and a value
