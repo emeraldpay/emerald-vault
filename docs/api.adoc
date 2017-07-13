@@ -315,7 +315,7 @@ Signs transaction offline with private key from keystore file with given passphr
     ** `value` (String, optional) - Hex-encoded integer of the value sent with this transaction
     ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
     ** `function` (String, optional) - Name of a not-constant smart contract function to encode and use as `data`
-    ** `arguments` (Array) - an array of objects, each of which contains a name and a value
+    ** `arguments` (Array, optional) - an array of objects, each of which contains a name and a value
     *** `name` (String) 
     *** `value` (String)
     ** `nonce` (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
@@ -501,7 +501,7 @@ Add a new contract and store the Application Binary Interface (ABI) locally.
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
 ----
-
+///
 === emerald_encodeFunctionCall
 
 Encode contract function call. The function can either be loaded from a stored ABI using `address` and `name`, or the function can be passed directly as an object.
@@ -537,7 +537,7 @@ Encode contract function call. The function can either be loaded from a stored A
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0x70a0823100000000000000000000000003d80b31a78c30fc628f20b2c89d7ddbf6e53cedc", "id": 1}
 ----
-
+///
 == Custom Errors
 
 |===
