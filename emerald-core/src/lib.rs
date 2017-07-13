@@ -43,6 +43,7 @@ pub mod keystore;
 pub mod contract;
 pub mod storage;
 pub mod rpc;
+mod hdwallet;
 mod util;
 
 pub use self::core::*;

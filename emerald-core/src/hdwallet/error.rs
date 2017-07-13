@@ -1,7 +1,7 @@
 //! # HDWallet Keystore files (UTC / JSON) module errors
 
-use super::core;
-use std::{error, fmt};
+use core;
+use std::{error, fmt, io};
 
 /// HDWallet Keystore file errors
 #[derive(Debug)]
@@ -12,7 +12,13 @@ pub enum Error {
 
 impl From<core::Error> for Error {
     fn from(err: core::Error) -> Self {
-        Error::CoreFault(err)
+        Error::HDWalletError(err.to_string())
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Error::HDWalletError(err.to_string())
     }
 }
 
@@ -31,7 +37,6 @@ impl error::Error for Error {
 
     fn cause(&self) -> Option<&error::Error> {
         match *self {
-            Error::HDWalletError(ref err) => Some(err),
             _ => None,
         }
     }
