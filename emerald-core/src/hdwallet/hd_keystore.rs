@@ -1,8 +1,9 @@
-use super::Error;
+use super::{Address, Error, Uuid, WalletType};
+
 
 /// Keyfile for HD Wallet
-#[derive(Clone, Debug, Eq)]
-pub struct HDWallet_Keyfile {
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct HdwalletKeyfile {
     /// Specifies if `Keyfile` is visible
     pub visible: Option<bool>,
 
@@ -22,11 +23,10 @@ pub struct HDWallet_Keyfile {
     pub cipher: String,
 
     ///
-    pub hardware: HDWallet_Type,
+    pub hardware: WalletType,
 
     ///
     pub hd_path: String,
-
 }
 
 // TODO:

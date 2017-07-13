@@ -44,7 +44,8 @@ impl Transaction {
         Ok(vec)
     }
 
-    fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
+    ///
+    pub fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
         let mut rlp = self.to_rlp();
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
@@ -57,7 +58,8 @@ impl Transaction {
         keccak256(&vec)
     }
 
-    fn to_rlp(&self) -> RLPList {
+    ///
+    pub fn to_rlp(&self) -> RLPList {
         let mut data = RLPList::default();
 
         data.push(&self.nonce);
