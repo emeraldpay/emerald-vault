@@ -46,9 +46,11 @@ environment:
   # Beta 64-bit MSVC
     - channel: beta
       target: x86_64-pc-windows-msvc
+      cmd: set RUSTFLAGS=-C target-feature=+crt-static
   # Beta 32-bit MSVC
     - channel: beta
       target: i686-pc-windows-msvc
+      cmd: set RUSTFLAGS=-C target-feature=+crt-static
 
 # Only build against the branches that will have pull requests built against them (master).
 # Otherwise creating feature branches on this repository and a pull requests against them will
@@ -74,7 +76,6 @@ install:
   - cargo -vV
   - rustup component add rust-src
   - for /f %%i in ('rustc --print sysroot') do set RUST_SRC_PATH=%%i\lib\rustlib\src\rust\src
-  - cmd: set RUSTFLAGS=-C target-feature=+crt-static
   - cmd: set RUST_BACKTRACE=1
 
 ## Build Script ##
