@@ -78,7 +78,7 @@ install:
   - ps: |
       if ($env:channel -eq 'beta')
       {
-        $env:RUSTFLAGS=-C target-feature=+crt-static
+        $env:RUSTFLAGS="-C target-feature=+crt-static"
       }
 
 ## Build Script ##
