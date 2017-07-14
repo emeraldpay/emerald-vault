@@ -42,7 +42,7 @@ Returns the client current version.
 
 === emerald_listAccounts
 
-Return the list of all not hidden accounts from the keystore.
+Return the list of all not hidden (by default) accounts from the keystore.
 
 *Parameters*:
 
@@ -55,9 +55,9 @@ Return the list of all not hidden accounts from the keystore.
 
     * `accounts` (Array)
     ** `account` (Object) - an account
+    *** `address` (String) - hex-encoded 20 bytes public address
     *** `name` (String, optional) - account name
     *** `description` (String, optional) - account description
-    *** `address` (String) - hex-encoded 20 bytes public address
 
 *Examples*:
 
@@ -75,7 +75,7 @@ Return the list of all not hidden accounts from the keystore.
 
 === emerald_hideAccount
 
-Hide an account from the list returned by `emerald_listAccounts`.
+Hide an account from the list returned by default by `emerald_listAccounts`.
 
 *Parameters*:
 
@@ -196,9 +196,9 @@ Update not secured by passphrase account metadata, like `name` and `description`
 *Parameters*:
 
     * `account` (Object)
+    ** `address` (String) - hex-encoded 20 bytes public address
     ** `name` (String, optional) - account name
     ** `description` (String, optional) - account description
-    ** `address` (String) - hex-encoded 20 bytes public address
     * `additional` (Object, optional)
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
     ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
@@ -301,9 +301,217 @@ Returns an account keyfile associated with the account.
      "id": 1}
 ----
 
+=== emerald_listContracts
+
+Return the list of all not hidden (by default) smart contracts from the local storage.
+
+*Parameters*:
+
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+    ** `show_hidden` (Boolean, optional) - also show hidden accounts
+
+*Result*:
+
+    * `contracts` (Array)
+    ** `contract` (Object) - a smart contract
+    *** `address` (String) - hex-encoded 20 bytes smart contract address
+    *** `name` (String, optional) - smart contract name
+    *** `description` (String, optional) - smart contract name
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_listContracts", "params": [{"chain": "testnet", "show_hidden": true}], "id": 1}
+<-- {"jsonrpc": "2.0", "result":
+      [{"name": "BitEther",
+        "description": "BitEther ERC20 token",
+        "address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"},
+       {"name": "DexNS",
+        "description": "Dexaran Naming service",
+        "address": "0x2906797a0a56a0c60525245c01788ecd34063b80"}],
+     "id": 1}
+----
+
+=== emerald_hideContract
+
+Hide a smart contract from the list returned by default by `emerald_listContracts`.
+
+*Parameters*:
+
+    * `contract` (Object)
+    ** `address` (String) - hex-encoded 20 bytes smart contract public address
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+*Result*: `accept` (Boolean) - `true` if required smart contract exists
+
+*Examples*:
+
+.If required contract exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_hideContract", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+.If required contract doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_hideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
+----
+
+=== emerald_unhideContract
+
+Show a smart contract that was hidden before by the command `emerald_hideContract`.
+
+*Parameters*:
+
+    * `contract` (Object)
+    ** `address` (String) - hex-encoded 20 bytes smart contract public address
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+*Result*: `accept` (Boolean) - `true` if required smart contract exists
+
+*Examples*:
+
+.If required contract exists
+----
+--> {"jsonrpc": "2.0", "method": "emerald_unhideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+.If required contract doesn't exist
+----
+--> {"jsonrpc": "2.0", "method": "emerald_unhideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
+<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
+----
+
+=== emerald_importContract
+
+Import a new smart contract Application Binary Interface (ABI) into local storage.
+
+*Parameters*:
+
+    * `contract` (Object)
+    ** `address` (String) - hex-encoded 20 bytes public address
+    ** `name` (String, optional) - contract name
+    ** `description` (String, optional) - contract description
+    ** `bytecode` (String, optional) - hex-encoded compiled contract
+    ** `abi` (Array) - JSON format for a contract ABI, should be an array of function and/or event descriptions as defined https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI[here]. Each operator should have the following properties:
+    *** `name` (String) - the name of the function
+    *** `inputs` (Array) - an array of objects, each of which contains a name and a type
+    *** `outputs` (Array) - an array of objects, each of which contains a name and a type
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+*Result*: `accept` (Boolean) - `true` if successful
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_importContract",
+     "params":
+       [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc",
+         "name": "ERC20 token",
+         "abi": [{"constant":true,
+                  "inputs":[],
+                  "name":"name",
+                  "outputs":[{"name":"",
+                              "type":"string"}],
+                  "payable":false,
+                  "type":"function"},
+                 {"constant":false,
+                  "inputs":[{"name":"_spender",
+                             "type":"address"},
+                            {"name":"_value",
+                             "type":"uint256"}],
+                  "name":"approve",
+                  "outputs":[{"name":"success",
+                              "type":"bool"}],
+                  "payable":false,
+                  "type":"function"},
+                 {"constant":true,
+                  "inputs":[],
+                  "name":"totalSupply",
+                  "outputs":[{"name":"",
+                              "type":"uint256"}],
+                  "payable":false,
+                  "type":"function"},
+                 {"constant":false,
+                  "inputs":[{"name":"_from",
+                             "type":"address"},
+                            {"name":"_to",
+                             "type":"address"},
+                            {"name":"_value",
+                             "type":"uint256"}],
+                  "name":"transferFrom",
+                  "outputs":[{"name":"success",
+                              "type":"bool"}],
+                  "payable":false,
+                  "type":"function"},
+                 {"constant":true,
+                  "inputs":[],
+                  "name":"decimals",
+                  "outputs":[{"name":"",
+                              "type":"uint8"}],
+                  "payable":false,
+                  "type":"function"},
+                 {"constant":true,
+                  "inputs":[],
+                  "name":"standard",
+                  "outputs":[{"name":"",
+                              "type":"string"}],
+                  "payable":false,
+                  "type":"function"},
+                 {"constant":true,
+                  "inputs":[{"name":"",
+                             "type":"address"}],
+                  "name":"balanceOf",
+                  "outputs":[{"name":"",
+                              "type":"uint256"}],
+                  "payable":false,
+                  "type":"function"},
+                 ...
+		 {"inputs":[{"name":"initialSupply",
+                             "type":"uint256"},
+                            {"name":"tokenName",
+                             "type":"string"},
+                            {"name":"decimalUnits",
+                             "type":"uint8"},
+                            {"name":"tokenSymbol",
+                             "type":"string"}],
+                  "payable":false,
+                  "type":"constructor"},
+                 {"anonymous":false,
+                  "inputs":[{"indexed":true,
+                             "name":"from",
+                             "type":"address"},
+                            {"indexed":true,
+                             "name":"to",
+                             "type":"address"},
+                            {"indexed":false,
+                             "name":"value",
+                             "type":"uint256"}],
+                  "name":"Transfer",
+                  "type":"event"}],
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": true, "id": 1}
+----
+
+=== emerald_exportContract
+
+TBD
+
 === emerald_signTransaction
 
-Signs transaction offline with private key from keystore file with given passphrase. If `function` and `arguments` are provided, they will be encoded and used in the `data` field of the transaction.
+Signs transaction offline with private key from keystore file with given passphrase.
+If `function` and `arguments` are provided, they will be encoded according smart contract ABI and used in the `data` field of the transaction.
 
 *Parameters*:
 
@@ -316,8 +524,8 @@ Signs transaction offline with private key from keystore file with given passphr
     ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
     ** `function` (String, optional) - Name of a not-constant smart contract function to encode and use as `data`
     ** `arguments` (Array, optional) - an array of objects, each of which contains a name and a value
-    *** `name` (String) 
-    *** `value` (String)
+    *** `name` (String) - an smart contract function argument name 
+    *** `value` (String) - an smart contract function argument value
     ** `nonce` (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
     ** `passphrase` (String) - passphrase used to encode keyfile
     * `additional` (Object, optional)
@@ -373,171 +581,6 @@ Signs transaction offline with private key from keystore file with given passphr
 <-- {"jsonrpc": "2.0", "result": "0x085fb4f24031eaedbc2b611aa528f22343eb52dba9059cbb000000000000000000000000aa00000000bbbb000000000000000000000000aa000000000000000000000000000000000000000000000000000000000000000a", "id": 1}
 ----
 
-
-=== emerald_listContracts
-
-Return the list of all not hidden contracts from the contract storage directory.
-
-*Parameters*:
-
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
-    ** `show_hidden` (Boolean, optional) - also show hidden accounts
-
-*Result*:
-
-    * `contracts` (Array) - array of contract objects
-    ** `contract` (Object) - a contract object
-    *** `address` (String) - hex-encoded 20 bytes contract address
-    *** `name` (String, optional) - contract name
-    *** `description` (String, optional) - contract name
-
-*Examples*:
-
-----
---> {"jsonrpc": "2.0", "method": "emerald_listContracts", "params": [{"chain": "testnet", "show_hidden": true}], "id": 1}
-<-- {"jsonrpc": "2.0", "result":
-      [
-       {"name": "BitEther",
-        "address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db",
-        "description": "BitEther ERC20 token"
-        },
-        {"name": "DexNS",
-        "address": "0x2906797a0a56a0c60525245c01788ecd34063b80",
-        "description": "Dexaran Naming service"
-        }
-      ],
-     "id": 1}
-----
-
-=== emerald_hideContract
-
-Hide a contract from the list returned by `emerald_listContracts`.
-
-*Parameters*:
-
-    * `contract` (Object)
-    ** `address` (String) - hex-encoded 20 bytes public contract address
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
-
-*Result*: `accept` (Boolean) - `true` if required contract exists
-
-*Examples*:
-
-.If required contract exists
-----
---> {"jsonrpc": "2.0", "method": "emerald_hideContract", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
-<-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
-
-.If required contract doesn't exist
-----
---> {"jsonrpc": "2.0", "method": "emerald_hideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
-<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
-----
-
-=== emerald_unhideContract
-
-Show a contract that was hidden before by the command `emerald_hideContract`.
-
-*Parameters*:
-
-    * `contract` (Object)
-    ** `address` (String) - hex-encoded 20 bytes public address
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
-
-*Result*: `accept` (Boolean) - `true` if required contract exists
-
-*Examples*:
-
-.If required contract exists
-----
---> {"jsonrpc": "2.0", "method": "emerald_unhideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
-<-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
-
-.If required contract doesn't exist
-----
---> {"jsonrpc": "2.0", "method": "emerald_unhideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
-<-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
-----
-
-=== emerald_importContract
-
-Add a new contract and store the Application Binary Interface (ABI) locally.
-
-*Parameters*:
-
-    * `contract` (Object) - JSON contract object defined here
-    ** `address` (String) - hex-encoded 20 bytes public address
-    ** `name` (String, optional) - contract name
-    ** `description` (String, optional) - contract description
-    ** `bytecode` (String, optional) - hex-encoded compiled contract
-    ** `abi` (Array) - JSON format for a contract ABI, should be an array of function and/or event descriptions as defined https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI[here]. Each operator should have the following properties:
-    *** `name` (String) - the name of the function
-    *** `inputs` (Array) - an array of objects, each of which contains a name and a type
-    *** `outputs` (Array) - an array of objects, each of which contains a name and a type
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
-
-*Result*: `accept` (Boolean) - `true` if successful
-
-*Examples*:
-
-----
---> {"jsonrpc": "2.0",
-     "method": "emerald_importContract",
-     "params":
-       [{
-         "address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc",
-         "name": "ERC20 token",
-         "abi": [{"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"success","type":"bool"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"standard","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_value","type":"uint256"}],"name":"transfer","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"inputs":[{"name":"initialSupply","type":"uint256"},{"name":"tokenName","type":"string"},{"name":"decimalUnits","type":"uint8"},{"name":"tokenSymbol","type":"string"}],"payable":false,"type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}],
-     "id": 1}
-<-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
-///
-=== emerald_encodeFunctionCall
-
-Encode contract function call. The function can either be loaded from a stored ABI using `address` and `name`, or the function can be passed directly as an object.
-
-*Parameters*:
-
-    * `address` (String) - hex-encoded 20 bytes contract address
-    * `name` (String, optional) - the name of the function
-    * `function` (Object, optional) - the function object, if `name`/`address` are not used.
-    * `inputs` (Array) - an array of objects, each of which contains a name and a value
-    ** `name` (String) 
-    ** `value` (String)
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`    
-
-*Result*: `data` (String) - hex-encoded unsigned raw transaction data
-
-*Examples*:
-
-----
---> {"jsonrpc": "2.0",
-     "method": "emerald_encodeFunctionCall",
-     "params":
-       [{
-         "address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db",
-         "name": "balanceOf",
-         "inputs": [{ 
-            name: '_owner', 
-            value: '0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc' 
-            }]
-        }],
-     "id": 1}
-<-- {"jsonrpc": "2.0", "result": "0x70a0823100000000000000000000000003d80b31a78c30fc628f20b2c89d7ddbf6e53cedc", "id": 1}
-----
-///
 == Custom Errors
 
 |===
