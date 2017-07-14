@@ -396,7 +396,7 @@ TBD
 
 === emerald_importContract
 
-Import a new smart contract Application Binary Interface (ABI) into local storage.
+Import a new smart contract Application Binary Interface (ABI) locally.
 
 *Parameters*:
 
