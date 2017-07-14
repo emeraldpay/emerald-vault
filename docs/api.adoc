@@ -390,6 +390,10 @@ Show a smart contract that was hidden before by the command `emerald_hideContrac
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
 ----
 
+=== emerald_updateContract
+
+TBD
+
 === emerald_importContract
 
 Import a new smart contract Application Binary Interface (ABI) into local storage.
@@ -503,10 +507,6 @@ Import a new smart contract Application Binary Interface (ABI) into local storag
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
 ----
-
-=== emerald_updateContract
-
-TBD
 
 === emerald_exportContract
 
