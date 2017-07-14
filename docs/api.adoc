@@ -527,9 +527,10 @@ If `function` and `arguments` are provided, they will be encoded according smart
     ** `value` (String, optional) - Hex-encoded integer of the value sent with this transaction
     ** `data` (String, optional) - The compiled code of a contract OR the hash of the invoked method signature and encoded parameters (smart contract ABI)
     ** `function` (String, optional) - Name of a not-constant smart contract function to encode and use as `data`
-    ** `arguments` (Array, optional) - an array of objects, each of which contains a name and a value
-    *** `name` (String) - an smart contract function argument name 
-    *** `value` (String) - an smart contract function argument value
+    *** `name` (String) - an smart contract function name 
+    *** `inputs` (Array, optional) - an array of smart contract input arguments
+    **** `name` (String) - an smart contract function argument name 
+    **** `value` (String) - an smart contract function argument value
     ** `nonce` (String) - Hex-encoded integer of a nonce, this allows to overwrite your own pending transactions that use the same nonce
     ** `passphrase` (String) - passphrase used to encode keyfile
     * `additional` (Object, optional)
@@ -566,21 +567,11 @@ If `function` and `arguments` are provided, they will be encoded according smart
          "to": "0x085fb4f24031eaedbc2b611aa528f22343eb52db",
          "gas": "0x0186a0",
          "gasPrice": "0x04e3b29200",         
-         "function":  {
-            constant: false,
-            inputs: [{ name: '_to', type: 'address' }, { name: '_value', type: 'uint256' }],
-            name: 'transfer',
-            outputs: [{ name: 'success', type: 'bool' }],
-            payable: false,
-            type: 'function',
-         },
-         "arguments": [{ 
-            name: '_to', 
-            value: '0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc' 
-            },{ 
-            name: '_value', 
-            value: '10' }]
-        }],
+         "function": {"name": "transfer",
+            	      "inputs": [{"name": "_to",
+                                  "value": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"},
+                                 {"name": "_value",
+                                  "value": 10}]}}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0x085fb4f24031eaedbc2b611aa528f22343eb52dba9059cbb000000000000000000000000aa00000000bbbb000000000000000000000000aa000000000000000000000000000000000000000000000000000000000000000a", "id": 1}
 ----
