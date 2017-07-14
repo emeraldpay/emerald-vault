@@ -14,6 +14,7 @@ pub trait WriteRLP {
 /// A list serializable to RLP
 #[derive(Debug)]
 pub struct RLPList {
+    ///
     pub tail: Vec<u8>,
 }
 
