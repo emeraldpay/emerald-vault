@@ -3,6 +3,11 @@
 //! `HD(Hierarchical Deterministic) Wallet` specified in
 //! [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.medёiawiki)
 
+extern crate base64;
+use crypto::digest::Digest;
+use crypto::sha2::Sha256;
+use std::io;
+use std::sync::mpsc::channel;
 
 mod error;
 mod apdu;
@@ -13,8 +18,9 @@ pub use self::error::Error;
 use self::ledger::Ledger;
 use core::Address;
 use core::Transaction;
-use u2fhid::{self, U2FManager};
+use u2fhid::{self, U2FManager, to_u8_array};
 use uuid::Uuid;
+use self::ledger::DERIVATION_PATH;
 
 /// Model of HD wallet
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -23,9 +29,22 @@ pub enum WalletType {
     LedgerNanoS,
 }
 
+#[repr(packed)]
+#[allow(dead_code)]
+pub struct APDUHeader {
+    pub cla: u8,
+    pub ins: u8,
+    pub p1: u8,
+    pub p2: u8,
+    pub lc: u8,
+}
+
 pub trait WalletCore: Sized {
     ///
     fn sign_tx(&self, tr: &Vec<u8>, u2f: &U2FManager) -> Result<Vec<u8>, Error>;
+
+    ///
+    fn get_address(&self, u2f: &U2FManager) -> Result<Vec<u8>, Error>;
 }
 
 ///
@@ -51,6 +70,11 @@ impl<T: WalletCore> HDWallet<T> {
     pub fn sign(&self, tr: &Vec<u8>) -> Result<Vec<u8>, Error> {
         self.core.sign_tx(tr, &self.u2f)
     }
+
+    ///
+    pub fn get_address(&self) -> Result<Vec<u8>, Error> {
+        self.core.get_address(&self.u2f)
+    }
 }
 
 
@@ -58,23 +82,6 @@ impl<T: WalletCore> HDWallet<T> {
 mod tests {
     use super::*;
     use tests::*;
-    //
-    //    let pk = PrivateKey(to_32bytes(
-    //        "c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4",
-    //    ));
-    //
-    //    assert_eq!(tx.to_signed_raw(pk, 61 /*MAINNET_ID*/).unwrap().to_hex(),
-    //               "f86d\
-    //                   80\
-    //                   8504e3b29200\
-    //                   825208\
-    //                   940000000000000000000000000000000012345678\
-    //                   880de0b6b3a7640000\
-    //                   80\
-    //                   819e\
-    //                   a0b17da8416f42d62192b07ff855f4a8e8e9ee1a2e920e3c407fd9a3bd5e388daa\
-    //                   a0547981b617c88587bfcd924437f6134b0b75f4484042db0750a2b1c0ccccc597");
-    //}
 
     #[test]
     pub fn should_sign_with_ledger() {
@@ -104,9 +111,51 @@ mod tests {
                "chainId":61
             }
         */
-        println!("RLP packed transaction: {:?}", &tx.to_rlp().tail);
+        println!("RLP packed transaction: {:?}", &tx.hash(61));
 
         let wallet = HDWallet::create_ledger().unwrap();
-        println!("signed with wallet {:?}", wallet.sign(&tx.to_rlp().tail).unwrap());
+        println!("signed with wallet {:?}", wallet.sign(&tx.hash(61).to_vec()).unwrap());
+    }
+
+    #[test]
+    pub fn should_get_address_with_ledger() {
+        let wallet = HDWallet::create_ledger().unwrap();
+        println!("Address {:?}", wallet.get_address().unwrap());
+
+        println!("Asking a security key to register now...");
+        let mut challenge = Sha256::new();
+        challenge.input_str(r#"{"challenge": "1vQ9mxionq0ngCnjD-wTsv1zUSrGRtFqG2xP09SbZ70",
+                                "version": "U2F_V2", "appId": "http://demo.yubico.com"}"#);
+        let mut chall_bytes: Vec<u8> = vec![0; challenge.output_bytes()];
+        challenge.result(&mut chall_bytes);
+
+        let mut application = Sha256::new();
+        application.input_str("http://demo.yubico.com");
+        let mut app_bytes: Vec<u8> = vec![0; application.output_bytes()];
+        application.result(&mut app_bytes);
+
+        let manager = U2FManager::new().unwrap();
+        let header = APDUHeader {
+            cla: 0xe0,
+            ins: 0x02,
+            p1: 0x00,
+            p2: 0x00,
+            lc: 21,
+        };
+        let header_raw = to_u8_array(&header);
+        let mut apdu = vec![0u8; 26];
+        apdu[0..5].clone_from_slice(&header_raw);
+        apdu[5..26].clone_from_slice(&DERIVATION_PATH);
+
+        let (tx, rx) = channel();
+        manager
+            .sign(15, chall_bytes, app_bytes, apdu, move |rv| {
+                tx.send(rv.unwrap()).unwrap();
+            })
+            .unwrap();
+
+        let sign_data = rx.recv().unwrap();
+        println!("Sign result: {}", base64::encode(&sign_data));
+        println!("Done.");
     }
 }
