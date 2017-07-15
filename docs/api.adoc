@@ -392,7 +392,7 @@ Show a smart contract that was hidden before by the command `emerald_hideContrac
 
 === emerald_updateContract
 
-Update contract information. Contract address and chain information are used to identify the contract, and may not be updated. 
+Update contract metadata. Contract address and chain information are used to identify the contract, and may not be updated. 
 
 *Parameters*:
 
@@ -400,11 +400,6 @@ Update contract information. Contract address and chain information are used to 
     ** `address` (String) - hex-encoded 20 bytes public address
     ** `name` (String, optional) - contract name
     ** `description` (String, optional) - contract description
-    ** `bytecode` (String, optional) - hex-encoded compiled contract
-    ** `abi` (Array) - JSON format for a contract ABI, should be an array of function and/or event descriptions as defined https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI[here]. Each operator should have the following properties:
-    *** `name` (String) - the name of the function
-    *** `inputs` (Array) - an array of objects, each of which contains a name and a type
-    *** `outputs` (Array) - an array of objects, each of which contains a name and a type
     * `additional` (Object, optional)
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
     ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
@@ -419,27 +414,7 @@ Update contract information. Contract address and chain information are used to 
      "method": "emerald_updateContract", 
      "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db",
          "name": "ERC223 token",
-         "abi":
-           [{"constant":true,
-             "inputs":[],
-             "name":"name",
-             "outputs":[{"name":"",
-                         "type":"string"}],
-             "payable":false,
-             "type":"function"},
-            ...
-            {"anonymous":false,
-             "inputs":[{"indexed":true,
-                        "name":"from",
-                        "type":"address"},
-                       {"indexed":true,
-                        "name":"to",
-                        "type":"address"},
-                       {"indexed":false,
-                        "name":"value",
-                        "type":"uint256"}],
-             "name":"Transfer",
-             "type":"event"}]}], 
+         "description": "Bit Ether"}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
 ----
@@ -450,27 +425,7 @@ Update contract information. Contract address and chain information are used to 
      "method": "emerald_updateContract", 
      "params": [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc",
          "name": "ERC20 token",
-         "abi":
-           [{"constant":true,
-             "inputs":[],
-             "name":"name",
-             "outputs":[{"name":"",
-                         "type":"string"}],
-             "payable":false,
-             "type":"function"},
-            ...
-            {"anonymous":false,
-             "inputs":[{"indexed":true,
-                        "name":"from",
-                        "type":"address"},
-                       {"indexed":true,
-                        "name":"to",
-                        "type":"address"},
-                       {"indexed":false,
-                        "name":"value",
-                        "type":"uint256"}],
-             "name":"Transfer",
-             "type":"event"}]}], 
+         "description": "Bit Ether"}], 
      "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
 ----
