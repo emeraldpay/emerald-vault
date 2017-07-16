@@ -1,4 +1,4 @@
-use super::{Address, Error, Uuid, WalletType};
+use super::{Address, Error, Uuid};
 
 
 /// Keyfile for HD Wallet
@@ -23,7 +23,7 @@ pub struct HdwalletKeyfile {
     pub cipher: String,
 
     ///
-    pub hardware: WalletType,
+    pub hardware: String,
 
     ///
     pub hd_path: String,

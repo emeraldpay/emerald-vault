@@ -1,9 +1,11 @@
-use super::error::Error;
+//! # Module providing commnication using HID API
+//!
+
 use super::APDU;
-use super::u2fhid::{to_u8_array, set_data, Device};
-use std::io::{Read, Write};
-use std::mem::size_of_val;
+use super::error::Error;
+use super::u2fhid::{Device, set_data, to_u8_array};
 use log;
+use std::mem::size_of_val;
 
 ///
 pub const HID_RPT_SIZE: u8 = 64;
@@ -12,11 +14,10 @@ pub const HID_RPT_SIZE: u8 = 64;
 pub const INIT_HEADER_SIZE: usize = 7;
 
 /// Size of data chunk expected in Init USB HID Packets
-const INIT_DATA_SIZE: usize = HID_RPT_SIZE - 12;
+const INIT_DATA_SIZE: u8 = HID_RPT_SIZE - 12;
 
 /// Size of data chunk expected in Cont USB HID Packets
-const CONT_DATA_SIZE: usize = HID_RPT_SIZE - 5;
-
+const CONT_DATA_SIZE: u8 = HID_RPT_SIZE - 5;
 
 /// ISO 7816-4 defined response status words
 pub const SW_NO_ERROR: [u8; 2] = [0x90, 0x00];
@@ -31,7 +32,7 @@ pub const SW_USER_CANCEL: [u8; 2] = [0x6A, 0x85];
 /// For more details refer:
 /// [https://github.com/LedgerHQ/blue-app-eth/blob/master/doc/ethapp.asc#general-purpose-apdus]
 fn get_hid_header(index: usize) -> [u8; 5] {
-    [0x01, 0x01, 0x05, (index >> 8) as u8, (index & 0xff) as u8 ]
+    [0x01, 0x01, 0x05, (index >> 8) as u8, (index & 0xff) as u8]
 }
 
 ///
@@ -46,7 +47,7 @@ fn check_recv_frame(frame: &[u8], index: u8) -> Result<(), Error> {
     }
 
     if index == 0 && size_of_val(frame) < 7 {
-        return Err(Error::CommError("Invalid frame size"))
+        return Err(Error::CommError("Invalid frame size"));
     }
 
     Ok(())
@@ -55,7 +56,7 @@ fn check_recv_frame(frame: &[u8], index: u8) -> Result<(), Error> {
 fn get_init_header(apdu: &APDU) -> [u8; INIT_HEADER_SIZE] {
     let mut buf = Vec::with_capacity(INIT_HEADER_SIZE);
     buf.extend_from_slice(&[(apdu.len() >> 8) as u8, (apdu.len() & 0xff) as u8]);
-    buf.extend_from_slice(&apdu.raw_header())
+    buf.extend_from_slice(&apdu.raw_header());
     buf
 
 }
@@ -78,9 +79,7 @@ fn sw_to_error(sw1: u8, sw2: u8) -> Result<(), Error> {
 
 
 ///
-pub fn sendrecv<T>(dev: &mut T, apdu: &APDU) -> Result<Vec<u8>, Error>
-    where T: Device + Read + Write,
-{
+pub fn sendrecv<T>(dev: &mut Device, apdu: &APDU) -> Result<Vec<u8>, Error> {
     let mut frame_index: usize = 0;
     let mut data_itr = apdu.data.into_iter();
     let mut init_sent = false;
@@ -124,7 +123,12 @@ pub fn sendrecv<T>(dev: &mut T, apdu: &APDU) -> Result<Vec<u8>, Error>
 
     recvlen += frame_size;
     frame_index += 1;
-    trace!("\t\t|-- init packet: {:?}, recvlen: {}, datalen: {}", data, recvlen, datalen);
+    trace!(
+        "\t\t|-- init packet: {:?}, recvlen: {}, datalen: {}",
+        data,
+        recvlen,
+        datalen
+    );
 
     while recvlen < datalen {
         frame = [0u8; HID_RPT_SIZE];
