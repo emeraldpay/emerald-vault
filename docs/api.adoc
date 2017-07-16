@@ -44,7 +44,7 @@ Returns the client current version.
 
 Return the list of all not hidden (by default) accounts from the keystore.
 
-*Parameters*:b
+*Parameters*:
 
     * `additional` (Object, optional)
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
@@ -56,7 +56,7 @@ Return the list of all not hidden (by default) accounts from the keystore.
     * `accounts` (Array)
     ** `account` (Object) - an account
     *** `address` (String) - hex-encoded 20 bytes public address
-    *** `is_hd` (Boolean) - flag to distinguish normal accounts from HD wallet accounts
+    *** `hardware_wallet` (Boolean) - flag to distinguish normal accounts from HD wallet accounts
     *** `name` (String, optional) - account name
     *** `description` (String, optional) - account description
 
@@ -68,7 +68,8 @@ Return the list of all not hidden (by default) accounts from the keystore.
       [{"address": "0x5e97870f263700f46aa00d967821199b9bc5a120"},
        {"name": "main",
         "address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}],
-       {"name": "test",
+       {"hardware_wallet": "true"
+        "name": "test",
         "description": "A test account",
         "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}],
      "id": 1}
@@ -546,7 +547,6 @@ If `function` and `arguments` are provided, they will be encoded according smart
     * `additional` (Object, optional)
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
     ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
-    ** `hd_path` (String, optional) - derivation path for signing with HD wallet, by default empty
 
 *Result*: `data` (String) - hex-encoded signed raw transaction data
 
