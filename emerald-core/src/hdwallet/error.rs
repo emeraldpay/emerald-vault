@@ -8,6 +8,8 @@ use std::{error, fmt, io};
 pub enum Error {
     /// An unsupported cipher
     HDWalletError(String),
+    ///
+    CommError(String),
 }
 
 impl From<core::Error> for Error {
@@ -26,6 +28,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::HDWalletError(ref str) => write!(f, "HD Wallet error: {}", str),
+            Error::CommError(ref str) => write!(f, "Communication protocol error: {}", str),
         }
     }
 }

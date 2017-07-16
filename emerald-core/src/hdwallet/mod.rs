@@ -1,5 +1,6 @@
 //! # Module to work with `HD Wallets`
 //!
+//! Currently supports only Ledger Nano S & Ledger Blue
 //! `HD(Hierarchical Deterministic) Wallet` specified in
 //! [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.medёiawiki)
 
@@ -12,68 +13,108 @@ use std::sync::mpsc::channel;
 mod error;
 mod apdu;
 mod hd_keystore;
-mod ledger;
+mod comm;
 
 pub use self::error::Error;
-use self::ledger::Ledger;
 use core::Address;
 use core::Transaction;
-use u2fhid::{self, U2FManager, to_u8_array};
+use u2fhid::{self, to_u8_array, RunLoop, Monitor, Device};
 use uuid::Uuid;
-use self::ledger::DERIVATION_PATH;
 
-/// Model of HD wallet
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum WalletType {
-    ///
-    LedgerNanoS,
-}
+pub const GET_ETH_ADDRESS: u8 = 0x02;
+pub const SIGN_ETH_TRANSACTION: u8 = 0x04;
+pub const APDU_HEADER_SIZE: u8 = 0x05;
 
 #[repr(packed)]
-#[allow(dead_code)]
-pub struct APDUHeader {
+#[derive(Debug, Clone)]
+pub struct APDU {
     pub cla: u8,
     pub ins: u8,
     pub p1: u8,
     pub p2: u8,
-    pub lc: u8,
+    pub len: u8,
+    pub data: Vec<u8>
 }
 
-pub trait WalletCore: Sized {
-    ///
-    fn sign_tx(&self, tr: &Vec<u8>, u2f: &U2FManager) -> Result<Vec<u8>, Error>;
+impl Default for APDU {
+    fn default() -> Self {
+        APDU {
+            cla: 0xe0,
+            ins: 0x00,
+            p1: 0x00,
+            p2: 0x00,
+            len: 0x00,
+            data: vec!(),
+        }
+    }
+}
 
-    ///
-    fn get_address(&self, u2f: &U2FManager) -> Result<Vec<u8>, Error>;
+impl APDU {
+    pub const HEADER_SIZE: u8 = 0x05;
+
+    pub fn raw_header(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(APDU::HEADER_SIZE);
+        buf.push(self.cla);
+        buf.push(self.ins);
+        buf.push(self.p1);
+        buf.push(self.p2);
+        buf.push(self.len);
+        buf
+    }
+
+    pub fn len(&self) -> usize {
+        self.data.len() + APDU::HEADER_SIZE
+    }
+
+}
+
+pub struct APDU_Builder{
+    apdu: APDU,
+}
+
+impl APDU_Builder {
+    pub fn get_empty<'a>(&'a mut self, cmd: u8) -> &'a mut Self {
+        self.apdu = APDU::default();
+        self
+    }
+
+    pub fn with_data<'a>(&'a mut self, data: Vec<u8>) -> &'a mut Self {
+        self.apdu.data = data;
+        self.apdu.len = data.len() as u8;
+        self
+    }
+
+    pub fn with_p1<'a>(&'a mut self, p1: u8) -> &'a mut Self {
+        self.apdu.p1 = p1;
+        self
+    }
+
+    pub fn with_p2<'a>(&'a mut self, p2: u8) -> &'a mut Self {
+        self.apdu.p2 = p2;
+        self
+    }
+
+    pub fn build(&self) -> APDU {
+        self.apdu
+    }
 }
 
 ///
-struct HDWallet<T: WalletCore> {
-    u2f: u2fhid::U2FManager,
-    id: WalletType,
-    core: T,
+pub struct WManager {
+    devices: Vec<Device>,
 }
 
-impl HDWallet<Ledger> {
-    ///
-    pub fn create_ledger() -> Result<Self, Error> {
-        Ok(HDWallet::<Ledger> {
-            u2f: U2FManager::new()?,
-            id: WalletType::LedgerNanoS,
-            core: Ledger,
-        })
-    }
-}
+impl WManager {
+    pub fn new() -> Self {
 
-impl<T: WalletCore> HDWallet<T> {
-    ///
-    pub fn sign(&self, tr: &Vec<u8>) -> Result<Vec<u8>, Error> {
-        self.core.sign_tx(tr, &self.u2f)
     }
 
-    ///
-    pub fn get_address(&self) -> Result<Vec<u8>, Error> {
-        self.core.get_address(&self.u2f)
+    pub fn get_address(dev: Device) -> Result<Address, Error> {
+
+    }
+
+    pub fn sign_transaction(dev: Device, tr: Vec<u8>) -> Result<Vec<u8>, Error> {
+
     }
 }
 
@@ -119,43 +160,9 @@ mod tests {
 
     #[test]
     pub fn should_get_address_with_ledger() {
-        let wallet = HDWallet::create_ledger().unwrap();
-        println!("Address {:?}", wallet.get_address().unwrap());
+        let manager = WManager::new();
+        let device = manager.devices[0];
 
-        println!("Asking a security key to register now...");
-        let mut challenge = Sha256::new();
-        challenge.input_str(r#"{"challenge": "1vQ9mxionq0ngCnjD-wTsv1zUSrGRtFqG2xP09SbZ70",
-                                "version": "U2F_V2", "appId": "http://demo.yubico.com"}"#);
-        let mut chall_bytes: Vec<u8> = vec![0; challenge.output_bytes()];
-        challenge.result(&mut chall_bytes);
-
-        let mut application = Sha256::new();
-        application.input_str("http://demo.yubico.com");
-        let mut app_bytes: Vec<u8> = vec![0; application.output_bytes()];
-        application.result(&mut app_bytes);
-
-        let manager = U2FManager::new().unwrap();
-        let header = APDUHeader {
-            cla: 0xe0,
-            ins: 0x02,
-            p1: 0x00,
-            p2: 0x00,
-            lc: 21,
-        };
-        let header_raw = to_u8_array(&header);
-        let mut apdu = vec![0u8; 26];
-        apdu[0..5].clone_from_slice(&header_raw);
-        apdu[5..26].clone_from_slice(&DERIVATION_PATH);
-
-        let (tx, rx) = channel();
-        manager
-            .sign(15, chall_bytes, app_bytes, apdu, move |rv| {
-                tx.send(rv.unwrap()).unwrap();
-            })
-            .unwrap();
-
-        let sign_data = rx.recv().unwrap();
-        println!("Sign result: {}", base64::encode(&sign_data));
-        println!("Done.");
+        println!("Address: {}",  WManager::get_address(device));
     }
 }

@@ -41,19 +41,3 @@ impl APDU_Builder {
         }
     }
 }
-//
-//impl Into<Vec<u8>> for Command {
-//    fn into(self) -> Vec<u8> {
-//        let mut buf = Vec::new();
-//        buf.push(self.CLA);
-//        buf.push(self.INS);
-//        buf.push(self.P1);
-//        buf.push(self.P2);
-//
-//        buf.append(&self.Lc);
-//        buf.append(&self.data);
-//        buf.append(&self.Le);
-//
-//        buf
-//    }
-//}
