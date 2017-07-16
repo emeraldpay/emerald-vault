@@ -565,7 +565,7 @@ If `function` and `arguments` are provided, they will be encoded according smart
     * `additional` (Object, optional)
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
     ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
-    ** `is_hd` (Boolean, optional) - sign wi1th HD Wallet
+    ** `hd_path` (String, optional) - derivation path for signing with HD wallet, by default empty
 
 *Result*: `data` (String) - hex-encoded signed raw transaction data
 
