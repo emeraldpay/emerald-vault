@@ -4,9 +4,6 @@
 //! `HD(Hierarchical Deterministic) Wallet` specified in
 //! [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.medёiawiki)
 
-extern crate base64;
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
 use std::io;
 use std::sync::mpsc::channel;
 
@@ -15,15 +12,25 @@ mod apdu;
 mod hd_keystore;
 mod comm;
 
+use self::comm::sendrecv;
 pub use self::error::Error;
 use core::Address;
 use core::Transaction;
-use u2fhid::{self, to_u8_array, RunLoop, Monitor, Device};
+use u2fhid::{self, Device, DeviceMap, Monitor, to_u8_array};
 use uuid::Uuid;
+
 
 pub const GET_ETH_ADDRESS: u8 = 0x02;
 pub const SIGN_ETH_TRANSACTION: u8 = 0x04;
 pub const APDU_HEADER_SIZE: u8 = 0x05;
+const ETC_DERIVATION_PATH: [u8; 21] =  [
+    5,
+    0x80, 0, 0, 44,
+    0x80, 0, 0, 60,
+    0x80, 0x02, 0x73, 0xd0,
+    0x80, 0, 0, 0,
+    0, 0, 0, 0
+];  // 44'/60'/160720'/0'/0
 
 #[repr(packed)]
 #[derive(Debug, Clone)]
@@ -33,7 +40,7 @@ pub struct APDU {
     pub p1: u8,
     pub p2: u8,
     pub len: u8,
-    pub data: Vec<u8>
+    pub data: Vec<u8>,
 }
 
 impl Default for APDU {
@@ -44,13 +51,13 @@ impl Default for APDU {
             p1: 0x00,
             p2: 0x00,
             len: 0x00,
-            data: vec!(),
+            data: vec![],
         }
     }
 }
 
 impl APDU {
-    pub const HEADER_SIZE: u8 = 0x05;
+    pub const HEADER_SIZE: usize = 0x05;
 
     pub fn raw_header(&self) -> Vec<u8> {
         let mut buf = Vec::with_capacity(APDU::HEADER_SIZE);
@@ -65,23 +72,20 @@ impl APDU {
     pub fn len(&self) -> usize {
         self.data.len() + APDU::HEADER_SIZE
     }
-
 }
 
-pub struct APDU_Builder{
+pub struct APDU_Builder {
     apdu: APDU,
 }
 
 impl APDU_Builder {
-    pub fn get_empty<'a>(&'a mut self, cmd: u8) -> &'a mut Self {
-        self.apdu = APDU::default();
-        self
-    }
+    pub fn new(cmd: u8) ->  Self {
+        let apdu = APDU::default();
+        apdu.ins = cmd;
 
-    pub fn with_data<'a>(&'a mut self, data: Vec<u8>) -> &'a mut Self {
-        self.apdu.data = data;
-        self.apdu.len = data.len() as u8;
-        self
+        Self {
+            apdu: apdu
+        }
     }
 
     pub fn with_p1<'a>(&'a mut self, p1: u8) -> &'a mut Self {
@@ -94,6 +98,15 @@ impl APDU_Builder {
         self
     }
 
+    pub fn with_data<'a>(&'a mut self, data: &[u8]) -> &'a mut Self {
+        let mut buf: Vec<u8> = Vec::new();
+        buf.extend_from_slice(data);
+
+        self.apdu.data = buf;
+        self.apdu.len = buf.len() as u8;
+        self
+    }
+
     pub fn build(&self) -> APDU {
         self.apdu
     }
@@ -101,20 +114,33 @@ impl APDU_Builder {
 
 ///
 pub struct WManager {
-    devices: Vec<Device>,
+    monitor: Monitor,
+    devices: DeviceMap,
 }
 
 impl WManager {
     pub fn new() -> Self {
-
+        Self {
+            monitor: Monitor::new()?,
+            devices: DeviceMap::new(),
+        }
     }
 
-    pub fn get_address(dev: Device) -> Result<Address, Error> {
+    pub fn get_address(&self, dev: Device) -> Result<Vec<u8>, Error> {
+        let apdu = APDU_Builder::new(GET_ETH_ADDRESS)
+            .with_data(&ETC_DERIVATION_PATH)
+            .build();
+        let res = sendrecv(self.devices.values_mut()[0], &apdu)?;
 
+        Ok(res)
     }
 
-    pub fn sign_transaction(dev: Device, tr: Vec<u8>) -> Result<Vec<u8>, Error> {
+    pub fn sign_transaction(dev: Device, tr: Vec<u8>) -> Result<Vec<u8>, Error> {}
 
+    fn update(&mut self) {
+        for event in self.monitor.events() {
+            self.devices.process_event(event);
+        }
     }
 }
 
@@ -155,7 +181,10 @@ mod tests {
         println!("RLP packed transaction: {:?}", &tx.hash(61));
 
         let wallet = HDWallet::create_ledger().unwrap();
-        println!("signed with wallet {:?}", wallet.sign(&tx.hash(61).to_vec()).unwrap());
+        println!(
+            "signed with wallet {:?}",
+            wallet.sign(&tx.hash(61).to_vec()).unwrap()
+        );
     }
 
     #[test]
@@ -163,6 +192,6 @@ mod tests {
         let manager = WManager::new();
         let device = manager.devices[0];
 
-        println!("Address: {}",  WManager::get_address(device));
+        println!("Address: {}", WManager::get_address(device));
     }
 }
