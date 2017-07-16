@@ -260,6 +260,36 @@ Import a new account from an external keyfile.
 <-- {"jsonrpc": "2.0", "result": "0x0047201aed0b69875b24b614dda0270bcd9f11cc", "id": 1}
 ----
 
+=== emerald_importHDAccount
+
+Import a new account from HD (Hierarchical Deterministic) Wallet.
+
+*Parameters*:
+
+    * `keyfile` (Object) - should be totally comply with the https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+*Result*: `address` (String) - successfully imported hex-encoded 20 bytes public address
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_importAccount",
+     "params":
+       [{"version": 3,
+         "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
+         "address": "0047201aed0b69875b24b614dda0270bcd9f11cc",
+         "crypto": {
+            cipher: "hardware",
+            type: "ledger-nano-s:v1",
+            hd: "0'/0/0"},
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0x0047201aed0b69875b24b6accounaccoun14dda0270bcd9f11cc", "id": 1}
+----
+
 === emerald_exportAccount
 
 Returns an account keyfile associated with the account.
@@ -299,6 +329,38 @@ Returns an account keyfile associated with the account.
            },
            "mac": "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"}}],
      "id": 1}
+----
+
+=== emerald_exportHDAccount
+
+Returns an account for  keyfile associated with HD (Hierarchical Deterministic) Wallet.
+
+*Parameters*:
+
+    * `account` (Object)
+    ** `address` (String) - hex-encoded 20 bytes public address
+    * `additional` (Object, optional)
+    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+*Result*: `HDWalletKeyfile` (Object) - account
+
+*Examples*:
+
+----
+--> {"jsonrpc": "2.0", "method": "emerald_exportAccount", "params": [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc"}, {"chain_id": 62}], "id": 1}
+<-- {"jsonrpc": "2.0",
+     "method": "emerald_importAccount",
+     "params":
+       [{"version": 3,
+         "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
+         "address": "0047201aed0b69875b24b614dda0270bcd9f11cc",
+         "crypto": {
+            cipher: "hardware",
+            type: "ledger-nano-s:v1",
+            hd: "0'/0/0"},
+     "id": 1}
+
 ----
 
 === emerald_listContracts
@@ -503,6 +565,7 @@ If `function` and `arguments` are provided, they will be encoded according smart
     * `additional` (Object, optional)
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
     ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+    ** `is_hd` (Boolean, optional) - sign wi1th HD Wallet
 
 *Result*: `data` (String) - hex-encoded signed raw transaction data
 
