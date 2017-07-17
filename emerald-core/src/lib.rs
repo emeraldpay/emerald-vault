@@ -34,6 +34,7 @@ extern crate serde_json;
 extern crate uuid;
 extern crate hex;
 extern crate u2fhid;
+extern crate hidapi;
 
 
 mod core;
