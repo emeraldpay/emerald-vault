@@ -4,20 +4,20 @@
 //! `HD(Hierarchical Deterministic) Wallet` specified in
 //! [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.medёiawiki)
 
-use std::io;
-use std::sync::mpsc::channel;
-
 mod error;
 mod apdu;
 mod hd_keystore;
 mod comm;
 
 use self::comm::sendrecv;
-pub use self::error::Error;
-use core::Address;
-use core::Transaction;
-use u2fhid::{self, Device, DeviceMap, Monitor, to_u8_array};
+use self::apdu::{APDU_Builder, APDU};
+use self::error::Error;
+use super::{to_arr, Address, Transaction};
+use u2fhid::{self, DeviceMap, Monitor, to_u8_array};
 use uuid::Uuid;
+use hidapi::{HidDeviceInfo, HidApi, HidDevice};
+use std::{thread, time};
+use std::str::{FromStr, from_utf8};
 
 
 pub const GET_ETH_ADDRESS: u8 = 0x02;
@@ -32,115 +32,130 @@ const ETC_DERIVATION_PATH: [u8; 21] =  [
     0, 0, 0, 0
 ];  // 44'/60'/160720'/0'/0
 
-#[repr(packed)]
-#[derive(Debug, Clone)]
-pub struct APDU {
-    pub cla: u8,
-    pub ins: u8,
-    pub p1: u8,
-    pub p2: u8,
-    pub len: u8,
-    pub data: Vec<u8>,
+const LEDGER_VID: u16 = 0x2c97;
+const LEDGER_PID: u16 = 0x0001; // for Nano S model
+
+
+/// Type used for device listing,
+/// String corresponds to file descriptor of the device
+pub type DevicesList = Vec<(Address, String)>;
+
+///
+#[derive(Debug)]
+struct Device {
+    ///
+    fd: String,
+    ///
+    address: Address,
+    ///
+    hid_info: HidDeviceInfo,
 }
 
-impl Default for APDU {
-    fn default() -> Self {
-        APDU {
-            cla: 0xe0,
-            ins: 0x00,
-            p1: 0x00,
-            p2: 0x00,
-            len: 0x00,
-            data: vec![],
+impl PartialEq for Device {
+    fn eq(&self, other: &Device) -> bool {
+        self.fd == other.fd
+    }
+}
+
+impl From<HidDeviceInfo> for Device {
+    fn from(hid_info: HidDeviceInfo) -> Self {
+        let info = hid_info.clone();
+        Device {
+            fd: hid_info.path,
+            address: Address::default(),
+            hid_info: info,
         }
-    }
-}
-
-impl APDU {
-    pub const HEADER_SIZE: usize = 0x05;
-
-    pub fn raw_header(&self) -> Vec<u8> {
-        let mut buf = Vec::with_capacity(APDU::HEADER_SIZE);
-        buf.push(self.cla);
-        buf.push(self.ins);
-        buf.push(self.p1);
-        buf.push(self.p2);
-        buf.push(self.len);
-        buf
-    }
-
-    pub fn len(&self) -> usize {
-        self.data.len() + APDU::HEADER_SIZE
-    }
-}
-
-pub struct APDU_Builder {
-    apdu: APDU,
-}
-
-impl APDU_Builder {
-    pub fn new(cmd: u8) ->  Self {
-        let apdu = APDU::default();
-        apdu.ins = cmd;
-
-        Self {
-            apdu: apdu
-        }
-    }
-
-    pub fn with_p1<'a>(&'a mut self, p1: u8) -> &'a mut Self {
-        self.apdu.p1 = p1;
-        self
-    }
-
-    pub fn with_p2<'a>(&'a mut self, p2: u8) -> &'a mut Self {
-        self.apdu.p2 = p2;
-        self
-    }
-
-    pub fn with_data<'a>(&'a mut self, data: &[u8]) -> &'a mut Self {
-        let mut buf: Vec<u8> = Vec::new();
-        buf.extend_from_slice(data);
-
-        self.apdu.data = buf;
-        self.apdu.len = buf.len() as u8;
-        self
-    }
-
-    pub fn build(&self) -> APDU {
-        self.apdu
     }
 }
 
 ///
 pub struct WManager {
-    monitor: Monitor,
-    devices: DeviceMap,
+    /// HID point used for communication
+    hid: HidApi,
+    /// List of available wallets
+    devices: Vec<Device>,
+    /// Derivation path
+    hd_path: Vec<u8>,
 }
 
 impl WManager {
-    pub fn new() -> Self {
-        Self {
-            monitor: Monitor::new()?,
-            devices: DeviceMap::new(),
-        }
+    /// Creates new `Wallet Manager` with a specified
+    /// derivation path
+    pub fn new(dpath: &[u8]) -> Result<WManager, Error> {
+        let mut p: Vec<u8> = Vec::new();
+        p.extend_from_slice(dpath);
+
+        Ok(Self {
+            hid: HidApi::new()?,
+            devices: Vec::new(),
+            hd_path: p,
+        })
     }
 
-    pub fn get_address(&self, dev: Device) -> Result<Vec<u8>, Error> {
+    ///
+    pub fn get_address(&self, fd: &str) -> Result<Address, Error> {
         let apdu = APDU_Builder::new(GET_ETH_ADDRESS)
             .with_data(&ETC_DERIVATION_PATH)
             .build();
-        let res = sendrecv(self.devices.values_mut()[0], &apdu)?;
 
-        Ok(res)
+        let handle = self.open(fd)?;
+        let addr = sendrecv(&handle, &apdu)
+            .and_then(|res| { match res.len() {
+                    107 => Ok(res),
+                    _ => Err(Error::HDWalletError("Address read returned invalid data length".to_string())),
+                }
+            })
+            .and_then(|res: Vec<u8>| from_utf8(&res[67..107])
+                .map(|ptr| ptr.to_string())
+                .map_err(|e| Error::HDWalletError(format!("Can't parse address: {}", e.to_string()))))
+            .and_then(|s| Address::from_str(&s)
+                .map_err(|e| Error::HDWalletError(format!("Can't parse address: {}", e.to_string())))
+            )?;
+
+        Ok(addr)
     }
 
-    pub fn sign_transaction(dev: Device, tr: Vec<u8>) -> Result<Vec<u8>, Error> {}
+    /// Sign hash for transaction
+    pub fn sign_transaction(&self, tr: Vec<u8>, fd: Option<String>) -> Result<Vec<u8>, Error> {
+        unimplemented!();
+    }
 
-    fn update(&mut self) {
-        for event in self.monitor.events() {
-            self.devices.process_event(event);
+    ///
+    pub fn devices(&self) -> DevicesList {
+        self.devices.iter()
+            .map(|d| (d.address.clone(), d.fd.clone()))
+            .collect()
+    }
+
+    /// Update device list
+    pub fn update(&mut self) -> Result<(), Error> {
+        self.hid.refresh_devices();
+        let mut new_devices = Vec::new();
+
+        for hid_info in self.hid.devices() {
+            if hid_info.product_id != LEDGER_PID || hid_info.vendor_id != LEDGER_VID  {
+                continue;
+            }
+            let mut d = Device::from(hid_info);
+            d.address = self.get_address(&d.fd)?;
+            new_devices.push(d);
         }
+        self.devices = new_devices;
+        println!("Devices found {:?}", self.devices);
+
+        Ok(())
+    }
+
+    fn open(&self, path: &str) -> Result<HidDevice, Error> {
+        for _ in 0..5 {
+            match self.hid.open_path(&path) {
+                Ok(h) => return Ok(h),
+                Err(_) => (),
+            }
+            thread::sleep(time::Duration::from_millis(100));
+        }
+
+        Err(Error::HDWalletError(format!("Can't open path: {}", path)))
     }
 }
 
@@ -149,6 +164,7 @@ impl WManager {
 mod tests {
     use super::*;
     use tests::*;
+    use rustc_serialize::hex::ToHex;
 
     #[test]
     pub fn should_sign_with_ledger() {
@@ -180,18 +196,14 @@ mod tests {
         */
         println!("RLP packed transaction: {:?}", &tx.hash(61));
 
-        let wallet = HDWallet::create_ledger().unwrap();
-        println!(
-            "signed with wallet {:?}",
-            wallet.sign(&tx.hash(61).to_vec()).unwrap()
-        );
     }
 
     #[test]
     pub fn should_get_address_with_ledger() {
-        let manager = WManager::new();
-        let device = manager.devices[0];
+        let mut manager = WManager::new(&ETC_DERIVATION_PATH).unwrap();
+        manager.update().unwrap();
+        let fd = &manager.devices()[0].1;
 
-        println!("Address: {}", WManager::get_address(device));
+        println!("Address: {:?}", manager.get_address(fd).unwrap().to_hex());
     }
 }

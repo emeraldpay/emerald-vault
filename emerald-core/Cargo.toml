@@ -49,7 +49,7 @@ clippy = {version = "0.0", optional = true}
 chrono = "0.4"
 #u2fhid = { git = "https://github.com/r8d8/u2f-hid-rs", branch = "fix/refactor" }
 u2fhid = { path = "/home/k2/Workshop/Stash/u2f-hid-rs"}
-base64 = "^0.4"
+hidapi = "0.3"
 
 [dev-dependencies]
 tempdir = "0.3"

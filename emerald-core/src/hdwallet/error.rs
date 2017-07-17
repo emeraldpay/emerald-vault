@@ -24,6 +24,13 @@ impl From<io::Error> for Error {
     }
 }
 
+impl <'a>From<&'a str> for Error {
+    fn from(err: &str) -> Self {
+        Error::HDWalletError(err.to_string())
+    }
+}
+
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
