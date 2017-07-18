@@ -1,6 +1,5 @@
 //! # APDU for communication over HID
 
-
 ///
 #[repr(packed)]
 #[derive(Debug, Clone)]
@@ -21,7 +20,7 @@ impl Default for APDU {
             p1: 0x00,
             p2: 0x00,
             len: 0x00,
-            data: vec![],
+            data: Vec::new(),
         }
     }
 }
@@ -46,11 +45,11 @@ impl APDU {
 }
 
 ///
-pub struct APDU_Builder {
+pub struct ApduBuilder {
     apdu: APDU,
 }
 
-impl APDU_Builder {
+impl ApduBuilder {
     ///
     pub fn new(cmd: u8) ->  Self {
         let mut apdu = APDU::default();
@@ -75,11 +74,8 @@ impl APDU_Builder {
 
     ///
     pub fn with_data<'a>(&'a mut self, data: &[u8]) -> &'a mut Self {
-        let mut buf: Vec<u8> = Vec::new();
-        buf.extend_from_slice(data);
-
-        self.apdu.len = buf.len() as u8;
-        self.apdu.data = buf;
+        self.apdu.data.extend_from_slice(data);
+        self.apdu.len += data.len() as u8;
         self
     }
 
