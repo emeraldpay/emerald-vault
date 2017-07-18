@@ -10,19 +10,18 @@ mod hd_keystore;
 mod comm;
 
 use self::comm::sendrecv;
-use self::apdu::{APDU_Builder, APDU};
+use self::apdu::ApduBuilder;
 use self::error::Error;
-use super::{to_arr, Address, Transaction};
-use u2fhid::{self, DeviceMap, Monitor, to_u8_array};
+use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
 use uuid::Uuid;
 use hidapi::{HidDeviceInfo, HidApi, HidDevice};
 use std::{thread, time};
 use std::str::{FromStr, from_utf8};
 
 
-pub const GET_ETH_ADDRESS: u8 = 0x02;
-pub const SIGN_ETH_TRANSACTION: u8 = 0x04;
-pub const APDU_HEADER_SIZE: u8 = 0x05;
+const GET_ETH_ADDRESS: u8 = 0x02;
+const SIGN_ETH_TRANSACTION: u8 = 0x04;
+const CHUNK_SIZE: usize = 255;
 const ETC_DERIVATION_PATH: [u8; 21] =  [
     5,
     0x80, 0, 0, 44,
@@ -94,8 +93,8 @@ impl WManager {
 
     ///
     pub fn get_address(&self, fd: &str) -> Result<Address, Error> {
-        let apdu = APDU_Builder::new(GET_ETH_ADDRESS)
-            .with_data(&ETC_DERIVATION_PATH)
+        let apdu = ApduBuilder::new(GET_ETH_ADDRESS)
+            .with_data(&self.hd_path)
             .build();
 
         let handle = self.open(fd)?;
@@ -116,8 +115,40 @@ impl WManager {
     }
 
     /// Sign hash for transaction
-    pub fn sign_transaction(&self, tr: Vec<u8>, fd: Option<String>) -> Result<Vec<u8>, Error> {
-        unimplemented!();
+    pub fn sign_transaction(&self, fd: &str, tr: &[u8]) -> Result<Signature, Error> { ;
+        let _mock = Vec::new();
+        let (init, cont) = match tr.len() {
+            0...CHUNK_SIZE => (tr, _mock.as_slice()),
+            _ => tr.split_at(CHUNK_SIZE - self.hd_path.len()),
+        };
+
+        let init_apdu = ApduBuilder::new(SIGN_ETH_TRANSACTION)
+            .with_p1(0x00)
+            .with_data(&self.hd_path)
+            .with_data(init)
+            .build();
+
+        let handle = self.open(fd)?;
+        let mut res = sendrecv(&handle, &init_apdu)?;
+
+        for chunk in cont.chunks(CHUNK_SIZE) {
+            let apdu_cont = ApduBuilder::new(SIGN_ETH_TRANSACTION)
+                .with_p1(0x80)
+                .with_data(chunk)
+                .build();
+
+            res = sendrecv(&handle, &apdu_cont)?;
+        }
+
+        match res.len() {
+            ECDSA_SIGNATURE_BYTES => {
+                //TODO: upgrade util::to_arr to handle array.len() > 32
+                let mut val: [u8; ECDSA_SIGNATURE_BYTES] = [0; ECDSA_SIGNATURE_BYTES];
+                val.copy_from_slice(&res);
+                Ok(Signature::from(val))
+            },
+            _ => Err(Error::HDWalletError("Invalid signature length".to_string()))
+        }
     }
 
     ///
@@ -165,16 +196,17 @@ mod tests {
     use super::*;
     use tests::*;
     use rustc_serialize::hex::ToHex;
+    use core::Transaction;
 
     #[test]
     pub fn should_sign_with_ledger() {
         let tx = Transaction {
-            nonce: 0,
+            nonce: 0x00,
             gas_price: /* 21000000000 */
             to_32bytes("0000000000000000000000000000000\
                                           0000000000000000000000004e3b29200"),
             gas_limit: 21000,
-            to: Some("0x0000000000000000000000000000000012345678"
+            to: Some("78296F1058dD49C5D6500855F59094F0a2876397"
                 .parse::<Address>()
                 .unwrap()),
             value: /* 1 ETC */
@@ -185,16 +217,35 @@ mod tests {
 
         /*
             {
-               "nonce":"0x00",
-               "gasPrice":"0x04e3b29200",
-               "gasLimit":"0x5208",
-               "to":"0x0000000000000000000000000000000012345678",
-               "value":"0x0de0b6b3a7640000",
-               "data":"",
-               "chainId":61
+                "nonce":"0x00",
+                "gasPrice":"0x04e3b29200",
+                "gasLimit":"0x5208",
+                "to":"0x78296F1058dD49C5D6500855F59094F0a2876397",
+                "value":"0x0de0b6b3a7640000",
+                "data":"",
+                "chainId":61,
+                "v":"0x9d",
+                "r":"0x5cba84eb9aac6854c8ff6aa21b3e0c6c2036e07ebdee44bcf7ace95bab569d8f",
+                "s":"0x6eab3be528ef7565c887e147a2d53340c6c9fab5d6f56694681c90b518b64183"
             }
         */
-        println!("RLP packed transaction: {:?}", &tx.hash(61));
+
+        // 0xf86d808504e3b292008252089478296f1058dd49c5d6500855f59094f0a2876397880de0b6b3a76400008081
+        // 9d
+        // a0
+        // 5cba84eb9aac6854c8ff6aa21b3e0c6c2036e07ebdee44bcf7ace95bab569d8f
+        // a0
+        // 6eab3be528ef7565c887e147a2d53340c6c9fab5d6f56694681c90b518b64183
+        let rlp = tx.to_rlp().tail;
+        let mut manager = WManager::new(&ETC_DERIVATION_PATH).unwrap();
+        manager.update().unwrap();
+
+        let fd = &manager.devices()[0].1;
+
+
+        println!("RLP: {:?}", &rlp.to_hex());
+        let sign = manager.sign_transaction(&fd, &rlp).unwrap();
+        println!("Signature: {:?}", &sign);
 
     }
 
@@ -202,8 +253,10 @@ mod tests {
     pub fn should_get_address_with_ledger() {
         let mut manager = WManager::new(&ETC_DERIVATION_PATH).unwrap();
         manager.update().unwrap();
-        let fd = &manager.devices()[0].1;
 
-        println!("Address: {:?}", manager.get_address(fd).unwrap().to_hex());
+        let fd = &manager.devices()[0].1;
+        let addr = manager.get_address(fd).unwrap();
+
+        assert_eq!("78296f1058dd49c5d6500855f59094f0a2876397", addr.to_hex());
     }
 }

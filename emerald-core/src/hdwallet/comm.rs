@@ -1,13 +1,13 @@
 //! # Module providing commnication using HID API
 //!
 
-use super::apdu::{APDU, APDU_Builder};
+use super::apdu::APDU;
 use super::error::Error;
 use super::to_arr;
-use super::u2fhid::{Device, set_data, to_u8_array};
 use log;
+use std::cmp::min;
 use std::mem::size_of_val;
-use std::io::{Read, Write};
+use std::slice;
 use super::HidDevice;
 
 ///
@@ -63,6 +63,14 @@ fn get_init_header(apdu: &APDU) -> [u8; INIT_HEADER_SIZE] {
     to_arr(&buf)
 }
 
+fn set_data(data: &mut [u8], itr: &mut slice::Iter<u8>, max: usize) {
+    let available = itr.size_hint().0;
+
+    for i in 0..min(max, available) {
+        data[i] = *itr.next().unwrap();
+    }
+}
+
 /// Check `status word`, if invalid coverts it
 /// to the proper error message
 fn sw_to_error(sw_h: u8, sw_l: u8) -> Result<(), Error> {
@@ -83,6 +91,8 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
     let mut frame_index: usize = 0;
     let mut data_itr = apdu.data.iter();
     let mut init_sent = false;
+
+    println!(">> senrecv input: {:?}", &apdu);
     // Write Data.
     while data_itr.size_hint().0 != 0 {
         // Add 1 to HID_RPT_SIZE since we need to prefix this with a record
@@ -109,13 +119,13 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
         frame_index += 1;
     }
 
-    trace!("\t |- read response");
+    println!("\t |- read response");
     frame_index = 0;
     let mut data: Vec<u8> = Vec::new();
     let datalen: usize;
     let mut recvlen: usize = 0;
     let mut frame: [u8; HID_RPT_SIZE] = [0u8; HID_RPT_SIZE];
-    let mut frame_size = dev.read(&mut frame)?;
+    let frame_size = dev.read(&mut frame)?;
 
     check_recv_frame(&frame, frame_index)?;
     datalen = (frame[5] as usize) << 8 | (frame[6] as usize);
@@ -123,7 +133,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
 
     recvlen += frame_size;
     frame_index += 1;
-    trace!(
+    println!(
         "\t\t|-- init data: {:?}, recvlen: {}, datalen: {}",
         data,
         recvlen,
@@ -132,13 +142,13 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
 
     while recvlen < datalen {
         frame = [0u8; HID_RPT_SIZE];
-        let mut frame_size = dev.read(&mut frame)?;
+        let frame_size = dev.read(&mut frame)?;
 
         check_recv_frame(&frame, frame_index)?;
         data.extend_from_slice(&frame[5..frame_size]);
         recvlen += frame_size;
         frame_index += 1;
-        trace!("\t\t|-- cont_{:?} size:{:?}, data: {:?}", frame_index, data.len(), data);
+        println!("\t\t|-- cont_{:?} size:{:?}, data: {:?}", frame_index, data.len(), data);
     }
     data.truncate(datalen);
 
