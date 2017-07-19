@@ -8,7 +8,8 @@ use std::{error, fmt, io};
 pub enum Error {
     /// An unsupported cipher
     HDWalletError(String),
-    ///
+
+    /// Error from HID communication
     CommError(String),
 }
 
@@ -24,7 +25,7 @@ impl From<io::Error> for Error {
     }
 }
 
-impl <'a>From<&'a str> for Error {
+impl<'a> From<&'a str> for Error {
     fn from(err: &str) -> Self {
         Error::HDWalletError(err.to_string())
     }

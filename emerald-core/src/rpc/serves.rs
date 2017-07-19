@@ -3,7 +3,7 @@ use super::serialize::RPCTransaction;
 
 use core::Address;
 use jsonrpc_core::{Params, Value};
-use keystore::{self, KdfDepthLevel, KeyFile};
+use keystore::{self, CryptoType, KdfDepthLevel, KeyFile};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::path::PathBuf;
@@ -165,17 +165,27 @@ pub fn shake_account(
     let addr = Address::from_str(&account.address)?;
 
     let (_, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
-    let pk = kf.decrypt_key(&account.old_passphrase)?;
-    let new_kf = KeyFile::new_custom(
-        pk,
-        &account.new_passphrase,
-        kf.kdf,
-        &mut os_random(),
-        kf.name,
-        kf.description,
-    )?;
-    new_kf.flush(keystore_path)?;
-    debug!("Account shaked: {}", kf.address);
+
+    match kf.crypto {
+        CryptoType::Core(ref core) => {
+            let pk = kf.decrypt_key(&account.old_passphrase)?;
+            let new_kf = KeyFile::new_custom(
+                pk,
+                &account.new_passphrase,
+                core.kdf,
+                &mut os_random(),
+                kf.name,
+                kf.description,
+            )?;
+            new_kf.flush(keystore_path)?;
+            debug!("Account shaked: {}", kf.address);
+        }
+        _ => {
+            return Err(Error::InvalidDataFormat(
+                "Can't shake account from HD wallet".to_string(),
+            ))
+        }
+    };
 
     Ok(true)
 }

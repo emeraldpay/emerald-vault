@@ -3,6 +3,7 @@
 macro_rules! byte_array_struct {
     ($name: ident, $num: expr) => (
         #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+        ///
         pub struct $name([u8; $num]);
 
         impl ::std::ops::Deref for $name {

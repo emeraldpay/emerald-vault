@@ -6,15 +6,15 @@
 
 mod error;
 mod apdu;
-mod hd_keystore;
+mod keystore;
 mod comm;
 
-use self::comm::sendrecv;
 use self::apdu::ApduBuilder;
-use self::error::Error;
-use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
-use uuid::Uuid;
-use hidapi::{HidDeviceInfo, HidApi, HidDevice};
+use self::comm::sendrecv;
+pub use self::error::Error;
+pub use self::keystore::HdwalletCrypto;
+use super::{Address, ECDSA_SIGNATURE_BYTES, Signature, to_arr};
+use hidapi::{HidApi, HidDevice, HidDeviceInfo};
 use std::{thread, time};
 use std::str::{FromStr, from_utf8};
 
@@ -22,14 +22,29 @@ use std::str::{FromStr, from_utf8};
 const GET_ETH_ADDRESS: u8 = 0x02;
 const SIGN_ETH_TRANSACTION: u8 = 0x04;
 const CHUNK_SIZE: usize = 255;
-const ETC_DERIVATION_PATH: [u8; 21] =  [
+const ETC_DERIVATION_PATH: [u8; 21] = [
     5,
-    0x80, 0, 0, 44,
-    0x80, 0, 0, 60,
-    0x80, 0x02, 0x73, 0xd0,
-    0x80, 0, 0, 0,
-    0, 0, 0, 0
-];  // 44'/60'/160720'/0'/0
+    0x80,
+    0,
+    0,
+    44,
+    0x80,
+    0,
+    0,
+    60,
+    0x80,
+    0x02,
+    0x73,
+    0xd0,
+    0x80,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+]; // 44'/60'/160720'/0'/0
 
 const LEDGER_VID: u16 = 0x2c97;
 const LEDGER_PID: u16 = 0x0001; // for Nano S model
@@ -99,23 +114,30 @@ impl WManager {
 
         let handle = self.open(fd)?;
         let addr = sendrecv(&handle, &apdu)
-            .and_then(|res| { match res.len() {
-                    107 => Ok(res),
-                    _ => Err(Error::HDWalletError("Address read returned invalid data length".to_string())),
-                }
+            .and_then(|res| match res.len() {
+                107 => Ok(res),
+                _ => Err(Error::HDWalletError(
+                    "Address read returned invalid data length".to_string(),
+                )),
             })
-            .and_then(|res: Vec<u8>| from_utf8(&res[67..107])
-                .map(|ptr| ptr.to_string())
-                .map_err(|e| Error::HDWalletError(format!("Can't parse address: {}", e.to_string()))))
-            .and_then(|s| Address::from_str(&s)
-                .map_err(|e| Error::HDWalletError(format!("Can't parse address: {}", e.to_string())))
-            )?;
+            .and_then(|res: Vec<u8>| {
+                from_utf8(&res[67..107])
+                    .map(|ptr| ptr.to_string())
+                    .map_err(|e| {
+                        Error::HDWalletError(format!("Can't parse address: {}", e.to_string()))
+                    })
+            })
+            .and_then(|s| {
+                Address::from_str(&s).map_err(|e| {
+                    Error::HDWalletError(format!("Can't parse address: {}", e.to_string()))
+                })
+            })?;
 
         Ok(addr)
     }
 
     /// Sign hash for transaction
-    pub fn sign_transaction(&self, fd: &str, tr: &[u8]) -> Result<Signature, Error> { ;
+    pub fn sign_transaction(&self, fd: &str, tr: &[u8]) -> Result<Signature, Error> {;
         let _mock = Vec::new();
         let (init, cont) = match tr.len() {
             0...CHUNK_SIZE => (tr, _mock.as_slice()),
@@ -146,14 +168,15 @@ impl WManager {
                 let mut val: [u8; ECDSA_SIGNATURE_BYTES] = [0; ECDSA_SIGNATURE_BYTES];
                 val.copy_from_slice(&res);
                 Ok(Signature::from(val))
-            },
-            _ => Err(Error::HDWalletError("Invalid signature length".to_string()))
+            }
+            _ => Err(Error::HDWalletError("Invalid signature length".to_string())),
         }
     }
 
     ///
     pub fn devices(&self) -> DevicesList {
-        self.devices.iter()
+        self.devices
+            .iter()
             .map(|d| (d.address.clone(), d.fd.clone()))
             .collect()
     }
@@ -164,7 +187,7 @@ impl WManager {
         let mut new_devices = Vec::new();
 
         for hid_info in self.hid.devices() {
-            if hid_info.product_id != LEDGER_PID || hid_info.vendor_id != LEDGER_VID  {
+            if hid_info.product_id != LEDGER_PID || hid_info.vendor_id != LEDGER_VID {
                 continue;
             }
             let mut d = Device::from(hid_info);
@@ -194,9 +217,9 @@ impl WManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tests::*;
-    use rustc_serialize::hex::ToHex;
     use core::Transaction;
+    use rustc_serialize::hex::ToHex;
+    use tests::*;
 
     #[test]
     pub fn should_sign_with_ledger() {
@@ -230,7 +253,8 @@ mod tests {
             }
         */
 
-        // 0xf86d808504e3b292008252089478296f1058dd49c5d6500855f59094f0a2876397880de0b6b3a76400008081
+        // 0xf86d808504e3b292008252089478296f1058dd49
+        // c5d6500855f59094f0a2876397880de0b6b3a76400008081
         // 9d
         // a0
         // 5cba84eb9aac6854c8ff6aa21b3e0c6c2036e07ebdee44bcf7ace95bab569d8f

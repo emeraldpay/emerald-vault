@@ -1,6 +1,7 @@
 //! # Module providing commnication using HID API
 //!
 
+use super::HidDevice;
 use super::apdu::APDU;
 use super::error::Error;
 use super::to_arr;
@@ -8,7 +9,6 @@ use log;
 use std::cmp::min;
 use std::mem::size_of_val;
 use std::slice;
-use super::HidDevice;
 
 ///
 pub const HID_RPT_SIZE: usize = 64;
@@ -80,8 +80,12 @@ fn sw_to_error(sw_h: u8, sw_l: u8) -> Result<(), Error> {
         SW_WRONG_DATA => Err(Error::CommError("Invalid data".to_string())),
         SW_INCORRECT_PARAMETERS => Err(Error::CommError("Incorrect parameters".to_string())),
         SW_USER_CANCEL => Err(Error::CommError("Canceled by user".to_string())),
-        SW_CONDITIONS_NOT_SATISFIED => Err(Error::CommError("Conditions not satisfied()".to_string())),
-        v => Err(Error::CommError(format!("Internal communication error: {:?}", v))),
+        SW_CONDITIONS_NOT_SATISFIED => Err(
+            Error::CommError("Conditions not satisfied()".to_string()),
+        ),
+        v => Err(Error::CommError(
+            format!("Internal communication error: {:?}", v),
+        )),
     }
 }
 
@@ -148,7 +152,12 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
         data.extend_from_slice(&frame[5..frame_size]);
         recvlen += frame_size;
         frame_index += 1;
-        println!("\t\t|-- cont_{:?} size:{:?}, data: {:?}", frame_index, data.len(), data);
+        println!(
+            "\t\t|-- cont_{:?} size:{:?}, data: {:?}",
+            frame_index,
+            data.len(),
+            data
+        );
     }
     data.truncate(datalen);
 
