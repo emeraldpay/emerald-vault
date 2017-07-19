@@ -51,13 +51,11 @@ pub struct ApduBuilder {
 
 impl ApduBuilder {
     ///
-    pub fn new(cmd: u8) ->  Self {
+    pub fn new(cmd: u8) -> Self {
         let mut apdu = APDU::default();
         apdu.ins = cmd;
 
-        Self {
-            apdu: apdu
-        }
+        Self { apdu: apdu }
     }
 
     ///

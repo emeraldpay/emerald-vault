@@ -1,24 +1,14 @@
 use super::Error;
-use super::Storages;
 use super::serialize::RPCTransaction;
 
 use core::Address;
 use jsonrpc_core::{Params, Value};
-use keystore::{self, KdfDepthLevel, KeyFile};
+use keystore::{self, CryptoType, KdfDepthLevel, KeyFile};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::path::PathBuf;
 use std::str::FromStr;
 use util;
-
-macro_rules! get_path {
-    ($chain:expr, $default:expr, $storage:ident) => {{
-        match $chain.as_ref() {
-            "" => $default,
-            _ => $storage.get_keystore_path(&$chain)?,
-        }
-    }}
-}
 
 fn to_chain_id(chain: &str, chain_id: Option<usize>, default_id: u8) -> u8 {
     if chain_id.is_some() {
@@ -95,13 +85,10 @@ pub struct ListAccountsAdditional {
 
 pub fn list_accounts(
     params: Either<(), (ListAccountsAdditional,)>,
-    default_keystore: &PathBuf,
-    storage: &Storages,
+    keystore_path: &PathBuf,
 ) -> Result<Vec<ListAccountAccount>, Error> {
     let (additional,) = params.into_right();
-    let path = get_path!(additional.chain, default_keystore.clone(), storage);
-
-    let res = keystore::list_accounts(&path, additional.show_hidden)?
+    let res = keystore::list_accounts(keystore_path, additional.show_hidden)?
         .iter()
         .map(|&(ref name, ref address)| {
             ListAccountAccount {
@@ -111,9 +98,8 @@ pub fn list_accounts(
         })
         .collect();
     debug!(
-        "Accounts listed with `show_hidden`: {} for path: {:?}\n\t{:?}",
+        "Accounts listed with `show_hidden`: {}\n\t{:?}",
         additional.show_hidden,
-        default_keystore,
         res
     );
 
@@ -135,14 +121,11 @@ pub struct HideAccountAccount {
 
 pub fn hide_account(
     params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
-    default_keystore: &PathBuf,
-    storage: &Storages,
+    keystore_path: &PathBuf,
 ) -> Result<bool, Error> {
-    let (account, additional) = params.into_full();
-    let path = get_path!(additional.chain, default_keystore.clone(), storage);
-
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
-    let res = keystore::hide(&addr, path)?;
+    let res = keystore::hide(&addr, keystore_path)?;
     debug!("Account hided: {}", addr);
 
     Ok(res)
@@ -155,14 +138,11 @@ pub struct UnhideAccountAccount {
 
 pub fn unhide_account(
     params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
-    default_keystore: &PathBuf,
-    storage: &Storages,
+    keystore_path: &PathBuf,
 ) -> Result<bool, Error> {
-    let (account, additional) = params.into_full();
-    let path = get_path!(additional.chain, default_keystore.clone(), storage);
-
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
-    let res = keystore::unhide(&addr, path)?;
+    let res = keystore::unhide(&addr, keystore_path)?;
     debug!("Account unhided: {}", addr);
 
     Ok(res)
@@ -177,27 +157,35 @@ pub struct ShakeAccountAccount {
 
 pub fn shake_account(
     params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
-    default_keystore: &PathBuf,
-    storage: &Storages,
+    keystore_path: &PathBuf,
 ) -> Result<bool, Error> {
     use keystore::os_random;
 
-    let (account, additional) = params.into_full();
-    let path = get_path!(additional.chain, default_keystore.clone(), storage);
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let (_, kf) = KeyFile::search_by_address(&addr, &path)?;
-    let pk = kf.decrypt_key(&account.old_passphrase)?;
-    let new_kf = KeyFile::new_custom(
-        pk,
-        &account.new_passphrase,
-        kf.kdf,
-        &mut os_random(),
-        kf.name,
-        kf.description,
-    )?;
-    new_kf.flush(&path)?;
-    debug!("Account shaked: {}", kf.address);
+    let (_, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
+
+    match kf.crypto {
+        CryptoType::Core(ref core) => {
+            let pk = kf.decrypt_key(&account.old_passphrase)?;
+            let new_kf = KeyFile::new_custom(
+                pk,
+                &account.new_passphrase,
+                core.kdf,
+                &mut os_random(),
+                kf.name,
+                kf.description,
+            )?;
+            new_kf.flush(keystore_path)?;
+            debug!("Account shaked: {}", kf.address);
+        }
+        _ => {
+            return Err(Error::InvalidDataFormat(
+                "Can't shake account from HD wallet".to_string(),
+            ))
+        }
+    };
 
     Ok(true)
 }
@@ -213,21 +201,19 @@ pub struct UpdateAccountAccount {
 
 pub fn update_account(
     params: Either<(UpdateAccountAccount,), (UpdateAccountAccount, CommonAdditional)>,
-    default_keystore: &PathBuf,
-    storage: &Storages,
+    keystore_path: &PathBuf,
 ) -> Result<bool, Error> {
-    let (account, additional) = params.into_full();
-    let path = get_path!(additional.chain, default_keystore.clone(), storage);
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let (_, mut kf) = KeyFile::search_by_address(&addr, &path)?;
+    let (_, mut kf) = KeyFile::search_by_address(&addr, keystore_path)?;
     if !account.name.is_empty() {
         kf.name = Some(account.name);
     }
     if !account.description.is_empty() {
         kf.description = Some(account.description);
     }
-    kf.flush(&path)?;
+    kf.flush(keystore_path)?;
     debug!(
         "Account {} updated with name: {}, description: {}",
         kf.address,
@@ -240,16 +226,12 @@ pub fn update_account(
 
 pub fn import_account(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    default_keystore: &PathBuf,
-    storage: &Storages,
+    keystore_path: &PathBuf,
 ) -> Result<String, Error> {
-    let (raw, additional) = params.into_full();
-    let path = get_path!(additional.chain, default_keystore.clone(), storage);
+    let (raw, _) = params.into_full();
     let raw = serde_json::to_string(&raw)?;
-
     let kf: KeyFile = rustc_json::decode(&raw)?;
-    kf.flush(path)?;
-
+    kf.flush(keystore_path)?;
     debug!("Account imported: {}", kf.address);
 
     Ok(format!("{}", kf.address))
@@ -262,14 +244,12 @@ pub struct ExportAccountAccount {
 
 pub fn export_account(
     params: Either<(ExportAccountAccount,), (ExportAccountAccount, CommonAdditional)>,
-    default_keystore: &PathBuf,
-    storage: &Storages,
+    keystore_path: &PathBuf,
 ) -> Result<Value, Error> {
-    let (account, additional) = params.into_full();
-    let path = get_path!(additional.chain, default_keystore.clone(), storage);
+    let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let (_, kf) = KeyFile::search_by_address(&addr, path)?;
+    let (_, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
     let raw = rustc_json::encode(&kf)?;
     let value = serde_json::to_value(&raw)?;
     debug!("Account exported: {}", kf.address);
@@ -289,12 +269,9 @@ pub struct NewAccountAccount {
 pub fn new_account(
     params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
     sec: &KdfDepthLevel,
-    default_keystore: &PathBuf,
-    storage: &Storages,
+    keystore_path: &PathBuf,
 ) -> Result<String, Error> {
-    let (account, additional) = params.into_full();
-    let path = get_path!(additional.chain, default_keystore.clone(), storage);
-
+    let (account, _) = params.into_full();
     if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
     }
@@ -307,7 +284,7 @@ pub fn new_account(
     )?;
 
     let addr = kf.address.to_string();
-    kf.flush(path)?;
+    kf.flush(keystore_path)?;
     debug!("New account generated: {}", kf.address);
 
     Ok(addr)
@@ -330,19 +307,17 @@ pub struct SignTransactionTransaction {
 
 pub fn sign_transaction(
     params: Either<(SignTransactionTransaction,), (SignTransactionTransaction, CommonAdditional)>,
-    default_keystore: &PathBuf,
+    keystore_path: &PathBuf,
     default_chain_id: u8,
-    storage: &Storages,
 ) -> Result<Params, Error> {
     let (transaction, additional) = params.into_full();
-    let path = get_path!(additional.chain, default_keystore.clone(), storage);
     let addr = Address::from_str(&transaction.from)?;
 
     if additional.chain_id.is_some() {
         check_chain_params(&additional.chain, additional.chain_id.unwrap())?;
     }
 
-    match KeyFile::search_by_address(&addr, path) {
+    match KeyFile::search_by_address(&addr, keystore_path) {
         Ok((_, kf)) => {
             if let Ok(pk) = kf.decrypt_key(&transaction.passphrase) {
                 let transaction = RPCTransaction {
