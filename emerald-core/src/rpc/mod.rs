@@ -18,7 +18,9 @@ use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
     if value.is_err() {
@@ -69,7 +71,7 @@ pub fn start(
     let keystore_path = Arc::new(default_keystore_path(&chain.id));
 
     let wallet_manager = match WManager::new(None) {
-        Ok(wm) => Arc::new(wm),
+        Ok(wm) => Mutex::new(RefCell::new(wm)),
         Err(e) => panic!("Unable to create wallet manager: {}", e.to_string()),
     };
 
@@ -155,7 +157,7 @@ pub fn start(
     {
         let keystore_path = keystore_path.clone();
         let chain_id = to_chain_id(chain_name).unwrap();
-        let wallet_manager = wallet_manager.clone();
+//        let wallet_manager = wallet_manager.clone();
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,

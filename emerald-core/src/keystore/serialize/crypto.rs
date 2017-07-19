@@ -285,7 +285,7 @@ mod tests {
 
     #[test]
     fn should_serialize_pbkdf2_crypto() {
-        let exp = Crypto {
+        let exp = CoreCrypto {
             cipher: Cipher::default(),
             cipher_text: Vec::from_hex(
                 "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126",
@@ -307,17 +307,17 @@ mod tests {
         };
 
         // just first encoding
-        let act = json::decode::<Crypto>(PBKDF2_TEXT).unwrap();
+        let act = json::decode::<CoreCrypto>(PBKDF2_TEXT).unwrap();
 
         // verify encoding & decoding full cycle logic
-        let act = json::decode::<Crypto>(&json::encode(&act).unwrap()).unwrap();
+        let act = json::decode::<CoreCrypto>(&json::encode(&act).unwrap()).unwrap();
 
         assert_eq!(act, exp);
     }
 
     #[test]
     fn should_serialize_scrypt_crypto() {
-        let exp = Crypto {
+        let exp = CoreCrypto {
             cipher: Cipher::default(),
             cipher_text: Vec::from_hex(
                 "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
@@ -340,10 +340,10 @@ mod tests {
         };
 
         // just first encoding
-        let act = json::decode::<Crypto>(SCRYPT_TEXT).unwrap();
+        let act = json::decode::<CoreCrypto>(SCRYPT_TEXT).unwrap();
 
         // verify encoding & decoding full cycle logic
-        let act = json::decode::<Crypto>(&json::encode(&act).unwrap()).unwrap();
+        let act = json::decode::<CoreCrypto>(&json::encode(&act).unwrap()).unwrap();
 
         assert_eq!(act, exp);
     }
@@ -352,18 +352,18 @@ mod tests {
     fn should_not_decode_unknown_kdf_prf() {
         let text = PBKDF2_TEXT.replace(&Prf::default().to_string(), "unknown");
 
-        assert!(json::decode::<Crypto>(&text).is_err());
+        assert!(json::decode::<CoreCrypto>(&text).is_err());
     }
 
     #[test]
     fn should_not_decode_unknown_cipher() {
         let text = SCRYPT_TEXT.replace(&Cipher::default().to_string(), "unknown");
 
-        assert!(json::decode::<Crypto>(&text).is_err());
+        assert!(json::decode::<CoreCrypto>(&text).is_err());
     }
 
     #[test]
     fn should_not_decode_not_wrong_crypto() {
-        assert!(json::decode::<Crypto>("garbage").is_err());
+        assert!(json::decode::<CoreCrypto>("garbage").is_err());
     }
 }
