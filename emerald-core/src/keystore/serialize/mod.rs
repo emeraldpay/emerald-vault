@@ -7,7 +7,7 @@ mod crypto;
 mod error;
 
 use self::address::try_extract_address;
-pub use self::crypto::{CoreCrypto, Iv, Mac, decode_str};
+pub use self::crypto::{CoreCrypto, Iv, Mac, Salt, decode_str};
 use self::error::Error;
 use super::{CIPHER_IV_BYTES, Cipher, CryptoType, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::HdwalletCrypto;

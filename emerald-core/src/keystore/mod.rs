@@ -13,7 +13,8 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::{Kdf, KdfDepthLevel};
 pub use self::prf::Prf;
-pub use self::serialize::{CoreCrypto, Iv, Mac, decode_str, hide, list_accounts, unhide};
+pub use self::serialize::{CoreCrypto, Iv, Mac, Salt,
+                          decode_str, hide, list_accounts, unhide};
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
 use hdwallet::HdwalletCrypto;
@@ -258,7 +259,12 @@ mod tests {
         let kf = KeyFile::new_custom(pk, "1234567890", kdf, &mut rand::thread_rng(), None, None)
             .unwrap();
 
-        assert_eq!(kf.kdf, kdf);
+        if let CryptoType::Core(ref core) = kf.crypto {
+            assert_eq!(core.kdf, kdf);
+        } else {
+            assert!(false);
+        }
+
         assert_eq!(kf.decrypt_key("1234567890").unwrap(), pk);
     }
 }

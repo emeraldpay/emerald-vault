@@ -11,6 +11,8 @@ use serde_json;
 use std::path::PathBuf;
 use std::str::FromStr;
 use util;
+use std::cell::RefCell;
+use std::sync::Mutex;
 
 fn to_chain_id(chain: &str, chain_id: Option<usize>, default_id: u8) -> u8 {
     if chain_id.is_some() {
@@ -326,7 +328,7 @@ pub fn sign_transaction(
     >,
     keystore_path: &PathBuf,
     default_chain_id: u8,
-    wallet_manager: &WManager,
+    wallet_manager: &Mutex<RefCell<WManager>>,
 ) -> Result<Params, Error> {
     let (transaction, additional) = params.into_full();
     let addr = Address::from_str(&transaction.from)?;
@@ -370,6 +372,9 @@ pub fn sign_transaction(
                         }
 
                         CryptoType::HdWallet(_) => {
+                            let quard = wallet_manager.lock().unwrap();
+                            let mut wm = quard.borrow_mut();
+
                             if additional.hd_path.is_none() {
                                 return Err(Error::InvalidDataFormat(
                                     "Can't sign with HD wallet. No path given".to_string(),
@@ -385,10 +390,17 @@ pub fn sign_transaction(
                                 }
                             };
 
+                            if let Err(e) = wm.update(Some(hd_path.clone())) {
+                                return Err(Error::InvalidDataFormat(
+                                    format!("Can't update HD wallets list : {}", e.to_string()),
+                                ))
+                            }
+
+                            debug!("Selected hd path: {:?}", &hd_path);
                             let mut err = String::new();
                             let rlp = tr.to_rlp().tail;
-                            for (addr, fd) in wallet_manager.devices() {
-                                match wallet_manager.sign_transaction(
+                            for (addr, fd) in wm.devices() {
+                                match wm.sign_transaction(
                                     &fd,
                                     &rlp,
                                     Some(hd_path.clone()),

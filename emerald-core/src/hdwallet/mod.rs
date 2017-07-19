@@ -250,7 +250,7 @@ mod tests {
 
     #[test]
     pub fn should_sign_with_ledger() {
-        let mut manager = WManager::new(&ETC_DERIVATION_PATH).unwrap();
+        let mut manager = WManager::new(Some(&ETC_DERIVATION_PATH)).unwrap();
         manager.update(None).unwrap();
 
         if manager.devices().is_empty() {
@@ -307,7 +307,7 @@ mod tests {
 
     #[test]
     pub fn should_get_address_with_ledger() {
-        let mut manager = WManager::new(&ETC_DERIVATION_PATH).unwrap();
+        let mut manager = WManager::new(Some(&ETC_DERIVATION_PATH)).unwrap();
         manager.update(None).unwrap();
 
         if manager.devices().is_empty() {
@@ -325,15 +325,14 @@ mod tests {
     pub fn should_pick_hd_path() {
         let buf1 = vec![0];
         let buf2 = vec![1];
-        let mut manager;
 
-        manager = WManager::new(None).unwrap();
-        assert_eq!(manager.pick_hd_path(Some(buf1)), buf1);
+        let mut manager = WManager::new(None).unwrap();
+        assert_eq!(manager.pick_hd_path(Some(buf1.clone())).unwrap(), buf1);
 
-        manager = WManager::new(Some(buf1)).unwrap();
-        assert_eq!(manager.pick_hd_path(Some(buf2)), buf2, );
+        manager = WManager::new(Some(&buf1)).unwrap();
+        assert_eq!(manager.pick_hd_path(Some(buf2.clone())).unwrap(), buf2);
 
-        manager = WManager::new(Some(buf1)).unwrap();
-        assert_eq!(manager.pick_hd_path(None), buf1);
+        manager = WManager::new(Some(&buf1)).unwrap();
+        assert_eq!(manager.pick_hd_path(None).unwrap(), buf1);
     }
 }
