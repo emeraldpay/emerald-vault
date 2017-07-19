@@ -2,7 +2,7 @@ use super::Error;
 use keystore::{CryptoType, KeyFile, decode_str};
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 
-/// Keyfile for HD Wallet
+/// `Keyfile` for HD Wallet
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct HdwalletCrypto {
     /// Cipher type 'hardware'
@@ -11,7 +11,7 @@ pub struct HdwalletCrypto {
     /// HD Wallet type
     pub hardware: String,
 
-    /// HD path
+    /// HD path as specified in BIP-32
     pub hd_path: String,
 }
 
@@ -26,6 +26,8 @@ impl Default for HdwalletCrypto {
 }
 
 impl HdwalletCrypto {
+    /// Try to convert from `Keyfile`
+    /// Fail if type of `crypto` section than `Self`
     ///
     pub fn try_from(kf: KeyFile) -> Result<Self, Error> {
         match kf.crypto {

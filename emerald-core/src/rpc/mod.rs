@@ -9,6 +9,7 @@ use super::core;
 use super::keystore::KdfDepthLevel;
 use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_chain_id, to_even_str, to_u64, trim_hex};
+use hdwallet::WManager;
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::LogLevel;
@@ -66,6 +67,11 @@ pub fn start(
         panic!("Unable to initialize chain");
     }
     let keystore_path = Arc::new(default_keystore_path(&chain.id));
+
+    let wallet_manager = match WManager::new(None) {
+        Ok(wm) => Arc::new(wm),
+        Err(e) => panic!("Unable to create wallet manager: {}", e.to_string()),
+    };
 
     let mut io = IoHandler::default();
 
@@ -149,11 +155,13 @@ pub fn start(
     {
         let keystore_path = keystore_path.clone();
         let chain_id = to_chain_id(chain_name).unwrap();
+        let wallet_manager = wallet_manager.clone();
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,
                 &keystore_path,
                 chain_id,
+                &wallet_manager,
             ))
         });
     }

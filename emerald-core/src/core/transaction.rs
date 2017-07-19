@@ -1,6 +1,6 @@
 //! # Account transaction
 
-use super::{Address, Error, PrivateKey};
+use super::{Address, Error, PrivateKey, Signature};
 use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
 
 /// Transaction data
@@ -28,9 +28,13 @@ pub struct Transaction {
 impl Transaction {
     /// Sign transaction data with provided private key
     pub fn to_signed_raw(&self, pk: PrivateKey, chain: u8) -> Result<Vec<u8>, Error> {
-        let mut rlp = self.to_rlp();
+        let sig = pk.sign_hash(self.hash(chain))?;
+        Ok(self.raw_from_sig(chain, sig))
+    }
 
-        let mut sig = pk.sign_hash(self.hash(chain))?;
+    /// RLP packed signed transaction from provided `Signature`
+    pub fn raw_from_sig(&self, chain: u8, mut sig: Signature) -> Vec<u8> {
+        let mut rlp = self.to_rlp();
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
         sig.v += chain * 2 + 35 - 27;
@@ -41,24 +45,11 @@ impl Transaction {
 
         let mut vec = Vec::new();
         rlp.write_rlp(&mut vec);
-        Ok(vec)
+
+        vec
     }
 
-    ///
-    pub fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
-        let mut rlp = self.to_rlp();
-
-        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        rlp.push(&chain);
-        rlp.push(&[][..]);
-        rlp.push(&[][..]);
-
-        let mut vec = Vec::new();
-        rlp.write_rlp(&mut vec);
-        keccak256(&vec)
-    }
-
-    ///
+    /// Pack transaction into `RLP` format
     pub fn to_rlp(&self) -> RLPList {
         let mut data = RLPList::default();
 
@@ -75,6 +66,19 @@ impl Transaction {
         data.push(self.data.as_slice());
 
         data
+    }
+
+    fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
+        let mut rlp = self.to_rlp();
+
+        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
+        rlp.push(&chain);
+        rlp.push(&[][..]);
+        rlp.push(&[][..]);
+
+        let mut vec = Vec::new();
+        rlp.write_rlp(&mut vec);
+        keccak256(&vec)
     }
 }
 

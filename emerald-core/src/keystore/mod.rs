@@ -111,6 +111,13 @@ impl KeyFile {
             ..Default::default()
         };
 
+        match kf.crypto {
+            CryptoType::Core(ref mut core) => {
+                core.kdf = kdf;
+            }
+            _ => (),
+        }
+
         kf.encrypt_key_custom(pk, passphrase, rng);
         kf.address = kf.decrypt_address(passphrase)?;
 
