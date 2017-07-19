@@ -1,9 +1,9 @@
 //! # Serialize JSON RPC parameters
 
 use super::{Error, ToHex, align_bytes, to_arr, to_even_str, to_u64, trim_hex};
-use super::core::{Address, PrivateKey, Transaction};
+use super::core::{Address, Transaction};
 use hex::FromHex;
-use jsonrpc_core::{Params, Value as JValue};
+use jsonrpc_core::{Params, Value as JsonRpcValue};
 
 #[derive(Deserialize, Debug)]
 pub struct RPCTransaction {
@@ -41,11 +41,16 @@ impl RPCTransaction {
 }
 
 impl Transaction {
-    /// Sign transaction and return as raw data
-    pub fn to_raw_params(&self, pk: PrivateKey, chain: u8) -> Params {
-        self.to_signed_raw(pk, chain)
-            .map(|v| format!("0x{}", v.to_hex()))
-            .map(|s| Params::Array(vec![JValue::String(s)]))
-            .expect("Expect to sign a transaction")
+    //    /// Sign transaction and return as raw data
+    //    pub fn to_raw_params(&self, pk: PrivateKey, chain: u8) -> Params {
+    //        self.to_signed_raw(pk, chain)
+    //            .map(|v| format!("0x{}", v.to_hex()))
+    //            .map(|s| Params::Array(vec![JsonRpcValue::String(s)]))
+    //            .expect("Expect to sign a transaction")
+    //    }
+    /// Signed transaction into raw data
+    pub fn to_raw_params(signed_rlp: Vec<u8>) -> Params {
+        let str = format!("0x{}", signed_rlp.to_hex());
+        Params::Array(vec![JsonRpcValue::String(str)])
     }
 }

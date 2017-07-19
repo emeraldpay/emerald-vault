@@ -22,7 +22,11 @@ use std::str::{FromStr, from_utf8};
 const GET_ETH_ADDRESS: u8 = 0x02;
 const SIGN_ETH_TRANSACTION: u8 = 0x04;
 const CHUNK_SIZE: usize = 255;
-const ETC_DERIVATION_PATH: [u8; 21] = [
+
+const LEDGER_VID: u16 = 0x2c97;
+const LEDGER_PID: u16 = 0x0001; // for Nano S model
+
+pub const ETC_DERIVATION_PATH: [u8; 21] = [
     5,
     0x80,
     0,
@@ -45,9 +49,6 @@ const ETC_DERIVATION_PATH: [u8; 21] = [
     0,
     0,
 ]; // 44'/60'/160720'/0'/0
-
-const LEDGER_VID: u16 = 0x2c97;
-const LEDGER_PID: u16 = 0x0001; // for Nano S model
 
 
 /// Type used for device listing,
@@ -89,15 +90,21 @@ pub struct WManager {
     /// List of available wallets
     devices: Vec<Device>,
     /// Derivation path
-    hd_path: Vec<u8>,
+    hd_path: Option<Vec<u8>>,
 }
 
 impl WManager {
     /// Creates new `Wallet Manager` with a specified
     /// derivation path
-    pub fn new(dpath: &[u8]) -> Result<WManager, Error> {
-        let mut p: Vec<u8> = Vec::new();
-        p.extend_from_slice(dpath);
+    pub fn new(hd_path: Option<&[u8]>) -> Result<WManager, Error> {
+        let p = match hd_path {
+            Some(p) => {
+                let mut buf = Vec::new();
+                buf.extend_from_slice(p);
+                Some(buf)
+            }
+            _ => None,
+        };
 
         Ok(Self {
             hid: HidApi::new()?,
@@ -106,10 +113,21 @@ impl WManager {
         })
     }
 
+    /// Decides what HD path to use
+    fn pick_hd_path(&self, h: Option<Vec<u8>>) -> Result<Vec<u8>, Error> {
+        if self.hd_path.is_none() && h.is_none() {
+            return Err(Error::HDWalletError("HD path is not specified".to_string()));
+        }
+
+        Ok(h.unwrap_or(self.hd_path.clone().unwrap()))
+    }
+
     ///
-    pub fn get_address(&self, fd: &str) -> Result<Address, Error> {
+    pub fn get_address(&self, fd: &str, hd_path: Option<Vec<u8>>) -> Result<Address, Error> {
+        let hd_path = self.pick_hd_path(hd_path)?;
+
         let apdu = ApduBuilder::new(GET_ETH_ADDRESS)
-            .with_data(&self.hd_path)
+            .with_data(&hd_path)
             .build();
 
         let handle = self.open(fd)?;
@@ -137,16 +155,23 @@ impl WManager {
     }
 
     /// Sign hash for transaction
-    pub fn sign_transaction(&self, fd: &str, tr: &[u8]) -> Result<Signature, Error> {;
+    pub fn sign_transaction(
+        &self,
+        fd: &str,
+        tr: &[u8],
+        hd_path: Option<Vec<u8>>,
+    ) -> Result<Signature, Error> {;
+        let hd_path = self.pick_hd_path(hd_path)?;
+
         let _mock = Vec::new();
         let (init, cont) = match tr.len() {
             0...CHUNK_SIZE => (tr, _mock.as_slice()),
-            _ => tr.split_at(CHUNK_SIZE - self.hd_path.len()),
+            _ => tr.split_at(CHUNK_SIZE - hd_path.len()),
         };
 
         let init_apdu = ApduBuilder::new(SIGN_ETH_TRANSACTION)
             .with_p1(0x00)
-            .with_data(&self.hd_path)
+            .with_data(&hd_path)
             .with_data(init)
             .build();
 
@@ -182,7 +207,9 @@ impl WManager {
     }
 
     /// Update device list
-    pub fn update(&mut self) -> Result<(), Error> {
+    pub fn update(&mut self, hd_path: Option<Vec<u8>>) -> Result<(), Error> {
+        let hd_path = self.pick_hd_path(hd_path)?;
+
         self.hid.refresh_devices();
         let mut new_devices = Vec::new();
 
@@ -191,7 +218,7 @@ impl WManager {
                 continue;
             }
             let mut d = Device::from(hid_info);
-            d.address = self.get_address(&d.fd)?;
+            d.address = self.get_address(&d.fd, Some(hd_path.clone()))?;
             new_devices.push(d);
         }
         self.devices = new_devices;
@@ -223,6 +250,14 @@ mod tests {
 
     #[test]
     pub fn should_sign_with_ledger() {
+        let mut manager = WManager::new(&ETC_DERIVATION_PATH).unwrap();
+        manager.update(None).unwrap();
+
+        if manager.devices().is_empty() {
+            // No device connected, skip test
+            return;
+        }
+
         let tx = Transaction {
             nonce: 0x00,
             gas_price: /* 21000000000 */
@@ -261,14 +296,11 @@ mod tests {
         // a0
         // 6eab3be528ef7565c887e147a2d53340c6c9fab5d6f56694681c90b518b64183
         let rlp = tx.to_rlp().tail;
-        let mut manager = WManager::new(&ETC_DERIVATION_PATH).unwrap();
-        manager.update().unwrap();
-
         let fd = &manager.devices()[0].1;
 
 
         println!("RLP: {:?}", &rlp.to_hex());
-        let sign = manager.sign_transaction(&fd, &rlp).unwrap();
+        let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
         println!("Signature: {:?}", &sign);
 
     }
@@ -276,11 +308,32 @@ mod tests {
     #[test]
     pub fn should_get_address_with_ledger() {
         let mut manager = WManager::new(&ETC_DERIVATION_PATH).unwrap();
-        manager.update().unwrap();
+        manager.update(None).unwrap();
+
+        if manager.devices().is_empty() {
+            // No device connected, skip test
+            return;
+        }
 
         let fd = &manager.devices()[0].1;
-        let addr = manager.get_address(fd).unwrap();
+        let addr = manager.get_address(fd, None).unwrap();
 
         assert_eq!("78296f1058dd49c5d6500855f59094f0a2876397", addr.to_hex());
+    }
+
+    #[test]
+    pub fn should_pick_hd_path() {
+        let buf1 = vec![0];
+        let buf2 = vec![1];
+        let mut manager;
+
+        manager = WManager::new(None).unwrap();
+        assert_eq!(manager.pick_hd_path(Some(buf1)), buf1);
+
+        manager = WManager::new(Some(buf1)).unwrap();
+        assert_eq!(manager.pick_hd_path(Some(buf2)), buf2, );
+
+        manager = WManager::new(Some(buf1)).unwrap();
+        assert_eq!(manager.pick_hd_path(None), buf1);
     }
 }

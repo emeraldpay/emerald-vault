@@ -1,7 +1,9 @@
 use super::Error;
 use super::serialize::RPCTransaction;
 
-use core::Address;
+use core::{Address, Transaction};
+use hdwallet::WManager;
+use hex::FromHex;
 use jsonrpc_core::{Params, Value};
 use keystore::{self, CryptoType, KdfDepthLevel, KeyFile};
 use rustc_serialize::json as rustc_json;
@@ -81,6 +83,8 @@ pub struct ListAccountsAdditional {
     chain_id: Option<usize>,
     #[serde(default)]
     show_hidden: bool,
+    #[serde(default)]
+    hd_path: Option<String>,
 }
 
 pub fn list_accounts(
@@ -230,7 +234,7 @@ pub fn import_account(
 ) -> Result<String, Error> {
     let (raw, _) = params.into_full();
     let raw = serde_json::to_string(&raw)?;
-    let kf: KeyFile = rustc_json::decode(&raw)?;
+    let kf: KeyFile = rustc_json::decode(&raw.to_lowercase())?;
     kf.flush(keystore_path)?;
     debug!("Account imported: {}", kf.address);
 
@@ -305,10 +309,24 @@ pub struct SignTransactionTransaction {
     pub passphrase: String,
 }
 
+#[derive(Deserialize, Default, Debug)]
+pub struct SignTransactionAdditional {
+    #[serde(default)]
+    chain: String,
+    #[serde(default)]
+    chain_id: Option<usize>,
+    #[serde(default)]
+    hd_path: Option<String>,
+}
+
 pub fn sign_transaction(
-    params: Either<(SignTransactionTransaction,), (SignTransactionTransaction, CommonAdditional)>,
+    params: Either<
+        (SignTransactionTransaction,),
+        (SignTransactionTransaction, SignTransactionAdditional),
+    >,
     keystore_path: &PathBuf,
     default_chain_id: u8,
+    wallet_manager: &WManager,
 ) -> Result<Params, Error> {
     let (transaction, additional) = params.into_full();
     let addr = Address::from_str(&transaction.from)?;
@@ -319,40 +337,97 @@ pub fn sign_transaction(
 
     match KeyFile::search_by_address(&addr, keystore_path) {
         Ok((_, kf)) => {
-            if let Ok(pk) = kf.decrypt_key(&transaction.passphrase) {
-                let transaction = RPCTransaction {
-                    from: transaction.from,
-                    to: transaction.to,
-                    gas: transaction.gas,
-                    gas_price: transaction.gas_price,
-                    value: transaction.value,
-                    data: transaction.data,
-                    nonce: transaction.nonce,
-                };
-                debug!(
-                    "Signed transaction from: {} to: {}",
-                    transaction.from,
-                    transaction.to
-                );
-                match transaction.try_into() {
-                    Ok(tr) => {
-                        let signed = tr.to_raw_params(
-                            pk,
-                            to_chain_id(
-                                &additional.chain,
-                                additional.chain_id,
-                                default_chain_id,
-                            ),
-                        );
-                        debug!("\n\t raw: {:?}", signed);
-                        Ok(signed)
+            let rpc_transaction = RPCTransaction {
+                from: transaction.from,
+                to: transaction.to,
+                gas: transaction.gas,
+                gas_price: transaction.gas_price,
+                value: transaction.value,
+                data: transaction.data,
+                nonce: transaction.nonce,
+            };
+            let chain_id = to_chain_id(&additional.chain, additional.chain_id, default_chain_id);
+            match rpc_transaction.try_into() {
+                Ok(tr) => {
+                    match kf.crypto {
+                        CryptoType::Core(_) => {
+                            if let Ok(pk) = kf.decrypt_key(&transaction.passphrase) {
+                                let raw = tr.to_signed_raw(pk, chain_id).expect(
+                                    "Expect to sign a \
+                                     transaction",
+                                );
+                                let signed = Transaction::to_raw_params(raw);
+                                debug!(
+                                    "Signed by emerald transaction to: {:?}\n\t raw: {:?}",
+                                    &tr.to,
+                                    signed
+                                );
+
+                                Ok(signed)
+                            } else {
+                                Err(Error::InvalidDataFormat("Invalid passphrase".to_string()))
+                            }
+                        }
+
+                        CryptoType::HdWallet(_) => {
+                            if additional.hd_path.is_none() {
+                                return Err(Error::InvalidDataFormat(
+                                    "Can't sign with HD wallet. No path given".to_string(),
+                                ));
+                            };
+
+                            let hd_path = match Vec::from_hex(additional.hd_path.unwrap()) {
+                                Ok(hd) => hd,
+                                Err(e) => {
+                                    return Err(Error::InvalidDataFormat(
+                                        format!("Invalid hd path format: {}", e.to_string()),
+                                    ))
+                                }
+                            };
+
+                            let mut err = String::new();
+                            let rlp = tr.to_rlp().tail;
+                            for (addr, fd) in wallet_manager.devices() {
+                                match wallet_manager.sign_transaction(
+                                    &fd,
+                                    &rlp,
+                                    Some(hd_path.clone()),
+                                ) {
+                                    Ok(s) => {
+                                        let raw = tr.raw_from_sig(chain_id, s);
+                                        let signed = Transaction::to_raw_params(raw);
+                                        debug!(
+                                            "HD wallet addr:{:?} path: {:?} signed transaction to: \
+                                             {:?}\n\t raw: {:?}",
+                                            addr,
+                                            fd,
+                                            &tr.to,
+                                            signed
+                                        );
+                                        return Ok(signed);
+                                    }
+                                    Err(e) => {
+                                        err = format!(
+                                            "{}\nWallet addr:{} on path:{}, can't sign \
+                                             transaction: {}",
+                                            err,
+                                            addr,
+                                            fd,
+                                            e.to_string()
+                                        );
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            return Err(Error::InvalidDataFormat(err));
+                        }
                     }
-                    Err(err) => Err(Error::InvalidDataFormat(err.to_string())),
                 }
-            } else {
-                Err(Error::InvalidDataFormat("Invalid passphrase".to_string()))
+                Err(err) => Err(Error::InvalidDataFormat(err.to_string())),
             }
         }
+
         Err(_) => Err(Error::InvalidDataFormat("Can't find account".to_string())),
     }
 }
