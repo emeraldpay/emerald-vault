@@ -11,6 +11,8 @@ notifications:
   email:
     on_success: never
 before_install:
+- sudo apt-get -qq update
+- sudo apt-get install -y libusb-1.0-0-dev
 - travis_wait cargo install rustfmt --force || true
 before_script:
 - export PATH="$PATH":~/.cargo/bin
