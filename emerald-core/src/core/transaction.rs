@@ -64,10 +64,6 @@ impl Transaction {
 
         data.push(trim_bytes(&self.value));
         data.push(self.data.as_slice());
-        data.push(&(1 as u8));
-        data.push(&(0 as u8));
-        //        data.push(&(0 as u8));
-
 
         data
     }

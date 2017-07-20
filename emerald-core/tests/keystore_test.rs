@@ -6,7 +6,7 @@ extern crate uuid;
 extern crate tempdir;
 
 use emerald::{Address, KECCAK256_BYTES};
-use emerald::keystore::{CIPHER_IV_BYTES, Cipher, CoreCrypto, CryptoType, Iv, KDF_SALT_BYTES, Kdf,
+use emerald::keystore::{CIPHER_IV_BYTES, Cipher, CoreCrypto, HdwalletCrypto, CryptoType, Iv, KDF_SALT_BYTES, Kdf,
                         KdfDepthLevel, KeyFile, Mac, Prf, Salt};
 use hex::FromHex;
 use rustc_serialize::json;
@@ -63,7 +63,7 @@ fn should_decrypt_private_key_protected_by_scrypt() {
         "UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc",
     );
 
-    let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
+    let keyfile = KeyFile::decode(file_content(path)).unwrap();
 
     assert!(keyfile.decrypt_key("_").is_err());
     assert_eq!(
@@ -78,7 +78,7 @@ fn should_decrypt_private_key_protected_by_pbkdf2() {
         "UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9",
     );
 
-    let keyfile = json::decode::<KeyFile>(&file_content(path)).unwrap();
+    let keyfile = KeyFile::decode(file_content(path)).unwrap();
 
     assert!(keyfile.decrypt_key("_").is_err());
     assert_eq!(
@@ -132,10 +132,10 @@ fn should_decode_keyfile_without_address() {
     };
 
     // just first encoding
-    let key = json::decode::<KeyFile>(&file_content(path)).unwrap();
+    let key = KeyFile::decode(file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
+    let key = KeyFile::decode(json::encode(&key).unwrap()).unwrap();
 
     if let CryptoType::Core(ref exp_core) = exp.crypto {
         if let CryptoType::Core(ref recv_core) = key.crypto {
@@ -199,10 +199,10 @@ fn should_decode_keyfile_with_address() {
     };
 
     // just first encoding
-    let key = json::decode::<KeyFile>(&file_content(path)).unwrap();
+    let key = KeyFile::decode(file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = json::decode::<KeyFile>(&json::encode(&key).unwrap()).unwrap();
+    let key = KeyFile::decode(json::encode(&key).unwrap()).unwrap();
 
     if let CryptoType::Core(ref exp_core) = exp.crypto {
         if let CryptoType::Core(ref recv_core) = key.crypto {
@@ -214,6 +214,45 @@ fn should_decode_keyfile_with_address() {
             assert_eq!(recv_core.cipher_text, exp_core.cipher_text);
             assert_eq!(recv_core.cipher_params.iv, exp_core.cipher_params.iv);
             assert_eq!(recv_core.mac, exp_core.mac);
+        } else {
+            assert!(false, "Invalid Crypto type")
+        }
+    }
+}
+
+#[test]
+fn should_decode_hd_wallet_keyfile() {
+    let path = keyfile_path(
+        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5",
+    );
+
+    let mut crypto = HdwalletCrypto::default();
+    crypto.cipher = "hardware".to_string();
+    crypto.hardware = "ledger-nano-s:v1".to_string();
+    crypto.hd_path = "44'/61'/0'/0/0".to_string();
+
+    let exp = KeyFile {
+        visible: None,
+        name: None,
+        description: None,
+        address: Address::from_str("01234567890abcdef1234567890abcdef1234567").unwrap(),
+        uuid: Uuid::from_str("a928d7c2-b37b-464c-a70b-b9979d59fac5").unwrap(),
+        crypto: CryptoType::HdWallet(crypto),
+    };
+
+    // just first encoding
+    let key = KeyFile::decode(file_content(path)).unwrap();
+
+    // verify encoding & decoding full cycle logic
+    let key = KeyFile::decode(json::encode(&key).unwrap()).unwrap();
+
+    if let CryptoType::HdWallet(ref exp_hd) = exp.crypto {
+        if let CryptoType::HdWallet(ref recv_hd) = key.crypto {
+            assert_eq!(key, exp);
+            assert_eq!(key.visible, exp.visible);
+            assert_eq!(recv_hd.cipher, exp_hd.cipher);
+            assert_eq!(recv_hd.hardware, exp_hd.hardware);
+            assert_eq!(recv_hd.hd_path, exp_hd.hd_path);
         } else {
             assert!(false, "Invalid Crypto type")
         }

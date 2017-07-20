@@ -236,8 +236,10 @@ pub fn import_account(
 ) -> Result<String, Error> {
     let (raw, _) = params.into_full();
     let raw = serde_json::to_string(&raw)?;
-    let kf: KeyFile = rustc_json::decode(&raw.to_lowercase())?;
+
+    let kf = KeyFile::decode(raw.to_lowercase())?;
     kf.flush(keystore_path)?;
+
     debug!("Account imported: {}", kf.address);
 
     Ok(format!("{}", kf.address))

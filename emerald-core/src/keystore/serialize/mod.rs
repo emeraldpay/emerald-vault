@@ -13,7 +13,7 @@ use super::{CIPHER_IV_BYTES, Cipher, CryptoType, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::HdwalletCrypto;
 use super::core::{self, Address};
 use super::util;
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
+use rustc_serialize::{Encodable, Encoder, json};
 use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -27,7 +27,7 @@ pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
 
 /// A serializable keystore file (UTC / JSON format)
 #[derive(Clone, Debug, RustcDecodable, RustcEncodable)]
-struct SerializableKeyFileCore {
+pub struct SerializableKeyFileCore {
     version: u8,
     id: Uuid,
     address: Address,
@@ -68,7 +68,7 @@ impl Into<KeyFile> for SerializableKeyFileCore {
 
 /// A serializable keystore file (UTC / JSON format)
 #[derive(Clone, Debug, RustcDecodable, RustcEncodable)]
-struct SerializableKeyFileHD {
+pub struct SerializableKeyFileHD {
     version: u8,
     id: Uuid,
     address: Address,
@@ -108,6 +108,22 @@ impl Into<KeyFile> for SerializableKeyFileHD {
 }
 
 impl KeyFile {
+    /// Decode `Keyfile` from JSON
+    /// Handles different variants of `crypto` section
+    ///
+    pub fn decode(f: String) -> Result<KeyFile, Error> {
+        let buf1 = f.clone();
+        let buf2 = f.clone();
+
+        let kf = json::decode::<SerializableKeyFileCore>(&buf1)
+            .and_then(|core| Ok(core.into()))
+            .or_else(|_| json::decode::<SerializableKeyFileHD>(&buf2)
+                .and_then(|hd| Ok(hd.into()))
+            )?;
+
+        Ok(kf)
+    }
+
     /// Serializes into JSON file with the name format `UTC--<timestamp>Z--<uuid>`
     ///
     /// # Arguments
@@ -152,7 +168,7 @@ impl KeyFile {
 
             match try_extract_address(&content) {
                 Some(a) if a == *addr => {
-                    let kf = json::decode::<KeyFile>(&content)?;
+                    let kf = KeyFile::decode(content)?;
                     return Ok((path.to_owned(), kf));
                 }
                 _ => continue,
@@ -160,43 +176,6 @@ impl KeyFile {
         }
 
         Err(Error::NotFound)
-    }
-}
-
-
-//let kf = SerializableKeyFileCore::decode(d)
-//.or_else(|_|  SerializableKeyFileHD::decode(d))
-//.and_then(|sf| {
-//if !SUPPORTED_VERSIONS.contains(&sf.version) {
-//return Err(d.error(&Error::UnsupportedVersion(sf.version).to_string()));
-//}
-//sf.into()
-//})?;
-//Ok(kf)
-
-impl Decodable for KeyFile {
-    fn decode<D: Decoder>(d: &mut D) -> Result<KeyFile, D::Error> {
-        let kf = match SerializableKeyFileCore::decode(d) {
-            Ok(sf) => {
-                if !SUPPORTED_VERSIONS.contains(&sf.version) {
-                    return Err(d.error(&Error::UnsupportedVersion(sf.version).to_string()));
-                }
-                sf.into()
-            }
-            Err(_) => {
-                match SerializableKeyFileHD::decode(d) {
-                    Ok(sf) => {
-                        if !SUPPORTED_VERSIONS.contains(&sf.version) {
-                            return Err(d.error(&Error::UnsupportedVersion(sf.version).to_string()));
-                        }
-                        sf.into()
-                    }
-                    Err(e) => return Err(e),
-                }
-            }
-        };
-
-        Ok(kf)
     }
 }
 
@@ -266,7 +245,7 @@ pub fn list_accounts<P: AsRef<Path>>(
                 continue;
             }
 
-            match json::decode::<KeyFile>(&content) {
+            match KeyFile::decode(content) {
                 Ok(kf) => {
                     if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
                         match kf.name {
@@ -337,7 +316,7 @@ mod tests {
           "id": "9bec4728-37f9-4444-9990-2ba70ee038e9"
         }"#;
 
-        assert!(json::decode::<KeyFile>(str).is_err());
+        assert!(KeyFile::decode(str.to_string()).is_err());
     }
 
     #[test]
@@ -347,7 +326,7 @@ mod tests {
           "id": "9bec4728-37f9-4444-9990-2ba70ee038e9"
         }"#;
 
-        assert!(json::decode::<KeyFile>(str).is_err());
+        assert!(KeyFile::decode(str.to_string()).is_err());
     }
 
     #[test]
@@ -357,14 +336,14 @@ mod tests {
           "id": "__ec4728-37f9-4444-9990-2ba70ee038e9"
         }"#;
 
-        assert!(json::decode::<KeyFile>(str).is_err());
+        assert!(KeyFile::decode(str.to_string()).is_err());
     }
 
     #[test]
     fn should_catch_absent_keyfile_uuid() {
         let str = r#"{"version": 3}"#;
 
-        assert!(json::decode::<KeyFile>(str).is_err());
+        assert!(KeyFile::decode(str.to_string()).is_err());
     }
 
     #[test]
