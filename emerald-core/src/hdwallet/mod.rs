@@ -298,7 +298,7 @@ mod tests {
         let rlp = tx.to_rlp().tail;
         let fd = &manager.devices()[0].1;
         //        let rlp = Vec::from_hex("eb018504a817c80082520894a6ca\
-        //                2e6707f2cc189794a9dd459d5b05ed1bcd1c8703f26fcfb7a22480018080").tra
+        //                2e6707f2cc189794a9dd459d5b05ed1bcd1c8703f26fcfb7a22480018080").unwrap()
 
         println!("RLP: {:?}", &rlp.to_hex());
         let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
