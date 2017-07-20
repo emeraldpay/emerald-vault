@@ -14,8 +14,7 @@ pub trait WriteRLP {
 /// A list serializable to RLP
 #[derive(Debug)]
 pub struct RLPList {
-    ///
-    pub tail: Vec<u8>,
+    tail: Vec<u8>,
 }
 
 impl RLPList {
@@ -37,6 +36,12 @@ impl RLPList {
 impl Default for RLPList {
     fn default() -> RLPList {
         RLPList { tail: Vec::new() }
+    }
+}
+
+impl Into<Vec<u8>> for RLPList {
+    fn into(self) -> Vec<u8> {
+        self.tail
     }
 }
 

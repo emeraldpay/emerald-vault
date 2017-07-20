@@ -400,7 +400,7 @@ pub fn sign_transaction(
 
                             debug!("Selected hd path: {:?}", &hd_path);
                             let mut err = String::new();
-                            let rlp = tr.to_rlp().tail;
+                            let rlp = tr.to_rlp();
                             for (addr, fd) in wm.devices() {
                                 match wm.sign_transaction(&fd, &rlp, Some(hd_path.clone())) {
                                     Ok(s) => {

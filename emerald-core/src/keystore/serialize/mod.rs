@@ -114,12 +114,24 @@ impl KeyFile {
     pub fn decode(f: String) -> Result<KeyFile, Error> {
         let buf1 = f.clone();
         let buf2 = f.clone();
+        let mut ver = 0;
 
         let kf = json::decode::<SerializableKeyFileCore>(&buf1)
-            .and_then(|core| Ok(core.into()))
+            .and_then(|core| {
+                ver = core.version;
+                Ok(core.into())
+            })
             .or_else(|_| {
-                json::decode::<SerializableKeyFileHD>(&buf2).and_then(|hd| Ok(hd.into()))
-            })?;
+                json::decode::<SerializableKeyFileHD>(&buf2).and_then(|hd| {
+                    ver = hd.version;
+                    Ok(hd.into())
+                })
+            })
+            .map_err(|e| Error::from(e))?;
+
+        if !SUPPORTED_VERSIONS.contains(&ver) {
+            return Err(Error::UnsupportedVersion(ver));
+        }
 
         Ok(kf)
     }

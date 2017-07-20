@@ -26,6 +26,7 @@ const CHUNK_SIZE: usize = 255;
 const LEDGER_VID: u16 = 0x2c97;
 const LEDGER_PID: u16 = 0x0001; // for Nano S model
 
+#[allow(dead_code)]
 pub const ETC_DERIVATION_PATH: [u8; 21] = [
     5,
     0x80,
@@ -183,18 +184,20 @@ impl WManager {
                 .with_p1(0x80)
                 .with_data(chunk)
                 .build();
-
             res = sendrecv(&handle, &apdu_cont)?;
         }
 
         match res.len() {
             ECDSA_SIGNATURE_BYTES => {
-                //TODO: upgrade util::to_arr to handle array.len() > 32
                 let mut val: [u8; ECDSA_SIGNATURE_BYTES] = [0; ECDSA_SIGNATURE_BYTES];
                 val.copy_from_slice(&res);
                 Ok(Signature::from(val))
             }
-            _ => Err(Error::HDWalletError("Invalid signature length".to_string())),
+            v => Err(Error::HDWalletError(format!(
+                "Invalid signature length. Expected: {}, received: {}",
+                ECDSA_SIGNATURE_BYTES,
+                v
+            ))),
         }
     }
 
@@ -265,46 +268,21 @@ mod tests {
             to_32bytes("0000000000000000000000000000000\
                                           0000000000000000000000004e3b29200"),
             gas_limit: 0x5208,
-            to: Some("78296F1058dD49C5D6500855F59094F0a2876396"
+            to: Some("c0de379b51d582e1600c76dd1efee8ed024b844a"
                 .parse::<Address>()
                 .unwrap()),
             value: /* 1 ETC */
             to_32bytes("00000000000000000000000000000000\
-                                          00000000000000000de0b6b3a7640000"),
+                                          00000000000000000003f26fcfb7a224"),
             data: Vec::new(),
         };
 
-        /*
-            {
-                "nonce":"0x00",
-                "gasPrice":"0x04e3b29200",
-                "gasLimit":"0x5208",
-                "to":"0x78296F1058dD49C5D6500855F59094F0a2876397",
-                "value":"0x0de0b6b3a7640000",
-                "data":"",
-                "chainId":61,
-                "v":"0x9d",
-                "r":"0x5cba84eb9aac6854c8ff6aa21b3e0c6c2036e07ebdee44bcf7ace95bab569d8f",
-                "s":"0x6eab3be528ef7565c887e147a2d53340c6c9fab5d6f56694681c90b518b64183"
-            }
-        */
-
-        // 0xf86d808504e3b292008252089478296f1058dd49
-        // c5d6500855f59094f0a2876397880de0b6b3a76400008081
-        // 9d
-        // a0
-        // 5cba84eb9aac6854c8ff6aa21b3e0c6c2036e07ebdee44bcf7ace95bab569d8f
-        // a0
-        // 6eab3be528ef7565c887e147a2d53340c6c9fab5d6f56694681c90b518b64183
-        let rlp = tx.to_rlp().tail;
+        let rlp = tx.to_rlp();
         let fd = &manager.devices()[0].1;
-        //        let rlp = Vec::from_hex("eb018504a817c80082520894a6ca2e6707f2\
-        //                 cc189794a9dd459d5b05ed1bcd1c8703f26fcfb7a22480018080").unwrap()
+        let sign = manager.sign_transaction(&fd, &rlp, None);
 
-        println!("RLP: {:?}", &rlp.to_hex());
-        let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
-        println!("Signature: {:?}", &sign);
-
+        assert!(sign.is_ok());
+        println!("Signature: {:?}", &sign.unwrap());
     }
 
     #[test]

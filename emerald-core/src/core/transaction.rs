@@ -34,7 +34,7 @@ impl Transaction {
 
     /// RLP packed signed transaction from provided `Signature`
     pub fn raw_from_sig(&self, chain: u8, mut sig: Signature) -> Vec<u8> {
-        let mut rlp = self.to_rlp();
+        let mut rlp = self.to_rlp_raw();
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
         sig.v += chain * 2 + 35 - 27;
@@ -49,8 +49,20 @@ impl Transaction {
         vec
     }
 
-    /// Pack transaction into `RLP` format
-    pub fn to_rlp(&self) -> RLPList {
+    /// RLP packed transaction
+    pub fn to_rlp(&self) -> Vec<u8> {
+        let rlp: Vec<u8> = self.to_rlp_raw().into();
+        let mut buf = Vec::with_capacity(rlp.len());
+
+        //add total length as prefix to raw rlp
+        //TODO: make it in main rlp module
+        buf.push((0xc0 + rlp.len()) as u8);
+        buf.extend(rlp.as_slice());
+
+        buf
+    }
+
+    fn to_rlp_raw(&self) -> RLPList {
         let mut data = RLPList::default();
 
         data.push(&self.nonce);
@@ -69,7 +81,7 @@ impl Transaction {
     }
 
     fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
-        let mut rlp = self.to_rlp();
+        let mut rlp = self.to_rlp_raw();
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
         rlp.push(&chain);
@@ -172,10 +184,14 @@ mod tests {
         assert_eq!(tx.to_signed_raw(pk, 62 /*TESTNET_ID*/).unwrap().to_hex(),
                     "f871\
                     83\
-                    1000098504a8\
-                    17c800\
-                    82520894163b454d1ccdd0a12e88341b12afb2c980\
-                    44c599891e77511665\
+                    100009\
+                    85\
+                    04a817c800\
+                    82\
+                    5208\
+                    94\
+                    163b454d1ccdd0a12e88341b12afb2c98044c599\
+                    891e77511665\
                     79\
                     8800\
                     0080819fa0cc6cd05d41bbbeb71913bf403a09db118f22e4ed7ebf707fcfb483dd1cde\
