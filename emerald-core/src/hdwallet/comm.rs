@@ -96,7 +96,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
     let mut data_itr = apdu.data.iter();
     let mut init_sent = false;
 
-    println!(">> senrecv input: {:?}", &apdu);
+    debug!(">> senrecv input: {:?}", &apdu);
     // Write Data.
     while data_itr.size_hint().0 != 0 {
         // Add 1 to HID_RPT_SIZE since we need to prefix this with a record

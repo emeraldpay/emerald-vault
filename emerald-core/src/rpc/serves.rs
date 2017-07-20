@@ -2,8 +2,7 @@ use super::Error;
 use super::serialize::RPCTransaction;
 
 use core::{Address, Transaction};
-use hdwallet::WManager;
-use hex::FromHex;
+use hdwallet::{WManager, to_prefixed_path};
 use jsonrpc_core::{Params, Value};
 use keystore::{self, CryptoType, KdfDepthLevel, KeyFile};
 use rustc_serialize::json as rustc_json;
@@ -379,11 +378,11 @@ pub fn sign_transaction(
 
                             if additional.hd_path.is_none() {
                                 return Err(Error::InvalidDataFormat(
-                                    "Can't sign with HD wallet. No path given".to_string(),
+                                    "Can't sign with HD wallet. No `hd_path` given".to_string(),
                                 ));
                             };
 
-                            let hd_path = match Vec::from_hex(additional.hd_path.unwrap()) {
+                            let hd_path = match to_prefixed_path(&additional.hd_path.unwrap()) {
                                 Ok(hd) => hd,
                                 Err(e) => {
                                     return Err(Error::InvalidDataFormat(
@@ -398,7 +397,7 @@ pub fn sign_transaction(
                                 ));
                             }
 
-                            debug!("Selected hd path: {:?}", &hd_path);
+                            debug!("Selected hd_path: {:?}", &hd_path);
                             let mut err = String::new();
                             let rlp = tr.to_rlp();
                             for (addr, fd) in wm.devices() {

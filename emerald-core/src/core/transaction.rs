@@ -51,15 +51,7 @@ impl Transaction {
 
     /// RLP packed transaction
     pub fn to_rlp(&self) -> Vec<u8> {
-        let rlp: Vec<u8> = self.to_rlp_raw().into();
-        let mut buf = Vec::with_capacity(rlp.len());
-
-        //add total length as prefix to raw rlp
-        //TODO: make it in main rlp module
-        buf.push((0xc0 + rlp.len()) as u8);
-        buf.extend(rlp.as_slice());
-
-        buf
+        self.to_rlp_raw().into()
     }
 
     fn to_rlp_raw(&self) -> RLPList {
