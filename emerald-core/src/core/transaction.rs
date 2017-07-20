@@ -2,7 +2,6 @@
 
 use super::{Address, Error, PrivateKey, Signature};
 use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
-use std::mem::transmute;
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -50,49 +49,23 @@ impl Transaction {
         vec
     }
 
-    //    /// Pack transaction into `RLP` format
-    //    pub fn to_rlp(&self) -> RLPList {
-    //        let mut data = RLPList::default();
-    //
-    //        data.push(&self.nonce);
-    //        data.push(trim_bytes(&self.gas_price));
-    //        data.push(&self.gas_limit);
-    //
-    //        match self.to {
-    //            Some(addr) => data.push(&Some(&addr[..])),
-    //            _ => data.push::<Option<&[u8]>>(&None),
-    //        };
-    //
-    //        data.push(trim_bytes(&self.value));
-    //        data.push(self.data.as_slice());
-    //
-    //        data
-    //    }
-
-
     /// Pack transaction into `RLP` format
     pub fn to_rlp(&self) -> RLPList {
-        let mut data = Vec::new();
+        let mut data = RLPList::default();
 
-        let nonce_bytes: [u8; 8] = unsafe { transmute(self.nonce.to_be()) };
-        data.extend_from_slice(&nonce_bytes);
-
-        data.extend_from_slice(trim_bytes(&self.gas_price));
-
-        let gas_limit_bytes: [u8; 8] = unsafe { transmute(self.gas_limit.to_be()) };
-        data.extend_from_slice(&gas_limit_bytes);
+        data.push(&self.nonce);
+        data.push(trim_bytes(&self.gas_price));
+        data.push(&self.gas_limit);
 
         match self.to {
-            Some(addr) => data.extend_from_slice(&addr[..]),
-            _ => (),
+            Some(addr) => data.push(&Some(&addr[..])),
+            _ => data.push::<Option<&[u8]>>(&None),
         };
 
-        data.extend_from_slice(trim_bytes(&self.value));
-        data.extend_from_slice(self.data.as_slice());
+        data.push(trim_bytes(&self.value));
+        data.push(self.data.as_slice());
 
-        let mut rlp = RLPList::default();
-        rlp.push(data.as_slice());
-        rlp
+        data
     }
 
     fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
