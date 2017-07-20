@@ -119,7 +119,7 @@ impl WManager {
             return Err(Error::HDWalletError("HD path is not specified".to_string()));
         }
 
-        Ok(h.unwrap_or(self.hd_path.clone().unwrap()))
+        Ok(h.or(self.hd_path.clone()).unwrap())
     }
 
     ///
@@ -222,7 +222,7 @@ impl WManager {
             new_devices.push(d);
         }
         self.devices = new_devices;
-        println!("Devices found {:?}", self.devices);
+        debug!("Devices found {:?}", self.devices);
 
         Ok(())
     }
@@ -244,9 +244,9 @@ impl WManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tests::*;
     use core::Transaction;
     use rustc_serialize::hex::ToHex;
-    use tests::*;
 
     #[test]
     pub fn should_sign_with_ledger() {
@@ -263,8 +263,8 @@ mod tests {
             gas_price: /* 21000000000 */
             to_32bytes("0000000000000000000000000000000\
                                           0000000000000000000000004e3b29200"),
-            gas_limit: 21000,
-            to: Some("78296F1058dD49C5D6500855F59094F0a2876397"
+            gas_limit: 0x5208,
+            to: Some("78296F1058dD49C5D6500855F59094F0a2876396"
                 .parse::<Address>()
                 .unwrap()),
             value: /* 1 ETC */
@@ -297,7 +297,7 @@ mod tests {
         // 6eab3be528ef7565c887e147a2d53340c6c9fab5d6f56694681c90b518b64183
         let rlp = tx.to_rlp().tail;
         let fd = &manager.devices()[0].1;
-
+//        let rlp = Vec::from_hex("eb018504a817c80082520894a6ca2e6707f2cc189794a9dd459d5b05ed1bcd1c8703f26fcfb7a22480018080").unwrap();
 
         println!("RLP: {:?}", &rlp.to_hex());
         let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
@@ -329,10 +329,10 @@ mod tests {
         let mut manager = WManager::new(None).unwrap();
         assert_eq!(manager.pick_hd_path(Some(buf1.clone())).unwrap(), buf1);
 
-        manager = WManager::new(Some(&buf1)).unwrap();
+        manager.hd_path = Some(buf2.clone());
         assert_eq!(manager.pick_hd_path(Some(buf2.clone())).unwrap(), buf2);
 
-        manager = WManager::new(Some(&buf1)).unwrap();
+        manager.hd_path = Some(buf1.clone());
         assert_eq!(manager.pick_hd_path(None).unwrap(), buf1);
     }
 }
