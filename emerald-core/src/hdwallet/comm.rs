@@ -123,7 +123,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
         frame_index += 1;
     }
 
-    println!("\t |- read response");
+    debug!("\t |- read response");
     frame_index = 0;
     let mut data: Vec<u8> = Vec::new();
     let datalen: usize;
@@ -137,7 +137,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
 
     recvlen += frame_size;
     frame_index += 1;
-    println!(
+    debug!(
         "\t\t|-- init data: {:?}, recvlen: {}, datalen: {}",
         data,
         recvlen,
@@ -152,7 +152,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
         data.extend_from_slice(&frame[5..frame_size]);
         recvlen += frame_size;
         frame_index += 1;
-        println!(
+        debug!(
             "\t\t|-- cont_{:?} size:{:?}, data: {:?}",
             frame_index,
             data.len(),
