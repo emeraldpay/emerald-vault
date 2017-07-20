@@ -117,9 +117,9 @@ impl KeyFile {
 
         let kf = json::decode::<SerializableKeyFileCore>(&buf1)
             .and_then(|core| Ok(core.into()))
-            .or_else(|_| json::decode::<SerializableKeyFileHD>(&buf2)
-                .and_then(|hd| Ok(hd.into()))
-            )?;
+            .or_else(|_| {
+                json::decode::<SerializableKeyFileHD>(&buf2).and_then(|hd| Ok(hd.into()))
+            })?;
 
         Ok(kf)
     }
