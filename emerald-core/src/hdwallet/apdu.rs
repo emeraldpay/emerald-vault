@@ -1,5 +1,7 @@
 //! # APDU for communication over HID
 
+pub const APDU_HEADER_SIZE: usize = 0x05;
+
 ///
 #[repr(packed)]
 #[derive(Debug, Clone)]
@@ -26,11 +28,9 @@ impl Default for APDU {
 }
 
 impl APDU {
-    pub const HEADER_SIZE: usize = 0x05;
-
     ///
     pub fn raw_header(&self) -> Vec<u8> {
-        let mut buf = Vec::with_capacity(APDU::HEADER_SIZE);
+        let mut buf = Vec::with_capacity(APDU_HEADER_SIZE);
         buf.push(self.cla);
         buf.push(self.ins);
         buf.push(self.p1);
@@ -40,7 +40,7 @@ impl APDU {
     }
 
     pub fn len(&self) -> usize {
-        self.data.len() + APDU::HEADER_SIZE
+        self.data.len() + APDU_HEADER_SIZE
     }
 }
 

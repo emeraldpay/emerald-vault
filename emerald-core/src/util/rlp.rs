@@ -290,6 +290,13 @@ mod tests {
     }
 
     #[test]
+    fn encode_long_str_debug() {
+        let mut buf = Vec::new();
+        "zoo255zoo255zzzzzzzzzzzzssssssssssssssssssssssssssssssssssssssssssssss".write_rlp(&mut buf);
+        println!(">> DEBUG: {}", buf.to_hex());
+    }
+
+    #[test]
     fn encode_extra_long_str() {
         let mut buf = Vec::new();
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris \
