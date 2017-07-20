@@ -16,10 +16,10 @@ use log::LogLevel;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
+use std::cell::RefCell;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use std::cell::RefCell;
 
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
@@ -157,7 +157,7 @@ pub fn start(
     {
         let keystore_path = keystore_path.clone();
         let chain_id = to_chain_id(chain_name).unwrap();
-//        let wallet_manager = wallet_manager.clone();
+        //        let wallet_manager = wallet_manager.clone();
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,

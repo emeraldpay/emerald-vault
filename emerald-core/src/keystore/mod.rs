@@ -13,8 +13,7 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::{Kdf, KdfDepthLevel};
 pub use self::prf::Prf;
-pub use self::serialize::{CoreCrypto, Iv, Mac, Salt,
-                          decode_str, hide, list_accounts, unhide};
+pub use self::serialize::{CoreCrypto, Iv, Mac, Salt, decode_str, hide, list_accounts, unhide};
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
 use hdwallet::HdwalletCrypto;

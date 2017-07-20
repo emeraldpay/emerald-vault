@@ -6,8 +6,8 @@ extern crate uuid;
 extern crate tempdir;
 
 use emerald::{Address, KECCAK256_BYTES};
-use emerald::keystore::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf,
-                        KdfDepthLevel, KeyFile, Prf, CryptoType, CoreCrypto, Salt, Iv, Mac};
+use emerald::keystore::{CIPHER_IV_BYTES, Cipher, CoreCrypto, CryptoType, Iv, KDF_SALT_BYTES, Kdf,
+                        KdfDepthLevel, KeyFile, Mac, Prf, Salt};
 use hex::FromHex;
 use rustc_serialize::json;
 use std::fs::File;
@@ -100,20 +100,20 @@ fn should_decode_keyfile_without_address() {
         c: 10240,
     };
     crypto.kdfparams_salt = Salt::from(arr!(
-            &Vec::from_hex(
-                "095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b",
-            ).unwrap(),
-            KDF_SALT_BYTES
-        ));
+        &Vec::from_hex(
+            "095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b",
+        ).unwrap(),
+        KDF_SALT_BYTES
+    ));
     crypto.cipher = Cipher::default();
     crypto.cipher_text = Vec::from_hex(
         "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126",
     ).unwrap();
 
     crypto.cipher_params.iv = Iv::from(arr!(
-            &Vec::from_hex("58d54158c3e27131b0a0f2b91201aedc").unwrap(),
-            CIPHER_IV_BYTES
-        ));
+        &Vec::from_hex("58d54158c3e27131b0a0f2b91201aedc").unwrap(),
+        CIPHER_IV_BYTES
+    ));
 
     crypto.mac = Mac::from(arr!(
         &Vec::from_hex(
@@ -139,14 +139,14 @@ fn should_decode_keyfile_without_address() {
 
     if let CryptoType::Core(ref exp_core) = exp.crypto {
         if let CryptoType::Core(ref recv_core) = key.crypto {
-            assert_eq!(key,                         exp);
-            assert_eq!(key.visible,                 exp.visible);
-            assert_eq!(recv_core.kdfparams_dklen,   exp_core.kdfparams_dklen);
-            assert_eq!(recv_core.kdf,               exp_core.kdf);
-            assert_eq!(recv_core.kdfparams_salt,    exp_core.kdfparams_salt);
-            assert_eq!(recv_core.cipher_text,       exp_core.cipher_text);
-            assert_eq!(recv_core.cipher_params.iv,  exp_core.cipher_params.iv);
-            assert_eq!(recv_core.mac,               exp_core.mac);
+            assert_eq!(key, exp);
+            assert_eq!(key.visible, exp.visible);
+            assert_eq!(recv_core.kdfparams_dklen, exp_core.kdfparams_dklen);
+            assert_eq!(recv_core.kdf, exp_core.kdf);
+            assert_eq!(recv_core.kdfparams_salt, exp_core.kdfparams_salt);
+            assert_eq!(recv_core.cipher_text, exp_core.cipher_text);
+            assert_eq!(recv_core.cipher_params.iv, exp_core.cipher_params.iv);
+            assert_eq!(recv_core.mac, exp_core.mac);
         } else {
             assert!(false, "Invalid Crypto type")
         }
@@ -167,20 +167,20 @@ fn should_decode_keyfile_with_address() {
         p: 1,
     };
     crypto.kdfparams_salt = Salt::from(arr!(
-            &Vec::from_hex(
-                "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
-            ).unwrap(),
-            KDF_SALT_BYTES
-        ));
+        &Vec::from_hex(
+            "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
+        ).unwrap(),
+        KDF_SALT_BYTES
+    ));
     crypto.cipher = Cipher::default();
     crypto.cipher_text = Vec::from_hex(
         "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
     ).unwrap();
 
     crypto.cipher_params.iv = Iv::from(arr!(
-            &Vec::from_hex("9df1649dd1c50f2153917e3b9e7164e9").unwrap(),
-            CIPHER_IV_BYTES
-        ));
+        &Vec::from_hex("9df1649dd1c50f2153917e3b9e7164e9").unwrap(),
+        CIPHER_IV_BYTES
+    ));
 
     crypto.mac = Mac::from(arr!(
         &Vec::from_hex(
@@ -206,14 +206,14 @@ fn should_decode_keyfile_with_address() {
 
     if let CryptoType::Core(ref exp_core) = exp.crypto {
         if let CryptoType::Core(ref recv_core) = key.crypto {
-            assert_eq!(key,                         exp);
-            assert_eq!(key.visible,                 exp.visible);
-            assert_eq!(recv_core.kdfparams_dklen,   exp_core.kdfparams_dklen);
-            assert_eq!(recv_core.kdf,               exp_core.kdf);
-            assert_eq!(recv_core.kdfparams_salt,    exp_core.kdfparams_salt);
-            assert_eq!(recv_core.cipher_text,       exp_core.cipher_text);
-            assert_eq!(recv_core.cipher_params.iv,  exp_core.cipher_params.iv);
-            assert_eq!(recv_core.mac,               exp_core.mac);
+            assert_eq!(key, exp);
+            assert_eq!(key.visible, exp.visible);
+            assert_eq!(recv_core.kdfparams_dklen, exp_core.kdfparams_dklen);
+            assert_eq!(recv_core.kdf, exp_core.kdf);
+            assert_eq!(recv_core.kdfparams_salt, exp_core.kdfparams_salt);
+            assert_eq!(recv_core.cipher_text, exp_core.cipher_text);
+            assert_eq!(recv_core.cipher_params.iv, exp_core.cipher_params.iv);
+            assert_eq!(recv_core.mac, exp_core.mac);
         } else {
             assert!(false, "Invalid Crypto type")
         }

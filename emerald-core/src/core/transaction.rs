@@ -50,24 +50,24 @@ impl Transaction {
         vec
     }
 
-//    /// Pack transaction into `RLP` format
-//    pub fn to_rlp(&self) -> RLPList {
-//        let mut data = RLPList::default();
-//
-//        data.push(&self.nonce);
-//        data.push(trim_bytes(&self.gas_price));
-//        data.push(&self.gas_limit);
-//
-//        match self.to {
-//            Some(addr) => data.push(&Some(&addr[..])),
-//            _ => data.push::<Option<&[u8]>>(&None),
-//        };
-//
-//        data.push(trim_bytes(&self.value));
-//        data.push(self.data.as_slice());
-//
-//        data
-//    }
+    //    /// Pack transaction into `RLP` format
+    //    pub fn to_rlp(&self) -> RLPList {
+    //        let mut data = RLPList::default();
+    //
+    //        data.push(&self.nonce);
+    //        data.push(trim_bytes(&self.gas_price));
+    //        data.push(&self.gas_limit);
+    //
+    //        match self.to {
+    //            Some(addr) => data.push(&Some(&addr[..])),
+    //            _ => data.push::<Option<&[u8]>>(&None),
+    //        };
+    //
+    //        data.push(trim_bytes(&self.value));
+    //        data.push(self.data.as_slice());
+    //
+    //        data
+    //    }
 
 
     /// Pack transaction into `RLP` format
@@ -84,7 +84,7 @@ impl Transaction {
 
         match self.to {
             Some(addr) => data.extend_from_slice(&addr[..]),
-            _ => ()
+            _ => (),
         };
 
         data.extend_from_slice(trim_bytes(&self.value));

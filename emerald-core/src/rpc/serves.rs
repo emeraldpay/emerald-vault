@@ -8,11 +8,11 @@ use jsonrpc_core::{Params, Value};
 use keystore::{self, CryptoType, KdfDepthLevel, KeyFile};
 use rustc_serialize::json as rustc_json;
 use serde_json;
+use std::cell::RefCell;
 use std::path::PathBuf;
 use std::str::FromStr;
-use util;
-use std::cell::RefCell;
 use std::sync::Mutex;
+use util;
 
 fn to_chain_id(chain: &str, chain_id: Option<usize>, default_id: u8) -> u8 {
     if chain_id.is_some() {
@@ -393,18 +393,14 @@ pub fn sign_transaction(
                             if let Err(e) = wm.update(Some(hd_path.clone())) {
                                 return Err(Error::InvalidDataFormat(
                                     format!("Can't update HD wallets list : {}", e.to_string()),
-                                ))
+                                ));
                             }
 
                             debug!("Selected hd path: {:?}", &hd_path);
                             let mut err = String::new();
                             let rlp = tr.to_rlp().tail;
                             for (addr, fd) in wm.devices() {
-                                match wm.sign_transaction(
-                                    &fd,
-                                    &rlp,
-                                    Some(hd_path.clone()),
-                                ) {
+                                match wm.sign_transaction(&fd, &rlp, Some(hd_path.clone())) {
                                     Ok(s) => {
                                         let raw = tr.raw_from_sig(chain_id, s);
                                         let signed = Transaction::to_raw_params(raw);
