@@ -370,7 +370,7 @@ mod tests {
     }
 
     #[test]
-    #[ignored]
+    #[ignore]
     pub fn should_fail_parse_hd_path() {
         let mut path_str = "44\'/60\'/160A+_0\'/0\'/0";
         assert!(path_to_arr(&path_str).is_err());
