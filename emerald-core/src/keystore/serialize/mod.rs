@@ -262,7 +262,7 @@ pub fn list_accounts<P: AsRef<Path>>(
                     if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
                         let is_hd = match kf.crypto {
                             CryptoType::Core(_) => false,
-                            CryptoType::HdWallet(_) => true
+                            CryptoType::HdWallet(_) => true,
                         };
                         match kf.name {
                             Some(name) => accounts.push((name, kf.address.to_string(), is_hd)),

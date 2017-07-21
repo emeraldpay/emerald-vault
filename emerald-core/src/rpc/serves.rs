@@ -74,7 +74,7 @@ pub fn heartbeat(_params: ()) -> Result<i64, Error> {
 pub struct ListAccountAccount {
     name: String,
     address: String,
-    hardware: bool
+    hardware: bool,
 }
 
 #[derive(Deserialize, Default, Debug)]
@@ -100,7 +100,7 @@ pub fn list_accounts(
             ListAccountAccount {
                 name: name.clone(),
                 address: address.clone(),
-                hardware: is_hd
+                hardware: is_hd,
             }
         })
         .collect();
