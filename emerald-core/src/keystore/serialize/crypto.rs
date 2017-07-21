@@ -56,11 +56,11 @@ impl CoreCrypto {
         match kf.crypto {
             CryptoType::Core(ref core) => {
                 Ok(CoreCrypto {
-                    cipher: core.cipher.clone(),
+                    cipher: core.cipher,
                     cipher_text: core.cipher_text.clone(),
                     cipher_params: core.cipher_params.clone(),
-                    kdf: core.kdf.clone(),
-                    kdfparams_dklen: core.kdfparams_dklen.clone(),
+                    kdf: core.kdf,
+                    kdfparams_dklen: core.kdfparams_dklen,
                     kdfparams_salt: Salt::from(core.kdfparams_salt.0),
                     mac: Mac::from(core.mac.0),
                 })

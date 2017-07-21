@@ -69,11 +69,12 @@ impl Storages {
             let entry = entry?;
             let mut path = entry.path();
 
-            if path.is_dir() && path.file_name().is_some() {
-                if path.file_name().unwrap() == chain_name {
-                    path.push("keystore");
-                    return Ok(path);
-                }
+            if path.is_dir() && path.file_name().is_some() &&
+                path.file_name().unwrap() == chain_name
+            {
+                path.push("keystore");
+                return Ok(path);
+
             }
         }
 

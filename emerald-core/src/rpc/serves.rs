@@ -425,7 +425,7 @@ pub fn sign_transaction(
                                 }
                             }
 
-                            return Err(Error::InvalidDataFormat(err));
+                            Err(Error::InvalidDataFormat(err))
                         }
                     }
                 }

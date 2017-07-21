@@ -111,11 +111,8 @@ impl KeyFile {
             ..Default::default()
         };
 
-        match kf.crypto {
-            CryptoType::Core(ref mut core) => {
-                core.kdf = kdf;
-            }
-            _ => (),
+        if let CryptoType::Core(ref mut core) = kf.crypto {
+            core.kdf = kdf;
         }
 
         kf.encrypt_key_custom(pk, passphrase, rng);

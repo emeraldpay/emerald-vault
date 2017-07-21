@@ -1,9 +1,9 @@
-//! # HDWallet Keystore files (UTC / JSON) module errors
+//! # `HDWallet` Keystore files (UTC / JSON) module errors
 
 use core;
 use std::{error, fmt, io};
 
-/// HDWallet Keystore file errors
+/// `HDWallet` Keystore file errors
 #[derive(Debug)]
 pub enum Error {
     /// An unsupported cipher

@@ -364,42 +364,42 @@ mod tests {
 
         let rlp = tx.to_rlp();
         let fd = &manager.devices()[0].1;
-//        let rlp = Vec::from_hex(
-//            "03\
-//            022a01\
-//            \
-//            85\
-//            04e3b29200\
-//            \
-//            82\
-//            5208\
-//            \
-//            94\
-//            c0de379b51d582e1600c76dd1efee8ed024b844a\
-//            \
-//            87\
-//            03f26fcfb7a224\
-//            \
-//            b9\
-//            0200\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
-//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11"
-//        ).unwrap();
-
+        /*
+            f9\
+            022a01\
+            \
+            85\
+            04e3b29200\
+            \
+            82\
+            5208\
+            \
+            94\
+            c0de379b51d582e1600c76dd1efee8ed024b844a\
+            \
+            87\
+            03f26fcfb7a224\
+            \
+            b9\
+            0200\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11
+        */
+        println!(">> RLP: {:?}", &rlp.to_hex());
         let sign = manager.sign_transaction(&fd, &rlp, None);
         assert!(sign.is_ok());
         debug!("Signature: {:?}", &sign.unwrap());
