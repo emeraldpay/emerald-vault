@@ -374,17 +374,11 @@ pub fn sign_transaction(
                             }
                         }
 
-                        CryptoType::HdWallet(_) => {
+                        CryptoType::HdWallet(hw) => {
                             let quard = wallet_manager.lock().unwrap();
                             let mut wm = quard.borrow_mut();
 
-                            if additional.hd_path.is_none() {
-                                return Err(Error::InvalidDataFormat(
-                                    "Can't sign with HD wallet. No `hd_path` given".to_string(),
-                                ));
-                            };
-
-                            let hd_path = match to_prefixed_path(&additional.hd_path.unwrap()) {
+                            let hd_path = match to_prefixed_path(&hw.hd_path) {
                                 Ok(hd) => hd,
                                 Err(e) => {
                                     return Err(Error::InvalidDataFormat(
