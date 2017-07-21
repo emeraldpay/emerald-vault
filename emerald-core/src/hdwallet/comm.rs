@@ -160,7 +160,6 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
         );
     }
     data.truncate(datalen);
-
     match sw_to_error(data.pop().unwrap(), data.pop().unwrap()) {
         Ok(_) => Ok(data),
         Err(e) => Err(e),

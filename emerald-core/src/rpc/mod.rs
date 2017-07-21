@@ -72,7 +72,7 @@ pub fn start(
 
     let wallet_manager = match WManager::new(None) {
         Ok(wm) => Mutex::new(RefCell::new(wm)),
-        Err(e) => panic!("Unable to create wallet manager: {}", e.to_string()),
+        Err(_) => panic!("Can't create HID endpoint"),
     };
 
     let mut io = IoHandler::default();
@@ -157,7 +157,6 @@ pub fn start(
     {
         let keystore_path = keystore_path.clone();
         let chain_id = to_chain_id(chain_name).unwrap();
-        //        let wallet_manager = wallet_manager.clone();
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,

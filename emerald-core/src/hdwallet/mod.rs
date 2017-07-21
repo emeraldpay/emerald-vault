@@ -98,6 +98,7 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
                 v += 0x80000000;
                 str.remove(s.len() - 1);
             }
+
             match str.parse::<u32>() {
                 Ok(d) => v += d as u64,
                 Err(_) => {
@@ -118,7 +119,7 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
 /// prefixed with count of derivation indexes
 pub fn to_prefixed_path(hd_str: &str) -> Result<Vec<u8>, Error> {
     let v = path_to_arr(hd_str)?;
-    let count = (v.len() % DERIVATION_INDEX_SIZE) as u8;
+    let count = (v.len() / DERIVATION_INDEX_SIZE) as u8;
     let mut buf = Vec::with_capacity(v.len() + 1);
 
     buf.push(count);
@@ -140,20 +141,11 @@ pub struct WManager {
 impl WManager {
     /// Creates new `Wallet Manager` with a specified
     /// derivation path
-    pub fn new(hd_path: Option<&[u8]>) -> Result<WManager, Error> {
-        let p = match hd_path {
-            Some(p) => {
-                let mut buf = Vec::new();
-                buf.extend_from_slice(p);
-                Some(buf)
-            }
-            _ => None,
-        };
-
+    pub fn new(hd_path: Option<Vec<u8>>) -> Result<WManager, Error> {
         Ok(Self {
             hid: HidApi::new()?,
             devices: Vec::new(),
-            hd_path: p,
+            hd_path: hd_path,
         })
     }
 
@@ -174,6 +166,7 @@ impl WManager {
             .with_data(&hd_path)
             .build();
 
+        debug!("DEBUG get address: {:?}", &fd);
         let handle = self.open(fd)?;
         let addr = sendrecv(&handle, &apdu)
             .and_then(|res| match res.len() {
@@ -234,7 +227,7 @@ impl WManager {
                 .build();
             res = sendrecv(&handle, &apdu_cont)?;
         }
-
+        debug!("Sign received: {:?}", res);
         match res.len() {
             ECDSA_SIGNATURE_BYTES => {
                 let mut val: [u8; ECDSA_SIGNATURE_BYTES] = [0; ECDSA_SIGNATURE_BYTES];
@@ -264,6 +257,7 @@ impl WManager {
         self.hid.refresh_devices();
         let mut new_devices = Vec::new();
 
+        debug!("Start searching for devices: {:?}", self.hid.devices());
         for hid_info in self.hid.devices() {
             if hid_info.product_id != LEDGER_PID || hid_info.vendor_id != LEDGER_VID {
                 continue;
@@ -280,11 +274,11 @@ impl WManager {
 
     fn open(&self, path: &str) -> Result<HidDevice, Error> {
         for _ in 0..5 {
-            match self.hid.open_path(&path) {
+            match self.hid.open(LEDGER_VID, LEDGER_PID) {
                 Ok(h) => return Ok(h),
                 Err(_) => (),
             }
-            thread::sleep(time::Duration::from_millis(100));
+            thread::sleep(time::Duration::from_millis(1000));
         }
 
         Err(Error::HDWalletError(format!("Can't open path: {}", path)))
@@ -300,8 +294,9 @@ mod tests {
     use tests::*;
 
     #[test]
+    #[ignore]
     pub fn should_sign_with_ledger() {
-        let mut manager = WManager::new(Some(&ETC_DERIVATION_PATH)).unwrap();
+        let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
         manager.update(None).unwrap();
 
         if manager.devices().is_empty() {
@@ -329,13 +324,13 @@ mod tests {
         let sign = manager.sign_transaction(&fd, &rlp, None);
 
         assert!(sign.is_ok());
-        println!("Signature: {:?}", &sign.unwrap());
+        debug!("Signature: {:?}", &sign.unwrap());
     }
 
     #[test]
     #[ignore]
     pub fn should_get_address_with_ledger() {
-        let mut manager = WManager::new(Some(&ETC_DERIVATION_PATH)).unwrap();
+        let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
         manager.update(None).unwrap();
 
         if manager.devices().is_empty() {
@@ -375,11 +370,12 @@ mod tests {
     }
 
     #[test]
+    #[ignored]
     pub fn should_fail_parse_hd_path() {
-        let path_str = "44\'/60\'/160AAAA0\'/0\'/0";
+        let mut path_str = "44\'/60\'/160A+_0\'/0\'/0";
         assert!(path_to_arr(&path_str).is_err());
 
-        let path_str = "44\'/60\'/16011111111111111111111111111111111111111111111111111111\'/0\'/0";
+        path_str = "44\'/60\'/16011_11111111111111111zz1111111111111111111111111111111\'/0\'/0";
         assert!(path_to_arr(&path_str).is_err());
     }
 
@@ -389,6 +385,7 @@ mod tests {
         assert_eq!(
             ETC_DERIVATION_PATH.to_vec(),
             to_prefixed_path(&path_str).unwrap()
-        );;
+        );
+        debug!("prefixed: {:?}", to_prefixed_path(&path_str).unwrap());
     }
 }

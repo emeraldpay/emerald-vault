@@ -397,10 +397,10 @@ pub fn sign_transaction(
                                 ));
                             }
 
-                            debug!("Selected hd_path: {:?}", &hd_path);
                             let mut err = String::new();
                             let rlp = tr.to_rlp();
                             for (addr, fd) in wm.devices() {
+                                debug!("Selected device: {:?} {:?}", &addr, &fd);
                                 match wm.sign_transaction(&fd, &rlp, Some(hd_path.clone())) {
                                     Ok(s) => {
                                         let raw = tr.raw_from_sig(chain_id, s);
