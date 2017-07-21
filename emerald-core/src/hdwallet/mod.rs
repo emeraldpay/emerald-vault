@@ -329,6 +329,84 @@ mod tests {
 
     #[test]
     #[ignore]
+    pub fn should_sign_with_ledger_big_data() {
+        let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
+        manager.update(None).unwrap();
+
+        if manager.devices().is_empty() {
+            // No device connected, skip test
+            return;
+        }
+
+        let mut data = Vec::new();
+
+        // create 512 bytes of data,
+        // fill with `11cccccccccccc11` 8-byte hex fragment
+        for _ in 0..64 {
+            data.push(0x11);
+            data.extend_from_slice(&[0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc]);
+            data.push(0x11);
+        }
+        let tx = Transaction {
+            nonce: 0x01,
+            gas_price: /* 21000000000 */
+            to_32bytes("0000000000000000000000000000000\
+                                          0000000000000000000000004e3b29200"),
+            gas_limit: 0x5208,
+            to: Some("c0de379b51d582e1600c76dd1efee8ed024b844a"
+                .parse::<Address>()
+                .unwrap()),
+            value: /* 1 ETC */
+            to_32bytes("00000000000000000000000000000000\
+                                          00000000000000000003f26fcfb7a224"),
+            data: data,
+        };
+
+        let rlp = tx.to_rlp();
+        let fd = &manager.devices()[0].1;
+//        let rlp = Vec::from_hex(
+//            "03\
+//            022a01\
+//            \
+//            85\
+//            04e3b29200\
+//            \
+//            82\
+//            5208\
+//            \
+//            94\
+//            c0de379b51d582e1600c76dd1efee8ed024b844a\
+//            \
+//            87\
+//            03f26fcfb7a224\
+//            \
+//            b9\
+//            0200\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
+//            11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11"
+//        ).unwrap();
+
+        let sign = manager.sign_transaction(&fd, &rlp, None);
+        assert!(sign.is_ok());
+        debug!("Signature: {:?}", &sign.unwrap());
+    }
+
+    #[test]
+    #[ignore]
     pub fn should_get_address_with_ledger() {
         let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
         manager.update(None).unwrap();

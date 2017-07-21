@@ -50,7 +50,7 @@ impl Into<Vec<u8>> for RLPList {
             v => {
                 let sb = to_bytes(v as u64, 8);
                 let size_arr = trim_bytes(&sb);
-                res.push((size_arr.len() + 257) as u8);
+                res.push((size_arr.len() + 247) as u8);
                 res.extend(size_arr);
                 res.extend(self.tail.as_slice());
             }
