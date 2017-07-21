@@ -1,6 +1,6 @@
 //! # Account transaction
 
-use super::{Address, Error, PrivateKey};
+use super::{Address, Error, PrivateKey, Signature};
 use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
 
 /// Transaction data
@@ -28,9 +28,13 @@ pub struct Transaction {
 impl Transaction {
     /// Sign transaction data with provided private key
     pub fn to_signed_raw(&self, pk: PrivateKey, chain: u8) -> Result<Vec<u8>, Error> {
-        let mut rlp = self.to_rlp();
+        let sig = pk.sign_hash(self.hash(chain))?;
+        Ok(self.raw_from_sig(chain, sig))
+    }
 
-        let mut sig = pk.sign_hash(self.hash(chain))?;
+    /// RLP packed signed transaction from provided `Signature`
+    pub fn raw_from_sig(&self, chain: u8, mut sig: Signature) -> Vec<u8> {
+        let mut rlp = self.to_rlp_raw();
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
         sig.v += chain * 2 + 35 - 27;
@@ -41,23 +45,16 @@ impl Transaction {
 
         let mut vec = Vec::new();
         rlp.write_rlp(&mut vec);
-        Ok(vec)
+
+        vec
     }
 
-    fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
-        let mut rlp = self.to_rlp();
-
-        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        rlp.push(&chain);
-        rlp.push(&[][..]);
-        rlp.push(&[][..]);
-
-        let mut vec = Vec::new();
-        rlp.write_rlp(&mut vec);
-        keccak256(&vec)
+    /// RLP packed transaction
+    pub fn to_rlp(&self) -> Vec<u8> {
+        self.to_rlp_raw().into()
     }
 
-    fn to_rlp(&self) -> RLPList {
+    fn to_rlp_raw(&self) -> RLPList {
         let mut data = RLPList::default();
 
         data.push(&self.nonce);
@@ -73,6 +70,19 @@ impl Transaction {
         data.push(self.data.as_slice());
 
         data
+    }
+
+    fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
+        let mut rlp = self.to_rlp_raw();
+
+        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
+        rlp.push(&chain);
+        rlp.push(&[][..]);
+        rlp.push(&[][..]);
+
+        let mut vec = Vec::new();
+        rlp.write_rlp(&mut vec);
+        keccak256(&vec)
     }
 }
 
@@ -166,10 +176,14 @@ mod tests {
         assert_eq!(tx.to_signed_raw(pk, 62 /*TESTNET_ID*/).unwrap().to_hex(),
                     "f871\
                     83\
-                    1000098504a8\
-                    17c800\
-                    82520894163b454d1ccdd0a12e88341b12afb2c980\
-                    44c599891e77511665\
+                    100009\
+                    85\
+                    04a817c800\
+                    82\
+                    5208\
+                    94\
+                    163b454d1ccdd0a12e88341b12afb2c98044c599\
+                    891e77511665\
                     79\
                     8800\
                     0080819fa0cc6cd05d41bbbeb71913bf403a09db118f22e4ed7ebf707fcfb483dd1cde\

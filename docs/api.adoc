@@ -279,9 +279,9 @@ Import a new account from an external keyfile. Handle both cases: normal account
          "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
          "address": "8f5201aed0b69875b24b6accounaccoun14dda0e",
          "crypto": {
-            cipher: "hardware",
-            type: "ledger-nano-s:v1",
-            hd: "0'/0/0"},
+            "cipher": "hardware",
+            "hardware": "ledger-nano-s:v1",
+            "hd_path": "44'/61'/0'/0/0"},
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0x8f5201aed0b69875b24b6accounaccoun14dda0e", "id": 1}
 ----
