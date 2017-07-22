@@ -36,6 +36,7 @@ impl Transaction {
     pub fn raw_from_sig(&self, chain: u8, mut sig: Signature) -> Vec<u8> {
         let mut rlp = self.to_rlp_raw();
 
+        println!(">> DEBUG signature: {:?}", sig);
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
         sig.v += chain * 2 + 35 - 27;
 
@@ -43,15 +44,18 @@ impl Transaction {
         rlp.push(&sig.r[..]);
         rlp.push(&sig.s[..]);
 
-        let mut vec = Vec::new();
-        rlp.write_rlp(&mut vec);
+        let mut buf = Vec::new();
+        rlp.write_rlp(&mut buf);
 
-        vec
+        buf
     }
 
     /// RLP packed transaction
     pub fn to_rlp(&self) -> Vec<u8> {
-        self.to_rlp_raw().into()
+        let mut buf = Vec::new();
+        self.to_rlp_raw().write_rlp(&mut buf);
+
+        buf
     }
 
     fn to_rlp_raw(&self) -> RLPList {
@@ -124,7 +128,9 @@ mod tests {
             "c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4",
         ));
 
-        assert_eq!(tx.to_signed_raw(pk, 61 /*MAINNET_ID*/).unwrap().to_hex(),
+        let hex = tx.to_signed_raw(pk, 61 /*MAINNET_ID*/).unwrap().to_hex();
+        println!("{:?}", &hex);
+        assert_eq!(hex,
                    "f86d\
                    80\
                    8504e3b29200\
@@ -133,8 +139,10 @@ mod tests {
                    880de0b6b3a7640000\
                    80\
                    819e\
-                   a0b17da8416f42d62192b07ff855f4a8e8e9ee1a2e920e3c407fd9a3bd5e388daa\
-                   a0547981b617c88587bfcd924437f6134b0b75f4484042db0750a2b1c0ccccc597");
+                   a0\
+                   b1\
+                   7da8416f42d62192b07ff855f4a8e8e9ee1a2e920e3c407fd9a3bd5e388daaa0\
+                   547981b617c88587bfcd924437f6134b0b75f4484042db0750a2b1c0ccccc597");
     }
 
     #[test]

@@ -282,7 +282,7 @@ fn should_use_security_level() {
 fn should_flush_to_file() {
     let kf = KeyFile::new("1234567890", &KdfDepthLevel::Normal, None, None).unwrap();
 
-    assert!(kf.flush(temp_dir().as_path()).is_ok());
+    assert!(kf.flush(temp_dir().as_path(), None).is_ok());
 }
 
 #[test]

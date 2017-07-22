@@ -171,7 +171,7 @@ pub fn shake_account(
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let (_, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
+    let (kf_path, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
 
     match kf.crypto {
         CryptoType::Core(ref core) => {
@@ -184,7 +184,8 @@ pub fn shake_account(
                 kf.name,
                 kf.description,
             )?;
-            new_kf.flush(keystore_path)?;
+            let filename = (*kf_path.as_path()).file_name().unwrap();
+            new_kf.flush(keystore_path, filename.to_str())?;
             debug!("Account shaked: {}", kf.address);
         }
         _ => {
@@ -213,14 +214,16 @@ pub fn update_account(
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let (_, mut kf) = KeyFile::search_by_address(&addr, keystore_path)?;
+    let (kf_path, mut kf) = KeyFile::search_by_address(&addr, keystore_path)?;
     if !account.name.is_empty() {
         kf.name = Some(account.name);
     }
     if !account.description.is_empty() {
         kf.description = Some(account.description);
     }
-    kf.flush(keystore_path)?;
+
+    let filename = (*kf_path.as_path()).file_name().unwrap();
+    kf.flush(keystore_path, filename.to_str())?;
     debug!(
         "Account {} updated with name: {}, description: {}",
         kf.address,
@@ -239,7 +242,7 @@ pub fn import_account(
     let raw = serde_json::to_string(&raw)?;
 
     let kf = KeyFile::decode(raw.to_lowercase())?;
-    kf.flush(keystore_path)?;
+    kf.flush(keystore_path, None)?;
 
     debug!("Account imported: {}", kf.address);
 
@@ -293,7 +296,7 @@ pub fn new_account(
     )?;
 
     let addr = kf.address.to_string();
-    kf.flush(keystore_path)?;
+    kf.flush(keystore_path, None)?;
     debug!("New account generated: {}", kf.address);
 
     Ok(addr)

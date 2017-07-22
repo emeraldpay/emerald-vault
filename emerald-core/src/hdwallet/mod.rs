@@ -324,7 +324,7 @@ mod tests {
         let sign = manager.sign_transaction(&fd, &rlp, None);
 
         assert!(sign.is_ok());
-        debug!("Signature: {:?}", &sign.unwrap());
+        println!("Signature: {:?}", &sign.unwrap());
     }
 
     #[test]

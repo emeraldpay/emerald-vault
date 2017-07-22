@@ -167,15 +167,19 @@ impl KeyFile {
     pub fn encrypt_key_custom<R: Rng>(&mut self, pk: PrivateKey, passphrase: &str, rng: &mut R) {
         match self.crypto {
             CryptoType::Core(ref mut core) => {
+                let mut buf_salt: [u8; KDF_SALT_BYTES] = [0; KDF_SALT_BYTES];
+                rng.fill_bytes(&mut buf_salt);
+                core.kdfparams_salt = Salt::from(buf_salt);
+
                 let derived = core.kdf.derive(
                     core.kdfparams_dklen,
                     &core.kdfparams_salt,
                     passphrase,
                 );
 
-                let mut buf: [u8; CIPHER_IV_BYTES] = [0; CIPHER_IV_BYTES];
-                rng.fill_bytes(&mut buf);
-                core.cipher_params.iv = Iv::from(buf);
+                let mut buf_iv: [u8; CIPHER_IV_BYTES] = [0; CIPHER_IV_BYTES];
+                rng.fill_bytes(&mut buf_iv);
+                core.cipher_params.iv = Iv::from(buf_iv);
 
                 core.cipher_text = core.cipher.encrypt(
                     &pk,
