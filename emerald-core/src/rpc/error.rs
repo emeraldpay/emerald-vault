@@ -21,20 +21,20 @@ pub enum Error {
 }
 
 impl From<rustc_serialize::json::EncoderError> for Error {
-    fn from(_err: rustc_serialize::json::EncoderError) -> Self {
-        Error::InvalidDataFormat("encoder error".to_string())
+    fn from(err: rustc_serialize::json::EncoderError) -> Self {
+        Error::InvalidDataFormat(format!("decoder: {}", err.to_string()))
     }
 }
 
 impl From<rustc_serialize::json::DecoderError> for Error {
-    fn from(_err: rustc_serialize::json::DecoderError) -> Self {
-        Error::InvalidDataFormat("decoder error".to_string())
+    fn from(err: rustc_serialize::json::DecoderError) -> Self {
+        Error::InvalidDataFormat(format!("decoder: {}", err.to_string()))
     }
 }
 
 impl From<keystore::Error> for Error {
-    fn from(_err: keystore::Error) -> Self {
-        Error::InvalidDataFormat("keystore error".to_string())
+    fn from(err: keystore::Error) -> Self {
+        Error::InvalidDataFormat(format!("keystore: {}", err.to_string()))
     }
 }
 

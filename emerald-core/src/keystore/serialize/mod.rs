@@ -143,10 +143,16 @@ impl KeyFile {
     /// * `dir` - path to destination directory
     /// * `addr` - a public address (optional)
     ///
-    pub fn flush<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
-        let path = dir.as_ref().join(
-            &generate_filename(&self.uuid.to_string()),
-        );
+    pub fn flush<P: AsRef<Path>>(&self, dir: P, filename: Option<&str>) -> Result<(), Error> {
+        let tmp;
+        let name = match filename {
+            Some(n) => n,
+            None => {
+                tmp = generate_filename(&self.uuid.to_string());
+                &tmp
+            }
+        };
+        let path = dir.as_ref().join(name);
 
         Ok(write(self, path)?)
     }
