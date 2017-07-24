@@ -33,14 +33,13 @@ impl Transaction {
     }
 
     /// RLP packed signed transaction from provided `Signature`
-    pub fn raw_from_sig(&self, chain: u8, mut sig: Signature) -> Vec<u8> {
-        let mut rlp = self.to_rlp_raw();
+    pub fn raw_from_sig(&self, chain: u8, sig: Signature) -> Vec<u8> {
+        let mut rlp = self.to_rlp_raw(None);
 
-        println!(">> DEBUG signature: {:?}", sig);
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        sig.v += chain * 2 + 35 - 27;
+        let v: u8 = sig.v + chain * 2 + 35 - 27;
 
-        rlp.push(&[sig.v][..]);
+        rlp.push(&v);
         rlp.push(&sig.r[..]);
         rlp.push(&sig.s[..]);
 
@@ -51,14 +50,14 @@ impl Transaction {
     }
 
     /// RLP packed transaction
-    pub fn to_rlp(&self) -> Vec<u8> {
+    pub fn to_rlp(&self, chain_id: Option<u8>) -> Vec<u8> {
         let mut buf = Vec::new();
-        self.to_rlp_raw().write_rlp(&mut buf);
+        self.to_rlp_raw(chain_id).write_rlp(&mut buf);
 
         buf
     }
 
-    fn to_rlp_raw(&self) -> RLPList {
+    fn to_rlp_raw(&self, chain_id: Option<u8>) -> RLPList {
         let mut data = RLPList::default();
 
         data.push(&self.nonce);
@@ -73,11 +72,20 @@ impl Transaction {
         data.push(trim_bytes(&self.value));
         data.push(self.data.as_slice());
 
+        match chain_id {
+            Some(id) => {
+                data.push(&id);
+                data.push(&[][..]);
+                data.push(&[][..]);
+            }
+            _ => {}
+        }
+
         data
     }
 
     fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
-        let mut rlp = self.to_rlp_raw();
+        let mut rlp = self.to_rlp_raw(Some(chain));
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
         rlp.push(&chain);
