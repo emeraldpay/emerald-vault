@@ -37,9 +37,15 @@ impl Transaction {
         let mut rlp = self.to_rlp_raw(None);
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        let v: u8 = sig.v + chain * 2 + 35 - 27;
+        // Can be already applied by HD wallet.
+        // TODO:refactor to avoid this check
+        let mut v = sig.v as u16;
+        let stamp = (chain * 2 + 35 - 27) as u16;
+        if v + stamp <= 0xff {
+            v += stamp;
+        }
 
-        rlp.push(&v);
+        rlp.push(&(v as u8));
         rlp.push(&sig.r[..]);
         rlp.push(&sig.s[..]);
 
