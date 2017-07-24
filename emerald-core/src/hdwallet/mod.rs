@@ -437,7 +437,11 @@ mod tests {
     #[test]
     pub fn should_get_address_with_ledger() {
         let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
-        let path_arr = ["44'/60'/160720'/0'/0", "44'/60'/160720'/1'/0", "44'/60'/160720'/1'/1"];
+        let path_arr = [
+            "44'/60'/160720'/0'/0",
+            "44'/60'/160720'/1'/0",
+            "44'/60'/160720'/1'/1",
+        ];
         manager.update(None).unwrap();
 
         if manager.devices().is_empty() {
@@ -448,10 +452,13 @@ mod tests {
         let fd = &manager.devices()[0].1;
         for p in path_arr.iter() {
             let path = to_prefixed_path(p).unwrap();
-            println!(">> ADDRESS: {}", manager.get_address(fd, Some(path)).unwrap());
+            println!(
+                ">> ADDRESS: {}",
+                manager.get_address(fd, Some(path)).unwrap()
+            );
         }
-//        let addr = manager.get_address(fd, None).unwrap();
-//        assert_eq!("78296f1058dd49c5d6500855f59094f0a2876397", addr.to_hex());
+        //        let addr = manager.get_address(fd, None).unwrap();
+        //        assert_eq!("78296f1058dd49c5d6500855f59094f0a2876397", addr.to_hex());
     }
 
     #[test]
