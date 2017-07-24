@@ -414,7 +414,8 @@ pub fn sign_transaction(
                                     }
                                     Err(e) => {
                                         return Err(Error::InvalidDataFormat(format!(
-                                            "Can't get Address for HD Path: {}", e.to_string()
+                                            "Can't get Address for HD Path: {}",
+                                            e.to_string()
                                         )))
                                     }
                                 }
