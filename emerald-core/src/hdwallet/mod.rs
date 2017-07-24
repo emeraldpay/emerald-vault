@@ -319,7 +319,7 @@ mod tests {
             data: Vec::new(),
         };
 
-        let rlp = tx.to_rlp();
+        let rlp = tx.to_rlp(None);
         let fd = &manager.devices()[0].1;
         let sign = manager.sign_transaction(&fd, &rlp, None);
 
@@ -362,7 +362,7 @@ mod tests {
             data: data,
         };
 
-        let rlp = tx.to_rlp();
+        let rlp = tx.to_rlp(None);
         let fd = &manager.devices()[0].1;
         /*
             f9\
