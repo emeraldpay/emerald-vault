@@ -400,6 +400,25 @@ pub fn sign_transaction(
                             let rlp = tr.to_rlp(Some(chain_id));
                             for (addr, fd) in wm.devices() {
                                 debug!("Selected device: {:?} {:?}", &addr, &fd);
+
+                                // MUST verify address before making a signature, or a malicious
+                                // person can replace HD path with another one and convince user to
+                                // make signature from this address
+                                match wm.get_address(&fd, Some(hd_path.clone())) {
+                                    Ok(actual_addr) => {
+                                        if actual_addr != addr {
+                                            return Err(Error::InvalidDataFormat(
+                                                format!("Address for stored HD path is incorrect"),
+                                            ))
+                                        }
+                                    },
+                                    Err(e) => {
+                                        return Err(Error::InvalidDataFormat(
+                                            format!("Can't get Address for HD Path: {}", e.to_string()),
+                                        ))
+                                    }
+                                }
+
                                 match wm.sign_transaction(&fd, &rlp, Some(hd_path.clone())) {
                                     Ok(s) => {
                                         let raw = tr.raw_from_sig(chain_id, s);
