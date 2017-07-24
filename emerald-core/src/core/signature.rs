@@ -36,9 +36,9 @@ impl From<[u8; ECDSA_SIGNATURE_BYTES]> for Signature {
     fn from(data: [u8; ECDSA_SIGNATURE_BYTES]) -> Self {
         let mut sign = Signature::default();
 
-        sign.v = data[64];
-        sign.r.copy_from_slice(&data[0..32]);
-        sign.s.copy_from_slice(&data[32..64]);
+        sign.v = data[0];
+        sign.r.copy_from_slice(&data[1..(1 + 32)]);
+        sign.s.copy_from_slice(&data[(1 + 32)..(1 + 32 + 32)]);
 
         sign
     }
