@@ -191,12 +191,13 @@ impl WManager {
         Ok(addr)
     }
 
-    /// Sign hash for transaction
+    /// Sign transaction
     ///
     /// # Arguments:
-    /// fd - file descritptor to corresponding HID device
+    /// fd - file descriptor to corresponding HID device
     /// tr - RLP packed transaction
-    /// hd_path - optinal HD path, prefixed with count of derivation indexes
+    /// hd_path - optional HD path, prefixed with count of derivation indexes
+    ///
     pub fn sign_transaction(
         &self,
         fd: &str,
@@ -232,6 +233,7 @@ impl WManager {
             ECDSA_SIGNATURE_BYTES => {
                 let mut val: [u8; ECDSA_SIGNATURE_BYTES] = [0; ECDSA_SIGNATURE_BYTES];
                 val.copy_from_slice(&res);
+
                 Ok(Signature::from(val))
             }
             v => Err(Error::HDWalletError(format!(
@@ -319,7 +321,7 @@ mod tests {
             data: Vec::new(),
         };
 
-        let rlp = tx.to_rlp(None);
+        let rlp = tx.to_rlp(Some(61));
         let fd = &manager.devices()[0].1;
         let sign = manager.sign_transaction(&fd, &rlp, None);
 

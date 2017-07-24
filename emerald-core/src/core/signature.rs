@@ -113,8 +113,8 @@ impl PrivateKey {
         let (rid, sig) = s.serialize_compact(&ECDSA);
 
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
-        buf[0..64].copy_from_slice(&sig[0..64]);
-        buf[64] = (rid.to_i32() + 27) as u8;
+        buf[0] = (rid.to_i32() + 27) as u8;
+        buf[1..65].copy_from_slice(&sig[0..64]);
 
         Ok(Signature::from(buf))
     }
