@@ -37,7 +37,7 @@ impl Transaction {
         let mut rlp = self.to_rlp_raw(None);
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        let v:u8 = sig.v + chain * 2 + 35 - 27;
+        let v: u8 = sig.v + chain * 2 + 35 - 27;
 
         rlp.push(&v);
         rlp.push(&sig.r[..]);
@@ -77,7 +77,7 @@ impl Transaction {
                 data.push(&id);
                 data.push(&[][..]);
                 data.push(&[][..]);
-            },
+            }
             _ => {}
         }
 
