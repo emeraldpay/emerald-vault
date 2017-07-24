@@ -397,7 +397,7 @@ pub fn sign_transaction(
                             }
 
                             let mut err = String::new();
-                            let rlp = tr.to_rlp();
+                            let rlp = tr.to_rlp(Some(chain_id));
                             for (addr, fd) in wm.devices() {
                                 debug!("Selected device: {:?} {:?}", &addr, &fd);
                                 match wm.sign_transaction(&fd, &rlp, Some(hd_path.clone())) {
