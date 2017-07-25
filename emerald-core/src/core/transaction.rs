@@ -33,14 +33,19 @@ impl Transaction {
     }
 
     /// RLP packed signed transaction from provided `Signature`
-    pub fn raw_from_sig(&self, chain: u8, mut sig: Signature) -> Vec<u8> {
-        let mut rlp = self.to_rlp_raw();
+    pub fn raw_from_sig(&self, chain: u8, sig: Signature) -> Vec<u8> {
+        let mut rlp = self.to_rlp_raw(None);
 
-        println!(">> DEBUG signature: {:?}", sig);
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        sig.v += chain * 2 + 35 - 27;
+        // Can be already applied by HD wallet.
+        // TODO:refactor to avoid this check
+        let mut v = sig.v as u16;
+        let stamp = (chain * 2 + 35 - 27) as u16;
+        if v + stamp <= 0xff {
+            v += stamp;
+        }
 
-        rlp.push(&[sig.v][..]);
+        rlp.push(&(v as u8));
         rlp.push(&sig.r[..]);
         rlp.push(&sig.s[..]);
 
@@ -51,14 +56,14 @@ impl Transaction {
     }
 
     /// RLP packed transaction
-    pub fn to_rlp(&self) -> Vec<u8> {
+    pub fn to_rlp(&self, chain_id: Option<u8>) -> Vec<u8> {
         let mut buf = Vec::new();
-        self.to_rlp_raw().write_rlp(&mut buf);
+        self.to_rlp_raw(chain_id).write_rlp(&mut buf);
 
         buf
     }
 
-    fn to_rlp_raw(&self) -> RLPList {
+    fn to_rlp_raw(&self, chain_id: Option<u8>) -> RLPList {
         let mut data = RLPList::default();
 
         data.push(&self.nonce);
@@ -73,19 +78,20 @@ impl Transaction {
         data.push(trim_bytes(&self.value));
         data.push(self.data.as_slice());
 
+        if let Some(id) = chain_id {
+            data.push(&id);
+            data.push(&[][..]);
+            data.push(&[][..]);
+        }
+
         data
     }
 
     fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
-        let mut rlp = self.to_rlp_raw();
-
-        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        rlp.push(&chain);
-        rlp.push(&[][..]);
-        rlp.push(&[][..]);
-
+        let rlp = self.to_rlp_raw(Some(chain));
         let mut vec = Vec::new();
         rlp.write_rlp(&mut vec);
+
         keccak256(&vec)
     }
 }
@@ -103,7 +109,7 @@ mod tests {
                 to_32bytes("0000000000000000000000000000000\
                               0000000000000000000000004e3b29200"),
             gas_limit: 21000,
-            to: Some("0x0000000000000000000000000000000012345678"
+            to: Some("0x3f4E0668C20E100d7C2A27D4b177Ac65B2875D26"
                     .parse::<Address>()
                     .unwrap()),
             value: /* 1 ETC */
@@ -117,7 +123,7 @@ mod tests {
            "nonce":"0x00",
            "gasPrice":"0x04e3b29200",
            "gasLimit":"0x5208",
-           "to":"0x0000000000000000000000000000000012345678",
+           "to":"0x3f4E0668C20E100d7C2A27D4b177Ac65B2875D26",
            "value":"0x0de0b6b3a7640000",
            "data":"",
            "chainId":61
@@ -125,25 +131,26 @@ mod tests {
         */
 
         let pk = PrivateKey(to_32bytes(
-            "c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4",
+            "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf",
         ));
 
         let hex = tx.to_signed_raw(pk, 61 /*MAINNET_ID*/).unwrap().to_hex();
-        println!("{:?}", &hex);
         assert_eq!(hex,
-                   "f86d\
-                   80\
-                   8504e3b29200\
-                   825208\
-                   940000000000000000000000000000000012345678\
-                   880de0b6b3a7640000\
-                   80\
-                   819e\
-                   a0\
-                   b1\
-                   7da8416f42d62192b07ff855f4a8e8e9ee1a2e920e3c407fd9a3bd5e388daaa0\
-                   547981b617c88587bfcd924437f6134b0b75f4484042db0750a2b1c0ccccc597");
+                    "f86d\
+                    808504e3b29200825208\
+                    94\
+                    3f4e0668c20e100d7c2a27d4b177ac65b2875d26\
+                    88\
+                    0de0b6b3a7640000\
+                    80\
+                    81\
+                    9e\
+                    a0\
+                    4ca75f697cf61daf1980dcd4f4460450e9e07b3c1b16ad1224b1a46e7e5c53b2\
+                    a0\
+                    59648e92e975d9cdf5d12698d7267595c087e83e9598639e13525f6fe7c047f1");
     }
+
 
     #[test]
     fn should_sign_transaction_for_testnet() {

@@ -128,7 +128,7 @@ pub fn to_prefixed_path(hd_str: &str) -> Result<Vec<u8>, Error> {
     Ok(buf)
 }
 
-///
+/// `Wallet Manager` to handle all interaction with HD wallet
 pub struct WManager {
     /// HID point used for communication
     hid: HidApi,
@@ -158,6 +158,11 @@ impl WManager {
         Ok(h.or(self.hd_path.clone()).unwrap())
     }
 
+    /// Get address
+    ///
+    /// # Arguments:
+    /// fd - file descriptor to corresponding HID device
+    /// hd_path - optional HD path, prefixed with count of derivation indexes
     ///
     pub fn get_address(&self, fd: &str, hd_path: Option<Vec<u8>>) -> Result<Address, Error> {
         let hd_path = self.pick_hd_path(hd_path)?;
@@ -191,12 +196,13 @@ impl WManager {
         Ok(addr)
     }
 
-    /// Sign hash for transaction
+    /// Sign transaction
     ///
     /// # Arguments:
-    /// fd - file descritptor to corresponding HID device
+    /// fd - file descriptor to corresponding HID device
     /// tr - RLP packed transaction
-    /// hd_path - optinal HD path, prefixed with count of derivation indexes
+    /// hd_path - optional HD path, prefixed with count of derivation indexes
+    ///
     pub fn sign_transaction(
         &self,
         fd: &str,
@@ -210,6 +216,11 @@ impl WManager {
             0...CHUNK_SIZE => (tr, _mock.as_slice()),
             _ => tr.split_at(CHUNK_SIZE - hd_path.len()),
         };
+
+        println!(
+            "Sign transaction with HD Wallet from address: {}",
+            self.get_address(fd, Some(hd_path.clone()))?
+        );
 
         let init_apdu = ApduBuilder::new(SIGN_ETH_TRANSACTION)
             .with_p1(0x00)
@@ -227,11 +238,12 @@ impl WManager {
                 .build();
             res = sendrecv(&handle, &apdu_cont)?;
         }
-        debug!("Sign received: {:?}", res);
+        debug!("Received signature: {:?}", res);
         match res.len() {
             ECDSA_SIGNATURE_BYTES => {
                 let mut val: [u8; ECDSA_SIGNATURE_BYTES] = [0; ECDSA_SIGNATURE_BYTES];
                 val.copy_from_slice(&res);
+
                 Ok(Signature::from(val))
             }
             v => Err(Error::HDWalletError(format!(
@@ -305,26 +317,43 @@ mod tests {
         }
 
         let tx = Transaction {
-            nonce: 0x01,
+            nonce: 0x00,
             gas_price: /* 21000000000 */
             to_32bytes("0000000000000000000000000000000\
                                           0000000000000000000000004e3b29200"),
             gas_limit: 0x5208,
-            to: Some("c0de379b51d582e1600c76dd1efee8ed024b844a"
+            to: Some("78296F1058dD49C5D6500855F59094F0a2876397"
                 .parse::<Address>()
                 .unwrap()),
             value: /* 1 ETC */
             to_32bytes("00000000000000000000000000000000\
-                                          00000000000000000003f26fcfb7a224"),
+                                00000000000000000de0b6b3a7640000"),
             data: Vec::new(),
         };
 
-        let rlp = tx.to_rlp();
+        let chain: u8 = 61;
+        let rlp = tx.to_rlp(Some(chain));
         let fd = &manager.devices()[0].1;
-        let sign = manager.sign_transaction(&fd, &rlp, None);
+        let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
 
-        assert!(sign.is_ok());
-        println!("Signature: {:?}", &sign.unwrap());
+        assert_eq!(tx.raw_from_sig(chain, sign).to_hex(),
+                   "f86d80\
+                   85\
+                   04e3b29200\
+                   82\
+                   5208\
+                   94\
+                   78296f1058dd49c5d6500855f59094f0a2876397\
+                   88\
+                   0de0b6b3a7640000\
+                   80\
+                   81\
+                   9d\
+                   a0\
+                   5cba84eb9aac6854c8ff6aa21b3e0c6c2036e07ebdee44bcf7ace95bab569d8f\
+                   a0\
+                   6eab3be528ef7565c887e147a2d53340c6c9fab5d6f56694681c90b518b64183");
+
     }
 
     #[test]
@@ -362,7 +391,7 @@ mod tests {
             data: data,
         };
 
-        let rlp = tx.to_rlp();
+        let rlp = tx.to_rlp(None);
         let fd = &manager.devices()[0].1;
         /*
             f9\
@@ -418,7 +447,6 @@ mod tests {
 
         let fd = &manager.devices()[0].1;
         let addr = manager.get_address(fd, None).unwrap();
-
         assert_eq!("78296f1058dd49c5d6500855f59094f0a2876397", addr.to_hex());
     }
 
@@ -466,4 +494,6 @@ mod tests {
         );
         debug!("prefixed: {:?}", to_prefixed_path(&path_str).unwrap());
     }
+
+
 }
