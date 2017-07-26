@@ -283,7 +283,12 @@ pub fn list_accounts<P: AsRef<Path>>(
                             Some(desc) => info.push(desc),
                             None => info.push("".to_string()),
                         }
-                        accounts.push((info[0].clone(), kf.address.to_string(), info[1].clone(), is_hd));
+                        accounts.push((
+                            info[0].clone(),
+                            kf.address.to_string(),
+                            info[1].clone(),
+                            is_hd,
+                        ));
                     }
                 }
                 Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
