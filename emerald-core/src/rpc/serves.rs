@@ -74,6 +74,7 @@ pub fn heartbeat(_params: ()) -> Result<i64, Error> {
 pub struct ListAccountAccount {
     name: String,
     address: String,
+    description: String,
     hardware: bool,
 }
 
@@ -96,10 +97,11 @@ pub fn list_accounts(
     let (additional,) = params.into_right();
     let res = keystore::list_accounts(keystore_path, additional.show_hidden)?
         .iter()
-        .map(|&(ref name, ref address, is_hd)| {
+        .map(|&(ref name, ref address, ref desc, is_hd)| {
             ListAccountAccount {
                 name: name.clone(),
                 address: address.clone(),
+                description: desc.clone(),
                 hardware: is_hd,
             }
         })

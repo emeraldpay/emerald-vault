@@ -239,19 +239,22 @@ pub fn write<P: AsRef<Path>>(kf: &KeyFile, p: P) -> Result<(), Error> {
     Ok(())
 }
 
-/// Lists addresses for `Keystore` files
-/// in specified folder. Can include hidden files if flag set
+/// Lists addresses for `Keystore` files in specified folder.
+/// Can include hidden files if flag set.
 ///
 /// # Arguments
 ///
 /// * `path` - target directory
 /// * `showHidden` - flag to show hidden `Keystore` files
 ///
+/// # Return:
+/// Array of tuples (name, address, description, is_hidden)
+///
 pub fn list_accounts<P: AsRef<Path>>(
     path: P,
     show_hidden: bool,
-) -> Result<Vec<(String, String, bool)>, Error> {
-    let mut accounts: Vec<(String, String, bool)> = vec![];
+) -> Result<Vec<(String, String, String, bool)>, Error> {
+    let mut accounts: Vec<(String, String, String, bool)> = vec![];
     for e in read_dir(&path)? {
         if e.is_err() {
             continue;
@@ -265,15 +268,27 @@ pub fn list_accounts<P: AsRef<Path>>(
 
             match KeyFile::decode(content) {
                 Ok(kf) => {
+                    let mut info = Vec::new();
                     if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
                         let is_hd = match kf.crypto {
                             CryptoType::Core(_) => false,
                             CryptoType::HdWallet(_) => true,
                         };
                         match kf.name {
-                            Some(name) => accounts.push((name, kf.address.to_string(), is_hd)),
-                            None => accounts.push(("".to_string(), kf.address.to_string(), is_hd)),
+                            Some(name) => info.push(name),
+                            None => info.push("".to_string()),
                         }
+
+                        match kf.description {
+                            Some(desc) => info.push(desc),
+                            None => info.push("".to_string()),
+                        }
+                        accounts.push((
+                            info[0].clone(),
+                            kf.address.to_string(),
+                            info[1].clone(),
+                            is_hd,
+                        ));
                     }
                 }
                 Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
