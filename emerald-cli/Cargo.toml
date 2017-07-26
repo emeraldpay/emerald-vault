@@ -1,6 +1,6 @@
 [package]
 name = "emerald-cli"
-version = "0.10.0"
+version = "0.10.1"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Ethereum Classic secure account management command line interface"
 homepage = "http://etcdevteam.com"
