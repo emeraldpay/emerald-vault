@@ -15,9 +15,9 @@ pub use self::error::Error;
 pub use self::keystore::HdwalletCrypto;
 use super::{Address, ECDSA_SIGNATURE_BYTES, Signature, to_arr, to_bytes};
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
+use regex::Regex;
 use std::{thread, time};
 use std::str::{FromStr, from_utf8};
-
 
 const GET_ETH_ADDRESS: u8 = 0x02;
 const SIGN_ETH_TRANSACTION: u8 = 0x04;
@@ -86,11 +86,19 @@ impl From<HidDeviceInfo> for Device {
 
 /// Parse HD path into byte array
 pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
-    let mut buf = Vec::new();
+    lazy_static! {
+        static ref INVALID_PATH_RE: Regex = Regex::new(r#"[^0-9'/]"#).unwrap();
+    }
 
-    hd_str
-        .split("/")
-        .map(|s| {
+    if INVALID_PATH_RE.is_match(hd_str) {
+        return Err(Error::HDWalletError(
+            format!("Invalid `hd_path` format: {}", hd_str),
+        ));
+    }
+
+    let mut buf = Vec::new();
+    {
+        let parse = |s: &str| {
             let mut str = s.to_string();
             let mut v: u64 = 0;
 
@@ -98,9 +106,8 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
                 v += 0x80000000;
                 str.remove(s.len() - 1);
             }
-
-            match str.parse::<u32>() {
-                Ok(d) => v += d as u64,
+            match str.parse::<u64>() {
+                Ok(d) => v += d,
                 Err(_) => {
                     return Err(Error::HDWalletError(
                         format!("Invalid `hd_path` format: {}", hd_str),
@@ -109,8 +116,10 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
             }
             buf.extend(to_bytes(v, 4));
             Ok(())
-        })
-        .collect::<Vec<_>>();
+        };
+
+        hd_str.split("/").map(parse).collect::<Vec<_>>();
+    }
 
     Ok(buf)
 }
@@ -468,7 +477,7 @@ mod tests {
 
     #[test]
     pub fn should_parse_hd_path() {
-        let path_str = "44\'/60\'/160720\'/0\'/0";
+        let path_str = "44'/60'/160720'/0'/0";
         assert_eq!(
             ETC_DERIVATION_PATH[1..].to_vec(),
             path_to_arr(&path_str).unwrap()
@@ -476,18 +485,17 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     pub fn should_fail_parse_hd_path() {
-        let mut path_str = "44\'/60\'/160A+_0\'/0\'/0";
+        let mut path_str = "44'/60'/160A+_0'/0'/0";
         assert!(path_to_arr(&path_str).is_err());
 
-        path_str = "44\'/60\'/16011_11111111111111111zz1111111111111111111111111111111\'/0\'/0";
+        path_str = "44'/60'/16011_11111111111111111zz1111111111111111111111111111111'/0'/0";
         assert!(path_to_arr(&path_str).is_err());
     }
 
     #[test]
-    pub fn should_parse_hd_path_prefixed() {
-        let path_str = "44\'/60\'/160720\'/0\'/0";
+    pub fn should_parse_hd_path_into_prefixed() {
+        let path_str = "44'/60'/160720'/0'/0";
         assert_eq!(
             ETC_DERIVATION_PATH.to_vec(),
             to_prefixed_path(&path_str).unwrap()

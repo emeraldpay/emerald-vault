@@ -16,5 +16,5 @@ Options:
                                                   + Mac OS X: ~/Library/Emerald
                                                   + Linux: ~/.emerald
                                                   + Windows: %USERDIR%\.emerald
-      --security-level <normal|high|ultra>    Level of security for cryptographic operations [default: normal]
+      --security-level <normal|high|ultra>    Level of security for cryptographic operations [default: ultra]
   -c, --chain <mainnet|testnet>               Chain name [default: mainnet]

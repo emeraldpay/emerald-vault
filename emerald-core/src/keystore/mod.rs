@@ -11,7 +11,7 @@ mod serialize;
 
 pub use self::cipher::Cipher;
 pub use self::error::Error;
-pub use self::kdf::{Kdf, KdfDepthLevel};
+pub use self::kdf::{Kdf, KdfDepthLevel, PBKDF2_KDF_NAME};
 pub use self::prf::Prf;
 pub use self::serialize::{CoreCrypto, Iv, Mac, Salt, decode_str, hide, list_accounts, unhide};
 use super::core::{self, Address, PrivateKey};
@@ -20,6 +20,7 @@ pub use hdwallet::HdwalletCrypto;
 use rand::{OsRng, Rng};
 use std::{cmp, fmt};
 use std::convert::From;
+use std::str::FromStr;
 use uuid::Uuid;
 
 /// Key derivation function salt length in bytes
@@ -76,10 +77,17 @@ impl KeyFile {
     ) -> Result<KeyFile, Error> {
         let mut rng = os_random();
 
+        let kdf;
+        if cfg!(target_os = "windows") {
+            kdf = Kdf::from_str(PBKDF2_KDF_NAME)?;
+        } else {
+            kdf = Kdf::from(*sec_level);
+        }
+
         Self::new_custom(
             PrivateKey::gen_custom(&mut rng),
             passphrase,
-            Kdf::from(*sec_level),
+            kdf,
             &mut rng,
             name,
             description,
