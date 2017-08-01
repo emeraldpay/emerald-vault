@@ -1,5 +1,6 @@
 //! # Serialize keystore files (UTC / JSON) module errors
 
+use hdwallet;
 use rpc;
 use rustc_serialize::json;
 use std::{error, fmt, io};
@@ -21,6 +22,9 @@ pub enum Error {
 
     /// `KeyFile` wasn't found
     NotFound,
+
+    /// `Keyfile` crypto section parsing
+    InvalidCrypto(String),
 }
 
 impl From<Error> for rpc::Error {
@@ -47,6 +51,13 @@ impl From<json::DecoderError> for Error {
     }
 }
 
+
+impl From<hdwallet::Error> for Error {
+    fn from(err: hdwallet::Error) -> Self {
+        Error::InvalidCrypto(err.to_string())
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
@@ -55,6 +66,9 @@ impl fmt::Display for Error {
             Error::InvalidDecoding(ref err) => write!(f, "Invalid keystore file decoding: {}", err),
             Error::InvalidEncoding(ref err) => write!(f, "Invalid keystore file encoding: {}", err),
             Error::NotFound => f.write_str("Required keystore file wasn't found"),
+            Error::InvalidCrypto(ref str) => {
+                f.write_str(&format!("Can't parse `crypto` section for. {}", str))
+            }
         }
     }
 }

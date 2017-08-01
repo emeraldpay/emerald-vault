@@ -1,6 +1,6 @@
 [package]
 name = "emerald-core"
-version = "0.9.1"
+version = "0.10.1"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Ethereum Classic secure account management core libary"
 homepage = "http://etcdevteam.com"
@@ -48,7 +48,7 @@ hyper = { version = "0.11", optional = true }
 reqwest = { version = "0.6", optional = true }
 clippy = {version = "0.0", optional = true}
 chrono = "0.4"
-csv = "0.15"
+hidapi = "0.4"
 
 [dev-dependencies]
 tempdir = "0.3"

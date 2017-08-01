@@ -1,62 +1,100 @@
 //! # JSON serialize for crypto field (UTC / JSON)
 
-use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
+use super::{CIPHER_IV_BYTES, Cipher, CryptoType, Error, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::util::KECCAK256_BYTES;
 use hex::{FromHex, ToHex};
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+use std::default::Default;
 use std::str::FromStr;
+
+/// Derived core length in bytes (by default)
+pub const DEFAULT_DK_LENGTH: usize = 32;
 
 byte_array_struct!(Salt, KDF_SALT_BYTES);
 byte_array_struct!(Mac, KECCAK256_BYTES);
 byte_array_struct!(Iv, CIPHER_IV_BYTES);
 
+///
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Crypto {
-    cipher: Cipher,
-    cipher_text: Vec<u8>,
-    cipher_params: CipherParams,
-    kdf: Kdf,
-    kdfparams_dklen: usize,
-    kdfparams_salt: Salt,
-    mac: Mac,
+pub struct CoreCrypto {
+    /// Cipher
+    pub cipher: Cipher,
+
+    /// Cipher text
+    pub cipher_text: Vec<u8>,
+
+    /// Params for `Cipher`
+    pub cipher_params: CipherParams,
+
+    /// Key derivation funciton
+    pub kdf: Kdf,
+
+    /// `Kdf` length for parameters
+    pub kdfparams_dklen: usize,
+
+    /// Cryptographic salt for `Kdf`
+    pub kdfparams_salt: Salt,
+
+    /// HMAC authentication code
+    pub mac: Mac,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, RustcDecodable, RustcEncodable)]
-struct CipherParams {
-    iv: Iv,
+pub struct CipherParams {
+    pub iv: Iv,
 }
 
-impl From<KeyFile> for Crypto {
-    fn from(key_file: KeyFile) -> Self {
-        Crypto {
-            cipher: key_file.cipher,
-            cipher_text: key_file.cipher_text,
-            cipher_params: CipherParams { iv: Iv::from(key_file.cipher_iv) },
-            kdf: key_file.kdf,
-            kdfparams_dklen: key_file.dk_length,
-            kdfparams_salt: Salt::from(key_file.kdf_salt),
-            mac: Mac::from(key_file.keccak256_mac),
+impl Default for CipherParams {
+    fn default() -> Self {
+        CipherParams { iv: Iv::from([0; CIPHER_IV_BYTES]) }
+    }
+}
+
+impl CoreCrypto {
+    ///
+    pub fn try_from(kf: KeyFile) -> Result<Self, Error> {
+        match kf.crypto {
+            CryptoType::Core(ref core) => {
+                Ok(CoreCrypto {
+                    cipher: core.cipher,
+                    cipher_text: core.cipher_text.clone(),
+                    cipher_params: core.cipher_params.clone(),
+                    kdf: core.kdf,
+                    kdfparams_dklen: core.kdfparams_dklen,
+                    kdfparams_salt: Salt::from(core.kdfparams_salt.0),
+                    mac: Mac::from(core.mac.0),
+                })
+            }
+            _ => Err(Error::NotFound),
         }
     }
 }
 
-impl Into<KeyFile> for Crypto {
+impl Default for CoreCrypto {
+    fn default() -> Self {
+        Self {
+            cipher: Cipher::default(),
+            cipher_text: vec![],
+            cipher_params: CipherParams::default(),
+            kdf: Kdf::default(),
+            kdfparams_dklen: DEFAULT_DK_LENGTH,
+            kdfparams_salt: Salt::default(),
+            mac: Mac::default(),
+        }
+    }
+}
+
+impl Into<KeyFile> for CoreCrypto {
     fn into(self) -> KeyFile {
         KeyFile {
-            dk_length: self.kdfparams_dklen,
-            kdf: self.kdf,
-            kdf_salt: self.kdfparams_salt.into(),
-            cipher: self.cipher,
-            cipher_text: self.cipher_text.clone(),
-            cipher_iv: self.cipher_params.iv.into(),
-            keccak256_mac: self.mac.into(),
+            crypto: CryptoType::Core(self),
             ..Default::default()
         }
     }
 }
 
-impl Decodable for Crypto {
-    fn decode<D: Decoder>(d: &mut D) -> Result<Crypto, D::Error> {
+impl Decodable for CoreCrypto {
+    fn decode<D: Decoder>(d: &mut D) -> Result<CoreCrypto, D::Error> {
         d.read_struct("Crypto", 6, |d| {
             let cipher = d.read_struct_field("cipher", 0, |d| decode_str(d))?;
 
@@ -109,7 +147,7 @@ impl Decodable for Crypto {
 
             let mac = d.read_struct_field("mac", 5, |d| Mac::decode(d))?;
 
-            Ok(Crypto {
+            Ok(CoreCrypto {
                 cipher: cipher,
                 cipher_text: cipher_text,
                 cipher_params: cipher_params,
@@ -122,7 +160,7 @@ impl Decodable for Crypto {
     }
 }
 
-impl Encodable for Crypto {
+impl Encodable for CoreCrypto {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         s.emit_struct("Crypto", 6, |s| {
             s.emit_struct_field(
@@ -195,6 +233,7 @@ impl Encodable for Crypto {
     }
 }
 
+/// Decode string for JSON deserialization
 #[inline]
 pub fn decode_str<T: FromStr, D: Decoder>(d: &mut D) -> Result<T, D::Error>
 where
@@ -246,7 +285,7 @@ mod tests {
 
     #[test]
     fn should_serialize_pbkdf2_crypto() {
-        let exp = Crypto {
+        let exp = CoreCrypto {
             cipher: Cipher::default(),
             cipher_text: Vec::from_hex(
                 "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126",
@@ -268,17 +307,17 @@ mod tests {
         };
 
         // just first encoding
-        let act = json::decode::<Crypto>(PBKDF2_TEXT).unwrap();
+        let act = json::decode::<CoreCrypto>(PBKDF2_TEXT).unwrap();
 
         // verify encoding & decoding full cycle logic
-        let act = json::decode::<Crypto>(&json::encode(&act).unwrap()).unwrap();
+        let act = json::decode::<CoreCrypto>(&json::encode(&act).unwrap()).unwrap();
 
         assert_eq!(act, exp);
     }
 
     #[test]
     fn should_serialize_scrypt_crypto() {
-        let exp = Crypto {
+        let exp = CoreCrypto {
             cipher: Cipher::default(),
             cipher_text: Vec::from_hex(
                 "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
@@ -301,10 +340,10 @@ mod tests {
         };
 
         // just first encoding
-        let act = json::decode::<Crypto>(SCRYPT_TEXT).unwrap();
+        let act = json::decode::<CoreCrypto>(SCRYPT_TEXT).unwrap();
 
         // verify encoding & decoding full cycle logic
-        let act = json::decode::<Crypto>(&json::encode(&act).unwrap()).unwrap();
+        let act = json::decode::<CoreCrypto>(&json::encode(&act).unwrap()).unwrap();
 
         assert_eq!(act, exp);
     }
@@ -313,18 +352,18 @@ mod tests {
     fn should_not_decode_unknown_kdf_prf() {
         let text = PBKDF2_TEXT.replace(&Prf::default().to_string(), "unknown");
 
-        assert!(json::decode::<Crypto>(&text).is_err());
+        assert!(json::decode::<CoreCrypto>(&text).is_err());
     }
 
     #[test]
     fn should_not_decode_unknown_cipher() {
         let text = SCRYPT_TEXT.replace(&Cipher::default().to_string(), "unknown");
 
-        assert!(json::decode::<Crypto>(&text).is_err());
+        assert!(json::decode::<CoreCrypto>(&text).is_err());
     }
 
     #[test]
     fn should_not_decode_not_wrong_crypto() {
-        assert!(json::decode::<Crypto>("garbage").is_err());
+        assert!(json::decode::<CoreCrypto>("garbage").is_err());
     }
 }

@@ -11,17 +11,17 @@ mod serialize;
 
 pub use self::cipher::Cipher;
 pub use self::error::Error;
-pub use self::kdf::{Kdf, KdfDepthLevel};
+pub use self::kdf::{Kdf, KdfDepthLevel, PBKDF2_KDF_NAME};
 pub use self::prf::Prf;
-pub use self::serialize::{hide, list_accounts, unhide};
+pub use self::serialize::{CoreCrypto, Iv, Mac, Salt, decode_str, hide, list_accounts, unhide};
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
+pub use hdwallet::HdwalletCrypto;
 use rand::{OsRng, Rng};
 use std::{cmp, fmt};
+use std::convert::From;
+use std::str::FromStr;
 use uuid::Uuid;
-
-/// Derived core length in bytes (by default)
-pub const DEFAULT_DK_LENGTH: usize = 32;
 
 /// Key derivation function salt length in bytes
 pub const KDF_SALT_BYTES: usize = 32;
@@ -30,7 +30,7 @@ pub const KDF_SALT_BYTES: usize = 32;
 pub const CIPHER_IV_BYTES: usize = 16;
 
 /// A keystore file (account private core encrypted with a passphrase)
-#[derive(Clone, Debug, Eq)]
+#[derive(Debug, Clone, Eq)]
 pub struct KeyFile {
     /// Specifies if `Keyfile` is visible
     pub visible: Option<bool>,
@@ -47,26 +47,19 @@ pub struct KeyFile {
     /// UUID v4
     pub uuid: Uuid,
 
-    /// Derived core length
-    pub dk_length: usize,
+    ///
+    pub crypto: CryptoType,
+}
 
-    /// Key derivation function
-    pub kdf: Kdf,
+/// Enum for two variants of `crypto` section in `Keyfile`
+///
+#[derive(Debug, Clone, PartialEq, Eq, RustcDecodable, RustcEncodable)]
+pub enum CryptoType {
+    /// normal Web3 Secret Storage
+    Core(CoreCrypto),
 
-    /// Key derivation function salt
-    pub kdf_salt: [u8; KDF_SALT_BYTES],
-
-    /// Cipher type
-    pub cipher: Cipher,
-
-    /// Cipher encoded text
-    pub cipher_text: Vec<u8>,
-
-    /// Cipher initialization vector
-    pub cipher_iv: [u8; CIPHER_IV_BYTES],
-
-    /// Keccak-256 based message authentication code
-    pub keccak256_mac: [u8; KECCAK256_BYTES],
+    /// backed with HD Wallet
+    HdWallet(HdwalletCrypto),
 }
 
 impl KeyFile {
@@ -84,10 +77,17 @@ impl KeyFile {
     ) -> Result<KeyFile, Error> {
         let mut rng = os_random();
 
+        let kdf;
+        if cfg!(target_os = "windows") {
+            kdf = Kdf::from_str(PBKDF2_KDF_NAME)?;
+        } else {
+            kdf = Kdf::from(*sec_level);
+        }
+
         Self::new_custom(
             PrivateKey::gen_custom(&mut rng),
             passphrase,
-            Kdf::from(*sec_level),
+            kdf,
             &mut rng,
             name,
             description,
@@ -116,10 +116,12 @@ impl KeyFile {
             uuid: rng.gen::<Uuid>(),
             name: name,
             description: description,
-            kdf: kdf,
-            kdf_salt: rng.gen::<[u8; KDF_SALT_BYTES]>(),
             ..Default::default()
         };
+
+        if let CryptoType::Core(ref mut core) = kf.crypto {
+            core.kdf = kdf;
+        }
 
         kf.encrypt_key_custom(pk, passphrase, rng);
         kf.address = kf.decrypt_address(passphrase)?;
@@ -135,20 +137,32 @@ impl KeyFile {
 
     /// Decrypt private key from keystore file by a passphrase
     pub fn decrypt_key(&self, passphrase: &str) -> Result<PrivateKey, Error> {
-        let derived = self.kdf.derive(self.dk_length, &self.kdf_salt, passphrase);
+        match self.crypto {
+            CryptoType::Core(ref core) => {
+                let derived = core.kdf.derive(
+                    core.kdfparams_dklen,
+                    &core.kdfparams_salt,
+                    passphrase,
+                );
 
-        let mut v = derived[16..32].to_vec();
-        v.extend_from_slice(&self.cipher_text);
+                let mut v = derived[16..32].to_vec();
+                v.extend_from_slice(&core.cipher_text);
 
-        if keccak256(&v) != self.keccak256_mac {
-            return Err(Error::FailedMacValidation);
+                let mac: [u8; KECCAK256_BYTES] = core.mac.into();
+                if keccak256(&v) != mac {
+                    return Err(Error::FailedMacValidation);
+                }
+
+                Ok(PrivateKey(to_arr(&core.cipher.encrypt(
+                    &core.cipher_text,
+                    &derived[0..16],
+                    &core.cipher_params.iv,
+                ))))
+            }
+            _ => Err(Error::InvalidCrypto(
+                "HD Wallet crypto used instead of normal".to_string(),
+            )),
         }
-
-        Ok(PrivateKey(to_arr(&self.cipher.encrypt(
-            &self.cipher_text,
-            &derived[0..16],
-            &self.cipher_iv,
-        ))))
     }
 
     /// Encrypt a new private key for keystore file with a passphrase
@@ -159,16 +173,34 @@ impl KeyFile {
     /// Encrypt a new private key for keystore file with a passphrase
     /// and with given custom random generator
     pub fn encrypt_key_custom<R: Rng>(&mut self, pk: PrivateKey, passphrase: &str, rng: &mut R) {
-        let derived = self.kdf.derive(self.dk_length, &self.kdf_salt, passphrase);
+        match self.crypto {
+            CryptoType::Core(ref mut core) => {
+                let mut buf_salt: [u8; KDF_SALT_BYTES] = [0; KDF_SALT_BYTES];
+                rng.fill_bytes(&mut buf_salt);
+                core.kdfparams_salt = Salt::from(buf_salt);
 
-        rng.fill_bytes(&mut self.cipher_iv);
+                let derived = core.kdf.derive(
+                    core.kdfparams_dklen,
+                    &core.kdfparams_salt,
+                    passphrase,
+                );
 
-        self.cipher_text = self.cipher.encrypt(&pk, &derived[0..16], &self.cipher_iv);
+                let mut buf_iv: [u8; CIPHER_IV_BYTES] = [0; CIPHER_IV_BYTES];
+                rng.fill_bytes(&mut buf_iv);
+                core.cipher_params.iv = Iv::from(buf_iv);
 
-        let mut v = derived[16..32].to_vec();
-        v.extend_from_slice(&self.cipher_text);
+                core.cipher_text = core.cipher.encrypt(
+                    &pk,
+                    &derived[0..16],
+                    &core.cipher_params.iv,
+                );
 
-        self.keccak256_mac = keccak256(&v);
+                let mut v = derived[16..32].to_vec();
+                v.extend_from_slice(&core.cipher_text);
+                core.mac = Mac::from(keccak256(&v));
+            }
+            _ => debug!("HD Wallet crypto used instead of normal"),
+        }
     }
 }
 
@@ -180,13 +212,7 @@ impl Default for KeyFile {
             description: None,
             address: Address::default(),
             uuid: Uuid::default(),
-            dk_length: DEFAULT_DK_LENGTH,
-            kdf: Kdf::default(),
-            kdf_salt: [0u8; KDF_SALT_BYTES],
-            cipher: Cipher::default(),
-            cipher_text: vec![],
-            cipher_iv: [0u8; CIPHER_IV_BYTES],
-            keccak256_mac: [0u8; KECCAK256_BYTES],
+            crypto: CryptoType::Core(CoreCrypto::default()),
         }
     }
 }
@@ -241,7 +267,12 @@ mod tests {
         let kf = KeyFile::new_custom(pk, "1234567890", kdf, &mut rand::thread_rng(), None, None)
             .unwrap();
 
-        assert_eq!(kf.kdf, kdf);
+        if let CryptoType::Core(ref core) = kf.crypto {
+            assert_eq!(core.kdf, kdf);
+        } else {
+            assert!(false);
+        }
+
         assert_eq!(kf.decrypt_key("1234567890").unwrap(), pk);
     }
 }

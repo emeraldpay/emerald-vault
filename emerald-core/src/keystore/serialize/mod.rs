@@ -7,12 +7,13 @@ mod crypto;
 mod error;
 
 use self::address::try_extract_address;
-use self::crypto::Crypto;
+pub use self::crypto::{CoreCrypto, Iv, Mac, Salt, decode_str};
 use self::error::Error;
-use super::{CIPHER_IV_BYTES, Cipher, KDF_SALT_BYTES, Kdf, KeyFile};
+use super::{CIPHER_IV_BYTES, Cipher, CryptoType, KDF_SALT_BYTES, Kdf, KeyFile};
+use super::HdwalletCrypto;
 use super::core::{self, Address};
 use super::util;
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder, json};
+use rustc_serialize::{Encodable, Encoder, json};
 use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -26,31 +27,33 @@ pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
 
 /// A serializable keystore file (UTC / JSON format)
 #[derive(Clone, Debug, RustcDecodable, RustcEncodable)]
-struct SerializableKeyFile {
+pub struct SerializableKeyFileCore {
     version: u8,
     id: Uuid,
     address: Address,
     name: Option<String>,
     description: Option<String>,
     visible: Option<bool>,
-    crypto: Crypto,
+    crypto: CoreCrypto,
 }
 
-impl From<KeyFile> for SerializableKeyFile {
-    fn from(key_file: KeyFile) -> Self {
-        SerializableKeyFile {
+impl SerializableKeyFileCore {
+    fn try_from(kf: KeyFile) -> Result<Self, Error> {
+        let cr = CoreCrypto::try_from(kf.clone())?;
+
+        Ok(SerializableKeyFileCore {
             version: CURRENT_VERSION,
-            id: key_file.uuid,
-            address: key_file.address,
-            name: key_file.name.clone(),
-            description: key_file.description.clone(),
-            visible: key_file.visible,
-            crypto: Crypto::from(key_file),
-        }
+            id: kf.uuid,
+            address: kf.address,
+            name: kf.name.clone(),
+            description: kf.description.clone(),
+            visible: kf.visible,
+            crypto: cr,
+        })
     }
 }
 
-impl Into<KeyFile> for SerializableKeyFile {
+impl Into<KeyFile> for SerializableKeyFileCore {
     fn into(self) -> KeyFile {
         KeyFile {
             name: self.name,
@@ -58,12 +61,81 @@ impl Into<KeyFile> for SerializableKeyFile {
             address: self.address,
             visible: self.visible,
             uuid: self.id,
-            ..self.crypto.into()
+            crypto: CryptoType::Core(self.crypto),
+        }
+    }
+}
+
+/// A serializable keystore file (UTC / JSON format)
+#[derive(Clone, Debug, RustcDecodable, RustcEncodable)]
+pub struct SerializableKeyFileHD {
+    version: u8,
+    id: Uuid,
+    address: Address,
+    name: Option<String>,
+    description: Option<String>,
+    visible: Option<bool>,
+    crypto: HdwalletCrypto,
+}
+
+impl SerializableKeyFileHD {
+    fn try_from(kf: KeyFile) -> Result<Self, Error> {
+        let cr = HdwalletCrypto::try_from(kf.clone())?;
+
+        Ok(SerializableKeyFileHD {
+            version: CURRENT_VERSION,
+            id: kf.uuid,
+            address: kf.address,
+            name: kf.name.clone(),
+            description: kf.description.clone(),
+            visible: kf.visible,
+            crypto: cr,
+        })
+    }
+}
+
+impl Into<KeyFile> for SerializableKeyFileHD {
+    fn into(self) -> KeyFile {
+        KeyFile {
+            name: self.name,
+            description: self.description,
+            address: self.address,
+            visible: self.visible,
+            uuid: self.id,
+            crypto: CryptoType::HdWallet(self.crypto),
         }
     }
 }
 
 impl KeyFile {
+    /// Decode `Keyfile` from JSON
+    /// Handles different variants of `crypto` section
+    ///
+    pub fn decode(f: String) -> Result<KeyFile, Error> {
+        let buf1 = f.clone();
+        let buf2 = f.clone();
+        let mut ver = 0;
+
+        let kf = json::decode::<SerializableKeyFileCore>(&buf1)
+            .and_then(|core| {
+                ver = core.version;
+                Ok(core.into())
+            })
+            .or_else(|_| {
+                json::decode::<SerializableKeyFileHD>(&buf2).and_then(|hd| {
+                    ver = hd.version;
+                    Ok(hd.into())
+                })
+            })
+            .map_err(|e| Error::from(e))?;
+
+        if !SUPPORTED_VERSIONS.contains(&ver) {
+            return Err(Error::UnsupportedVersion(ver));
+        }
+
+        Ok(kf)
+    }
+
     /// Serializes into JSON file with the name format `UTC--<timestamp>Z--<uuid>`
     ///
     /// # Arguments
@@ -71,10 +143,16 @@ impl KeyFile {
     /// * `dir` - path to destination directory
     /// * `addr` - a public address (optional)
     ///
-    pub fn flush<P: AsRef<Path>>(&self, dir: P) -> Result<(), Error> {
-        let path = dir.as_ref().join(
-            &generate_filename(&self.uuid.to_string()),
-        );
+    pub fn flush<P: AsRef<Path>>(&self, dir: P, filename: Option<&str>) -> Result<(), Error> {
+        let tmp;
+        let name = match filename {
+            Some(n) => n,
+            None => {
+                tmp = generate_filename(&self.uuid.to_string());
+                &tmp
+            }
+        };
+        let path = dir.as_ref().join(name);
 
         Ok(write(self, path)?)
     }
@@ -108,7 +186,7 @@ impl KeyFile {
 
             match try_extract_address(&content) {
                 Some(a) if a == *addr => {
-                    let kf = json::decode::<KeyFile>(&content)?;
+                    let kf = KeyFile::decode(content)?;
                     return Ok((path.to_owned(), kf));
                 }
                 _ => continue,
@@ -119,73 +197,98 @@ impl KeyFile {
     }
 }
 
-impl Decodable for KeyFile {
-    fn decode<D: Decoder>(d: &mut D) -> Result<KeyFile, D::Error> {
-        let sf = SerializableKeyFile::decode(d)?;
-
-        if !SUPPORTED_VERSIONS.contains(&sf.version) {
-            return Err(d.error(&Error::UnsupportedVersion(sf.version).to_string()));
-        }
-
-        Ok(sf.into())
-    }
-}
-
 impl Encodable for KeyFile {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        SerializableKeyFile::from(self.clone()).encode(s)
+        match SerializableKeyFileCore::try_from(self.clone()) {
+            Ok(sf) => sf.encode(s),
+            Err(_) => {
+                match SerializableKeyFileHD::try_from(self.clone()) {
+                    Ok(sf) => sf.encode(s),
+                    Err(_) => Ok(()),
+                }
+            }
+
+        }
     }
 }
 
 
-/// Writes out `Keyfile` into disk
-/// accordingly to `p` path
+/// Writes out `Keyfile` into disk accordingly to `p` path
+/// Try to match one wvariant of KeyFile:
+///     `..Core` - for normal `Keyfile` created as JSON safe storage
+///     `..HD` - for usage with HD wallets
 ///
 /// #Arguments:
 /// kf - `Keyfile` to be written
 /// p - destination route (path + filename)
 ///
 pub fn write<P: AsRef<Path>>(kf: &KeyFile, p: P) -> Result<(), Error> {
-    let sf = SerializableKeyFile::from(kf.clone());
-    let json = json::encode(&sf)?;
+    let json = match SerializableKeyFileCore::try_from(kf.clone()) {
+        Ok(sf) => json::encode(&sf)?,
+        Err(_) => {
+            match SerializableKeyFileHD::try_from(kf.clone()) {
+                Ok(sf) => json::encode(&sf)?,
+                Err(e) => return Err(Error::InvalidCrypto(e.to_string())),
+            }
+        }
+    };
+
     let mut file = File::create(&p)?;
     file.write_all(json.as_ref()).ok();
 
     Ok(())
 }
 
-/// Lists addresses for `Keystore` files
-/// in specified folder. Can include hidden files if flag set
+/// Lists addresses for `Keystore` files in specified folder.
+/// Can include hidden files if flag set.
 ///
 /// # Arguments
 ///
 /// * `path` - target directory
 /// * `showHidden` - flag to show hidden `Keystore` files
 ///
+/// # Return:
+/// Array of tuples (name, address, description, is_hidden)
+///
 pub fn list_accounts<P: AsRef<Path>>(
     path: P,
     show_hidden: bool,
-) -> Result<Vec<(String, String)>, Error> {
-    let mut accounts: Vec<(String, String)> = vec![];
+) -> Result<Vec<(String, String, String, bool)>, Error> {
+    let mut accounts: Vec<(String, String, String, bool)> = vec![];
     for e in read_dir(&path)? {
         if e.is_err() {
             continue;
         }
         let entry = e.unwrap();
-
         let mut content = String::new();
         if let Ok(mut keyfile) = File::open(entry.path()) {
             if keyfile.read_to_string(&mut content).is_err() {
                 continue;
             }
 
-            match json::decode::<KeyFile>(&content) {
+            match KeyFile::decode(content) {
                 Ok(kf) => {
+                    let mut info = Vec::new();
                     if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
+                        let is_hd = match kf.crypto {
+                            CryptoType::Core(_) => false,
+                            CryptoType::HdWallet(_) => true,
+                        };
                         match kf.name {
-                            Some(name) => accounts.push((name, kf.address.to_string())),
-                            None => accounts.push(("".to_string(), kf.address.to_string())),
+                            Some(name) => info.push(name),
+                            None => info.push("".to_string()),
                         }
+
+                        match kf.description {
+                            Some(desc) => info.push(desc),
+                            None => info.push("".to_string()),
+                        }
+                        accounts.push((
+                            info[0].clone(),
+                            kf.address.to_string(),
+                            info[1].clone(),
+                            is_hd,
+                        ));
                     }
                 }
                 Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
@@ -250,7 +353,7 @@ mod tests {
           "id": "9bec4728-37f9-4444-9990-2ba70ee038e9"
         }"#;
 
-        assert!(json::decode::<KeyFile>(str).is_err());
+        assert!(KeyFile::decode(str.to_string()).is_err());
     }
 
     #[test]
@@ -260,7 +363,7 @@ mod tests {
           "id": "9bec4728-37f9-4444-9990-2ba70ee038e9"
         }"#;
 
-        assert!(json::decode::<KeyFile>(str).is_err());
+        assert!(KeyFile::decode(str.to_string()).is_err());
     }
 
     #[test]
@@ -270,14 +373,14 @@ mod tests {
           "id": "__ec4728-37f9-4444-9990-2ba70ee038e9"
         }"#;
 
-        assert!(json::decode::<KeyFile>(str).is_err());
+        assert!(KeyFile::decode(str.to_string()).is_err());
     }
 
     #[test]
     fn should_catch_absent_keyfile_uuid() {
         let str = r#"{"version": 3}"#;
 
-        assert!(json::decode::<KeyFile>(str).is_err());
+        assert!(KeyFile::decode(str.to_string()).is_err());
     }
 
     #[test]

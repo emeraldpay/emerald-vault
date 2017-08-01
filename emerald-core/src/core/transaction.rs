@@ -1,6 +1,6 @@
 //! # Account transaction
 
-use super::{Address, Error, PrivateKey};
+use super::{Address, Error, PrivateKey, Signature};
 use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
 
 /// Transaction data
@@ -28,36 +28,42 @@ pub struct Transaction {
 impl Transaction {
     /// Sign transaction data with provided private key
     pub fn to_signed_raw(&self, pk: PrivateKey, chain: u8) -> Result<Vec<u8>, Error> {
-        let mut rlp = self.to_rlp();
+        let sig = pk.sign_hash(self.hash(chain))?;
+        Ok(self.raw_from_sig(chain, sig))
+    }
 
-        let mut sig = pk.sign_hash(self.hash(chain))?;
+    /// RLP packed signed transaction from provided `Signature`
+    pub fn raw_from_sig(&self, chain: u8, sig: Signature) -> Vec<u8> {
+        let mut rlp = self.to_rlp_raw(None);
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        sig.v += chain * 2 + 35 - 27;
+        // Can be already applied by HD wallet.
+        // TODO:refactor to avoid this check
+        let mut v = sig.v as u16;
+        let stamp = (chain * 2 + 35 - 27) as u16;
+        if v + stamp <= 0xff {
+            v += stamp;
+        }
 
-        rlp.push(&[sig.v][..]);
+        rlp.push(&(v as u8));
         rlp.push(&sig.r[..]);
         rlp.push(&sig.s[..]);
 
-        let mut vec = Vec::new();
-        rlp.write_rlp(&mut vec);
-        Ok(vec)
+        let mut buf = Vec::new();
+        rlp.write_rlp(&mut buf);
+
+        buf
     }
 
-    fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
-        let mut rlp = self.to_rlp();
+    /// RLP packed transaction
+    pub fn to_rlp(&self, chain_id: Option<u8>) -> Vec<u8> {
+        let mut buf = Vec::new();
+        self.to_rlp_raw(chain_id).write_rlp(&mut buf);
 
-        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        rlp.push(&chain);
-        rlp.push(&[][..]);
-        rlp.push(&[][..]);
-
-        let mut vec = Vec::new();
-        rlp.write_rlp(&mut vec);
-        keccak256(&vec)
+        buf
     }
 
-    fn to_rlp(&self) -> RLPList {
+    fn to_rlp_raw(&self, chain_id: Option<u8>) -> RLPList {
         let mut data = RLPList::default();
 
         data.push(&self.nonce);
@@ -72,7 +78,21 @@ impl Transaction {
         data.push(trim_bytes(&self.value));
         data.push(self.data.as_slice());
 
+        if let Some(id) = chain_id {
+            data.push(&id);
+            data.push(&[][..]);
+            data.push(&[][..]);
+        }
+
         data
+    }
+
+    fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
+        let rlp = self.to_rlp_raw(Some(chain));
+        let mut vec = Vec::new();
+        rlp.write_rlp(&mut vec);
+
+        keccak256(&vec)
     }
 }
 
@@ -89,7 +109,7 @@ mod tests {
                 to_32bytes("0000000000000000000000000000000\
                               0000000000000000000000004e3b29200"),
             gas_limit: 21000,
-            to: Some("0x0000000000000000000000000000000012345678"
+            to: Some("0x3f4E0668C20E100d7C2A27D4b177Ac65B2875D26"
                     .parse::<Address>()
                     .unwrap()),
             value: /* 1 ETC */
@@ -103,7 +123,7 @@ mod tests {
            "nonce":"0x00",
            "gasPrice":"0x04e3b29200",
            "gasLimit":"0x5208",
-           "to":"0x0000000000000000000000000000000012345678",
+           "to":"0x3f4E0668C20E100d7C2A27D4b177Ac65B2875D26",
            "value":"0x0de0b6b3a7640000",
            "data":"",
            "chainId":61
@@ -111,21 +131,26 @@ mod tests {
         */
 
         let pk = PrivateKey(to_32bytes(
-            "c85ef7d79691fe79573b1a7064c19c1a9819ebdbd1faaab1a8ec92344438aaf4",
+            "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf",
         ));
 
-        assert_eq!(tx.to_signed_raw(pk, 61 /*MAINNET_ID*/).unwrap().to_hex(),
-                   "f86d\
-                   80\
-                   8504e3b29200\
-                   825208\
-                   940000000000000000000000000000000012345678\
-                   880de0b6b3a7640000\
-                   80\
-                   819e\
-                   a0b17da8416f42d62192b07ff855f4a8e8e9ee1a2e920e3c407fd9a3bd5e388daa\
-                   a0547981b617c88587bfcd924437f6134b0b75f4484042db0750a2b1c0ccccc597");
+        let hex = tx.to_signed_raw(pk, 61 /*MAINNET_ID*/).unwrap().to_hex();
+        assert_eq!(hex,
+                    "f86d\
+                    808504e3b29200825208\
+                    94\
+                    3f4e0668c20e100d7c2a27d4b177ac65b2875d26\
+                    88\
+                    0de0b6b3a7640000\
+                    80\
+                    81\
+                    9e\
+                    a0\
+                    4ca75f697cf61daf1980dcd4f4460450e9e07b3c1b16ad1224b1a46e7e5c53b2\
+                    a0\
+                    59648e92e975d9cdf5d12698d7267595c087e83e9598639e13525f6fe7c047f1");
     }
+
 
     #[test]
     fn should_sign_transaction_for_testnet() {
@@ -166,10 +191,14 @@ mod tests {
         assert_eq!(tx.to_signed_raw(pk, 62 /*TESTNET_ID*/).unwrap().to_hex(),
                     "f871\
                     83\
-                    1000098504a8\
-                    17c800\
-                    82520894163b454d1ccdd0a12e88341b12afb2c980\
-                    44c599891e77511665\
+                    100009\
+                    85\
+                    04a817c800\
+                    82\
+                    5208\
+                    94\
+                    163b454d1ccdd0a12e88341b12afb2c98044c599\
+                    891e77511665\
                     79\
                     8800\
                     0080819fa0cc6cd05d41bbbeb71913bf403a09db118f22e4ed7ebf707fcfb483dd1cde\

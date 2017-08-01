@@ -9,15 +9,18 @@ use super::core;
 use super::keystore::KdfDepthLevel;
 use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_chain_id, to_even_str, to_u64, trim_hex};
+use hdwallet::WManager;
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::LogLevel;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
+use std::cell::RefCell;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
     if value.is_err() {
@@ -66,6 +69,11 @@ pub fn start(
         panic!("Unable to initialize chain");
     }
     let keystore_path = Arc::new(default_keystore_path(&chain.id));
+
+    let wallet_manager = match WManager::new(None) {
+        Ok(wm) => Mutex::new(RefCell::new(wm)),
+        Err(_) => panic!("Can't create HID endpoint"),
+    };
 
     let mut io = IoHandler::default();
 
@@ -154,6 +162,7 @@ pub fn start(
                 parse(p)?,
                 &keystore_path,
                 chain_id,
+                &wallet_manager,
             ))
         });
     }
