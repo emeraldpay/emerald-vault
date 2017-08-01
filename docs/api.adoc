@@ -449,7 +449,7 @@ Import a new smart contract Application Binary Interface (ABI) locally.
     ** `name` (String, optional) - contract name
     ** `description` (String, optional) - contract description
     ** `bytecode` (String, optional) - hex-encoded compiled contract
-    ** `abi` (Array) - JSON format for a contract ABI, should be an array of function and/or event descriptions as defined https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI[here]. Each operator should have the following properties:
+    ** `contract` (Array) - JSON format for a contract ABI, should be an array of function and/or event descriptions as defined https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI[here]. Each operator should have the following properties:
     *** `name` (String) - the name of the function
     *** `inputs` (Array) - an array of objects, each of which contains a name and a type
     *** `outputs` (Array) - an array of objects, each of which contains a name and a type
@@ -467,7 +467,7 @@ Import a new smart contract Application Binary Interface (ABI) locally.
      "params":
        [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc",
          "name": "ERC20 token",
-         "abi":
+         "contract":
            [{"constant":true,
              "inputs":[],
              "name":"name",

@@ -1,7 +1,8 @@
 use super::Error;
 use super::serialize::RPCTransaction;
 
-use core::{Address, Transaction, Contract};
+use core::{Address, Transaction};
+use contract::Contract;
 use hdwallet::{WManager, to_prefixed_path};
 use jsonrpc_core::{Params, Value};
 use keystore::{self, CryptoType, KdfDepthLevel, KeyFile};
@@ -471,7 +472,7 @@ pub struct FunctionParams {
 pub fn encode_function_call(
     params: Either<(Value,), (Value, FunctionParams)>,
 ) -> Result<String, Error> {
-    let (function, inputs) = params.into_full();
+    let (_, inputs) = params.into_full();
 
     Contract::serialize_params(inputs.types, inputs.values).map_err(From::from)
 }

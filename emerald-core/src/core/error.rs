@@ -1,6 +1,5 @@
 //! # Core domain logic module errors
 
-use ethabi;
 use hex;
 use secp256k1;
 use std::{error, fmt};
@@ -16,7 +15,7 @@ pub enum Error {
 
     /// An invalid length
     InvalidLength(usize),
-
+std::convert::From<ethabi::spec::Error>
     /// An unexpected hexadecimal prefix (should be '0x')
     InvalidHexLength(String),
 
@@ -25,30 +24,6 @@ pub enum Error {
 
     /// ECDSA crypto error
     EcdsaCrypto(secp256k1::Error),
-}
-
-impl From<ethabi::Error> for Error {
-    fn from(err: ethabi::Error) -> Self {
-        Error::InvalidABI(format!("Invalid ABI {:?}", err))
-    }
-}
-
-impl From<ethabi::spec::Error> for Error {
-    fn from(err: ethabi::spec::Error) -> Self {
-        Error::InvalidABI(format!("Invalid ABI Spec {:?}", err))
-    }
-}
-
-impl From<ethabi::token::Error> for Error {
-    fn from(err: ethabi::token::Error) -> Self {
-        Error::InvalidABIToken(err)
-    }
-}
-
-impl From<ethabi::spec::param_type::Error> for Error {
-    fn from(err: ethabi::spec::param_type::Error) -> Self {
-        Error::InvalidABI(format!("Invalid ABI Param {:?}", err))
-    }
 }
 
 impl From<hex::FromHexError> for Error {

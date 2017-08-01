@@ -1,17 +1,13 @@
 //! # Contract
 
-use super::Error;
+use super::error::Error;
+use super::Contract;
 use ethabi::{Encoder, Function, Interface};
 use ethabi::spec::param_type::{ParamType, Reader};
 use ethabi::token::{LenientTokenizer, Token, Tokenizer};
 use hex::ToHex;
 use std::fmt;
 
-/// Contract specification
-#[derive(Clone, Debug, Deserialize)]
-pub struct Contract {
-    abi: Interface,
-}
 
 impl Contract {
     /// Try to convert deserialized vector to Contract ABI.
@@ -21,23 +17,24 @@ impl Contract {
     /// * `DATA` - A byte slice
     ///
     /// # Example
-    ///
     /// ```
+    /// pub use self::contract::Contract;
+    ///
     /// const DATA: &[u8] = b"[{\"constant\":true,\"inputs\":[],\"name\":\"name\",\
     ///             \"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\
     ///             \"payable\":false,\"type\":\"function\"}]";
-    /// let contract = emerald_core::Contract::from(DATA).unwrap();
+    /// let contract = emerald_core::Contract::try_from(DATA).unwrap();
     /// assert_eq!(contract.to_string(),
     ///            "Interface([Function(Function { name: \"name\", inputs: [], \
     ///             outputs: [Param { name: \"\", kind: String }] })])");
     /// ```
-    pub fn from(data: &[u8]) -> Result<Self, Error> {
+    pub fn try_from(data: &[u8]) -> Result<Self, Error> {
         let abi = Interface::load(data)?;
         Ok(Contract { abi: abi })
     }
 
     /// Returns specification of contract function given the function name.
-    pub fn function(&self, name: String) -> Option<Function> {
+    pub fn get_function(&self, name: String) -> Option<Function> {
         match self.abi.function(name) {
             Some(f) => Some(Function::new(f)),
             _ => None,
@@ -50,7 +47,7 @@ impl Contract {
         name: String,
         params: Vec<Token>,
     ) -> Result<Vec<u8>, Error> {
-        let f = self.function(name).unwrap();
+        let f = self.get_function(name).unwrap();
         f.encode_call(params).map_err(From::from)
     }
 
@@ -91,7 +88,7 @@ mod tests {
     fn should_display_contract_abi() {
         let c = b"[{\"constant\":true,\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"name\":\"\",\
                  \"type\":\"string\"}],\"payable\":false,\"type\":\"function\"}]";
-        let contract = Contract::from(c).unwrap();
+        let contract = Contract::try_from(c).unwrap();
         format!("{}", contract);
     }
 
@@ -117,8 +114,8 @@ mod tests {
                 },
             ],
         };
-        let contract = Contract::from(c).unwrap();
-        let f = contract.function("balanceOf".to_string()).unwrap();
+        let contract = Contract::try_from(c).unwrap();
+        let f = contract.get_function("balanceOf".to_string()).unwrap();
         assert_eq!(f.input_params(), Function::new(interface).input_params());
     }
 }
