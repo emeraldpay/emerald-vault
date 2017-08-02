@@ -1,13 +1,18 @@
 //! # Contract
 
 use super::error::Error;
-use super::Contract;
 use ethabi::{Encoder, Function, Interface};
 use ethabi::spec::param_type::{ParamType, Reader};
 use ethabi::token::{LenientTokenizer, Token, Tokenizer};
 use hex::ToHex;
 use std::fmt;
 
+
+/// Contract specification
+#[derive(Clone, Debug, Deserialize)]
+pub struct Contract {
+    abi: Interface,
+}
 
 impl Contract {
     /// Try to convert deserialized vector to Contract ABI.

@@ -4,6 +4,7 @@ mod address;
 mod error;
 mod signature;
 mod transaction;
+mod contract;
 
 pub use self::address::{ADDRESS_BYTES, Address};
 pub use self::error::Error;
