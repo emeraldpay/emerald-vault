@@ -316,7 +316,8 @@ pub struct SignTransactionTransaction {
     #[serde(default)]
     pub data: String,
     pub nonce: String,
-    pub passphrase: String,
+    #[serde(default)]
+    pub passphrase: Option<String>,
 }
 
 #[derive(Deserialize, Default, Debug)]
@@ -361,7 +362,14 @@ pub fn sign_transaction(
                 Ok(tr) => {
                     match kf.crypto {
                         CryptoType::Core(_) => {
-                            if let Ok(pk) = kf.decrypt_key(&transaction.passphrase) {
+                            if transaction.passphrase.is_none() {
+                                return Err(
+                                    Error::InvalidDataFormat("Missing passphrase".to_string()),
+                                );
+                            }
+                            let pass = transaction.passphrase.unwrap();
+
+                            if let Ok(pk) = kf.decrypt_key(&pass) {
                                 let raw = tr.to_signed_raw(pk, chain_id).expect(
                                     "Expect to sign a \
                                      transaction",
