@@ -1,0 +1,1 @@
+{"version":3, "id":"a928d7c2-b37b-464c-a70b-b9979d59fac5", "address":"01234567890abcdef1234567890abcdef1234567", "name":"x", "description":null, "crypto": { "cipher": "hardware", "hardware": "ledger-nano-s:v1","hd_path": "44'/61'/0'/0/0"}}

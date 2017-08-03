@@ -56,6 +56,7 @@ Return the list of all not hidden (by default) accounts from the keystore.
     * `accounts` (Array)
     ** `account` (Object) - an account
     *** `address` (String) - hex-encoded 20 bytes public address
+    *** `hardware_wallet` (Boolean) - flag to distinguish normal accounts from HD wallet accounts
     *** `name` (String, optional) - account name
     *** `description` (String, optional) - account description
 
@@ -67,7 +68,8 @@ Return the list of all not hidden (by default) accounts from the keystore.
       [{"address": "0x5e97870f263700f46aa00d967821199b9bc5a120"},
        {"name": "main",
         "address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}],
-       {"name": "test",
+       {"hardware_wallet": "true"
+        "name": "test",
         "description": "A test account",
         "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}],
      "id": 1}
@@ -221,19 +223,27 @@ Update not secured by passphrase account metadata, like `name` and `description`
 
 === emerald_importAccount
 
-Import a new account from an external keyfile.
+Import a new account from an external keyfile. Handle both cases: normal account & HD wallet account,
 
 *Parameters*:
 
-    * `keyfile` (Object) - should be totally comply with the https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
-    * `additional` (Object, optional)
-    ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
-    ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+    - Normal account:
+        * `keyfile` (Object) - should be totally comply with the https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
+        * `additional` (Object, optional)
+        ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
+        ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+    - HD wallet:
+        * `keyfile` (Object) - should be totally comply with format specified in example
+        * `additional` (Object, optional)
+        ** `chain`, `chain_id` - same as for normal account
+
 
 *Result*: `address` (String) - successfully imported hex-encoded 20 bytes public address
 
 *Examples*:
 
+* Normal account:
 ----
 --> {"jsonrpc": "2.0",
      "method": "emerald_importAccount",
@@ -260,6 +270,22 @@ Import a new account from an external keyfile.
 <-- {"jsonrpc": "2.0", "result": "0x0047201aed0b69875b24b614dda0270bcd9f11cc", "id": 1}
 ----
 
+* HD wallet account:
+----
+--> {"jsonrpc": "2.0",
+     "method": "emerald_importAccount",
+     "params":
+       [{"version": 3,
+         "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
+         "address": "8f5201aed0b69875b24b6accounaccoun14dda0e",
+         "crypto": {
+            "cipher": "hardware",
+            "hardware": "ledger-nano-s:v1",
+            "hd_path": "44'/61'/0'/0/0"},
+     "id": 1}
+<-- {"jsonrpc": "2.0", "result": "0x8f5201aed0b69875b24b6accounaccoun14dda0e", "id": 1}
+----
+
 === emerald_exportAccount
 
 Returns an account keyfile associated with the account.
@@ -272,10 +298,12 @@ Returns an account keyfile associated with the account.
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
     ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
-*Result*: `keyfile` (Object) - account in https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
+*Result*: `keyfile` (Object) - normal account in https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format],
+ or HD wallet account (see example)
 
 *Examples*:
 
+* Normal account:
 ----
 --> {"jsonrpc": "2.0", "method": "emerald_exportAccount", "params": [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc"}, {"chain_id": 62}], "id": 1}
 <-- {"jsonrpc": "2.0",
@@ -298,6 +326,22 @@ Returns an account keyfile associated with the account.
              "p": 1
            },
            "mac": "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"}}],
+     "id": 1}
+----
+
+* HD wallet account:
+----
+--> {"jsonrpc": "2.0", "method": "emerald_exportAccount", "params": [{"address": "0x8f5201aed0b69875b24b6accounaccoun14dda0e"}, {"chain_id": 62}], "id": 1}
+<-- {"jsonrpc": "2.0",
+     "method": "emerald_importAccount",
+     "params":
+       [{"version": 3,
+         "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
+         "address": "8f5201aed0b69875b24b6accounaccoun14dda0e",
+         "crypto": {
+            cipher: "hardware",
+            type: "ledger-nano-s:v1",
+            hd: "0'/0/0"},
      "id": 1}
 ----
 

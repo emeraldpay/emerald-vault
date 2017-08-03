@@ -84,7 +84,7 @@ fn main() {
             "mainnet".to_string()
         }
     };
-    info!("chain set to '{}'", chain);
+    info!("Chain set to '{}'", chain);
 
     let sec_level_str: &str = &args.flag_security_level.parse::<String>().expect(
         "Expect to parse \
@@ -98,7 +98,7 @@ fn main() {
             KdfDepthLevel::default()
         }
     };
-    info!("security level set to '{}'", sec_level);
+    info!("Security level set to '{}'", sec_level);
 
     if args.cmd_server {
         let addr = format!("{}:{}", args.flag_host, args.flag_port)

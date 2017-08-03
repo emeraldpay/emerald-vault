@@ -9,15 +9,18 @@ use super::core;
 use super::keystore::KdfDepthLevel;
 use super::storage::{ChainStorage, Storages, default_keystore_path};
 use super::util::{ToHex, align_bytes, to_arr, to_chain_id, to_even_str, to_u64, trim_hex};
+use hdwallet::WManager;
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::LogLevel;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
+use std::cell::RefCell;
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
     if value.is_err() {
@@ -53,8 +56,8 @@ pub fn start(
     let sec_level = sec_level.unwrap_or_default();
 
     let storage = match base_path {
-        Some(p) => Arc::new(Storages::new(p)),
-        None => Arc::new(Storages::default()),
+        Some(p) => Storages::new(p),
+        None => Storages::default(),
     };
 
     if storage.init().is_err() {
@@ -66,6 +69,11 @@ pub fn start(
         panic!("Unable to initialize chain");
     }
     let keystore_path = Arc::new(default_keystore_path(&chain.id));
+
+    let wallet_manager = match WManager::new(None) {
+        Ok(wm) => Mutex::new(RefCell::new(wm)),
+        Err(_) => panic!("Can't create HID endpoint"),
+    };
 
     let mut io = IoHandler::default();
 
@@ -82,117 +90,79 @@ pub fn start(
     }
 
     {
-        let storage = storage.clone();
-        let default_keystore = keystore_path.clone();
+        let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_listAccounts", move |p: Params| {
-            wrapper(serves::list_accounts(
-                parse(p)?,
-                &default_keystore,
-                &storage,
-            ))
+            wrapper(serves::list_accounts(parse(p)?, &keystore_path))
         });
     }
 
     {
-        let default_keystore = keystore_path.clone();
-        let storage = storage.clone();
+        let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_hideAccount", move |p: Params| {
-            wrapper(serves::hide_account(parse(p)?, &default_keystore, &storage))
+            wrapper(serves::hide_account(parse(p)?, &keystore_path))
         });
     }
 
     {
-        let default_keystore = keystore_path.clone();
-        let storage = storage.clone();
+        let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_unhideAccount", move |p: Params| {
-            wrapper(serves::unhide_account(
-                parse(p)?,
-                &default_keystore,
-                &storage,
-            ))
+            wrapper(serves::unhide_account(parse(p)?, &keystore_path))
         });
     }
 
     {
-        let default_keystore = keystore_path.clone();
-        let storage = storage.clone();
+        let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_shakeAccount", move |p: Params| {
-            wrapper(serves::shake_account(
-                parse(p)?,
-                &default_keystore,
-                &storage,
-            ))
+            wrapper(serves::shake_account(parse(p)?, &keystore_path))
         });
     }
 
     {
-        let default_keystore = keystore_path.clone();
-        let storage = storage.clone();
+        let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_updateAccount", move |p: Params| {
-            wrapper(serves::update_account(
-                parse(p)?,
-                &default_keystore,
-                &storage,
-            ))
+            wrapper(serves::update_account(parse(p)?, &keystore_path))
         });
     }
 
     {
-        let default_keystore = keystore_path.clone();
-        let storage = storage.clone();
+        let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_importAccount", move |p: Params| {
-            wrapper(serves::import_account(
-                parse(p)?,
-                &default_keystore,
-                &storage,
-            ))
+            wrapper(serves::import_account(parse(p)?, &keystore_path))
         });
     }
 
     {
-        let default_keystore = keystore_path.clone();
-        let storage = storage.clone();
+        let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_exportAccount", move |p: Params| {
-            wrapper(serves::export_account(
-                parse(p)?,
-                &default_keystore,
-                &storage,
-            ))
+            wrapper(serves::export_account(parse(p)?, &keystore_path))
         });
     }
 
     {
         let sec = sec_level;
-        let default_keystore = keystore_path.clone();
-        let storage = storage.clone();
+        let keystore_path = keystore_path.clone();
 
         io.add_method("emerald_newAccount", move |p: Params| {
-            wrapper(serves::new_account(
-                parse(p)?,
-                &sec,
-                &default_keystore,
-                &storage,
-            ))
+            wrapper(serves::new_account(parse(p)?, &sec, &keystore_path))
         });
     }
 
     {
-        let default_keystore = keystore_path.clone();
-        let storage = storage.clone();
+        let keystore_path = keystore_path.clone();
         let chain_id = to_chain_id(chain_name).unwrap();
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,
-                &default_keystore,
+                &keystore_path,
                 chain_id,
-                &storage,
+                &wallet_manager,
             ))
         });
     }
