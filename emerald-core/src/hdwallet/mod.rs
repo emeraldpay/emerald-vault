@@ -226,11 +226,6 @@ impl WManager {
             _ => tr.split_at(CHUNK_SIZE - hd_path.len()),
         };
 
-        println!(
-            "Sign transaction with HD Wallet from address: {}",
-            self.get_address(fd, Some(hd_path.clone()))?
-        );
-
         let init_apdu = ApduBuilder::new(SIGN_ETH_TRANSACTION)
             .with_p1(0x00)
             .with_data(&hd_path)
