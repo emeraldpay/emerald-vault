@@ -41,13 +41,6 @@ impl RPCTransaction {
 }
 
 impl Transaction {
-    //    /// Sign transaction and return as raw data
-    //    pub fn to_raw_params(&self, pk: PrivateKey, chain: u8) -> Params {
-    //        self.to_signed_raw(pk, chain)
-    //            .map(|v| format!("0x{}", v.to_hex()))
-    //            .map(|s| Params::Array(vec![JsonRpcValue::String(s)]))
-    //            .expect("Expect to sign a transaction")
-    //    }
     /// Signed transaction into raw data
     pub fn to_raw_params(signed_rlp: Vec<u8>) -> Params {
         let str = format!("0x{}", signed_rlp.to_hex());
