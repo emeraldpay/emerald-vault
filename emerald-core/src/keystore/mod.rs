@@ -13,7 +13,7 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::{Kdf, KdfDepthLevel, PBKDF2_KDF_NAME};
 pub use self::prf::Prf;
-pub use self::serialize::{CoreCrypto, Iv, Mac, Salt, decode_str, hide, list_accounts, unhide};
+pub use self::serialize::{CoreCrypto, Iv, Mac, Salt, decode_str, hide, list_accounts, unhide, SerializableKeyFileCore, SerializableKeyFileHD};
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
 pub use hdwallet::HdwalletCrypto;
@@ -51,7 +51,7 @@ pub struct KeyFile {
     pub crypto: CryptoType,
 }
 
-/// Enum for two variants of `crypto` section in `Keyfile`
+/// Variants of `crypto` section in `Keyfile`
 ///
 #[derive(Debug, Clone, PartialEq, Eq, RustcDecodable, RustcEncodable)]
 pub enum CryptoType {
