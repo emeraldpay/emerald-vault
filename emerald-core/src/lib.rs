@@ -40,7 +40,7 @@ mod core;
 pub mod addressbook;
 pub mod keystore;
 pub mod rpc;
-mod storage;
+pub mod storage;
 mod hdwallet;
 mod util;
 

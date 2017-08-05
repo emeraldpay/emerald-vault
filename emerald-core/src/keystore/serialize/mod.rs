@@ -8,7 +8,7 @@ mod error;
 
 use self::address::try_extract_address;
 pub use self::crypto::{CoreCrypto, Iv, Mac, Salt, decode_str};
-use self::error::Error;
+pub use self::error::Error;
 use super::{CIPHER_IV_BYTES, Cipher, CryptoType, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::HdwalletCrypto;
 use super::core::{self, Address};
@@ -223,15 +223,7 @@ impl Encodable for KeyFile {
 /// p - destination route (path + filename)
 ///
 pub fn write<P: AsRef<Path>>(kf: &KeyFile, p: P) -> Result<(), Error> {
-    let json = match SerializableKeyFileCore::try_from(kf.clone()) {
-        Ok(sf) => json::encode(&sf)?,
-        Err(_) => {
-            match SerializableKeyFileHD::try_from(kf.clone()) {
-                Ok(sf) => json::encode(&sf)?,
-                Err(e) => return Err(Error::InvalidCrypto(e.to_string())),
-            }
-        }
-    };
+    let json = json::encode(&kf)?;
 
     let mut file = File::create(&p)?;
     file.write_all(json.as_ref()).ok();

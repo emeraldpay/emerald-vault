@@ -8,6 +8,7 @@ extern crate tempdir;
 use emerald::{Address, KECCAK256_BYTES};
 use emerald::keystore::{CIPHER_IV_BYTES, Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv,
                         KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Mac, Prf, Salt};
+use emerald::storage::KeyfileStorage;
 use hex::FromHex;
 use rustc_serialize::json;
 use std::fs::File;
@@ -299,4 +300,35 @@ fn should_search_by_address() {
         kf.uuid,
         "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3".parse().unwrap()
     );
+}
+
+#[test]
+fn should_add() {
+    let path = keyfile_path(
+        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5",
+    );
+
+    // verify encoding & decoding full cycle logic
+    let key = KeyFile::decode(file_content(path)).unwrap();
+    let storage = KeyfileStorage::new(temp_dir()).unwrap();
+
+    storage
+        .put(
+            &key,
+            Some(
+                "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5",
+            ),
+        )
+        .unwrap();
+
+    let data = storage
+        .db
+        .get(
+            "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5".as_bytes(),
+        )
+        .unwrap()
+        .unwrap();
+    println!(">> DEBUG: {}", data.to_utf8().unwrap());
+
+    storage.db.me
 }
