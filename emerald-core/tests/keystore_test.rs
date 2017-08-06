@@ -312,23 +312,14 @@ fn should_add() {
     let key = KeyFile::decode(file_content(path)).unwrap();
     let storage = KeyfileStorage::new(temp_dir()).unwrap();
 
-    storage
-        .put(
-            &key,
-            Some(
-                "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5",
-            ),
-        )
-        .unwrap();
-
+    storage.put(&key).unwrap();
     let data = storage
         .db
-        .get(
-            "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5".as_bytes(),
-        )
-        .unwrap()
+        .get(&Address::from_str(
+            "01234567890abcdef1234567890abcdef1234567",
+        ).unwrap())
         .unwrap();
-    println!(">> DEBUG: {}", data.to_utf8().unwrap());
+    println!(">> DEBUG: {}", data.unwrap().to_utf8().unwrap());
 
-    storage.db.me
+    while true {}
 }

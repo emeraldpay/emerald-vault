@@ -1,156 +1,165 @@
-//! # Storage for `Keystore` files
+//! # Storage for `KeyFiles` and `Contracts`
 
-mod error;
-pub mod storage;
+mod keyfile;
 
-use self::error::Error;
-pub use self::storage::{ChainStorage, Storages, default_keystore_path, default_path};
+pub use self::keyfile::*;
+pub use self::KeyStorageError;
+use log::LogLevel;
+use std::{env, fs};
+use std::io::{Error, ErrorKind};
+use std::path::PathBuf;
 
-use super::util;
-use core::Address;
-use keystore::{CryptoType, KeyFile};
-use keystore::{SerializableKeyFileCore, SerializableKeyFileHD};
-use rocksdb::{DB, IteratorMode};
-use rustc_serialize::{Encodable, Encoder, json};
-use std::fs::{self, File, read_dir};
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
-use std::str;
-
-/// Storage controller for `Keyfile`
-///
-pub struct KeyfileStorage {
-    ///
-    pub db: DB,
+/// Base dir for internal data, all chain-related should be store in subdirectories
+#[derive(Debug, Clone)]
+pub struct Storages {
+    /// base dir
+    base_dir: PathBuf,
 }
 
-impl KeyfileStorage {
-    ///
-    pub fn new<P: AsRef<Path>>(dir: P) -> Result<KeyfileStorage, Error> {
-        let db = DB::open_default(dir)?;
+/// Default path (*nix)
+#[cfg(all(unix, not(target_os = "macos"), not(target_os = "ios"), not(target_os = "android")))]
+pub fn default_path() -> PathBuf {
+    let mut config_dir = env::home_dir().expect("Expect path to home dir");
+    config_dir.push(".emerald");
+    config_dir
+}
 
-        Ok(KeyfileStorage { db: db })
+/// Default path (Mac OS X)
+#[cfg(target_os = "macos")]
+pub fn default_path() -> PathBuf {
+    let mut config_dir = env::home_dir().expect("Expect path to home dir");
+    config_dir.push("Library");
+    config_dir.push("Emerald");
+    config_dir
+}
+
+/// Default path (Windows OS)
+#[cfg(target_os = "windows")]
+pub fn default_path() -> PathBuf {
+    let app_data_var = env::var("APPDATA").expect("Expect 'APPDATA' environment variable");
+    let mut config_dir = PathBuf::from(app_data_var);
+    config_dir.push(".emerald");
+    config_dir
+}
+
+/// Default path for `Keystore` files
+pub fn default_keystore_path(chain_id: &str) -> PathBuf {
+    let mut path = default_path();
+    path.push(chain_id);
+    path.push("keystore");
+    path
+}
+
+impl Storages {
+    /// Create storage using user directory if specified, or default path in other case.
+    pub fn new(path: PathBuf) -> Storages {
+        Storages { base_dir: path }
     }
 
-    ///
-    pub fn put(&self, kf: &KeyFile) -> Result<(), Error> {
-        let json = json::encode(&kf)?;
-        self.db.put(&kf.address, json.as_ref())?;
-
-        Ok(())
-    }
-
-    ///
-    pub fn delete(&self, addr: &Address) -> Result<(), Error> {
-        Ok(())
-    }
-
-    /// Search of `KeyFile` by specified `Address`
-    ///
-    pub fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
-        let bytes = self.db.get(&addr)?;
-        let str = bytes.and_then(|d| d.to_utf8()).ok_or(Error::StorageError(
-            "Can't parse KeyFile data"
-                .to_string(),
-        ))?;
-        let kf = KeyFile::decode(str.to_string())?;
-
-        Ok(kf)
-    }
-
-    /// Hides account for given address from being listed
-    ///
-    pub fn hide(&self, addr: &Address) -> Result<bool, Error> {
-        let mut kf = self.search_by_address(&addr)?;
-
-        kf.visible = Some(false);
-        self.put(&kf)?;
-
-        Ok(true)
-    }
-
-    /// Unhides account for given address from being listed
-    ///
-    pub fn unhide(&self, addr: &Address) -> Result<bool, Error> {
-        let mut kf = self.search_by_address(&addr)?;
-
-        kf.visible = Some(true);
-        self.put(&kf)?;
-
-        Ok(true)
-    }
-
-    /// Lists addresses for `Keystore` files in specified folder.
-    /// Can include hidden files if flag set.
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - target directory
-    /// * `showHidden` - flag to show hidden `Keystore` files
-    ///
-    /// # Return:
-    /// Array of tuples (name, address, description, is_hidden)
-    ///
-    pub fn list_accounts(
-        &self,
-        show_hidden: bool,
-    ) -> Result<Vec<(String, String, String, bool)>, Error> {
-        let mut accounts: Vec<(String, String, String, bool)> = vec![];
-
-        for (addr, val) in self.db.iterator(IteratorMode::Start) {
-            let str = str::from_utf8(&val)?;
-            match KeyFile::decode(str.to_string()) {
-                Ok(kf) => {
-                    let mut info = Vec::new();
-                    if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
-                        let is_hd = match kf.crypto {
-                            CryptoType::Core(_) => false,
-                            CryptoType::HdWallet(_) => true,
-                        };
-                        match kf.name {
-                            Some(name) => info.push(name),
-                            None => info.push("".to_string()),
-                        }
-
-                        match kf.description {
-                            Some(desc) => info.push(desc),
-                            None => info.push("".to_string()),
-                        }
-                        accounts.push((
-                            info[0].clone(),
-                            kf.address.to_string(),
-                            info[1].clone(),
-                            is_hd,
-                        ));
-                    }
-                }
-                Err(_) => {
-                    info!(
-                        "Invalid keystore file format for addr: {}",
-                        Address::from(util::to_arr(&*addr))
-                    )
-                }
+    /// Initialize new storage
+    pub fn init(&self) -> Result<(), Error> {
+        if !&self.base_dir.exists() {
+            if log_enabled!(LogLevel::Info) {
+                info!("Init new storage at {}", self.base_dir.display());
             }
+            fs::create_dir(self.base_dir.as_path())?
+        }
+        Ok(())
+    }
+
+    /// Get keystore storage by chain name
+    pub fn get_keystore_path(&self, chain_name: &str) -> Result<PathBuf, Error> {
+        for entry in fs::read_dir(&self.base_dir)? {
+            let entry = entry?;
+            let mut path = entry.path();
+
+            if path.is_dir() && path.file_name().is_some() &&
+                path.file_name().unwrap() == chain_name
+                {
+                    path.push("keystore");
+                    return Ok(path);
+
+                }
         }
 
-        Ok(accounts)
+        Err(Error::new(
+            ErrorKind::InvalidInput,
+            "No keystorage for specified chain name",
+        ))
+    }
+}
+
+impl Default for Storages {
+    fn default() -> Self {
+        Storages { base_dir: default_path() }
+    }
+}
+
+/// Subdir for a chain
+#[derive(Debug, Clone)]
+pub struct ChainStorage<'a> {
+    /// subdir name
+    pub id: String,
+    /// storage
+    base: &'a Storages,
+}
+
+impl<'a> ChainStorage<'a> {
+    /// Crate a new chain
+    pub fn new(base: &'a Storages, id: String) -> ChainStorage<'a> {
+        ChainStorage { id: id, base: base }
     }
 
-    /// Creates filename for keystore file in format:
-    /// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
-    ///
-    /// # Arguments
-    ///
-    /// * `uuid` - UUID for keyfile
-    ///
-    fn generate_filename(uuid: &str) -> String {
-        format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
+    /// Initialize a new chain
+    pub fn init(&self) -> Result<(), Error> {
+        let mut p: PathBuf = self.base.base_dir.to_path_buf();
+        p.push(self.id.clone());
+        if !p.exists() {
+            if log_enabled!(LogLevel::Info) {
+                info!("Init new chain at {}", p.display());
+            }
+            fs::create_dir(p)?
+        }
+
+        let ks_path = default_keystore_path(&self.id);
+        if !ks_path.exists() {
+            fs::create_dir(ks_path.as_path())?
+        }
+
+        Ok(())
+    }
+
+    /// Get chain path
+    pub fn get_path(&self, id: String) -> Result<PathBuf, Error> {
+        let mut p: PathBuf = self.base.base_dir.to_path_buf().clone();
+        p.push(self.id.clone());
+        p.push(id.clone());
+        if !p.exists() {
+            if log_enabled!(LogLevel::Debug) {
+                debug!("Init new chain storage at {}", p.display());
+            }
+            fs::create_dir(&p)?
+        }
+        Ok(p)
     }
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
+    use super::*;
 
     #[test]
-    fn should_add() {}
+    fn should_use_default_path() {
+        let st = Storages::default();
+        assert_eq!(st.base_dir, default_path());
+    }
+
+    #[test]
+    fn should_use_user_path() {
+        let user_path: &str = "/tmp/some";
+        let st = Storages::new(PathBuf::from(user_path));
+
+        assert_eq!(st.base_dir, PathBuf::from(user_path));
+    }
 }
+

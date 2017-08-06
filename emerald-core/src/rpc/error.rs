@@ -1,6 +1,7 @@
 //! # JSON RPC module errors
 
 use super::core;
+use super::storage;
 use hex;
 use jsonrpc_core;
 use keystore;
@@ -18,6 +19,8 @@ pub enum Error {
     RPC(jsonrpc_core::Error),
     /// Invalid data format
     InvalidDataFormat(String),
+    /// Storage error
+    StorageError(String)
 }
 
 impl From<rustc_serialize::json::EncoderError> for Error {
@@ -74,6 +77,12 @@ impl From<jsonrpc_core::Error> for Error {
     }
 }
 
+impl From<storage::KeyStorageError> for Error {
+    fn from(err: storage::KeyStorageError) -> Self {
+        Error::StorageError(err.to_string())
+    }
+}
+
 impl Into<jsonrpc_core::Error> for Error {
     fn into(self) -> jsonrpc_core::Error {
         jsonrpc_core::Error::internal_error()
@@ -86,6 +95,7 @@ impl fmt::Display for Error {
             Error::HttpClient(ref err) => write!(f, "HTTP client error: {}", err),
             Error::RPC(ref err) => write!(f, "RPC error: {:?}", err),
             Error::InvalidDataFormat(ref str) => write!(f, "Invalid data format: {}", str),
+            Error::StorageError(ref str) => write!(f, "Keyfile storage error: {}", str),
         }
     }
 }
