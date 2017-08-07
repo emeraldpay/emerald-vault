@@ -9,7 +9,7 @@ use serde_json;
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
 use storage::KeyfileStorage;
 use util;
 
@@ -98,7 +98,8 @@ where
     T: KeyfileStorage,
 {
     let (additional,) = params.into_right();
-    let res = storage.list_accounts(additional.show_hidden)?
+    let res = storage
+        .list_accounts(additional.show_hidden)?
         .iter()
         .map(|&(ref name, ref address, ref desc, is_hd)| {
             ListAccountAccount {

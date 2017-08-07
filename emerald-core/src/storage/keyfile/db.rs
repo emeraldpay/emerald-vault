@@ -1,11 +1,9 @@
 //! # Storage for `Keystore` files
 
 
-use super::error::Error;
 use super::{ChainStorage, Storages, default_keystore_path, default_path};
 use super::KeyfileStorage;
-
-use util;
+use super::error::Error;
 use core::Address;
 use keystore::{CryptoType, KeyFile};
 use keystore::{SerializableKeyFileCore, SerializableKeyFileHD};
@@ -15,6 +13,8 @@ use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::str;
+
+use util;
 
 /// Dtabase backed storage for `Keyfile`
 ///

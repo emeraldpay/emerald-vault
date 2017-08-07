@@ -16,7 +16,7 @@ use core::Address;
 use keystore::KeyFile;
 
 ///
-pub trait KeyfileStorage: Sync + Send {
+pub trait KeyfileStorage {
     ///
     fn put(&self, kf: &KeyFile) -> Result<(), KeyStorageError>;
 

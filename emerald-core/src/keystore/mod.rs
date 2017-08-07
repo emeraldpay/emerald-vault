@@ -14,7 +14,7 @@ pub use self::error::Error;
 pub use self::kdf::{Kdf, KdfDepthLevel, PBKDF2_KDF_NAME};
 pub use self::prf::Prf;
 pub use self::serialize::{CoreCrypto, Iv, Mac, Salt, SerializableKeyFileCore,
-                          SerializableKeyFileHD, decode_str};
+                          SerializableKeyFileHD, decode_str, try_extract_address};
 pub use self::serialize::Error as SerializeError;
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};

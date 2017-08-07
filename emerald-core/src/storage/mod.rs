@@ -2,8 +2,8 @@
 
 mod keyfile;
 
-pub use self::keyfile::*;
 pub use self::KeyStorageError;
+pub use self::keyfile::*;
 use log::LogLevel;
 use std::{env, fs};
 use std::io::{Error, ErrorKind};
@@ -75,11 +75,11 @@ impl Storages {
 
             if path.is_dir() && path.file_name().is_some() &&
                 path.file_name().unwrap() == chain_name
-                {
-                    path.push("keystore");
-                    return Ok(path);
+            {
+                path.push("keystore");
+                return Ok(path);
 
-                }
+            }
         }
 
         Err(Error::new(
@@ -162,4 +162,3 @@ mod test {
         assert_eq!(st.base_dir, PathBuf::from(user_path));
     }
 }
-

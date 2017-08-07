@@ -20,7 +20,7 @@ pub enum Error {
     /// Invalid data format
     InvalidDataFormat(String),
     /// Storage error
-    StorageError(String)
+    StorageError(String),
 }
 
 impl From<rustc_serialize::json::EncoderError> for Error {
