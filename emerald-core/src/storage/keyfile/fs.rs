@@ -22,13 +22,58 @@ pub struct fsStorage {
     path: PathBuf,
 }
 
+///
+enum SearchTag {
+    File,
+    Content,
+}
+
+///
+enum SearchResult {
+    Path(PathBuf),
+    Content(String),
+}
+
+
 impl fsStorage {
     ///
-    fn new<P>(dir: P) -> fsStorage
+    pub fn new<P>(dir: P) -> fsStorage
     where
         P: AsRef<Path> + AsRef<OsStr>,
     {
         fsStorage { path: PathBuf::from(&dir) }
+    }
+
+    ///
+    fn search(&self, addr: &Address, tag: SearchTag) -> Result<SearchResult, Error> {
+        let entries = fs::read_dir(&self.path)?;
+
+        for entry in entries {
+            let path = entry?.path();
+
+            if path.is_dir() {
+                continue;
+            }
+
+            let mut file = fs::File::open(&path)?;
+            let mut content = String::new();
+
+            if file.read_to_string(&mut content).is_err() {
+                continue;
+            }
+
+            match try_extract_address(&content) {
+                Some(a) if a == *addr => {
+                    match tag {
+                        SearchTag::File => return Ok(SearchResult::Path(path)),
+                        SearchTag::Content => return Ok(SearchResult::Content(content)),
+                    }
+                }
+                _ => continue,
+            }
+        }
+
+        Err(Error::NotFound(addr.to_string()))
     }
 
     /// Creates filename for keystore file in format:
@@ -58,12 +103,21 @@ impl KeyfileStorage for fsStorage {
     }
 
     fn delete(&self, addr: &Address) -> Result<(), Error> {
-        unimplemented!()
+        let res = self.search(addr, SearchTag::File)?;
+
+        if let SearchResult::Path(ref p) = res {
+            fs::remove_file(p)?;
+            return Ok(());
+        }
+
+        Err(Error::StorageError(
+            format!("Can't delete Keyfile for address: {}", addr),
+        ))
     }
 
     /// Search of `KeyFile` by specified `Address`
     /// Returns set of filepath and `Keyfile`
-    ///
+    ///Keyfile
     /// # Arguments
     ///
     /// * `addr` - a public address
