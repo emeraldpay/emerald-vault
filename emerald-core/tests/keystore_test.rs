@@ -8,7 +8,7 @@ extern crate tempdir;
 use emerald::{Address, KECCAK256_BYTES};
 use emerald::keystore::{CIPHER_IV_BYTES, Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv,
                         KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Mac, Prf, Salt};
-use emerald::storage::{fsStorage, dbStorage};
+use emerald::storage::{dbStorage, fsStorage};
 use hex::FromHex;
 use rustc_serialize::json;
 use std::fs::File;

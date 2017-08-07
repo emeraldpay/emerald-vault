@@ -15,25 +15,24 @@ use std::path::{Path, PathBuf};
 use util;
 use uuid::Uuid;
 
-/// Filesystem storage for `Keyfiles`
+/// Filesystem storage for `KeyFiles`
 ///
 pub struct fsStorage {
-    /// Path for storage folder
+    /// Parent directory for storage
+    base_path: PathBuf,
+}
+
+
+/// Result for searching `KeyFile` in base_path
+/// and it subdirectories
+///
+struct SearchResult {
+    /// Path to target `KeyFile`
     path: PathBuf,
-}
 
-///
-enum SearchTag {
-    File,
-    Content,
+    /// Decoded `KeyFile`
+    kf: KeyFile,
 }
-
-///
-enum SearchResult {
-    Path(PathBuf),
-    Content(String),
-}
-
 
 impl fsStorage {
     ///
@@ -41,12 +40,12 @@ impl fsStorage {
     where
         P: AsRef<Path> + AsRef<OsStr>,
     {
-        fsStorage { path: PathBuf::from(&dir) }
+        fsStorage { base_path: PathBuf::from(&dir) }
     }
 
     ///
-    fn search(&self, addr: &Address, tag: SearchTag) -> Result<SearchResult, Error> {
-        let entries = fs::read_dir(&self.path)?;
+    fn search(&self, addr: &Address) -> Result<SearchResult, Error> {
+        let entries = fs::read_dir(&self.base_path)?;
 
         for entry in entries {
             let path = entry?.path();
@@ -64,16 +63,34 @@ impl fsStorage {
 
             match try_extract_address(&content) {
                 Some(a) if a == *addr => {
-                    match tag {
-                        SearchTag::File => return Ok(SearchResult::Path(path)),
-                        SearchTag::Content => return Ok(SearchResult::Content(content)),
-                    }
+                    let kf = KeyFile::decode(content)?;
+
+                    return Ok(SearchResult { path: path, kf: kf });
                 }
                 _ => continue,
             }
         }
 
         Err(Error::NotFound(addr.to_string()))
+    }
+
+    ///
+    fn toogle_visibility(&self, addr: &Address, is_visible: bool) -> Result<(), Error> {
+        let mut res = self.search(addr)?;
+
+        res.kf.visible = Some(is_visible);
+        self.delete(&res.kf.address)?;
+        fsStorage::put_with_name(&res.kf, &res.path)?;
+
+        Ok(())
+    }
+
+    fn put_with_name<P: AsRef<Path>>(kf: &KeyFile, path: P) -> Result<(), Error> {
+        let json = json::encode(&kf)?;
+        let mut file = File::create(&path)?;
+        file.write_all(json.as_ref()).ok();
+
+        Ok(())
     }
 
     /// Creates filename for keystore file in format:
@@ -91,48 +108,34 @@ impl fsStorage {
 impl KeyfileStorage for fsStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), Error> {
         let name = fsStorage::generate_filename(&kf.uuid.to_string());
-        let p: PathBuf = self.path.clone();
+        let p: PathBuf = self.base_path.clone();
         let p_ref: &Path = p.as_ref();
         let path = p_ref.join(name);
 
-        let json = json::encode(&kf)?;
-        let mut file = File::create(&path)?;
-        file.write_all(json.as_ref()).ok();
-
-        Ok(())
+        fsStorage::put_with_name(&kf, path)
     }
 
     fn delete(&self, addr: &Address) -> Result<(), Error> {
-        let res = self.search(addr, SearchTag::File)?;
+        let res = self.search(addr)?;
 
-        if let SearchResult::Path(ref p) = res {
-            fs::remove_file(p)?;
-            return Ok(());
+        match fs::remove_file(res.path) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(Error::StorageError(
+                format!("Can't delete KeyFile for address: {}", addr),
+            )),
         }
-
-        Err(Error::StorageError(
-            format!("Can't delete Keyfile for address: {}", addr),
-        ))
     }
 
     /// Search of `KeyFile` by specified `Address`
-    /// Returns set of filepath and `Keyfile`
-    ///Keyfile
+    /// Returns set of filepath and `KeyFile`
+    ///KeyFile
     /// # Arguments
     ///
     /// * `addr` - a public address
     ///
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
-        let res = self.search(addr, SearchTag::Content)?;
-
-        if let SearchResult::Content(s) = res {
-            let kf = KeyFile::decode(s)?;
-            return Ok(kf);
-        }
-
-        Err(Error::StorageError(
-            format!("Can't find Keyfile for address: {}", addr),
-        ))
+        let res = self.search(addr)?;
+        Ok(res.kf)
     }
 
     /// Lists addresses for `Keystore` files in specified folder.
@@ -150,7 +153,7 @@ impl KeyfileStorage for fsStorage {
         show_hidden: bool,
     ) -> Result<Vec<(String, String, String, bool)>, Error> {
         let mut accounts: Vec<(String, String, String, bool)> = vec![];
-        for e in read_dir(&self.path)? {
+        for e in read_dir(&self.base_path)? {
             if e.is_err() {
                 continue;
             }
@@ -198,13 +201,9 @@ impl KeyfileStorage for fsStorage {
     ///
     /// #Arguments
     /// addr - target address
-    /// path - folder with keystore files
     ///
     fn hide(&self, addr: &Address) -> Result<bool, Error> {
-        let mut kf = self.search_by_address(addr)?;
-
-        kf.visible = Some(false);
-        self.put(&kf)?;
+        self.toogle_visibility(&addr, false)?;
 
         Ok(true)
     }
@@ -213,13 +212,9 @@ impl KeyfileStorage for fsStorage {
     ///
     /// #Arguments
     /// addr - target address
-    /// path - folder with keystore files
     ///
     fn unhide(&self, addr: &Address) -> Result<bool, Error> {
-        let mut kf = self.search_by_address(addr)?;
-
-        kf.visible = Some(true);
-        self.put(&kf)?;
+        self.toogle_visibility(&addr, true)?;
 
         Ok(true)
     }
