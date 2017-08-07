@@ -12,14 +12,20 @@ use std::str;
 
 use util;
 
-/// Dtabase backed storage for `Keyfile`
+/// Database backed storage for `KeyFile`
 ///
 pub struct DbStorage {
-    ///
+    /// Database handler
     pub db: DB,
 }
 
 impl DbStorage {
+    /// Create new database storage
+    /// Use specified directory as parent folder
+    ///
+    /// # Arguments:
+    ///
+    /// * dir - parent folder
     ///
     pub fn new<P: AsRef<Path>>(dir: P) -> Result<DbStorage, Error> {
         let db = DB::open_default(dir)?;
@@ -36,15 +42,12 @@ impl KeyfileStorage for DbStorage {
         Ok(())
     }
 
-    ///
     fn delete(&self, addr: &Address) -> Result<(), Error> {
         self.db.delete(&addr)?;
 
         Ok(())
     }
 
-    /// Search of `KeyFile` by specified `Address`
-    ///
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
         let bytes = self.db.get(&addr)?;
         let str = bytes
@@ -55,8 +58,6 @@ impl KeyfileStorage for DbStorage {
         Ok(kf)
     }
 
-    /// Hides account for given address from being listed
-    ///
     fn hide(&self, addr: &Address) -> Result<bool, Error> {
         let mut kf = self.search_by_address(&addr)?;
 
@@ -66,8 +67,6 @@ impl KeyfileStorage for DbStorage {
         Ok(true)
     }
 
-    /// Unhides account for given address from being listed
-    ///
     fn unhide(&self, addr: &Address) -> Result<bool, Error> {
         let mut kf = self.search_by_address(&addr)?;
 
@@ -77,17 +76,6 @@ impl KeyfileStorage for DbStorage {
         Ok(true)
     }
 
-    /// Lists addresses for `Keystore` files in specified folder.
-    /// Can include hidden files if flag set.
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - target directory
-    /// * `showHidden` - flag to show hidden `Keystore` files
-    ///
-    /// # Return:
-    /// Array of tuples (name, address, description, is_hidden)
-    ///
     fn list_accounts(
         &self,
         show_hidden: bool,

@@ -20,7 +20,7 @@ pub struct FsStorage {
     base_path: PathBuf,
 }
 
-/// Result for searching `KeyFile` in base_path
+/// Result for searching `KeyFile` in `base_path`
 /// and it subdirectories
 ///
 struct SearchResult {
@@ -32,6 +32,12 @@ struct SearchResult {
 }
 
 impl FsStorage {
+    /// Create new `FsStorage`
+    /// Uses specified path as parent folder
+    ///
+    /// # Arguments:
+    ///
+    /// * dir - parent folder
     ///
     pub fn new<P>(dir: P) -> FsStorage
     where
@@ -40,6 +46,11 @@ impl FsStorage {
         FsStorage { base_path: PathBuf::from(&dir) }
     }
 
+    /// Search for `KeyFile` by specified `Address`
+    ///
+    /// # Arguments:
+    ///
+    /// * addr - target address
     ///
     fn search(&self, addr: &Address) -> Result<SearchResult, Error> {
         let entries = fs::read_dir(&self.base_path)?;
@@ -71,6 +82,12 @@ impl FsStorage {
         Err(Error::NotFound(addr.to_string()))
     }
 
+    /// Hides/unhides `Keyfile` for specified `Address`
+    ///
+    /// # Arguments:
+    ///
+    /// * addr - target address
+    /// * is_visible - visibility flag
     ///
     fn toogle_visibility(&self, addr: &Address, is_visible: bool) -> Result<(), Error> {
         let mut res = self.search(addr)?;
@@ -82,6 +99,14 @@ impl FsStorage {
         Ok(())
     }
 
+    /// Put new `Keyfile` with specified name inside storage
+    /// Uses absolute `path` appended with `KeyFile` name
+    ///
+    /// # Arguments:
+    ///
+    /// * kf - target `Keyfile`
+    /// * path - path for insertion
+    ///
     fn put_with_name<P: AsRef<Path>>(kf: &KeyFile, path: P) -> Result<(), Error> {
         let json = json::encode(&kf)?;
         let mut file = File::create(&path)?;
@@ -112,28 +137,11 @@ impl KeyfileStorage for FsStorage {
         }
     }
 
-    /// Search of `KeyFile` by specified `Address`
-    /// Returns set of filepath and `KeyFile`
-    ///KeyFile
-    /// # Arguments
-    ///
-    /// * `addr` - a public address
-    ///
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
         let res = self.search(addr)?;
         Ok(res.kf)
     }
 
-    /// Lists addresses for `Keystore` files in specified folder.
-    /// Can include hidden files if flag set.
-    ///
-    /// # Arguments
-    ///
-    /// * `showHidden` - flag to show hidden `Keystore` files
-    ///
-    /// # Return:
-    /// Array of tuples (name, address, description, is_hidden)
-    ///
     fn list_accounts(
         &self,
         show_hidden: bool,
