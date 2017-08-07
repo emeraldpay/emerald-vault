@@ -8,7 +8,7 @@ extern crate tempdir;
 use emerald::{Address, KECCAK256_BYTES};
 use emerald::keystore::{CIPHER_IV_BYTES, Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv,
                         KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Mac, Prf, Salt};
-use emerald::storage::{dbStorage, fsStorage};
+use emerald::storage::{DbStorage, FsStorage, KeyfileStorage};
 use hex::FromHex;
 use rustc_serialize::json;
 use std::fs::File;
@@ -285,7 +285,7 @@ fn should_use_security_level() {
 fn should_flush_to_file() {
     let kf = KeyFile::new("1234567890", &KdfDepthLevel::Normal, None, None).unwrap();
 
-    let storage = fsStorage::new(&temp_dir().as_path());
+    let storage = FsStorage::new(&temp_dir().as_path());
 
     assert!(storage.put(&kf).is_ok());
 }
@@ -296,7 +296,7 @@ fn should_search_by_address_filesystem() {
         .parse::<Address>()
         .unwrap();
 
-    let storage = fsStorage::new(&keystore_path());
+    let storage = FsStorage::new(&keystore_path());
     let kf = storage.search_by_address(&addr).unwrap();
 
     assert_eq!(
@@ -313,38 +313,16 @@ fn should_search_by_address_db() {
         .unwrap();
 
     let path = keyfile_path(
-        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5",
+        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4",
     );
     let key = KeyFile::decode(file_content(path)).unwrap();
 
-    let storage = dbStorage::new(&keystore_path()).unwrap();
-    storage.put(key);
+    let storage = DbStorage::new(temp_dir().as_path()).unwrap();
+    storage.put(&key).unwrap();
     let kf = storage.search_by_address(&addr).unwrap();
 
     assert_eq!(
         kf.uuid,
         "a928d7c2-b37b-464c-a70b-b9979d59fac4".parse().unwrap()
     );
-}
-
-#[test]
-fn should_add() {
-    let path = keyfile_path(
-        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5",
-    );
-
-    // verify encoding & decoding full cycle logic
-    let key = KeyFile::decode(file_content(path)).unwrap();
-    let storage = KeyfileStorage::new(temp_dir()).unwrap();
-
-    storage.put(&key).unwrap();
-    let data = storage
-        .db
-        .get(&Address::from_str(
-            "01234567890abcdef1234567890abcdef1234567",
-        ).unwrap())
-        .unwrap();
-    println!(">> DEBUG: {}", data.unwrap().to_utf8().unwrap());
-
-    while true {}
 }

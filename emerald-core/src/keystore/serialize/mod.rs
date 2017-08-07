@@ -14,9 +14,6 @@ use super::HdwalletCrypto;
 use super::core::{self, Address};
 use super::util;
 use rustc_serialize::{Encodable, Encoder, json};
-use std::fs::{self, File, read_dir};
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 /// Keystore file current version used for serializing

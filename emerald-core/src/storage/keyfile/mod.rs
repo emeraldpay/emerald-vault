@@ -9,10 +9,9 @@ mod db;
 mod fs;
 mod error;
 
-pub use self::db::dbStorage;
+pub use self::db::DbStorage;
 pub use self::error::Error as KeyStorageError;
-pub use self::fs::fsStorage;
-use super::{ChainStorage, Storages, default_keystore_path, default_path};
+pub use self::fs::{FsStorage, generate_filename};
 use core::Address;
 use keystore::KeyFile;
 

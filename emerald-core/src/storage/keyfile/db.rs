@@ -1,49 +1,34 @@
 //! # Storage for `Keystore` files
 
 
-use super::{ChainStorage, Storages, default_keystore_path, default_path};
 use super::KeyfileStorage;
 use super::error::Error;
 use core::Address;
 use keystore::{CryptoType, KeyFile};
-use keystore::{SerializableKeyFileCore, SerializableKeyFileHD};
 use rocksdb::{DB, IteratorMode};
-use rustc_serialize::{Encodable, Encoder, json};
-use std::fs::{self, File, read_dir};
-use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
+use rustc_serialize::json;
+use std::path::Path;
 use std::str;
 
 use util;
 
 /// Dtabase backed storage for `Keyfile`
 ///
-pub struct dbStorage {
+pub struct DbStorage {
     ///
     pub db: DB,
 }
 
-impl dbStorage {
+impl DbStorage {
     ///
-    pub fn new<P: AsRef<Path>>(dir: P) -> Result<dbStorage, Error> {
+    pub fn new<P: AsRef<Path>>(dir: P) -> Result<DbStorage, Error> {
         let db = DB::open_default(dir)?;
 
-        Ok(dbStorage { db: db })
-    }
-
-    /// Creates filename for keystore file in format:
-    /// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
-    ///
-    /// # Arguments
-    ///
-    /// * `uuid` - UUID for keyfile
-    ///
-    fn generate_filename(uuid: &str) -> String {
-        format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
+        Ok(DbStorage { db: db })
     }
 }
 
-impl KeyfileStorage for dbStorage {
+impl KeyfileStorage for DbStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), Error> {
         let json = json::encode(&kf)?;
         self.db.put(&kf.address, json.as_ref())?;
@@ -64,7 +49,7 @@ impl KeyfileStorage for dbStorage {
         let bytes = self.db.get(&addr)?;
         let str = bytes
             .and_then(|d| d.to_utf8().and_then(|v| Some(v.to_string())))
-            .ok_or(Error::StorageError("Can't parse KeyFile data".to_string()))?;
+            .ok_or(Error::NotFound(addr.to_string()))?;
         let kf = KeyFile::decode(str)?;
 
         Ok(kf)

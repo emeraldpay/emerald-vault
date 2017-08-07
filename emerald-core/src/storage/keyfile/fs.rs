@@ -3,25 +3,22 @@
 
 use super::KeyfileStorage;
 use super::error::Error;
-use core::{self, Address};
-use hdwallet::HdwalletCrypto;
-use keystore::{CIPHER_IV_BYTES, Cipher, CryptoType, KDF_SALT_BYTES, Kdf, KeyFile};
-use keystore::{CoreCrypto, Iv, Mac, Salt, decode_str, try_extract_address};
-use rustc_serialize::{Encodable, Encoder, json};
+use core::Address;
+use keystore::{CryptoType, KeyFile};
+use keystore::try_extract_address;
+use rustc_serialize::json;
 use std::ffi::OsStr;
 use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use util;
-use uuid::Uuid;
 
 /// Filesystem storage for `KeyFiles`
 ///
-pub struct fsStorage {
+pub struct FsStorage {
     /// Parent directory for storage
     base_path: PathBuf,
 }
-
 
 /// Result for searching `KeyFile` in base_path
 /// and it subdirectories
@@ -34,13 +31,13 @@ struct SearchResult {
     kf: KeyFile,
 }
 
-impl fsStorage {
+impl FsStorage {
     ///
-    pub fn new<P>(dir: P) -> fsStorage
+    pub fn new<P>(dir: P) -> FsStorage
     where
         P: AsRef<Path> + AsRef<OsStr>,
     {
-        fsStorage { base_path: PathBuf::from(&dir) }
+        FsStorage { base_path: PathBuf::from(&dir) }
     }
 
     ///
@@ -80,7 +77,7 @@ impl fsStorage {
 
         res.kf.visible = Some(is_visible);
         self.delete(&res.kf.address)?;
-        fsStorage::put_with_name(&res.kf, &res.path)?;
+        FsStorage::put_with_name(&res.kf, &res.path)?;
 
         Ok(())
     }
@@ -92,27 +89,16 @@ impl fsStorage {
 
         Ok(())
     }
-
-    /// Creates filename for keystore file in format:
-    /// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
-    ///
-    /// # Arguments
-    ///
-    /// * `uuid` - UUID for keyfile
-    ///
-    fn generate_filename(uuid: &str) -> String {
-        format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
-    }
 }
 
-impl KeyfileStorage for fsStorage {
+impl KeyfileStorage for FsStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), Error> {
-        let name = fsStorage::generate_filename(&kf.uuid.to_string());
+        let name = generate_filename(&kf.uuid.to_string());
         let p: PathBuf = self.base_path.clone();
         let p_ref: &Path = p.as_ref();
         let path = p_ref.join(name);
 
-        fsStorage::put_with_name(&kf, path)
+        FsStorage::put_with_name(&kf, path)
     }
 
     fn delete(&self, addr: &Address) -> Result<(), Error> {
@@ -218,4 +204,15 @@ impl KeyfileStorage for fsStorage {
 
         Ok(true)
     }
+}
+
+/// Creates filename for keystore file in format:
+/// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
+///
+/// # Arguments
+///
+/// * `uuid` - UUID for keyfile
+///
+pub fn generate_filename(uuid: &str) -> String {
+    format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
 }
