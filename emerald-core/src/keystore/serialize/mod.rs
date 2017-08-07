@@ -153,6 +153,7 @@ impl Encodable for KeyFile {
 mod tests {
     use super::*;
     use tests::*;
+    use storage::generate_filename;
 
     #[test]
     fn should_catch_unsupported_keyfile_version() {
