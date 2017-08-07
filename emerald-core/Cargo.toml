@@ -59,3 +59,4 @@ quickcheck = "0.4"
 default = ["http", "rocksdb"]
 http = ["hyper", "reqwest"]
 dev = ["clippy"]
+fs-storage = []

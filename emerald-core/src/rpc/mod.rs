@@ -21,10 +21,10 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-//#[cfg(feature = "default")]
+#[cfg(feature = "default")]
 use storage::dbStorage;
-//#[cfg(feature = "foo")]
-//use storage::keyfile::fs;
+#[cfg(feature = "fs-storage")]
+use storage::fsStorage;
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
     if value.is_err() {
@@ -74,9 +74,15 @@ pub fn start(
     }
 
     let keystore_path = default_keystore_path(&chain.id);
+    #[cfg(feature = "default")]
     let storage = match dbStorage::new(keystore_path) {
         Ok(db) => Arc::new(db),
-        Err(_) => panic!("Can't create keyfile storage"),
+        Err(_) => panic!("Can't create database keyfile storage"),
+    };
+    #[cfg(feature = "fs-storage")]
+    let storage = match fsStorage::new(keystore_path) {
+        Ok(fs) => Arc::new(fs),
+        Err(_) => panic!("Can't create filesystem keyfile storage"),
     };
 
     let wallet_manager = match WManager::new(None) {

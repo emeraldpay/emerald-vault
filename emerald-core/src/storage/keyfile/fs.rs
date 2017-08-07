@@ -123,32 +123,16 @@ impl KeyfileStorage for fsStorage {
     /// * `addr` - a public address
     ///
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
-        let entries = fs::read_dir(&self.path)?;
+        let res = self.search(addr, SearchTag::Content)?;
 
-        for entry in entries {
-            let path = entry?.path();
-
-            if path.is_dir() {
-                continue;
-            }
-
-            let mut file = fs::File::open(&path)?;
-            let mut content = String::new();
-
-            if file.read_to_string(&mut content).is_err() {
-                continue;
-            }
-
-            match try_extract_address(&content) {
-                Some(a) if a == *addr => {
-                    let kf = KeyFile::decode(content)?;
-                    return Ok(kf);
-                }
-                _ => continue,
-            }
+        if let SearchResult::Content(s) = res {
+            let kf = KeyFile::decode(s)?;
+            return Ok(kf);
         }
 
-        Err(Error::NotFound(addr.to_string()))
+        Err(Error::StorageError(
+            format!("Can't find Keyfile for address: {}", addr),
+        ))
     }
 
     /// Lists addresses for `Keystore` files in specified folder.
