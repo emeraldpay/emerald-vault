@@ -23,8 +23,7 @@ pub fn get_keyfile() -> KeyFile {
     let pk = PrivateKey::gen();
     let kdf = Kdf::from((8, 2, 1));
 
-    KeyFile::new_custom(pk, "1234567890", kdf, &mut rand::thread_rng(), None, None)
-        .unwrap()
+    KeyFile::new_custom(pk, "1234567890", kdf, &mut rand::thread_rng(), None, None).unwrap()
 }
 
 fn time<F: FnOnce()>(f: F) -> u64 {
