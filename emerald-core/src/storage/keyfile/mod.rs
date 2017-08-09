@@ -66,6 +66,7 @@ pub trait KeyfileStorage {
     /// * `showHidden` - flag to show hidden `Keystore` files
     ///
     /// # Return:
+    ///
     /// Array of tuples (name, address, description, is_hidden)
     ///
     fn list_accounts(

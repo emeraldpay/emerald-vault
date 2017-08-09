@@ -8,9 +8,10 @@ use std::{error, fmt, io, str};
 ///
 #[derive(Debug)]
 pub enum Error {
-    ///
+    /// General storage error
     StorageError(String),
-    ///
+
+    /// `KeyFile` not found
     NotFound(String),
 }
 
@@ -48,15 +49,15 @@ impl From<io::Error> for Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::StorageError(ref str) => write!(f, "Keyfile storage error: {}", str),
-            Error::NotFound(ref str) => write!(f, "Missing Keyfile for address: {}", str),
+            Error::StorageError(ref str) => write!(f, "KeyFile storage error: {}", str),
+            Error::NotFound(ref str) => write!(f, "Missing KeyFile for address: {}", str),
         }
     }
 }
 
 impl error::Error for Error {
     fn description(&self) -> &str {
-        "Keyfile storage error"
+        "KeyFile storage error"
     }
 
     fn cause(&self) -> Option<&error::Error> {
