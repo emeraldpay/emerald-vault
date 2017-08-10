@@ -34,14 +34,13 @@ extern crate serde_json;
 extern crate uuid;
 extern crate hex;
 extern crate hidapi;
-
+extern crate rocksdb;
 
 mod core;
 pub mod addressbook;
 pub mod keystore;
-pub mod contract;
-pub mod storage;
 pub mod rpc;
+pub mod storage;
 mod hdwallet;
 mod util;
 

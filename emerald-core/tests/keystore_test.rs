@@ -8,6 +8,7 @@ extern crate tempdir;
 use emerald::{Address, KECCAK256_BYTES};
 use emerald::keystore::{CIPHER_IV_BYTES, Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv,
                         KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Mac, Prf, Salt};
+use emerald::storage::{DbStorage, FsStorage, KeyfileStorage};
 use hex::FromHex;
 use rustc_serialize::json;
 use std::fs::File;
@@ -284,19 +285,44 @@ fn should_use_security_level() {
 fn should_flush_to_file() {
     let kf = KeyFile::new("1234567890", &KdfDepthLevel::Normal, None, None).unwrap();
 
-    assert!(kf.flush(temp_dir().as_path(), None).is_ok());
+    let storage = FsStorage::new(&temp_dir().as_path());
+
+    assert!(storage.put(&kf).is_ok());
 }
 
 #[test]
-fn should_search_by_address() {
-    let addr = "0x0047201aed0b69875b24b614dda0270bcd9f11cc"
+fn should_search_by_address_filesystem() {
+    let addr = "0xc0de379b51d582e1600c76dd1efee8ed024b844a"
         .parse::<Address>()
         .unwrap();
 
-    let (_, kf) = KeyFile::search_by_address(&addr, &keystore_path()).unwrap();
+    let storage = FsStorage::new(&keystore_path());
+    let kf = storage.search_by_address(&addr).unwrap();
 
     assert_eq!(
         kf.uuid,
-        "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3".parse().unwrap()
+        "a928d7c2-b37b-464c-a70b-b9979d59fac4".parse().unwrap()
+    );
+}
+
+
+#[test]
+fn should_search_by_address_db() {
+    let addr = "0xc0de379b51d582e1600c76dd1efee8ed024b844a"
+        .parse::<Address>()
+        .unwrap();
+
+    let path = keyfile_path(
+        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4",
+    );
+    let key = KeyFile::decode(file_content(path)).unwrap();
+
+    let storage = DbStorage::new(temp_dir().as_path()).unwrap();
+    storage.put(&key).unwrap();
+    let kf = storage.search_by_address(&addr).unwrap();
+
+    assert_eq!(
+        kf.uuid,
+        "a928d7c2-b37b-464c-a70b-b9979d59fac4".parse().unwrap()
     );
 }

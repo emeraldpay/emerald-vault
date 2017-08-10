@@ -1,16 +1,15 @@
 use super::Error;
 use super::serialize::RPCTransaction;
-
 use core::{Address, Transaction};
 use hdwallet::{WManager, to_prefixed_path};
 use jsonrpc_core::{Params, Value};
-use keystore::{self, CryptoType, KdfDepthLevel, KeyFile};
+use keystore::{CryptoType, KdfDepthLevel, KeyFile};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::cell::RefCell;
-use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use storage::KeyfileStorage;
 use util;
 
 fn to_chain_id(chain: &str, chain_id: Option<usize>, default_id: u8) -> u8 {
@@ -90,12 +89,16 @@ pub struct ListAccountsAdditional {
     hd_path: Option<String>,
 }
 
-pub fn list_accounts(
+pub fn list_accounts<T>(
     params: Either<(), (ListAccountsAdditional,)>,
-    keystore_path: &PathBuf,
-) -> Result<Vec<ListAccountAccount>, Error> {
+    storage: &Arc<T>,
+) -> Result<Vec<ListAccountAccount>, Error>
+where
+    T: KeyfileStorage,
+{
     let (additional,) = params.into_right();
-    let res = keystore::list_accounts(keystore_path, additional.show_hidden)?
+    let res = storage
+        .list_accounts(additional.show_hidden)?
         .iter()
         .map(|&(ref name, ref address, ref desc, is_hd)| {
             ListAccountAccount {
@@ -128,13 +131,16 @@ pub struct HideAccountAccount {
     address: String,
 }
 
-pub fn hide_account(
+pub fn hide_account<T>(
     params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
-    keystore_path: &PathBuf,
-) -> Result<bool, Error> {
+    storage: &Arc<T>,
+) -> Result<bool, Error>
+where
+    T: KeyfileStorage,
+{
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
-    let res = keystore::hide(&addr, keystore_path)?;
+    let res = storage.hide(&addr)?;
     debug!("Account hided: {}", addr);
 
     Ok(res)
@@ -145,13 +151,16 @@ pub struct UnhideAccountAccount {
     address: String,
 }
 
-pub fn unhide_account(
+pub fn unhide_account<T>(
     params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
-    keystore_path: &PathBuf,
-) -> Result<bool, Error> {
+    storage: &Arc<T>,
+) -> Result<bool, Error>
+where
+    T: KeyfileStorage,
+{
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
-    let res = keystore::unhide(&addr, keystore_path)?;
+    let res = storage.unhide(&addr)?;
     debug!("Account unhided: {}", addr);
 
     Ok(res)
@@ -164,16 +173,19 @@ pub struct ShakeAccountAccount {
     new_passphrase: String,
 }
 
-pub fn shake_account(
+pub fn shake_account<T>(
     params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
-    keystore_path: &PathBuf,
-) -> Result<bool, Error> {
+    storage: &Arc<T>,
+) -> Result<bool, Error>
+where
+    T: KeyfileStorage,
+{
     use keystore::os_random;
 
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let (kf_path, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
+    let kf = storage.search_by_address(&addr)?;
 
     match kf.crypto {
         CryptoType::Core(ref core) => {
@@ -186,8 +198,7 @@ pub fn shake_account(
                 kf.name,
                 kf.description,
             )?;
-            let filename = (*kf_path.as_path()).file_name().unwrap();
-            new_kf.flush(keystore_path, filename.to_str())?;
+            storage.put(&new_kf)?;
             debug!("Account shaked: {}", kf.address);
         }
         _ => {
@@ -209,14 +220,17 @@ pub struct UpdateAccountAccount {
     description: String,
 }
 
-pub fn update_account(
+pub fn update_account<T>(
     params: Either<(UpdateAccountAccount,), (UpdateAccountAccount, CommonAdditional)>,
-    keystore_path: &PathBuf,
-) -> Result<bool, Error> {
+    storage: &Arc<T>,
+) -> Result<bool, Error>
+where
+    T: KeyfileStorage,
+{
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let (kf_path, mut kf) = KeyFile::search_by_address(&addr, keystore_path)?;
+    let mut kf = storage.search_by_address(&addr)?;
     if !account.name.is_empty() {
         kf.name = Some(account.name);
     }
@@ -224,8 +238,7 @@ pub fn update_account(
         kf.description = Some(account.description);
     }
 
-    let filename = (*kf_path.as_path()).file_name().unwrap();
-    kf.flush(keystore_path, filename.to_str())?;
+    storage.put(&kf)?;
     debug!(
         "Account {} updated with name: {}, description: {}",
         kf.address,
@@ -236,15 +249,18 @@ pub fn update_account(
     Ok(true)
 }
 
-pub fn import_account(
+pub fn import_account<T>(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    keystore_path: &PathBuf,
-) -> Result<String, Error> {
+    storage: &Arc<T>,
+) -> Result<String, Error>
+where
+    T: KeyfileStorage,
+{
     let (raw, _) = params.into_full();
     let raw = serde_json::to_string(&raw)?;
 
     let kf = KeyFile::decode(raw.to_lowercase())?;
-    kf.flush(keystore_path, None)?;
+    storage.put(&kf)?;
 
     debug!("Account imported: {}", kf.address);
 
@@ -256,14 +272,17 @@ pub struct ExportAccountAccount {
     address: String,
 }
 
-pub fn export_account(
+pub fn export_account<T>(
     params: Either<(ExportAccountAccount,), (ExportAccountAccount, CommonAdditional)>,
-    keystore_path: &PathBuf,
-) -> Result<Value, Error> {
+    storage: &Arc<T>,
+) -> Result<Value, Error>
+where
+    T: KeyfileStorage,
+{
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let (_, kf) = KeyFile::search_by_address(&addr, keystore_path)?;
+    let kf = storage.search_by_address(&addr)?;
     let raw = rustc_json::encode(&kf)?;
     let value = serde_json::to_value(&raw)?;
     debug!("Account exported: {}", kf.address);
@@ -280,11 +299,14 @@ pub struct NewAccountAccount {
     passphrase: String,
 }
 
-pub fn new_account(
+pub fn new_account<T>(
     params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
     sec: &KdfDepthLevel,
-    keystore_path: &PathBuf,
-) -> Result<String, Error> {
+    storage: &Arc<T>,
+) -> Result<String, Error>
+where
+    T: KeyfileStorage,
+{
     let (account, _) = params.into_full();
     if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
@@ -298,7 +320,7 @@ pub fn new_account(
     )?;
 
     let addr = kf.address.to_string();
-    kf.flush(keystore_path, None)?;
+    storage.put(&kf)?;
     debug!("New account generated: {}", kf.address);
 
     Ok(addr)
@@ -330,15 +352,18 @@ pub struct SignTransactionAdditional {
     hd_path: Option<String>,
 }
 
-pub fn sign_transaction(
+pub fn sign_transaction<T>(
     params: Either<
         (SignTransactionTransaction,),
         (SignTransactionTransaction, SignTransactionAdditional),
     >,
-    keystore_path: &PathBuf,
+    storage: &Arc<T>,
     default_chain_id: u8,
     wallet_manager: &Mutex<RefCell<WManager>>,
-) -> Result<Params, Error> {
+) -> Result<Params, Error>
+where
+    T: KeyfileStorage,
+{
     let (transaction, additional) = params.into_full();
     let addr = Address::from_str(&transaction.from)?;
 
@@ -346,8 +371,8 @@ pub fn sign_transaction(
         check_chain_params(&additional.chain, additional.chain_id.unwrap())?;
     }
 
-    match KeyFile::search_by_address(&addr, keystore_path) {
-        Ok((_, kf)) => {
+    match storage.search_by_address(&addr) {
+        Ok(kf) => {
             let rpc_transaction = RPCTransaction {
                 from: transaction.from,
                 to: transaction.to,

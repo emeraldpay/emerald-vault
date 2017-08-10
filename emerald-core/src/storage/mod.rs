@@ -1,5 +1,9 @@
-//! # Chain-related storage
+//! # Storage for `KeyFiles` and `Contracts`
 
+mod keyfile;
+
+pub use self::KeyStorageError;
+pub use self::keyfile::*;
 use log::LogLevel;
 use std::{env, fs};
 use std::io::{Error, ErrorKind};
