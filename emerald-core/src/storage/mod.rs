@@ -7,7 +7,8 @@ pub use self::keyfile::*;
 use log::LogLevel;
 use std::{env, fs};
 use std::io::{Error, ErrorKind};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::boxed::Box;
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
 #[derive(Debug, Clone)]
@@ -48,6 +49,26 @@ pub fn default_keystore_path(chain_id: &str) -> PathBuf {
     path.push(chain_id);
     path.push("keystore");
     path
+}
+
+/// Creates specific type of storage (database or filesystem)
+pub fn build_storage<P>(keystore_path: P) -> Result<Box<KeyfileStorage>, KeyStorageError>
+    where P: AsRef<Path>
+{
+    #[cfg(feature = "default")]
+    match DbStorage::new(keystore_path) {
+        Ok(db) => Ok(Box::new(db)),
+        Err(_) => Err(KeyStorageError::StorageError(
+            "Can't create database Keyfile storage".to_string(),
+        )),
+    }
+    #[cfg(feature = "fs-storage")]
+    match FsStorage::new(keystore_path) {
+        Ok(fs) => Ok(Box::new(fs)),
+        Err(_) => Err(KeyStorageError::StorageError(
+            "Can't create filesystem Keyfile storage".to_string(),
+        )),
+    }
 }
 
 impl Storages {
