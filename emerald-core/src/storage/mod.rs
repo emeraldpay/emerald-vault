@@ -6,9 +6,9 @@ pub use self::KeyStorageError;
 pub use self::keyfile::*;
 use log::LogLevel;
 use std::{env, fs};
+use std::boxed::Box;
 use std::io::{Error, ErrorKind};
 use std::path::{Path, PathBuf};
-use std::boxed::Box;
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
 #[derive(Debug, Clone)]
@@ -53,7 +53,8 @@ pub fn default_keystore_path(chain_id: &str) -> PathBuf {
 
 /// Creates specific type of storage (database or filesystem)
 pub fn build_storage<P>(keystore_path: P) -> Result<Box<KeyfileStorage>, KeyStorageError>
-    where P: AsRef<Path>
+where
+    P: AsRef<Path>,
 {
     #[cfg(feature = "default")]
     match DbStorage::new(keystore_path) {
