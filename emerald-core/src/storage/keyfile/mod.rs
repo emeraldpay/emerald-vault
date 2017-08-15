@@ -15,6 +15,25 @@ pub use self::fs::{FsStorage, generate_filename};
 use core::Address;
 use keystore::KeyFile;
 
+
+/// Short account info
+///
+#[derive(Debug, Clone, Default)]
+pub struct AccountInfo {
+    /// Address of account
+    pub address: String,
+
+    /// Optional name for account
+    pub name: String,
+
+    /// Optional description for account
+    pub description: String,
+
+    /// shows whether it is normal account or
+    /// held by HD wallet
+    pub is_hardware: bool,
+}
+
 /// Storage for KeyFiles
 ///
 pub trait KeyfileStorage {
@@ -67,10 +86,7 @@ pub trait KeyfileStorage {
     ///
     /// # Return:
     ///
-    /// Array of tuples (name, address, description, is_hidden)
+    /// Array of `AccountInfo` struct
     ///
-    fn list_accounts(
-        &self,
-        show_hidden: bool,
-    ) -> Result<Vec<(String, String, String, bool)>, KeyStorageError>;
+    fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, KeyStorageError>;
 }

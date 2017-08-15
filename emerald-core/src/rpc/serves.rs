@@ -100,12 +100,12 @@ where
     let res = storage
         .list_accounts(additional.show_hidden)?
         .iter()
-        .map(|&(ref name, ref address, ref desc, is_hd)| {
+        .map(|ref info| {
             ListAccountAccount {
-                name: name.clone(),
-                address: address.clone(),
-                description: desc.clone(),
-                hardware: is_hd,
+                name: info.name.clone(),
+                address: info.address.clone(),
+                description: info.description.clone(),
+                hardware: info.is_hardware,
             }
         })
         .collect();

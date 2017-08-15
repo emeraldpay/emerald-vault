@@ -1,7 +1,7 @@
 //! # KeyFile storage within filesystem
 
 
-use super::KeyfileStorage;
+use super::{AccountInfo, KeyfileStorage};
 use super::error::Error;
 use core::Address;
 use keystore::{CryptoType, KeyFile};
@@ -142,11 +142,8 @@ impl KeyfileStorage for FsStorage {
         Ok(res.kf)
     }
 
-    fn list_accounts(
-        &self,
-        show_hidden: bool,
-    ) -> Result<Vec<(String, String, String, bool)>, Error> {
-        let mut accounts: Vec<(String, String, String, bool)> = vec![];
+    fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, Error> {
+        let mut accounts = vec![];
         for e in read_dir(&self.base_path)? {
             if e.is_err() {
                 continue;
@@ -160,27 +157,22 @@ impl KeyfileStorage for FsStorage {
 
                 match KeyFile::decode(content) {
                     Ok(kf) => {
-                        let mut info = Vec::new();
+                        let mut info = AccountInfo::default();
                         if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
-                            let is_hd = match kf.crypto {
+                            info.is_hardware = match kf.crypto {
                                 CryptoType::Core(_) => false,
                                 CryptoType::HdWallet(_) => true,
                             };
-                            match kf.name {
-                                Some(name) => info.push(name),
-                                None => info.push("".to_string()),
-                            }
 
-                            match kf.description {
-                                Some(desc) => info.push(desc),
-                                None => info.push("".to_string()),
-                            }
-                            accounts.push((
-                                info[0].clone(),
-                                kf.address.to_string(),
-                                info[1].clone(),
-                                is_hd,
-                            ));
+                            if let Some(name) = kf.name {
+                                info.name = name;
+                            };
+
+                            if let Some(desc) = kf.description {
+                                info.description = desc;
+                            };
+
+                            accounts.push(info);
                         }
                     }
                     Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
