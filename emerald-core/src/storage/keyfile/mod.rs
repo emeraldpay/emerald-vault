@@ -11,9 +11,10 @@ mod error;
 
 pub use self::db::DbStorage;
 pub use self::error::Error as KeyStorageError;
-pub use self::fs::{FsStorage, generate_filename};
+pub use self::fs::FsStorage;
 use core::Address;
 use keystore::KeyFile;
+use util;
 
 
 /// Short account info
@@ -89,4 +90,15 @@ pub trait KeyfileStorage {
     /// Array of `AccountInfo` struct
     ///
     fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, KeyStorageError>;
+}
+
+/// Creates filename for keystore file in format:
+/// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
+///
+/// # Arguments
+///
+/// * `uuid` - UUID for keyfile
+///
+pub fn generate_filename(uuid: &str) -> String {
+    format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
 }

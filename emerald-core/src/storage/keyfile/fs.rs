@@ -1,7 +1,7 @@
 //! # KeyFile storage within filesystem
 
 
-use super::{AccountInfo, KeyfileStorage};
+use super::{AccountInfo, KeyfileStorage, generate_filename};
 use super::error::Error;
 use core::Address;
 use keystore::{CryptoType, KeyFile};
@@ -11,7 +11,6 @@ use std::ffi::OsStr;
 use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use util;
 
 /// Filesystem storage for `KeyFiles`
 ///
@@ -204,15 +203,4 @@ impl KeyfileStorage for FsStorage {
 
         Ok(true)
     }
-}
-
-/// Creates filename for keystore file in format:
-/// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
-///
-/// # Arguments
-///
-/// * `uuid` - UUID for keyfile
-///
-pub fn generate_filename(uuid: &str) -> String {
-    format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
 }
