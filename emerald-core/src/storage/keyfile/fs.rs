@@ -4,7 +4,7 @@
 use super::{AccountInfo, KeyfileStorage, generate_filename};
 use super::error::Error;
 use core::Address;
-use keystore::{CryptoType, KeyFile};
+use keystore::KeyFile;
 use keystore::try_extract_address;
 use rustc_serialize::json;
 use std::ffi::OsStr;
@@ -156,22 +156,8 @@ impl KeyfileStorage for FsStorage {
 
                 match KeyFile::decode(content) {
                     Ok(kf) => {
-                        let mut info = AccountInfo::default();
                         if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
-                            info.is_hardware = match kf.crypto {
-                                CryptoType::Core(_) => false,
-                                CryptoType::HdWallet(_) => true,
-                            };
-
-                            if let Some(name) = kf.name {
-                                info.name = name;
-                            };
-
-                            if let Some(desc) = kf.description {
-                                info.description = desc;
-                            };
-
-                            accounts.push(info);
+                            accounts.push(AccountInfo::from(kf));
                         }
                     }
                     Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),

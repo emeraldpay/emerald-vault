@@ -13,7 +13,7 @@ pub use self::db::DbStorage;
 pub use self::error::Error as KeyStorageError;
 pub use self::fs::FsStorage;
 use core::Address;
-use keystore::KeyFile;
+use keystore::{CryptoType, KeyFile};
 use util;
 
 
@@ -101,4 +101,26 @@ pub trait KeyfileStorage {
 ///
 pub fn generate_filename(uuid: &str) -> String {
     format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
+}
+
+impl From<KeyFile> for AccountInfo {
+    fn from(kf: KeyFile) -> Self {
+        let mut info = Self::default();
+        info.address = kf.address.to_string();
+
+        if let Some(name) = kf.name {
+            info.name = name;
+        };
+
+        if let Some(desc) = kf.description {
+            info.description = desc;
+        };
+
+        info.is_hardware = match kf.crypto {
+            CryptoType::Core(_) => false,
+            CryptoType::HdWallet(_) => true,
+        };
+
+        info
+    }
 }

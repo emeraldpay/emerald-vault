@@ -4,7 +4,7 @@
 use super::{AccountInfo, KeyfileStorage};
 use super::error::Error;
 use core::Address;
-use keystore::{CryptoType, KeyFile};
+use keystore::KeyFile;
 use rocksdb::{DB, IteratorMode};
 use rustc_serialize::json;
 use std::path::Path;
@@ -83,22 +83,8 @@ impl KeyfileStorage for DbStorage {
             let str = str::from_utf8(&val)?;
             match KeyFile::decode(str.to_string()) {
                 Ok(kf) => {
-                    let mut info = AccountInfo::default();
                     if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
-                        info.is_hardware = match kf.crypto {
-                            CryptoType::Core(_) => false,
-                            CryptoType::HdWallet(_) => true,
-                        };
-
-                        if let Some(name) = kf.name {
-                            info.name = name;
-                        };
-
-                        if let Some(desc) = kf.description {
-                            info.description = desc;
-                        };
-
-                        accounts.push(info);
+                        accounts.push(AccountInfo::from(kf));
                     }
                 }
                 Err(_) => {
