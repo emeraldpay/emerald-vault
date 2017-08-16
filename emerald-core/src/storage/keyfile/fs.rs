@@ -186,4 +186,23 @@ impl KeyfileStorage for FsStorage {
 
         Ok(true)
     }
+
+    fn update(
+        &self,
+        addr: &Address,
+        name: Option<String>,
+        desc: Option<String>,
+    ) -> Result<(), Error> {
+        let mut res = self.search(addr)?;
+
+        if name.is_some() {
+            res.kf.name = name;
+        };
+
+        if desc.is_some() {
+            res.kf.description = desc;
+        };
+        self.delete(&res.kf.address)?;
+        FsStorage::put_with_name(&res.kf, &res.path)
+    }
 }

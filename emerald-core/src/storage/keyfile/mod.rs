@@ -86,7 +86,7 @@ pub trait KeyfileStorage {
     ///
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, KeyStorageError>;
 
-    /// Hides account for given address from being listed
+    /// Hide account for given address from being listed
     ///
     /// # Arguments:
     ///
@@ -94,13 +94,28 @@ pub trait KeyfileStorage {
     ///
     fn hide(&self, addr: &Address) -> Result<bool, KeyStorageError>;
 
-    /// Unhides account for given address from being listed
+    /// Unhide account for given address from being listed
     ///
     /// # Arguments:
     ///
     ///  * addr - target `Address`
     ///
     fn unhide(&self, addr: &Address) -> Result<bool, KeyStorageError>;
+
+    /// Update account for given address with new name and description
+    ///
+    /// # Arguments:
+    ///
+    ///  * addr - target `Address`
+    ///  * name - optional new name
+    ///  * desc - optional new description
+    ///
+    fn update(
+        &self,
+        addr: &Address,
+        name: Option<String>,
+        desc: Option<String>,
+    ) -> Result<(), KeyStorageError>;
 
     /// Lists info for `Keystore` files inside storage
     /// Can include hidden files if flag set.

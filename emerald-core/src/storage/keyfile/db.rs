@@ -131,4 +131,23 @@ impl KeyfileStorage for DbStorage {
 
         Ok(accounts)
     }
+    
+    fn update(
+        &self,
+        addr: &Address,
+        name: Option<String>,
+        desc: Option<String>,
+    ) -> Result<(), Error> {
+        let mut kf = self.search_by_address(&addr)?;
+
+        if name.is_some() {
+            kf.name = name;
+        };
+
+        if desc.is_some() {
+            kf.description = desc;
+        };
+
+        self.put(&kf)
+    }
 }
