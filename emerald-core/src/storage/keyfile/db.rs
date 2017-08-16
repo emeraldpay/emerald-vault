@@ -1,11 +1,11 @@
 //! # Storage for `Keystore` files
 
 
-use super::{AccountInfo, KeyfileStorage};
+use super::{AccountInfo, KeyfileStorage, generate_filename};
 use super::error::Error;
 use core::Address;
 use keystore::KeyFile;
-use rocksdb::{DB, IteratorMode};
+use rocksdb::{DB, DBVector, IteratorMode};
 use rustc_serialize::json;
 use std::path::Path;
 use std::str;
@@ -22,6 +22,9 @@ pub struct DbStorage {
 impl DbStorage {
     /// Create new database storage
     /// Use specified directory as parent folder
+    /// Storage structure:
+    ///     key - `Address`
+    ///     value - `Filename`+ `:` + `Keyfile_json`
     ///
     /// # Arguments:
     ///
@@ -32,12 +35,37 @@ impl DbStorage {
 
         Ok(DbStorage { db: db })
     }
+
+    /// Splits value into filename and `Keyfile` json
+    ///
+    /// # Arguments:
+    ///
+    /// * dir - parent folder
+    ///
+    /// # Return:
+    ///
+    /// Tuple of `String` (<filename>, <keyfile_json>)
+    ///
+    fn split(bytes: Option<DBVector>) -> Result<(String, String), Error> {
+        let val = bytes
+            .and_then(|d| {
+                d.to_utf8().and_then(|v| {
+                    let val = v.to_string();
+                    let arr: Vec<&str> = val.split(":").collect();
+                    Some((arr[0].to_string(), arr[1].to_string()))
+                })
+            })
+            .ok_or(Error::NotFound("Can't extract filename".to_string()))?;
+
+        Ok(val)
+    }
 }
 
 impl KeyfileStorage for DbStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), Error> {
         let json = json::encode(&kf)?;
-        self.db.put(&kf.address, json.as_ref())?;
+        let val = generate_filename(&kf.uuid.to_string()) + ":" + &json;
+        self.db.put(&kf.address, &val.as_bytes())?;
 
         Ok(())
     }
@@ -49,11 +77,9 @@ impl KeyfileStorage for DbStorage {
     }
 
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
-        let bytes = self.db.get(&addr)?;
-        let str = bytes
-            .and_then(|d| d.to_utf8().and_then(|v| Some(v.to_string())))
-            .ok_or(Error::NotFound(addr.to_string()))?;
-        let kf = KeyFile::decode(str)?;
+        let vec = self.db.get(&addr)?;
+        let (_, json) = DbStorage::split(vec)?;
+        let kf = KeyFile::decode(json)?;
 
         Ok(kf)
     }
@@ -79,20 +105,26 @@ impl KeyfileStorage for DbStorage {
     fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, Error> {
         let mut accounts = vec![];
 
-        for (addr, val) in self.db.iterator(IteratorMode::Start) {
-            let str = str::from_utf8(&val)?;
-            match KeyFile::decode(str.to_string()) {
-                Ok(kf) => {
-                    if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
-                        accounts.push(AccountInfo::from(kf));
+        unsafe {
+            for (addr, mut val) in self.db.iterator(IteratorMode::Start) {
+                let vec = DBVector::from_c(val.as_mut_ptr(), val.len());
+                let (filename, json) = DbStorage::split(Some(vec))?;
+
+                match KeyFile::decode(json) {
+                    Ok(kf) => {
+                        if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
+                            let mut info = AccountInfo::from(kf);
+                            info.filename = filename;
+                            accounts.push(info);
+                        }
                     }
-                }
-                Err(_) => {
-                    let data: [u8; 20] = util::to_arr(&*addr);
-                    info!(
-                        "Invalid keystore file format for addr: {}",
-                        Address::from(data)
-                    )
+                    Err(_) => {
+                        let data: [u8; 20] = util::to_arr(&*addr);
+                        info!(
+                            "Invalid keystore file format for addr: {}",
+                            Address::from(data)
+                        )
+                    }
                 }
             }
         }

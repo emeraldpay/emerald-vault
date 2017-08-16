@@ -16,11 +16,13 @@ use core::Address;
 use keystore::{CryptoType, KeyFile};
 use util;
 
-
 /// Short account info
 ///
 #[derive(Debug, Clone, Default)]
 pub struct AccountInfo {
+    /// File name for `KeyFile`
+    pub filename: String,
+
     /// Address of account
     pub address: String,
 
@@ -33,6 +35,28 @@ pub struct AccountInfo {
     /// shows whether it is normal account or
     /// held by HD wallet
     pub is_hardware: bool,
+}
+
+impl From<KeyFile> for AccountInfo {
+    fn from(kf: KeyFile) -> Self {
+        let mut info = Self::default();
+        info.address = kf.address.to_string();
+
+        if let Some(name) = kf.name {
+            info.name = name;
+        };
+
+        if let Some(desc) = kf.description {
+            info.description = desc;
+        };
+
+        info.is_hardware = match kf.crypto {
+            CryptoType::Core(_) => false,
+            CryptoType::HdWallet(_) => true,
+        };
+
+        info
+    }
 }
 
 /// Storage for KeyFiles
@@ -101,26 +125,4 @@ pub trait KeyfileStorage {
 ///
 pub fn generate_filename(uuid: &str) -> String {
     format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
-}
-
-impl From<KeyFile> for AccountInfo {
-    fn from(kf: KeyFile) -> Self {
-        let mut info = Self::default();
-        info.address = kf.address.to_string();
-
-        if let Some(name) = kf.name {
-            info.name = name;
-        };
-
-        if let Some(desc) = kf.description {
-            info.description = desc;
-        };
-
-        info.is_hardware = match kf.crypto {
-            CryptoType::Core(_) => false,
-            CryptoType::HdWallet(_) => true,
-        };
-
-        info
-    }
 }

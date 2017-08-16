@@ -157,7 +157,14 @@ impl KeyfileStorage for FsStorage {
                 match KeyFile::decode(content) {
                     Ok(kf) => {
                         if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
-                            accounts.push(AccountInfo::from(kf));
+                            let mut info = AccountInfo::from(kf);
+                            match entry.path().file_name().and_then(|s| s.to_str()) {
+                                Some(name) => {
+                                    info.filename = name.to_string();
+                                    accounts.push(info);
+                                }
+                                None => info!("Corrupted filename for: {:?}", entry.file_name()),
+                            }
                         }
                     }
                     Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
@@ -168,22 +175,12 @@ impl KeyfileStorage for FsStorage {
         Ok(accounts)
     }
 
-    /// Hides account for given address from being listed
-    ///
-    /// #Arguments
-    /// addr - target address
-    ///
     fn hide(&self, addr: &Address) -> Result<bool, Error> {
         self.toogle_visibility(&addr, false)?;
 
         Ok(true)
     }
 
-    /// Unhides account for given address from being listed
-    ///
-    /// #Arguments
-    /// addr - target address
-    ///
     fn unhide(&self, addr: &Address) -> Result<bool, Error> {
         self.toogle_visibility(&addr, true)?;
 
