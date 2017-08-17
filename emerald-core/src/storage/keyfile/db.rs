@@ -70,8 +70,7 @@ impl DbStorage {
 impl KeyfileStorage for DbStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), Error> {
         let json = json::encode(&kf)?;
-        let val = generate_filename(&kf.uuid.to_string()) +
-            DbStorage::SEPARATOR + &json;
+        let val = generate_filename(&kf.uuid.to_string()) + DbStorage::SEPARATOR + &json;
         self.db.put(&kf.address, &val.as_bytes())?;
 
         Ok(())
