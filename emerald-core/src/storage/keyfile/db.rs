@@ -131,7 +131,7 @@ impl KeyfileStorage for DbStorage {
 
         Ok(accounts)
     }
-    
+
     fn update(
         &self,
         addr: &Address,
