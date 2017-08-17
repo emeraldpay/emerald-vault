@@ -20,11 +20,16 @@ pub struct DbStorage {
 }
 
 impl DbStorage {
+    /// Separator for composing value string
+    /// `value = <filename> + SEPARATOR + <keyfile_json>`
+    const SEPARATOR: &'static str = "<|>";
+
+
     /// Create new database storage
     /// Use specified directory as parent folder
     /// Storage structure:
     ///     key - `Address`
-    ///     value - `Filename`+ `:` + `Keyfile_json`
+    ///     value - `<filename> + SEPARATOR + <keyfile_json>`
     ///
     /// # Arguments:
     ///
@@ -51,8 +56,9 @@ impl DbStorage {
             .and_then(|d| {
                 d.to_utf8().and_then(|v| {
                     let val = v.to_string();
-                    let arr: Vec<&str> = val.split(":").collect();
-                    Some((arr[0].to_string(), arr[1].to_string()))
+                    let arr: Vec<&str> = val.split(DbStorage::SEPARATOR).collect();
+                    let json = arr[1..arr.len()].join(DbStorage::SEPARATOR);
+                    Some((arr[0].to_string(), json))
                 })
             })
             .ok_or(Error::NotFound("Can't extract filename".to_string()))?;
@@ -64,7 +70,8 @@ impl DbStorage {
 impl KeyfileStorage for DbStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), Error> {
         let json = json::encode(&kf)?;
-        let val = generate_filename(&kf.uuid.to_string()) + ":" + &json;
+        let val = generate_filename(&kf.uuid.to_string()) +
+            DbStorage::SEPARATOR + &json;
         self.db.put(&kf.address, &val.as_bytes())?;
 
         Ok(())
@@ -78,7 +85,10 @@ impl KeyfileStorage for DbStorage {
 
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
         let vec = self.db.get(&addr)?;
-        let (_, json) = DbStorage::split(vec)?;
+        let (p, json) = DbStorage::split(vec)?;
+
+        println!(">> DEBUG path:{}, json:{}", p, json);
+
         let kf = KeyFile::decode(json)?;
 
         Ok(kf)
