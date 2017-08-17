@@ -19,12 +19,12 @@ pub struct DbStorage {
     pub db: DB,
 }
 
+/// Separator for composing value string
+/// `value = <filename> + SEPARATOR + <keyfile_json>`
+///
+const SEPARATOR: &'static str = "<|>";
+
 impl DbStorage {
-    /// Separator for composing value string
-    /// `value = <filename> + SEPARATOR + <keyfile_json>`
-    const SEPARATOR: &'static str = "<|>";
-
-
     /// Create new database storage
     /// Use specified directory as parent folder
     /// Storage structure:
@@ -56,8 +56,8 @@ impl DbStorage {
             .and_then(|d| {
                 d.to_utf8().and_then(|v| {
                     let val = v.to_string();
-                    let arr: Vec<&str> = val.split(DbStorage::SEPARATOR).collect();
-                    let json = arr[1..arr.len()].join(DbStorage::SEPARATOR);
+                    let arr: Vec<&str> = val.split(SEPARATOR).collect();
+                    let json = arr[1..arr.len()].join(SEPARATOR);
                     Some((arr[0].to_string(), json))
                 })
             })
@@ -70,7 +70,7 @@ impl DbStorage {
 impl KeyfileStorage for DbStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), Error> {
         let json = json::encode(&kf)?;
-        let val = generate_filename(&kf.uuid.to_string()) + DbStorage::SEPARATOR + &json;
+        let val = generate_filename(&kf.uuid.to_string()) + SEPARATOR + &json;
         self.db.put(&kf.address, &val.as_bytes())?;
 
         Ok(())
