@@ -400,11 +400,7 @@ where
                                      transaction",
                                 );
                                 let signed = Transaction::to_raw_params(raw);
-                                debug!(
-                                    "Signed by emerald transaction to: {:?}\n\t raw: {:?}",
-                                    &tr.to,
-                                    signed
-                                );
+                                debug!("Signed transaction to: {:?}\n\t raw: {:?}", &tr.to, signed);
 
                                 Ok(signed)
                             } else {
@@ -413,8 +409,8 @@ where
                         }
 
                         CryptoType::HdWallet(hw) => {
-                            let quard = wallet_manager.lock().unwrap();
-                            let mut wm = quard.borrow_mut();
+                            let guard = wallet_manager.lock().unwrap();
+                            let mut wm = guard.borrow_mut();
 
                             let hd_path = match to_prefixed_path(&hw.hd_path) {
                                 Ok(hd) => hd,
