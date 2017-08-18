@@ -106,30 +106,6 @@ fn main() {
             .parse::<SocketAddr>()
             .expect("Expect to parse address");
 
-//        let base_path_str = args.flag_base_path.parse::<String>().expect(
-//            "Expect to parse base \
-//             path",
-//        );
-
-        //        let base_path = if !base_path_str.is_empty() {
-        //            Some(PathBuf::from(&base_path_str))
-        //        } else {
-        //            None
-        //        };
-
-        //        let storage = match base_path {
-        //            Some(p) => Storages::new(p),
-        //            None => Storages::default(),
-        //        };
-        //
-        //        if storage.init().is_err() {
-        //            panic!("Unable to initialize storage");
-        //        }
-        //
-        //        let chain = ChainStorage::new(&storage, chain_name.to_string());
-        //        if chain.init().is_err() {
-        //            panic!("Unable to initialize chain");
-        //        }
         let keystore_path = default_keystore_path(&chain);
         let storage = match build_storage(keystore_path) {
             Ok(st) => Arc::new(st),

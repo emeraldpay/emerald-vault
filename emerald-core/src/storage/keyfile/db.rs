@@ -115,7 +115,6 @@ impl KeyfileStorage for DbStorage {
             for (addr, mut val) in self.db.iterator(IteratorMode::Start) {
                 let vec = DBVector::from_c(val.as_mut_ptr(), val.len());
                 let (filename, json) = DbStorage::split(Some(vec))?;
-
                 match KeyFile::decode(json) {
                     Ok(kf) => {
                         if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
@@ -127,7 +126,7 @@ impl KeyfileStorage for DbStorage {
                     Err(_) => {
                         let data: [u8; 20] = util::to_arr(&*addr);
                         info!(
-                            "Invalid keystore file format for addr: {}",
+                            "Invalid keystore file format for address: {}",
                             Address::from(data)
                         )
                     }
