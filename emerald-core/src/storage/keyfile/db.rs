@@ -84,10 +84,7 @@ impl KeyfileStorage for DbStorage {
 
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
         let vec = self.db.get(&addr)?;
-        let (p, json) = DbStorage::split(vec)?;
-
-        println!(">> DEBUG path:{}, json:{}", p, json);
-
+        let (_, json) = DbStorage::split(vec)?;
         let kf = KeyFile::decode(json)?;
 
         Ok(kf)

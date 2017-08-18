@@ -18,6 +18,7 @@ extern crate regex;
 
 use docopt::Docopt;
 use emerald::keystore::KdfDepthLevel;
+use emerald::storage::{build_storage, default_keystore_path};
 use env_logger::LogBuilder;
 use log::{LogLevel, LogRecord};
 use std::env;
@@ -110,13 +111,32 @@ fn main() {
              path",
         );
 
-        let base_path = if !base_path_str.is_empty() {
-            Some(PathBuf::from(&base_path_str))
-        } else {
-            None
+        //        let base_path = if !base_path_str.is_empty() {
+        //            Some(PathBuf::from(&base_path_str))
+        //        } else {
+        //            None
+        //        };
+
+        //        let storage = match base_path {
+        //            Some(p) => Storages::new(p),
+        //            None => Storages::default(),
+        //        };
+        //
+        //        if storage.init().is_err() {
+        //            panic!("Unable to initialize storage");
+        //        }
+        //
+        //        let chain = ChainStorage::new(&storage, chain_name.to_string());
+        //        if chain.init().is_err() {
+        //            panic!("Unable to initialize chain");
+        //        }
+        let keystore_path = default_keystore_path(&chain);
+        let storage = match build_storage(keystore_path) {
+            Ok(st) => st,
+            Err(_) => panic!("Can't create filesystem keyfile storage"),
         };
 
-        emerald::rpc::start(&addr, &chain, base_path, Some(sec_level));
+        emerald::rpc::start(&addr, &chain, storage, Some(sec_level));
     }
 
 }

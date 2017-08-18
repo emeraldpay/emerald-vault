@@ -12,6 +12,7 @@ use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
+
 /// Filesystem storage for `KeyFiles`
 ///
 pub struct FsStorage {
@@ -21,7 +22,7 @@ pub struct FsStorage {
 
 /// Result for searching `KeyFile` in `base_path`
 /// and it subdirectories
-///
+#[derive(Debug, Clone)]
 struct SearchResult {
     /// Path to target `KeyFile`
     path: PathBuf,

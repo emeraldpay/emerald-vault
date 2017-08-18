@@ -89,13 +89,14 @@ pub struct ListAccountsAdditional {
     hd_path: Option<String>,
 }
 
-pub fn list_accounts<T>(
+pub fn list_accounts<T: ?Sized>(
     params: Either<(), (ListAccountsAdditional,)>,
-    storage: &Arc<T>,
+    storage: &Arc<Mutex<Box<T>>>,
 ) -> Result<Vec<ListAccountAccount>, Error>
 where
     T: KeyfileStorage,
 {
+    let storage = storage.lock().unwrap();
     let (additional,) = params.into_right();
     let res = storage
         .list_accounts(additional.show_hidden)?
@@ -131,13 +132,14 @@ pub struct HideAccountAccount {
     address: String,
 }
 
-pub fn hide_account<T>(
+pub fn hide_account<T: ?Sized>(
     params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
-    storage: &Arc<T>,
+    storage: &Arc<Mutex<Box<T>>>,
 ) -> Result<bool, Error>
 where
     T: KeyfileStorage,
 {
+    let storage = storage.lock().unwrap();
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
     let res = storage.hide(&addr)?;
@@ -151,13 +153,14 @@ pub struct UnhideAccountAccount {
     address: String,
 }
 
-pub fn unhide_account<T>(
+pub fn unhide_account<T: ?Sized>(
     params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
-    storage: &Arc<T>,
+    storage: &Arc<Mutex<Box<T>>>,
 ) -> Result<bool, Error>
 where
     T: KeyfileStorage,
 {
+    let storage = storage.lock().unwrap();
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
     let res = storage.unhide(&addr)?;
@@ -173,20 +176,20 @@ pub struct ShakeAccountAccount {
     new_passphrase: String,
 }
 
-pub fn shake_account<T>(
+pub fn shake_account<T: ?Sized>(
     params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
-    storage: &Arc<T>,
+    storage: &Arc<Mutex<Box<T>>>,
 ) -> Result<bool, Error>
 where
     T: KeyfileStorage,
 {
     use keystore::os_random;
 
+    let storage = storage.lock().unwrap();
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
     let kf = storage.search_by_address(&addr)?;
-
     match kf.crypto {
         CryptoType::Core(ref core) => {
             let pk = kf.decrypt_key(&account.old_passphrase)?;
@@ -220,13 +223,14 @@ pub struct UpdateAccountAccount {
     description: String,
 }
 
-pub fn update_account<T>(
+pub fn update_account<T: ?Sized>(
     params: Either<(UpdateAccountAccount,), (UpdateAccountAccount, CommonAdditional)>,
-    storage: &Arc<T>,
+    storage: &Arc<Mutex<Box<T>>>,
 ) -> Result<bool, Error>
 where
     T: KeyfileStorage,
 {
+    let storage = storage.lock().unwrap();
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
@@ -249,13 +253,14 @@ where
     Ok(true)
 }
 
-pub fn import_account<T>(
+pub fn import_account<T: ?Sized>(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    storage: &Arc<T>,
+    storage: &Arc<Mutex<Box<T>>>,
 ) -> Result<String, Error>
 where
     T: KeyfileStorage,
 {
+    let storage = storage.lock().unwrap();
     let (raw, _) = params.into_full();
     let raw = serde_json::to_string(&raw)?;
 
@@ -272,13 +277,14 @@ pub struct ExportAccountAccount {
     address: String,
 }
 
-pub fn export_account<T>(
+pub fn export_account<T: ?Sized>(
     params: Either<(ExportAccountAccount,), (ExportAccountAccount, CommonAdditional)>,
-    storage: &Arc<T>,
+    storage: &Arc<Mutex<Box<T>>>,
 ) -> Result<Value, Error>
 where
     T: KeyfileStorage,
 {
+    let storage = storage.lock().unwrap();
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
@@ -299,14 +305,15 @@ pub struct NewAccountAccount {
     passphrase: String,
 }
 
-pub fn new_account<T>(
+pub fn new_account<T: ?Sized>(
     params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
     sec: &KdfDepthLevel,
-    storage: &Arc<T>,
+    storage: &Arc<Mutex<Box<T>>>,
 ) -> Result<String, Error>
 where
     T: KeyfileStorage,
 {
+    let storage = storage.lock().unwrap();
     let (account, _) = params.into_full();
     if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
@@ -352,18 +359,19 @@ pub struct SignTransactionAdditional {
     hd_path: Option<String>,
 }
 
-pub fn sign_transaction<T>(
+pub fn sign_transaction<T: ?Sized>(
     params: Either<
         (SignTransactionTransaction,),
         (SignTransactionTransaction, SignTransactionAdditional),
     >,
-    storage: &Arc<T>,
+    storage: &Arc<Mutex<Box<T>>>,
     default_chain_id: u8,
     wallet_manager: &Mutex<RefCell<WManager>>,
 ) -> Result<Params, Error>
 where
     T: KeyfileStorage,
 {
+    let storage = storage.lock().unwrap();
     let (transaction, additional) = params.into_full();
     let addr = Address::from_str(&transaction.from)?;
 
