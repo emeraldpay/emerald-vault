@@ -91,7 +91,7 @@ pub struct ListAccountsAdditional {
 
 pub fn list_accounts<T: ?Sized>(
     params: Either<(), (ListAccountsAdditional,)>,
-    storage: &Arc<Mutex<Box<T>>>,
+    storage: &Arc<Mutex<Arc<Box<T>>>>,
 ) -> Result<Vec<ListAccountAccount>, Error>
 where
     T: KeyfileStorage,
@@ -134,7 +134,7 @@ pub struct HideAccountAccount {
 
 pub fn hide_account<T: ?Sized>(
     params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Box<T>>>,
+    storage: &Arc<Mutex<Arc<Box<T>>>>,
 ) -> Result<bool, Error>
 where
     T: KeyfileStorage,
@@ -155,7 +155,7 @@ pub struct UnhideAccountAccount {
 
 pub fn unhide_account<T: ?Sized>(
     params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Box<T>>>,
+    storage: &Arc<Mutex<Arc<Box<T>>>>,
 ) -> Result<bool, Error>
 where
     T: KeyfileStorage,
@@ -178,7 +178,7 @@ pub struct ShakeAccountAccount {
 
 pub fn shake_account<T: ?Sized>(
     params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Box<T>>>,
+    storage: &Arc<Mutex<Arc<Box<T>>>>,
 ) -> Result<bool, Error>
 where
     T: KeyfileStorage,
@@ -225,7 +225,7 @@ pub struct UpdateAccountAccount {
 
 pub fn update_account<T: ?Sized>(
     params: Either<(UpdateAccountAccount,), (UpdateAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Box<T>>>,
+    storage: &Arc<Mutex<Arc<Box<T>>>>,
 ) -> Result<bool, Error>
 where
     T: KeyfileStorage,
@@ -255,7 +255,7 @@ where
 
 pub fn import_account<T: ?Sized>(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    storage: &Arc<Mutex<Box<T>>>,
+    storage: &Arc<Mutex<Arc<Box<T>>>>,
 ) -> Result<String, Error>
 where
     T: KeyfileStorage,
@@ -279,7 +279,7 @@ pub struct ExportAccountAccount {
 
 pub fn export_account<T: ?Sized>(
     params: Either<(ExportAccountAccount,), (ExportAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Box<T>>>,
+    storage: &Arc<Mutex<Arc<Box<T>>>>,
 ) -> Result<Value, Error>
 where
     T: KeyfileStorage,
@@ -308,7 +308,7 @@ pub struct NewAccountAccount {
 pub fn new_account<T: ?Sized>(
     params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
     sec: &KdfDepthLevel,
-    storage: &Arc<Mutex<Box<T>>>,
+    storage: &Arc<Mutex<Arc<Box<T>>>>,
 ) -> Result<String, Error>
 where
     T: KeyfileStorage,
@@ -364,7 +364,7 @@ pub fn sign_transaction<T: ?Sized>(
         (SignTransactionTransaction,),
         (SignTransactionTransaction, SignTransactionAdditional),
     >,
-    storage: &Arc<Mutex<Box<T>>>,
+    storage: &Arc<Mutex<Arc<Box<T>>>>,
     default_chain_id: u8,
     wallet_manager: &Mutex<RefCell<WManager>>,
 ) -> Result<Params, Error>

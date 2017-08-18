@@ -49,7 +49,7 @@ where
 pub fn start<T: ?Sized>(
     addr: &SocketAddr,
     chain_name: &str,
-    storage: Box<T>,
+    storage: Arc<Box<T>>,
     sec_level: Option<KdfDepthLevel>,
 ) where
     T: KeyfileStorage + 'static,
