@@ -57,11 +57,16 @@ where
     P: AsRef<Path>,
 {
     #[cfg(feature = "default")]
-    match DbStorage::new(keystore_path) {
-        Ok(db) => Ok(Box::new(db)),
-        Err(_) => Err(KeyStorageError::StorageError(
-            "Can't create database Keyfile storage".to_string(),
-        )),
+    {
+        let mut p = PathBuf::new();
+        p.push(keystore_path);
+        p.push(".db");
+        match DbStorage::new(p) {
+            Ok(db) => Ok(Box::new(db)),
+            Err(_) => Err(KeyStorageError::StorageError(
+                "Can't create database Keyfile storage".to_string(),
+            )),
+        }
     }
     #[cfg(feature = "fs-storage")]
     match FsStorage::new(keystore_path) {
