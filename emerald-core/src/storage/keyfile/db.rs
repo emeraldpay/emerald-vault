@@ -5,7 +5,7 @@ use super::{AccountInfo, KeyfileStorage, generate_filename};
 use super::error::Error;
 use core::Address;
 use keystore::KeyFile;
-use rocksdb::{DB, DBVector, IteratorMode};
+use rocksdb::{DB, IteratorMode};
 use rustc_serialize::json;
 use std::path::Path;
 use std::str;
@@ -41,7 +41,7 @@ impl DbStorage {
         Ok(DbStorage { db: db })
     }
 
-    /// Splits value into filename and `Keyfile` json
+    /// Splits value into `filename` and `Keyfile` json
     ///
     /// # Arguments:
     ///
@@ -51,19 +51,11 @@ impl DbStorage {
     ///
     /// Tuple of `String` (<filename>, <keyfile_json>)
     ///
-    fn split(bytes: Option<DBVector>) -> Result<(String, String), Error> {
-        let val = bytes
-            .and_then(|d| {
-                d.to_utf8().and_then(|v| {
-                    let val = v.to_string();
-                    let arr: Vec<&str> = val.split(SEPARATOR).collect();
-                    let json = arr[1..arr.len()].join(SEPARATOR);
-                    Some((arr[0].to_string(), json))
-                })
-            })
-            .ok_or(Error::NotFound("Can't extract filename".to_string()))?;
+    fn split(val: &str) -> Result<(String, String), Error> {
+        let arr: Vec<&str> = val.split(SEPARATOR).collect();
+        let json = arr[1..arr.len()].join(SEPARATOR);
 
-        Ok(val)
+        Ok((arr[0].to_string(), json))
     }
 }
 
@@ -83,8 +75,11 @@ impl KeyfileStorage for DbStorage {
     }
 
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
-        let vec = self.db.get(&addr)?;
-        let (_, json) = DbStorage::split(vec)?;
+        let dbvec = self.db.get(&addr)?;
+        let val = dbvec
+            .and_then(|ref d| d.to_utf8().and_then(|v| Some(v.to_string())))
+            .ok_or(Error::StorageError("Invalid data format".to_string()))?;
+        let (_, json) = DbStorage::split(&val)?;
         let kf = KeyFile::decode(json)?;
 
         Ok(kf)
@@ -111,25 +106,23 @@ impl KeyfileStorage for DbStorage {
     fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, Error> {
         let mut accounts = vec![];
 
-        unsafe {
-            for (addr, mut val) in self.db.iterator(IteratorMode::Start) {
-                let vec = DBVector::from_c(val.as_mut_ptr(), val.len());
-                let (filename, json) = DbStorage::split(Some(vec))?;
-                match KeyFile::decode(json) {
-                    Ok(kf) => {
-                        if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
-                            let mut info = AccountInfo::from(kf);
-                            info.filename = filename;
-                            accounts.push(info);
-                        }
+        for (addr, val) in self.db.iterator(IteratorMode::Start) {
+            let vec = str::from_utf8(&val)?;
+            let (filename, json) = DbStorage::split(vec)?;
+            match KeyFile::decode(json) {
+                Ok(kf) => {
+                    if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
+                        let mut info = AccountInfo::from(kf);
+                        info.filename = filename;
+                        accounts.push(info);
                     }
-                    Err(_) => {
-                        let data: [u8; 20] = util::to_arr(&*addr);
-                        info!(
-                            "Invalid keystore file format for address: {}",
-                            Address::from(data)
-                        )
-                    }
+                }
+                Err(_) => {
+                    let data: [u8; 20] = util::to_arr(&*addr);
+                    info!(
+                        "Invalid keystore file format for address: {}",
+                        Address::from(data)
+                    )
                 }
             }
         }
@@ -154,5 +147,70 @@ impl KeyfileStorage for DbStorage {
         };
 
         self.put(&kf)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_split() {
+        let db_item = r#"UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc<|>{
+          "version": 3,
+          "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
+          "name":"test<|><\\\|>"
+          "description":"descr<|><\\\|>"
+          "address": "0047201aed0b69875b24b614dda0270bcd9f11cc",
+          "crypto": {
+            "ciphertext": "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
+            "cipherparams": {
+              "iv": "9df1649dd1c50f2153917e3b9e7164e9"
+            },
+            "cipher": "aes-128-ctr",
+            "kdf": "scrypt",
+            "kdfparams": {
+              "dklen": 32,
+              "salt": "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
+              "n": 1024,
+              "r": 8,
+              "p": 1
+            },
+            "mac": "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
+          }
+        }"#;
+
+        let (filename, json) = DbStorage::split(&db_item).unwrap();
+
+        assert_eq!(
+            filename,
+            "UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc"
+        );
+        assert_eq!(
+            json,
+            r#"{
+          "version": 3,
+          "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
+          "name":"test<|><\\\|>"
+          "description":"descr<|><\\\|>"
+          "address": "0047201aed0b69875b24b614dda0270bcd9f11cc",
+          "crypto": {
+            "ciphertext": "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
+            "cipherparams": {
+              "iv": "9df1649dd1c50f2153917e3b9e7164e9"
+            },
+            "cipher": "aes-128-ctr",
+            "kdf": "scrypt",
+            "kdfparams": {
+              "dklen": 32,
+              "salt": "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
+              "n": 1024,
+              "r": 8,
+              "p": 1
+            },
+            "mac": "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"
+          }
+        }"#
+        )
     }
 }
