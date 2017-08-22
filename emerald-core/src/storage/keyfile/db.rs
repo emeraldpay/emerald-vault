@@ -180,7 +180,7 @@ mod tests {
           }
         }"#;
 
-        let (filename, json) = DbStorage::split(&db_item).unwrap();
+        let (filename, json) = DbStorage::split(&db_item5).unwrap();
 
         assert_eq!(
             filename,
