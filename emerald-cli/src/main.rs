@@ -18,13 +18,14 @@ extern crate regex;
 
 use docopt::Docopt;
 use emerald::keystore::KdfDepthLevel;
+use emerald::storage::{build_storage, default_keystore_path};
 use env_logger::LogBuilder;
 use log::{LogLevel, LogRecord};
 use std::env;
 use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::process::*;
 use std::str::FromStr;
+use std::sync::Arc;
 
 const USAGE: &'static str = include_str!("../usage.txt");
 
@@ -105,18 +106,13 @@ fn main() {
             .parse::<SocketAddr>()
             .expect("Expect to parse address");
 
-        let base_path_str = args.flag_base_path.parse::<String>().expect(
-            "Expect to parse base \
-             path",
-        );
-
-        let base_path = if !base_path_str.is_empty() {
-            Some(PathBuf::from(&base_path_str))
-        } else {
-            None
+        let keystore_path = default_keystore_path(&chain);
+        let storage = match build_storage(keystore_path) {
+            Ok(st) => Arc::new(st),
+            Err(_) => panic!("Can't create filesystem keyfile storage"),
         };
 
-        emerald::rpc::start(&addr, &chain, base_path, Some(sec_level));
+        emerald::rpc::start(&addr, &chain, storage, Some(sec_level));
     }
 
 }

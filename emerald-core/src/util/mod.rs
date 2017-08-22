@@ -6,6 +6,7 @@ pub use self::crypto::{KECCAK256_BYTES, keccak256};
 pub use self::rlp::{RLPList, WriteRLP};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use chrono::prelude::Utc;
+use hex::FromHex;
 use std::io::Cursor;
 use std::mem::transmute;
 
@@ -201,26 +202,28 @@ pub fn timestamp() -> String {
         .to_string()
 }
 
+///
+pub fn to_16bytes(hex: &str) -> [u8; 16] {
+    to_arr(Vec::from_hex(&hex).unwrap().as_slice())
+}
+
+///
+pub fn to_20bytes(hex: &str) -> [u8; 20] {
+    to_arr(Vec::from_hex(&hex).unwrap().as_slice())
+}
+
+///
+pub fn to_32bytes(hex: &str) -> [u8; 32] {
+    to_arr(Vec::from_hex(&hex).unwrap().as_slice())
+}
+
 #[cfg(test)]
 pub use self::tests::*;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hex::FromHex;
     use tests::*;
-
-    pub fn to_16bytes(hex: &str) -> [u8; 16] {
-        to_arr(Vec::from_hex(&hex).unwrap().as_slice())
-    }
-
-    pub fn to_20bytes(hex: &str) -> [u8; 20] {
-        to_arr(Vec::from_hex(&hex).unwrap().as_slice())
-    }
-
-    pub fn to_32bytes(hex: &str) -> [u8; 32] {
-        to_arr(Vec::from_hex(&hex).unwrap().as_slice())
-    }
 
     #[test]
     fn should_convert_zero_string_into_16bytes() {

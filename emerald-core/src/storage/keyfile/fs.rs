@@ -1,17 +1,17 @@
 //! # KeyFile storage within filesystem
 
 
-use super::KeyfileStorage;
+use super::{AccountInfo, KeyfileStorage, generate_filename};
 use super::error::Error;
 use core::Address;
-use keystore::{CryptoType, KeyFile};
+use keystore::KeyFile;
 use keystore::try_extract_address;
 use rustc_serialize::json;
 use std::ffi::OsStr;
 use std::fs::{self, File, read_dir};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use util;
+
 
 /// Filesystem storage for `KeyFiles`
 ///
@@ -22,7 +22,7 @@ pub struct FsStorage {
 
 /// Result for searching `KeyFile` in `base_path`
 /// and it subdirectories
-///
+#[derive(Debug, Clone)]
 struct SearchResult {
     /// Path to target `KeyFile`
     path: PathBuf,
@@ -142,11 +142,8 @@ impl KeyfileStorage for FsStorage {
         Ok(res.kf)
     }
 
-    fn list_accounts(
-        &self,
-        show_hidden: bool,
-    ) -> Result<Vec<(String, String, String, bool)>, Error> {
-        let mut accounts: Vec<(String, String, String, bool)> = vec![];
+    fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, Error> {
+        let mut accounts = vec![];
         for e in read_dir(&self.base_path)? {
             if e.is_err() {
                 continue;
@@ -160,27 +157,15 @@ impl KeyfileStorage for FsStorage {
 
                 match KeyFile::decode(content) {
                     Ok(kf) => {
-                        let mut info = Vec::new();
                         if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
-                            let is_hd = match kf.crypto {
-                                CryptoType::Core(_) => false,
-                                CryptoType::HdWallet(_) => true,
-                            };
-                            match kf.name {
-                                Some(name) => info.push(name),
-                                None => info.push("".to_string()),
+                            let mut info = AccountInfo::from(kf);
+                            match entry.path().file_name().and_then(|s| s.to_str()) {
+                                Some(name) => {
+                                    info.filename = name.to_string();
+                                    accounts.push(info);
+                                }
+                                None => info!("Corrupted filename for: {:?}", entry.file_name()),
                             }
-
-                            match kf.description {
-                                Some(desc) => info.push(desc),
-                                None => info.push("".to_string()),
-                            }
-                            accounts.push((
-                                info[0].clone(),
-                                kf.address.to_string(),
-                                info[1].clone(),
-                                is_hd,
-                            ));
                         }
                     }
                     Err(_) => info!("Invalid keystore file format for: {:?}", entry.file_name()),
@@ -191,36 +176,34 @@ impl KeyfileStorage for FsStorage {
         Ok(accounts)
     }
 
-    /// Hides account for given address from being listed
-    ///
-    /// #Arguments
-    /// addr - target address
-    ///
     fn hide(&self, addr: &Address) -> Result<bool, Error> {
         self.toogle_visibility(&addr, false)?;
 
         Ok(true)
     }
 
-    /// Unhides account for given address from being listed
-    ///
-    /// #Arguments
-    /// addr - target address
-    ///
     fn unhide(&self, addr: &Address) -> Result<bool, Error> {
         self.toogle_visibility(&addr, true)?;
 
         Ok(true)
     }
-}
 
-/// Creates filename for keystore file in format:
-/// `UTC--yyy-mm-ddThh-mm-ssZ--uuid`
-///
-/// # Arguments
-///
-/// * `uuid` - UUID for keyfile
-///
-pub fn generate_filename(uuid: &str) -> String {
-    format!("UTC--{}Z--{}", &util::timestamp(), &uuid)
+    fn update(
+        &self,
+        addr: &Address,
+        name: Option<String>,
+        desc: Option<String>,
+    ) -> Result<(), Error> {
+        let mut res = self.search(addr)?;
+
+        if name.is_some() {
+            res.kf.name = name;
+        };
+
+        if desc.is_some() {
+            res.kf.description = desc;
+        };
+        self.delete(&res.kf.address)?;
+        FsStorage::put_with_name(&res.kf, &res.path)
+    }
 }

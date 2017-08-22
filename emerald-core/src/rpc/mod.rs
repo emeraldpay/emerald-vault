@@ -7,7 +7,7 @@ mod serves;
 pub use self::error::Error;
 use super::core;
 use super::keystore::KdfDepthLevel;
-use super::storage::{self, ChainStorage, Storages, default_keystore_path};
+use super::storage::{self, KeyfileStorage};
 use super::util::{ToHex, align_bytes, to_arr, to_chain_id, to_even_str, to_u64, trim_hex};
 use hdwallet::WManager;
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
@@ -18,13 +18,8 @@ use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use std::cell::RefCell;
 use std::net::SocketAddr;
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-#[cfg(feature = "default")]
-use storage::DbStorage;
-#[cfg(feature = "fs-storage")]
-use storage::FsStorage;
 
 fn wrapper<T: Serialize>(value: Result<T, Error>) -> Result<Value, JsonRpcError> {
     if value.is_err() {
@@ -51,38 +46,19 @@ where
 
 
 /// Start an HTTP RPC endpoint
-pub fn start(
+pub fn start<T: ?Sized>(
     addr: &SocketAddr,
     chain_name: &str,
-    base_path: Option<PathBuf>,
+    storage: Arc<Box<T>>,
     sec_level: Option<KdfDepthLevel>,
-) {
+) where
+    T: KeyfileStorage + 'static,
+{
     let sec_level = sec_level.unwrap_or_default();
-
-    let storage = match base_path {
-        Some(p) => Storages::new(p),
-        None => Storages::default(),
-    };
-
-    if storage.init().is_err() {
-        panic!("Unable to initialize storage");
-    }
-
-    let chain = ChainStorage::new(&storage, chain_name.to_string());
-    if chain.init().is_err() {
-        panic!("Unable to initialize chain");
-    }
-
-    let keystore_path = default_keystore_path(&chain.id);
-    #[cfg(feature = "default")]
-    let storage = match DbStorage::new(keystore_path) {
-        Ok(db) => Arc::new(db),
-        Err(_) => panic!("Can't create database keyfile storage"),
-    };
-    #[cfg(feature = "fs-storage")]
-    let storage = match FsStorage::new(keystore_path) {
-        Ok(fs) => Arc::new(fs),
-        Err(_) => panic!("Can't create filesystem keyfile storage"),
+    let storage = Arc::new(Mutex::new(storage));
+    let chain_id = match to_chain_id(chain_name) {
+        Some(id) => id,
+        None => panic!(format!("Invalid chain name: {}", chain_name)),
     };
 
     let wallet_manager = match WManager::new(None) {
@@ -171,7 +147,6 @@ pub fn start(
 
     {
         let storage = storage.clone();
-        let chain_id = to_chain_id(chain_name).unwrap();
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,
