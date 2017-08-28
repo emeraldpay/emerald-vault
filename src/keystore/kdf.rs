@@ -30,7 +30,7 @@ pub enum KdfDepthLevel {
     High = 8096,
 
     /// Top security level (consumes more CPU time)
-    Ultra = 262144,
+    Ultra = 262_144,
 }
 
 impl fmt::Display for KdfDepthLevel {
@@ -158,7 +158,7 @@ impl FromStr for Kdf {
             _ if s == PBKDF2_KDF_NAME => {
                 Ok(Kdf::Pbkdf2 {
                     prf: Prf::default(),
-                    c: 262144,
+                    c: 262_144,
                 })
             }
             _ if s == SCRYPT_KDF_NAME => Ok(Kdf::default()),

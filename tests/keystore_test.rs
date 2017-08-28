@@ -1,4 +1,4 @@
-extern crate emerald_core as emerald;
+extern crate emerald_rs as emerald;
 extern crate rand;
 extern crate rustc_serialize;
 extern crate hex;

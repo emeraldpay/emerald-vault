@@ -103,7 +103,7 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
             let mut v: u64 = 0;
 
             if str.ends_with("'") {
-                v += 0x80000000;
+                v += 0x8000_0000;
                 str.remove(s.len() - 1);
             }
             match str.parse::<u64>() {
@@ -118,7 +118,7 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
             Ok(())
         };
 
-        hd_str.split("/").map(parse).collect::<Vec<_>>();
+        hd_str.split('/').map(parse).collect::<Vec<_>>();
     }
 
     Ok(buf)
@@ -164,7 +164,7 @@ impl WManager {
             return Err(Error::HDWalletError("HD path is not specified".to_string()));
         }
 
-        Ok(h.or(self.hd_path.clone()).unwrap())
+        Ok(h.or_else(|| self.hd_path.clone()).unwrap())
     }
 
     /// Get address
@@ -262,7 +262,7 @@ impl WManager {
     pub fn devices(&self) -> DevicesList {
         self.devices
             .iter()
-            .map(|d| (d.address.clone(), d.fd.clone()))
+            .map(|d| (d.address, d.fd.clone()))
             .collect()
     }
 
@@ -290,9 +290,8 @@ impl WManager {
 
     fn open(&self, path: &str) -> Result<HidDevice, Error> {
         for _ in 0..5 {
-            match self.hid.open(LEDGER_VID, LEDGER_PID) {
-                Ok(h) => return Ok(h),
-                Err(_) => (),
+            if let Ok(h) = self.hid.open(LEDGER_VID, LEDGER_PID) {
+                return Ok(h);
             }
             thread::sleep(time::Duration::from_millis(1000));
         }

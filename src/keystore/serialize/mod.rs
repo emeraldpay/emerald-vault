@@ -124,7 +124,7 @@ impl KeyFile {
                     Ok(hd.into())
                 })
             })
-            .map_err(|e| Error::from(e))?;
+            .map_err(Error::from)?;
 
         if !SUPPORTED_VERSIONS.contains(&ver) {
             return Err(Error::UnsupportedVersion(ver));

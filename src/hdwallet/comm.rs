@@ -103,7 +103,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
         // index.
         let mut frame: [u8; (HID_RPT_SIZE + 1) as usize] = [0; (HID_RPT_SIZE + 1) as usize];
 
-        &mut frame[1..6].clone_from_slice(&get_hid_header(frame_index));
+        frame[1..6].clone_from_slice(&get_hid_header(frame_index));
         if !init_sent {
             frame[6..13].clone_from_slice(&get_init_header(&apdu));
             init_sent = true;

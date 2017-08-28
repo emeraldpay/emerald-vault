@@ -59,7 +59,7 @@ impl From<KeyFile> for AccountInfo {
     }
 }
 
-/// Storage for KeyFiles
+/// Storage for `KeyFiles`
 ///
 pub trait KeyfileStorage: Send + Sync {
     /// Put new `KeyFile` inside storage

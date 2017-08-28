@@ -23,7 +23,7 @@ impl Address {
     /// # Example
     ///
     /// ```
-    /// let addr = emerald_core::Address::try_from(&[0u8; emerald_core::ADDRESS_BYTES]).unwrap();
+    /// let addr = emerald_rs::Address::try_from(&[0u8; emerald_rs::ADDRESS_BYTES]).unwrap();
     /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
     /// ```
     pub fn try_from(data: &[u8]) -> Result<Self, Error> {

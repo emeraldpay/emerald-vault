@@ -1,4 +1,4 @@
-//! # KeyFile storage within filesystem
+//! # `KeyFile` storage within filesystem
 
 
 use super::{AccountInfo, KeyfileStorage, generate_filename};

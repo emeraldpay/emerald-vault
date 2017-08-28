@@ -446,9 +446,9 @@ where
                                 match wm.get_address(&fd, Some(hd_path.clone())) {
                                     Ok(actual_addr) => {
                                         if actual_addr != addr {
-                                            return Err(Error::InvalidDataFormat(format!(
-                                                "Address for stored HD path is incorrect"
-                                            )));
+                                            return Err(Error::InvalidDataFormat(
+                                                "Address for stored HD path is incorrect".to_string()
+                                            ));
                                         }
                                     }
                                     Err(e) => {

@@ -79,12 +79,11 @@ impl KeyFile {
     ) -> Result<KeyFile, Error> {
         let mut rng = os_random();
 
-        let kdf;
-        if cfg!(target_os = "windows") {
-            kdf = Kdf::from_str(PBKDF2_KDF_NAME)?;
+        let kdf = if cfg!(target_os = "windows") {
+            Kdf::from_str(PBKDF2_KDF_NAME)?
         } else {
-            kdf = Kdf::from(*sec_level);
-        }
+            Kdf::from(*sec_level)
+        };
 
         Self::new_custom(
             PrivateKey::gen_custom(&mut rng),
