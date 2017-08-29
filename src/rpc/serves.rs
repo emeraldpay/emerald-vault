@@ -447,7 +447,8 @@ where
                                     Ok(actual_addr) => {
                                         if actual_addr != addr {
                                             return Err(Error::InvalidDataFormat(
-                                                "Address for stored HD path is incorrect".to_string()
+                                                "Address for stored HD path is incorrect"
+                                                    .to_string(),
                                             ));
                                         }
                                     }
