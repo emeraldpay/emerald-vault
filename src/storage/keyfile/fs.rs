@@ -20,17 +20,6 @@ pub struct FsStorage {
     base_path: PathBuf,
 }
 
-/// Result for searching `KeyFile` in `base_path`
-/// and it subdirectories
-#[derive(Debug, Clone)]
-struct SearchResult {
-    /// Path to target `KeyFile`
-    path: PathBuf,
-
-    /// Decoded `KeyFile`
-    kf: KeyFile,
-}
-
 impl FsStorage {
     /// Create new `FsStorage`
     /// Uses specified path as parent folder
@@ -46,13 +35,74 @@ impl FsStorage {
         FsStorage { base_path: PathBuf::from(&dir) }
     }
 
-    /// Search for `KeyFile` by specified `Address`
+    /// Hides/unhides `Keyfile` for specified `Address`
     ///
     /// # Arguments:
     ///
     /// * addr - target address
+    /// * is_visible - visibility flag
     ///
-    fn search(&self, addr: &Address) -> Result<SearchResult, Error> {
+    fn toogle_visibility(&self, addr: &Address, is_visible: bool) -> Result<(), Error> {
+        let (info, mut kf) = self.search_by_address(addr)?;
+
+        kf.visible = Some(is_visible);
+        self.delete(&kf.address)?;
+
+        self.put_with_name(&kf, &info.filename)
+    }
+
+    /// Creates path for specified keyfile name
+    ///
+    /// # Arguments:
+    ///
+    /// * name - filename
+    ///
+    fn build_path(&self, name: &str) -> PathBuf {
+        let mut path = self.base_path.clone();
+        path.push(name);
+        path
+    }
+
+    /// Put new `Keyfile` with specified name inside storage
+    /// Uses absolute `path` appended with `KeyFile` name
+    ///
+    /// # Arguments:
+    ///
+    /// * kf - target `Keyfile`
+    /// * name - filename
+    ///
+    fn put_with_name(&self, kf: &KeyFile, name: &str) -> Result<(), Error> {
+        let json = json::encode(&kf)?;
+        let path = self.build_path(name);
+
+        let mut file = File::create(&path)?;
+        file.write_all(json.as_ref()).ok();
+
+        Ok(())
+    }
+}
+
+impl KeyfileStorage for FsStorage {
+    fn put(&self, kf: &KeyFile) -> Result<(), Error> {
+        self.is_addr_exist(&kf.address)?;
+        let name = generate_filename(&kf.uuid.to_string());
+
+        self.put_with_name(kf, &name)
+    }
+
+    fn delete(&self, addr: &Address) -> Result<(), Error> {
+        let (info, _) = self.search_by_address(addr)?;
+        let path = self.build_path(&info.filename);
+
+        match fs::remove_file(path) {
+            Ok(_) => Ok(()),
+            Err(_) => Err(Error::StorageError(
+                format!("Can't delete KeyFile for address: {}", addr),
+            )),
+        }
+    }
+
+    fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), Error> {
         let entries = fs::read_dir(&self.base_path)?;
 
         for entry in entries {
@@ -72,76 +122,23 @@ impl FsStorage {
             match try_extract_address(&content) {
                 Some(a) if a == *addr => {
                     let kf = KeyFile::decode(content)?;
+                    let mut info = AccountInfo::from(kf.clone());
+                    info.filename = match path.file_name().and_then(|s| s.to_str()) {
+                        Some(s) => s.to_string(),
+                        None => {
+                            return Err(Error::StorageError(
+                                format!("Invalid filename format for address {}", addr),
+                            ))
+                        }
+                    };
 
-                    return Ok(SearchResult { path: path, kf: kf });
+                    return Ok((info, kf));
                 }
                 _ => continue,
             }
         }
 
         Err(Error::NotFound(addr.to_string()))
-    }
-
-    /// Hides/unhides `Keyfile` for specified `Address`
-    ///
-    /// # Arguments:
-    ///
-    /// * addr - target address
-    /// * is_visible - visibility flag
-    ///
-    fn toogle_visibility(&self, addr: &Address, is_visible: bool) -> Result<(), Error> {
-        let mut res = self.search(addr)?;
-
-        res.kf.visible = Some(is_visible);
-        self.delete(&res.kf.address)?;
-        FsStorage::put_with_name(&res.kf, &res.path)?;
-
-        Ok(())
-    }
-
-    /// Put new `Keyfile` with specified name inside storage
-    /// Uses absolute `path` appended with `KeyFile` name
-    ///
-    /// # Arguments:
-    ///
-    /// * kf - target `Keyfile`
-    /// * path - path for insertion
-    ///
-    fn put_with_name<P: AsRef<Path>>(kf: &KeyFile, path: P) -> Result<(), Error> {
-        let json = json::encode(&kf)?;
-        let mut file = File::create(&path)?;
-        file.write_all(json.as_ref()).ok();
-
-        Ok(())
-    }
-}
-
-impl KeyfileStorage for FsStorage {
-    fn put(&self, kf: &KeyFile) -> Result<(), Error> {
-        self.is_addr_exist(&kf.address)?;
-
-        let name = generate_filename(&kf.uuid.to_string());
-        let p: PathBuf = self.base_path.clone();
-        let p_ref: &Path = p.as_ref();
-        let path = p_ref.join(name);
-
-        FsStorage::put_with_name(&kf, path)
-    }
-
-    fn delete(&self, addr: &Address) -> Result<(), Error> {
-        let res = self.search(addr)?;
-
-        match fs::remove_file(res.path) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(Error::StorageError(
-                format!("Can't delete KeyFile for address: {}", addr),
-            )),
-        }
-    }
-
-    fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
-        let res = self.search(addr)?;
-        Ok(res.kf)
     }
 
     fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, Error> {
@@ -179,13 +176,13 @@ impl KeyfileStorage for FsStorage {
     }
 
     fn hide(&self, addr: &Address) -> Result<bool, Error> {
-        self.toogle_visibility(&addr, false)?;
+        self.toogle_visibility(addr, false)?;
 
         Ok(true)
     }
 
     fn unhide(&self, addr: &Address) -> Result<bool, Error> {
-        self.toogle_visibility(&addr, true)?;
+        self.toogle_visibility(addr, true)?;
 
         Ok(true)
     }
@@ -196,16 +193,17 @@ impl KeyfileStorage for FsStorage {
         name: Option<String>,
         desc: Option<String>,
     ) -> Result<(), Error> {
-        let mut res = self.search(addr)?;
+        let (info, mut kf) = self.search_by_address(addr)?;
 
         if name.is_some() {
-            res.kf.name = name;
+            kf.name = name;
         };
 
         if desc.is_some() {
-            res.kf.description = desc;
+            kf.description = desc;
         };
-        self.delete(&res.kf.address)?;
-        FsStorage::put_with_name(&res.kf, &res.path)
+        self.delete(&kf.address)?;
+
+        self.put_with_name(&kf, &info.filename)
     }
 }

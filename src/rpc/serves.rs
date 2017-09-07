@@ -101,7 +101,7 @@ where
     let res = storage
         .list_accounts(additional.show_hidden)?
         .iter()
-        .map(|ref info| {
+        .map(|info| {
             ListAccountAccount {
                 name: info.name.clone(),
                 address: info.address.clone(),
@@ -189,7 +189,7 @@ where
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let kf = storage.search_by_address(&addr)?;
+    let (_, kf) = storage.search_by_address(&addr)?;
     match kf.crypto {
         CryptoType::Core(ref core) => {
             let pk = kf.decrypt_key(&account.old_passphrase)?;
@@ -234,7 +234,7 @@ where
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let mut kf = storage.search_by_address(&addr)?;
+    let (_, mut kf) = storage.search_by_address(&addr)?;
     if !account.name.is_empty() {
         kf.name = Some(account.name);
     }
@@ -288,7 +288,7 @@ where
     let (account, _) = params.into_full();
     let addr = Address::from_str(&account.address)?;
 
-    let kf = storage.search_by_address(&addr)?;
+    let (_, kf) = storage.search_by_address(&addr)?;
     let raw = rustc_json::encode(&kf)?;
     let value = serde_json::to_value(&raw)?;
     debug!("Account exported: {}", kf.address);
@@ -380,7 +380,7 @@ where
     }
 
     match storage.search_by_address(&addr) {
-        Ok(kf) => {
+        Ok((_, kf)) => {
             let rpc_transaction = RPCTransaction {
                 from: transaction.from,
                 to: transaction.to,

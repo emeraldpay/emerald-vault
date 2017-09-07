@@ -63,7 +63,7 @@ pub fn start<T: ?Sized>(
 
     let wallet_manager = match WManager::new(None) {
         Ok(wm) => Mutex::new(RefCell::new(wm)),
-        Err(_) => panic!("Can't create HID endpoint"),
+        Err(e) => panic!("Can't create HID endpoint: {}", e.to_string()),
     };
 
     let mut io = IoHandler::default();

@@ -296,7 +296,7 @@ fn should_search_by_address_filesystem() {
         .unwrap();
 
     let storage = FsStorage::new(&keystore_path());
-    let kf = storage.search_by_address(&addr).unwrap();
+    let (_, kf) = storage.search_by_address(&addr).unwrap();
 
     assert_eq!(
         kf.uuid,
@@ -319,7 +319,7 @@ fn should_search_by_address_db() {
     let storage = DbStorage::new(temp_dir().as_path()).unwrap();
     storage.put(&key).unwrap();
 
-    let kf = storage.search_by_address(&addr).unwrap();
+    let (_, kf) = storage.search_by_address(&addr).unwrap();
 
     assert_eq!(
         kf.uuid,

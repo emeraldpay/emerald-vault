@@ -62,19 +62,19 @@ impl ApduBuilder {
     }
 
     /// Add parameter 1
-    pub fn with_p1<'a>(&'a mut self, p1: u8) -> &'a mut Self {
+    pub fn with_p1(&mut self, p1: u8) -> &mut Self {
         self.apdu.p1 = p1;
         self
     }
 
     /// Add parameter 2
-    pub fn with_p2<'a>(&'a mut self, p2: u8) -> &'a mut Self {
+    pub fn with_p2(&mut self, p2: u8) -> &mut Self {
         self.apdu.p2 = p2;
         self
     }
 
     /// Add data
-    pub fn with_data<'a>(&'a mut self, data: &[u8]) -> &'a mut Self {
+    pub fn with_data(&mut self, data: &[u8]) -> &mut Self {
         self.apdu.data.extend_from_slice(data);
         self.apdu.len += data.len() as u8;
         self

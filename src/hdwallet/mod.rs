@@ -98,7 +98,7 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
 
     let mut buf = Vec::new();
     {
-        let parse = |s: &str| {
+        let mut parse = |s: &str| {
             let mut str = s.to_string();
             let mut v: u64 = 0;
 
@@ -118,7 +118,9 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
             Ok(())
         };
 
-        hd_str.split('/').map(parse).collect::<Vec<_>>();
+        for val in hd_str.split('/') {
+            parse(val)?;
+        }
     }
 
     Ok(buf)

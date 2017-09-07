@@ -78,14 +78,6 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     fn delete(&self, addr: &Address) -> Result<(), KeyStorageError>;
 
-    /// Search of `KeyFile` by specified `Address`
-    ///
-    /// # Arguments:
-    ///
-    ///  * addr - target `Address`
-    ///
-    fn search_by_address(&self, addr: &Address) -> Result<KeyFile, KeyStorageError>;
-
     /// Hide account for given address from being listed
     ///
     /// # Arguments:
@@ -130,6 +122,14 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, KeyStorageError>;
 
+    /// Search of `KeyFile` by specified `Address`
+    /// Provides additional meta info for account
+    ///
+    /// # Arguments:
+    ///
+    ///  * addr - target `Address`
+    ///
+    fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), KeyStorageError>;
 
     /// Check whether specified address is already
     /// inserted into the storage
@@ -139,8 +139,8 @@ pub trait KeyfileStorage: Send + Sync {
     /// * `addr` - address to check
     ///
     fn is_addr_exist(&self, addr: &Address) -> Result<(), KeyStorageError> {
-        match self.search_by_address(&addr) {
-            Ok(_) => {
+        match self.search_by_address(addr) {
+            Ok((_, _)) => {
                 Err(KeyStorageError::StorageError(
                     format!("Address {} already in storage", addr),
                 ))

@@ -65,31 +65,34 @@ impl KeyfileStorage for DbStorage {
 
         let json = json::encode(&kf)?;
         let val = generate_filename(&kf.uuid.to_string()) + SEPARATOR + &json;
-        self.db.put(&kf.address, &val.as_bytes())?;
+        self.db.put(&kf.address, val.as_bytes())?;
 
         Ok(())
     }
 
     fn delete(&self, addr: &Address) -> Result<(), Error> {
-        self.db.delete(&addr)?;
+        self.db.delete(addr)?;
 
         Ok(())
     }
 
-    fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
-        let dbvec = self.db.get(&addr)?;
+    fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), Error> {
+        let dbvec = self.db.get(addr)?;
 
         let val = dbvec
             .and_then(|ref d| d.to_utf8().and_then(|v| Some(v.to_string())))
-            .ok_or(Error::NotFound(format!("{}", addr)))?;
-        let (_, json) = DbStorage::split(&val)?;
+            .ok_or_else(|| Error::NotFound(format!("{}", addr)))?;
+        let (filename, json) = DbStorage::split(&val)?;
         let kf = KeyFile::decode(json)?;
 
-        Ok(kf)
+        let mut info = AccountInfo::from(kf.clone());
+        info.filename = filename;
+
+        Ok((info, kf))
     }
 
     fn hide(&self, addr: &Address) -> Result<bool, Error> {
-        let mut kf = self.search_by_address(&addr)?;
+        let (_, mut kf) = self.search_by_address(addr)?;
 
         kf.visible = Some(false);
         self.put(&kf)?;
@@ -98,7 +101,7 @@ impl KeyfileStorage for DbStorage {
     }
 
     fn unhide(&self, addr: &Address) -> Result<bool, Error> {
-        let mut kf = self.search_by_address(&addr)?;
+        let (_, mut kf) = self.search_by_address(addr)?;
 
         kf.visible = Some(true);
         self.put(&kf)?;
@@ -139,7 +142,7 @@ impl KeyfileStorage for DbStorage {
         name: Option<String>,
         desc: Option<String>,
     ) -> Result<(), Error> {
-        let mut kf = self.search_by_address(&addr)?;
+        let (_, mut kf) = self.search_by_address(addr)?;
 
         if name.is_some() {
             kf.name = name;
