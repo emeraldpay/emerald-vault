@@ -90,7 +90,7 @@ impl WriteRLP for u8 {
         } else if *self <= 0x7f {
             buf.push(*self);
         } else {
-            trim_bytes(&to_bytes(*self as u64, 1)).write_rlp(buf);
+            trim_bytes(&to_bytes(u64::from(*self), 1)).write_rlp(buf);
         }
     }
 }
@@ -102,7 +102,7 @@ impl WriteRLP for u16 {
         } else if *self <= 0x7f {
             buf.push(*self as u8);
         } else {
-            trim_bytes(&to_bytes(*self as u64, 2)).write_rlp(buf);
+            trim_bytes(&to_bytes(u64::from(*self), 2)).write_rlp(buf);
         }
     }
 }
@@ -114,7 +114,7 @@ impl WriteRLP for u32 {
         } else if *self <= 0x7f {
             buf.push(*self as u8);
         } else {
-            trim_bytes(&to_bytes(*self as u64, 4)).write_rlp(buf);
+            trim_bytes(&to_bytes(u64::from(*self), 4)).write_rlp(buf);
         }
     }
 }

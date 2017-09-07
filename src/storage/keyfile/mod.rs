@@ -129,6 +129,30 @@ pub trait KeyfileStorage: Send + Sync {
     /// Array of `AccountInfo` struct
     ///
     fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, KeyStorageError>;
+
+
+    /// Check whether specified address is already
+    /// inserted into the storage
+    ///
+    /// # Arguments
+    ///
+    /// * `addr` - address to check
+    ///
+    fn is_addr_exist(&self, addr: &Address) -> Result<(), KeyStorageError> {
+        match self.search_by_address(&addr) {
+            Ok(_) => {
+                Err(KeyStorageError::StorageError(
+                    format!("Address {} already in storage", addr),
+                ))
+            }
+            Err(e) => {
+                match e {
+                    KeyStorageError::NotFound(_) => Ok(()),
+                    _ => Err(e),
+                }
+            }
+        }
+    }
 }
 
 /// Creates filename for keystore file in format:

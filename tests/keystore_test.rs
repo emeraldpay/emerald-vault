@@ -1,5 +1,4 @@
 extern crate emerald_rs as emerald;
-extern crate rand;
 extern crate rustc_serialize;
 extern crate hex;
 extern crate uuid;
@@ -319,10 +318,24 @@ fn should_search_by_address_db() {
 
     let storage = DbStorage::new(temp_dir().as_path()).unwrap();
     storage.put(&key).unwrap();
+
     let kf = storage.search_by_address(&addr).unwrap();
 
     assert_eq!(
         kf.uuid,
         "a928d7c2-b37b-464c-a70b-b9979d59fac4".parse().unwrap()
     );
+}
+
+#[test]
+fn should_skip_existing_addresses() {
+    let path = keyfile_path(
+        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4",
+    );
+    let key = KeyFile::decode(file_content(path)).unwrap();
+
+    let storage = DbStorage::new(temp_dir().as_path()).unwrap();
+    storage.put(&key).unwrap();
+
+    assert!(storage.put(&key).is_err());
 }

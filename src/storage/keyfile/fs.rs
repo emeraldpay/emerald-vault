@@ -118,6 +118,8 @@ impl FsStorage {
 
 impl KeyfileStorage for FsStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), Error> {
+        self.is_addr_exist(&kf.address)?;
+
         let name = generate_filename(&kf.uuid.to_string());
         let p: PathBuf = self.base_path.clone();
         let p_ref: &Path = p.as_ref();

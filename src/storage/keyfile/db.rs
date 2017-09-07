@@ -61,6 +61,8 @@ impl DbStorage {
 
 impl KeyfileStorage for DbStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), Error> {
+        self.is_addr_exist(&kf.address)?;
+
         let json = json::encode(&kf)?;
         let val = generate_filename(&kf.uuid.to_string()) + SEPARATOR + &json;
         self.db.put(&kf.address, &val.as_bytes())?;
@@ -76,9 +78,10 @@ impl KeyfileStorage for DbStorage {
 
     fn search_by_address(&self, addr: &Address) -> Result<KeyFile, Error> {
         let dbvec = self.db.get(&addr)?;
+
         let val = dbvec
             .and_then(|ref d| d.to_utf8().and_then(|v| Some(v.to_string())))
-            .ok_or(Error::StorageError("Invalid data format".to_string()))?;
+            .ok_or(Error::NotFound(format!("{}", addr)))?;
         let (_, json) = DbStorage::split(&val)?;
         let kf = KeyFile::decode(json)?;
 

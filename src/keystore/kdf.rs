@@ -106,7 +106,7 @@ impl Kdf {
             }
             #[cfg(all(unix))]
             Kdf::Scrypt { n, r, p } => {
-                let params = ScryptParams::new(n as u64, r, p);
+                let params = ScryptParams::new(u64::from(n), r, p);
                 scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key);
             }
         }

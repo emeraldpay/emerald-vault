@@ -39,8 +39,8 @@ impl Transaction {
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
         // Can be already applied by HD wallet.
         // TODO:refactor to avoid this check
-        let mut v = sig.v as u16;
-        let stamp = (chain * 2 + 35 - 27) as u16;
+        let mut v = u16::from(sig.v);
+        let stamp = u16::from(chain * 2 + 35 - 27);
         if v + stamp <= 0xff {
             v += stamp;
         }

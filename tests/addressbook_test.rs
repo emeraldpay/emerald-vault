@@ -1,6 +1,4 @@
 extern crate emerald_rs as emerald;
-
-extern crate serde;
 extern crate serde_json;
 extern crate tempdir;
 
