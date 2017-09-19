@@ -42,7 +42,7 @@ rust-crypto = "0.2"
 secp256k1 = "0.6"
 rand = "0.3"
 byteorder="1.0"
-ethabi = "4.0.0"
+ethabi = "2.0.0"
 # optional dependencies
 rocksdb = { git = "https://github.com/r8d8/rust-rocksdb", branch = "master", optional = true }
 hyper = { version = "0.11", optional = true }

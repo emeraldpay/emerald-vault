@@ -2,6 +2,7 @@
 
 use super::core;
 use super::storage;
+use contract;
 use hex;
 use jsonrpc_core;
 use keystore;
@@ -21,6 +22,8 @@ pub enum Error {
     InvalidDataFormat(String),
     /// Storage error
     StorageError(String),
+    /// Storage error
+    ContractAbiError(String),
 }
 
 impl From<rustc_serialize::json::EncoderError> for Error {
@@ -83,6 +86,12 @@ impl From<storage::KeyStorageError> for Error {
     }
 }
 
+impl From<contract::Error> for Error {
+    fn from(err: contract::Error) -> Self {
+        Error::ContractAbiError(err.to_string())
+    }
+}
+
 impl Into<jsonrpc_core::Error> for Error {
     fn into(self) -> jsonrpc_core::Error {
         jsonrpc_core::Error::internal_error()
@@ -96,6 +105,7 @@ impl fmt::Display for Error {
             Error::RPC(ref err) => write!(f, "RPC error: {:?}", err),
             Error::InvalidDataFormat(ref str) => write!(f, "Invalid data format: {}", str),
             Error::StorageError(ref str) => write!(f, "Keyfile storage error: {}", str),
+            Error::ContractAbiError(ref str) => write!(f, "Contract ABI error: {}", str),
         }
     }
 }

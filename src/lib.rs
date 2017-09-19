@@ -18,7 +18,6 @@ extern crate byteorder;
 extern crate chrono;
 extern crate crypto;
 extern crate ethabi;
-extern crate futures;
 extern crate glob;
 extern crate jsonrpc_core;
 extern crate jsonrpc_http_server;

@@ -1,5 +1,6 @@
 //! # Core domain logic module errors
 
+use ethabi;
 use hex;
 use secp256k1;
 use std::{error, fmt};

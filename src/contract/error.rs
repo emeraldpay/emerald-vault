@@ -1,5 +1,6 @@
 use ethabi;
 use std::{error, fmt};
+use std::string::ToString;
 
 /// Contract Service Errors
 #[derive(Debug, Clone)]
@@ -15,8 +16,32 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::IO(ref str) => write!(f, "IO error: {}", str),
-            Error::InvalidContract(ref str) => write!(f, "Invalid constract: {}", str),
+            Error::InvalidContract(ref str) => write!(f, "Invalid contract: {}", str),
         }
+    }
+}
+
+impl From<ethabi::Error> for Error {
+    fn from(err: ethabi::Error) -> Self {
+        Error::InvalidContract("".to_string())
+    }
+}
+
+impl From<ethabi::spec::Error> for Error {
+    fn from(err: ethabi::spec::Error) -> Self {
+        Error::InvalidContract("".to_string())
+    }
+}
+
+impl From<ethabi::spec::param_type::Error> for Error {
+    fn from(err: ethabi::spec::param_type::Error) -> Self {
+        Error::InvalidContract("".to_string())
+    }
+}
+
+impl From<ethabi::token::Error> for Error {
+    fn from(err: ethabi::token::Error) -> Self {
+        Error::InvalidContract("".to_string())
     }
 }
 
