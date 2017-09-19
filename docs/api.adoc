@@ -243,7 +243,7 @@ Import a new account from an external keyfile. Handle both cases: normal account
 
 *Examples*:
 
-* Normal account:
+.Normal account:
 ----
 --> {"jsonrpc": "2.0",
      "method": "emerald_importAccount",
@@ -270,7 +270,7 @@ Import a new account from an external keyfile. Handle both cases: normal account
 <-- {"jsonrpc": "2.0", "result": "0x0047201aed0b69875b24b614dda0270bcd9f11cc", "id": 1}
 ----
 
-* HD wallet account:
+.HD wallet account:
 ----
 --> {"jsonrpc": "2.0",
      "method": "emerald_importAccount",
@@ -303,7 +303,7 @@ Returns an account keyfile associated with the account.
 
 *Examples*:
 
-* Normal account:
+.Normal account:
 ----
 --> {"jsonrpc": "2.0", "method": "emerald_exportAccount", "params": [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc"}, {"chain_id": 62}], "id": 1}
 <-- {"jsonrpc": "2.0",
@@ -329,7 +329,7 @@ Returns an account keyfile associated with the account.
      "id": 1}
 ----
 
-* HD wallet account:
+.HD wallet account:
 ----
 --> {"jsonrpc": "2.0", "method": "emerald_exportAccount", "params": [{"address": "0x8f5201aed0b69875b24b6accounaccoun14dda0e"}, {"chain_id": 62}], "id": 1}
 <-- {"jsonrpc": "2.0",
@@ -600,6 +600,7 @@ Returns contract object associated with the contract.
              "name":"Transfer",
              "type":"event"}]}],
      "id": 1}
+----
 
 === emerald_signTransaction
 
