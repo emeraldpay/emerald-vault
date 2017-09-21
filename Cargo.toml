@@ -8,7 +8,7 @@ repository = "https://github.com/ethereumproject/emerald-rs"
 documentation = "https://docs.rs/emerald-core"
 keywords = ["ethereum-classic", "blockchain", "ffi", "crypto-wallet", "cold-storage"]
 categories = ["embedded", "external-ffi-bindings"]
-readme = "../README.adoc"
+readme = "README.adoc"
 license = "Apache-2.0"
 
 [badges]
