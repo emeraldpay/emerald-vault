@@ -338,9 +338,10 @@ fn should_update_existing_addresses() {
     assert!(key.name.is_none());
     storage.put(&key).unwrap();
 
-    key.name = Some("updated name");
+    let updated_name = Some("updated name".to_string());
+    key.name = updated_name.clone();
     assert!(storage.put(&key).is_ok());
 
-    let (_, kf) = storage.search_by_address(key.address).unwrap()
-    assert_eq!()
+    let (_, kf) = storage.search_by_address(&key.address).unwrap();
+    assert_eq!(kf.name, updated_name)
 }
