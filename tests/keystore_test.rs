@@ -328,14 +328,20 @@ fn should_search_by_address_db() {
 }
 
 #[test]
-fn should_skip_existing_addresses() {
+fn should_update_existing_addresses() {
     let path = keyfile_path(
         "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4",
     );
-    let key = KeyFile::decode(file_content(path)).unwrap();
+    let mut key = KeyFile::decode(file_content(path)).unwrap();
 
     let storage = DbStorage::new(temp_dir().as_path()).unwrap();
+    assert!(key.name.is_none());
     storage.put(&key).unwrap();
 
-    assert!(storage.put(&key).is_err());
+    let updated_name = Some("updated name".to_string());
+    key.name = updated_name.clone();
+    assert!(storage.put(&key).is_ok());
+
+    let (_, kf) = storage.search_by_address(&key.address).unwrap();
+    assert_eq!(kf.name, updated_name)
 }
