@@ -75,6 +75,7 @@ pub struct ListAccountAccount {
     address: String,
     description: String,
     hardware: bool,
+    is_hidden: bool,
 }
 
 #[derive(Deserialize, Default, Debug)]
@@ -107,6 +108,7 @@ where
                 address: info.address.clone(),
                 description: info.description.clone(),
                 hardware: info.is_hardware,
+                is_hidden: info.is_hidden,
             }
         })
         .collect();
