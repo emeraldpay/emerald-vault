@@ -21,13 +21,15 @@ pub struct RPCTransaction {
 
 impl RPCTransaction {
     pub fn try_into(self) -> Result<Transaction, Error> {
-        let gp_str = trim_hex(self.gas_price.as_str());
-        let v_str = trim_hex(self.value.as_str());
+        let gp_str = to_even_str(trim_hex(self.gas_price.as_str()));
+        let v_str = to_even_str(trim_hex(self.value.as_str()));
+        let gasl_str = to_even_str(trim_hex(self.gas.as_str()));
 
-        let gas_limit = Vec::from_hex(trim_hex(self.gas.as_str()))?;
+        let gas_limit = Vec::from_hex(gasl_str)?;
         let gas_price = Vec::from_hex(gp_str)?;
         let value = Vec::from_hex(v_str)?;
         let nonce = Vec::from_hex(to_even_str(trim_hex(self.nonce.as_str())))?;
+        let data = to_even_str(trim_hex(self.data.as_str()));
 
         Ok(Transaction {
             nonce: to_u64(&nonce),
@@ -35,7 +37,7 @@ impl RPCTransaction {
             gas_limit: to_u64(&gas_limit),
             to: self.to.as_str().parse::<Address>().ok(),
             value: to_arr(&align_bytes(&value, 32)),
-            data: Vec::from_hex(trim_hex(self.data.as_str()))?,
+            data: Vec::from_hex(data)?,
         })
     }
 }
