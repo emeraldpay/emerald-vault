@@ -85,8 +85,10 @@ For more see link:./examples[examples folder].
 
 == References
 
-=== <<docs/cli.adoc#,CLI API>>
 === <<docs/api.adoc#,JSON-RPC API>>
+
+== Command line tools
+http://github.com/ethereumproject/emerald-cli[Emerald CLI] based on `emerald-rs`
 
 == License
 
