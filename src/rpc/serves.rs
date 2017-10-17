@@ -1,4 +1,5 @@
 use super::Error;
+use super::StorageController;
 use super::serialize::RPCTransaction;
 use core::{Address, Transaction};
 use hdwallet::{WManager, to_prefixed_path};
@@ -9,7 +10,6 @@ use serde_json;
 use std::cell::RefCell;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use storage::KeyfileStorage;
 use util;
 
 fn to_chain_id(chain: &str, chain_id: Option<usize>, default_id: u8) -> u8 {
@@ -57,16 +57,16 @@ impl<T, U: Default> Either<(T,), (T, U)> {
     }
 }
 
-pub fn current_version(_params: ()) -> Result<&'static str, Error> {
-    Ok(::version())
-}
-
 pub fn heartbeat(_params: ()) -> Result<i64, Error> {
     use time::get_time;
     let res = get_time().sec;
     debug!("Emerald heartbeat: {}", res);
 
     Ok(res)
+}
+
+pub fn current_version(_params: ()) -> Result<&'static str, Error> {
+    Ok(::version())
 }
 
 #[derive(Serialize, Debug)]
@@ -90,15 +90,13 @@ pub struct ListAccountsAdditional {
     hd_path: Option<String>,
 }
 
-pub fn list_accounts<T: ?Sized>(
+pub fn list_accounts(
     params: Either<(), (ListAccountsAdditional,)>,
-    storage: &Arc<Mutex<Arc<Box<T>>>>,
-) -> Result<Vec<ListAccountAccount>, Error>
-where
-    T: KeyfileStorage,
-{
-    let storage = storage.lock().unwrap();
+    storage: &Arc<Mutex<StorageController>>,
+) -> Result<Vec<ListAccountAccount>, Error> {
+    let storage_ctrl = storage.lock().unwrap();
     let (additional,) = params.into_right();
+    let storage = storage_ctrl.get(&additional.chain)?;
     let res = storage
         .list_accounts(additional.show_hidden)?
         .iter()
@@ -134,15 +132,13 @@ pub struct HideAccountAccount {
     address: String,
 }
 
-pub fn hide_account<T: ?Sized>(
+pub fn hide_account(
     params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<T>>>>,
-) -> Result<bool, Error>
-where
-    T: KeyfileStorage,
-{
-    let storage = storage.lock().unwrap();
-    let (account, _) = params.into_full();
+    storage: &Arc<Mutex<StorageController>>,
+) -> Result<bool, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (account, additional) = params.into_full();
+    let storage = storage_ctrl.get(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
     let res = storage.hide(&addr)?;
     debug!("Account hided: {}", addr);
@@ -155,15 +151,13 @@ pub struct UnhideAccountAccount {
     address: String,
 }
 
-pub fn unhide_account<T: ?Sized>(
+pub fn unhide_account(
     params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<T>>>>,
-) -> Result<bool, Error>
-where
-    T: KeyfileStorage,
-{
-    let storage = storage.lock().unwrap();
-    let (account, _) = params.into_full();
+    storage: &Arc<Mutex<StorageController>>,
+) -> Result<bool, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (account, additional) = params.into_full();
+    let storage = storage_ctrl.get(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
     let res = storage.unhide(&addr)?;
     debug!("Account unhided: {}", addr);
@@ -178,17 +172,15 @@ pub struct ShakeAccountAccount {
     new_passphrase: String,
 }
 
-pub fn shake_account<T: ?Sized>(
+pub fn shake_account(
     params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<T>>>>,
-) -> Result<bool, Error>
-where
-    T: KeyfileStorage,
-{
+    storage: &Arc<Mutex<StorageController>>,
+) -> Result<bool, Error> {
     use keystore::os_random;
 
-    let storage = storage.lock().unwrap();
-    let (account, _) = params.into_full();
+    let storage_ctrl = storage.lock().unwrap();
+    let (account, additional) = params.into_full();
+    let storage = storage_ctrl.get(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
 
     let (_, kf) = storage.search_by_address(&addr)?;
@@ -225,15 +217,13 @@ pub struct UpdateAccountAccount {
     description: String,
 }
 
-pub fn update_account<T: ?Sized>(
+pub fn update_account(
     params: Either<(UpdateAccountAccount,), (UpdateAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<T>>>>,
-) -> Result<bool, Error>
-where
-    T: KeyfileStorage,
-{
-    let storage = storage.lock().unwrap();
-    let (account, _) = params.into_full();
+    storage: &Arc<Mutex<StorageController>>,
+) -> Result<bool, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (account, additional) = params.into_full();
+    let storage = storage_ctrl.get(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
 
     let (_, mut kf) = storage.search_by_address(&addr)?;
@@ -255,15 +245,13 @@ where
     Ok(true)
 }
 
-pub fn import_account<T: ?Sized>(
+pub fn import_account(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<T>>>>,
-) -> Result<String, Error>
-where
-    T: KeyfileStorage,
-{
-    let storage = storage.lock().unwrap();
-    let (raw, _) = params.into_full();
+    storage: &Arc<Mutex<StorageController>>,
+) -> Result<String, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (raw, additional) = params.into_full();
+    let storage = storage_ctrl.get(&additional.chain)?;
     let raw = serde_json::to_string(&raw)?;
 
     let kf = KeyFile::decode(raw.to_lowercase())?;
@@ -279,15 +267,13 @@ pub struct ExportAccountAccount {
     address: String,
 }
 
-pub fn export_account<T: ?Sized>(
+pub fn export_account(
     params: Either<(ExportAccountAccount,), (ExportAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<T>>>>,
-) -> Result<Value, Error>
-where
-    T: KeyfileStorage,
-{
-    let storage = storage.lock().unwrap();
-    let (account, _) = params.into_full();
+    storage: &Arc<Mutex<StorageController>>,
+) -> Result<Value, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (account, additional) = params.into_full();
+    let storage = storage_ctrl.get(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
 
     let (_, kf) = storage.search_by_address(&addr)?;
@@ -307,16 +293,14 @@ pub struct NewAccountAccount {
     passphrase: String,
 }
 
-pub fn new_account<T: ?Sized>(
+pub fn new_account(
     params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
     sec: &KdfDepthLevel,
-    storage: &Arc<Mutex<Arc<Box<T>>>>,
-) -> Result<String, Error>
-where
-    T: KeyfileStorage,
-{
-    let storage = storage.lock().unwrap();
-    let (account, _) = params.into_full();
+    storage: &Arc<Mutex<StorageController>>,
+) -> Result<String, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (account, additional) = params.into_full();
+    let storage = storage_ctrl.get(&additional.chain)?;
     if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
     }
@@ -361,21 +345,19 @@ pub struct SignTransactionAdditional {
     hd_path: Option<String>,
 }
 
-pub fn sign_transaction<T: ?Sized>(
+pub fn sign_transaction(
     params: Either<
         (SignTransactionTransaction,),
         (SignTransactionTransaction, SignTransactionAdditional),
     >,
-    storage: &Arc<Mutex<Arc<Box<T>>>>,
+    storage: &Arc<Mutex<StorageController>>,
     default_chain_id: u8,
     wallet_manager: &Mutex<RefCell<WManager>>,
-) -> Result<Params, Error>
-where
-    T: KeyfileStorage,
-{
-    let storage = storage.lock().unwrap();
+) -> Result<Params, Error> {
+    let storage_ctrl = storage.lock().unwrap();
     let (transaction, additional) = params.into_full();
     let addr = Address::from_str(&transaction.from)?;
+    let storage = storage_ctrl.get(&additional.chain)?;
 
     if additional.chain_id.is_some() {
         check_chain_params(&additional.chain, additional.chain_id.unwrap())?;

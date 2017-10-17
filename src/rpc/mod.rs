@@ -7,7 +7,7 @@ mod serves;
 pub use self::error::Error;
 use super::core;
 use super::keystore::KdfDepthLevel;
-use super::storage::{self, KeyfileStorage};
+use super::storage::{self, StorageController};
 use super::util::{ToHex, align_bytes, to_arr, to_chain_id, to_even_str, to_u64, trim_hex};
 use hdwallet::WManager;
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
@@ -46,16 +46,15 @@ where
 
 
 /// Start an HTTP RPC endpoint
-pub fn start<T: ?Sized>(
+pub fn start(
     addr: &SocketAddr,
     chain_name: &str,
-    storage: Arc<Box<T>>,
+    storage_ctrl: StorageController,
     sec_level: Option<KdfDepthLevel>,
-) where
-    T: KeyfileStorage + 'static,
+)
 {
     let sec_level = sec_level.unwrap_or_default();
-    let storage = Arc::new(Mutex::new(storage));
+    let storage_ctrl = Arc::new(Mutex::new(storage_ctrl));
     let chain_id = match to_chain_id(chain_name) {
         Some(id) => id,
         None => panic!(format!("Invalid chain name: {}", chain_name)),
@@ -81,76 +80,76 @@ pub fn start<T: ?Sized>(
     }
 
     {
-        let storage = storage.clone();
+        let storage_ctrl = storage_ctrl.clone();
 
         io.add_method("emerald_listAccounts", move |p: Params| {
-            wrapper(serves::list_accounts(parse(p)?, &storage))
+            wrapper(serves::list_accounts(parse(p)?, &storage_ctrl))
         });
     }
 
     {
-        let storage = storage.clone();
+        let storage_ctrl = storage_ctrl.clone();
 
         io.add_method("emerald_hideAccount", move |p: Params| {
-            wrapper(serves::hide_account(parse(p)?, &storage))
+            wrapper(serves::hide_account(parse(p)?, &storage_ctrl))
         });
     }
 
     {
-        let storage = storage.clone();
+        let storage_ctrl = storage_ctrl.clone();
 
         io.add_method("emerald_unhideAccount", move |p: Params| {
-            wrapper(serves::unhide_account(parse(p)?, &storage))
+            wrapper(serves::unhide_account(parse(p)?, &storage_ctrl))
         });
     }
 
     {
-        let storage = storage.clone();
+        let storage_ctrl = storage_ctrl.clone();
 
         io.add_method("emerald_shakeAccount", move |p: Params| {
-            wrapper(serves::shake_account(parse(p)?, &storage))
+            wrapper(serves::shake_account(parse(p)?, &storage_ctrl))
         });
     }
 
     {
-        let storage = storage.clone();
+        let storage_ctrl = storage_ctrl.clone();
 
         io.add_method("emerald_updateAccount", move |p: Params| {
-            wrapper(serves::update_account(parse(p)?, &storage))
+            wrapper(serves::update_account(parse(p)?, &storage_ctrl))
         });
     }
 
     {
-        let storage = storage.clone();
+        let storage_ctrl = storage_ctrl.clone();
 
         io.add_method("emerald_importAccount", move |p: Params| {
-            wrapper(serves::import_account(parse(p)?, &storage))
+            wrapper(serves::import_account(parse(p)?, &storage_ctrl))
         });
     }
 
     {
-        let storage = storage.clone();
+        let storage_ctrl = storage_ctrl.clone();
 
         io.add_method("emerald_exportAccount", move |p: Params| {
-            wrapper(serves::export_account(parse(p)?, &storage))
+            wrapper(serves::export_account(parse(p)?, &storage_ctrl))
         });
     }
 
     {
         let sec = sec_level;
-        let storage = storage.clone();
+        let storage_ctrl = storage_ctrl.clone();
 
         io.add_method("emerald_newAccount", move |p: Params| {
-            wrapper(serves::new_account(parse(p)?, &sec, &storage))
+            wrapper(serves::new_account(parse(p)?, &sec, &storage_ctrl))
         });
     }
 
     {
-        let storage = storage.clone();
+        let storage_ctrl = storage_ctrl.clone();
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,
-                &storage,
+                &storage_ctrl,
                 chain_id,
                 &wallet_manager,
             ))
