@@ -49,10 +49,9 @@ where
 pub fn start(
     addr: &SocketAddr,
     chain_name: &str,
-    storage_ctrl: StorageController,
+    storage_ctrl: Arc<Box<StorageController>>,
     sec_level: Option<KdfDepthLevel>,
-)
-{
+) {
     let sec_level = sec_level.unwrap_or_default();
     let storage_ctrl = Arc::new(Mutex::new(storage_ctrl));
     let chain_id = match to_chain_id(chain_name) {

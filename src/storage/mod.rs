@@ -49,10 +49,11 @@ pub fn default_path() -> PathBuf {
 ///
 /// # Arguments:
 ///
+/// * base_path - base folder for storage
 /// * chain - chain name
 ///
-pub fn default_keystore_path(chain: &str) -> PathBuf {
-    let mut path = default_path();
+pub fn build_keystore_path(base_path: &Path, chain: &str) -> PathBuf {
+    let mut path = PathBuf::from(base_path);
     path.push(chain);
     path.push("keystore");
     path
@@ -160,7 +161,7 @@ impl<'a> ChainStorage<'a> {
             fs::create_dir(p)?
         }
 
-        let ks_path = default_keystore_path(&self.id);
+        let ks_path = build_keystore_path(&default_path(), &self.id);
         if !ks_path.exists() {
             fs::create_dir(ks_path.as_path())?
         }

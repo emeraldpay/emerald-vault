@@ -92,7 +92,7 @@ pub struct ListAccountsAdditional {
 
 pub fn list_accounts(
     params: Either<(), (ListAccountsAdditional,)>,
-    storage: &Arc<Mutex<StorageController>>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<Vec<ListAccountAccount>, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (additional,) = params.into_right();
@@ -134,7 +134,7 @@ pub struct HideAccountAccount {
 
 pub fn hide_account(
     params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<StorageController>>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -153,7 +153,7 @@ pub struct UnhideAccountAccount {
 
 pub fn unhide_account(
     params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<StorageController>>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -174,7 +174,7 @@ pub struct ShakeAccountAccount {
 
 pub fn shake_account(
     params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<StorageController>>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<bool, Error> {
     use keystore::os_random;
 
@@ -219,7 +219,7 @@ pub struct UpdateAccountAccount {
 
 pub fn update_account(
     params: Either<(UpdateAccountAccount,), (UpdateAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<StorageController>>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -247,7 +247,7 @@ pub fn update_account(
 
 pub fn import_account(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    storage: &Arc<Mutex<StorageController>>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<String, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (raw, additional) = params.into_full();
@@ -269,7 +269,7 @@ pub struct ExportAccountAccount {
 
 pub fn export_account(
     params: Either<(ExportAccountAccount,), (ExportAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<StorageController>>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<Value, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -296,7 +296,7 @@ pub struct NewAccountAccount {
 pub fn new_account(
     params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
     sec: &KdfDepthLevel,
-    storage: &Arc<Mutex<StorageController>>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<String, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -350,7 +350,7 @@ pub fn sign_transaction(
         (SignTransactionTransaction,),
         (SignTransactionTransaction, SignTransactionAdditional),
     >,
-    storage: &Arc<Mutex<StorageController>>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
     default_chain_id: u8,
     wallet_manager: &Mutex<RefCell<WManager>>,
 ) -> Result<Params, Error> {
