@@ -148,14 +148,12 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     fn is_addr_exist(&self, addr: &Address) -> Result<(), KeyStorageError> {
         match self.search_by_address(addr) {
-            Ok((_, _)) => {
-                Err(KeyStorageError::StorageError(
-                    format!("Address {} already in storage", addr),
-                ))
-            }
+            Ok((_, _)) => Ok(()),
             Err(e) => {
                 match e {
-                    KeyStorageError::NotFound(_) => Ok(()),
+                    KeyStorageError::NotFound(_) => Err(KeyStorageError::StorageError(
+                        format!("Address {} not in a storage", addr),
+                    )),
                     _ => Err(e),
                 }
             }
