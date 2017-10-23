@@ -22,9 +22,9 @@ It involves storing a wallet in a secured place that is not connected to the net
 When done properly, it can offer a very good protection against computer vulnerabilities.
 ====
 
-Distributed as a command line tool (CLI), as a Rust crate or can be embedded via foreign function interface (FFI).
+Distributed as a Rust crate or can be embedded via foreign function interface (FFI).
 
-If you are looking for for a fully-featured UI online wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
+For minimalistic CLI tool refer to link:https://github.com/ethereumproject/emerald-cli[emerald-cli], or if you looking for a fully-featured UI online wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
 
 Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
@@ -34,7 +34,7 @@ Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
 
 * [x] Accounts
 * [x] Transactions signing
-* [ ] Smart contracts (ABI)
+* [x] Smart contracts (ABI)
 * [ ] C interface (ABI)
 
 == Installation
@@ -54,16 +54,6 @@ $ cargo install emerald-cli
 ----
 
 If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` command in your cloned repository and all dependencies will be made available in your environment automatically.
-
-== Usage
-
-How to run `emerald` (by default on port '1920'):
-
-----
-$ emerald server
-----
-
-For more details look at link:./emerald-cli/usage.txt[usage].
 
 == Examples
 
