@@ -35,6 +35,10 @@ pub struct AccountInfo {
     /// shows whether it is normal account or
     /// held by HD wallet
     pub is_hardware: bool,
+
+    /// show if account hidden from 'normal' listing
+    /// `normal` - not forcing to show hidden accounts
+    pub is_hidden: bool,
 }
 
 impl From<KeyFile> for AccountInfo {
@@ -48,6 +52,10 @@ impl From<KeyFile> for AccountInfo {
 
         if let Some(desc) = kf.description {
             info.description = desc;
+        };
+
+        if let Some(visible) = kf.visible {
+            info.is_hidden = !visible;
         };
 
         info.is_hardware = match kf.crypto {
@@ -140,14 +148,12 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     fn is_addr_exist(&self, addr: &Address) -> Result<(), KeyStorageError> {
         match self.search_by_address(addr) {
-            Ok((_, _)) => {
-                Err(KeyStorageError::StorageError(
-                    format!("Address {} already in storage", addr),
-                ))
-            }
+            Ok((_, _)) => Ok(()),
             Err(e) => {
                 match e {
-                    KeyStorageError::NotFound(_) => Ok(()),
+                    KeyStorageError::NotFound(_) => Err(KeyStorageError::StorageError(
+                        format!("Address {} not in a storage", addr),
+                    )),
                     _ => Err(e),
                 }
             }

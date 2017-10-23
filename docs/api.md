@@ -563,7 +563,7 @@ Returns contract object associated with the contract.
 *Parameters*:
 
     * `contractt` (Object)
-    ** `address` (String) - hex-encoded 20 bytes public address
+    ** `address` (String) - hex-encoded 20 bytes publ/usr/local/bin/ic address
     * `additional` (Object, optional)
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
     ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`

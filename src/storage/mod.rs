@@ -1,9 +1,11 @@
 //! # Storage for `KeyFiles` and `Contracts`
 
 mod keyfile;
+mod storage_ctrl;
 
 pub use self::KeyStorageError;
 pub use self::keyfile::*;
+pub use self::storage_ctrl::StorageController;
 use log::LogLevel;
 use std::{env, fs};
 use std::boxed::Box;
@@ -44,14 +46,25 @@ pub fn default_path() -> PathBuf {
 }
 
 /// Default path for `Keystore` files
-pub fn default_keystore_path(chain_id: &str) -> PathBuf {
-    let mut path = default_path();
-    path.push(chain_id);
+///
+/// # Arguments:
+///
+/// * base_path - base folder for storage
+/// * chain - chain name
+///
+pub fn build_keystore_path(base_path: &Path, chain: &str) -> PathBuf {
+    let mut path = PathBuf::from(base_path);
+    path.push(chain);
     path.push("keystore");
     path
 }
 
-/// Creates specific type of storage (database or filesystem)
+/// Creates specific type of `KeyFile` storage (database or filesystem)
+///
+/// # Arguments:
+///
+/// * keystore_path - path for `KeyFile` storage
+///
 pub fn build_storage<P>(keystore_path: P) -> Result<Box<KeyfileStorage>, KeyStorageError>
 where
     P: AsRef<Path>,
@@ -148,7 +161,7 @@ impl<'a> ChainStorage<'a> {
             fs::create_dir(p)?
         }
 
-        let ks_path = default_keystore_path(&self.id);
+        let ks_path = build_keystore_path(&default_path(), &self.id);
         if !ks_path.exists() {
             fs::create_dir(ks_path.as_path())?
         }
