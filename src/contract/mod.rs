@@ -24,18 +24,6 @@ impl Contract {
     ///
     /// * `DATA` - A byte slice
     ///
-    /// # Example
-    /// ```
-    /// pub use self::contract::Contract;
-    ///
-    /// const DATA: &[u8] = b"[{\"constant\":true,\"inputs\":[],\"name\":\"name\",\
-    ///             \"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\
-    ///             \"payable\":false,\"type\":\"function\"}]";
-    /// let contract = emerald_core::Contract::try_from(DATA).unwrap();
-    /// assert_eq!(contract.to_string(),
-    ///            "Interface([Function(Function { name: \"name\", inputs: [], \
-    ///             outputs: [Param { name: \"\", kind: String }] })])");
-    /// ```
     pub fn try_from(data: &[u8]) -> Result<Self, Error> {
         let abi = Interface::load(data)?;
         Ok(Contract { abi: abi })
