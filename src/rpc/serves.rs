@@ -97,7 +97,7 @@ pub fn list_accounts(
 ) -> Result<Vec<ListAccountAccount>, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (additional,) = params.into_right();
-    let storage = storage_ctrl.get(&additional.chain)?;
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let res = storage
         .list_accounts(additional.show_hidden)?
         .iter()
@@ -139,7 +139,7 @@ pub fn hide_account(
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
-    let storage = storage_ctrl.get(&additional.chain)?;
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
     let res = storage.hide(&addr)?;
     debug!("Account hided: {}", addr);
@@ -158,7 +158,7 @@ pub fn unhide_account(
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
-    let storage = storage_ctrl.get(&additional.chain)?;
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
     let res = storage.unhide(&addr)?;
     debug!("Account unhided: {}", addr);
@@ -181,7 +181,7 @@ pub fn shake_account(
 
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
-    let storage = storage_ctrl.get(&additional.chain)?;
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
 
     let (_, kf) = storage.search_by_address(&addr)?;
@@ -224,7 +224,7 @@ pub fn update_account(
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
-    let storage = storage_ctrl.get(&additional.chain)?;
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
 
     let (_, mut kf) = storage.search_by_address(&addr)?;
@@ -252,7 +252,7 @@ pub fn import_account(
 ) -> Result<String, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (raw, additional) = params.into_full();
-    let storage = storage_ctrl.get(&additional.chain)?;
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let raw = serde_json::to_string(&raw)?;
 
     let kf = KeyFile::decode(raw.to_lowercase())?;
@@ -274,7 +274,7 @@ pub fn export_account(
 ) -> Result<Value, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
-    let storage = storage_ctrl.get(&additional.chain)?;
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let addr = Address::from_str(&account.address)?;
 
     let (_, kf) = storage.search_by_address(&addr)?;
@@ -301,7 +301,7 @@ pub fn new_account(
 ) -> Result<String, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
-    let storage = storage_ctrl.get(&additional.chain)?;
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
     if account.passphrase.is_empty() {
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
     }
@@ -357,8 +357,8 @@ pub fn sign_transaction(
 ) -> Result<Params, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (transaction, additional) = params.into_full();
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let addr = Address::from_str(&transaction.from)?;
-    let storage = storage_ctrl.get(&additional.chain)?;
 
     if additional.chain_id.is_some() {
         check_chain_params(&additional.chain, additional.chain_id.unwrap())?;
@@ -498,3 +498,37 @@ pub fn encode_function_call(
 
     Contract::serialize_params(inputs.types, inputs.values).map_err(From::from)
 }
+
+pub fn list_contracts(
+    params: Either<(), (CommonAdditional,)>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+) -> Result<Vec<serde_json::Value>, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (additional,) = params.into_right();
+    let storage = storage_ctrl.get_contracts(&additional.chain)?;
+
+    Ok(storage.list())
+}
+
+pub fn import_contract(
+    params: Either<(Value,), (Value, CommonAdditional)>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+) -> Result<(), Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (raw, additional) = params.into_full();
+    let storage = storage_ctrl.get_contracts(&additional.chain)?;
+
+    storage.add(&raw)?;
+    Ok(())
+}
+
+//pub fn export_contract(
+//    params: Either<(Value,), (Value, FunctionParams)>,
+//    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+//) -> Result<String, Error> {
+//    let storage_ctrl = storage.lock().unwrap();
+//    let (_, inputs) = params.into_full();
+//    let storage = storage_ctrl.get_contracts(&additional.chain)?;
+//
+//    Contract::serialize_params(inputs.types, inputs.values).map_err(From::from)
+//}

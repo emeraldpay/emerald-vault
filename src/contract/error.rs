@@ -1,5 +1,5 @@
 use ethabi;
-use std::{error, fmt};
+use std::{error, fmt, io};
 use std::string::ToString;
 
 /// Contract Service Errors
@@ -42,6 +42,12 @@ impl From<ethabi::spec::param_type::Error> for Error {
 impl From<ethabi::token::Error> for Error {
     fn from(err: ethabi::token::Error) -> Self {
         Error::InvalidContract("".to_string())
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Error::IO(err.to_string())
     }
 }
 

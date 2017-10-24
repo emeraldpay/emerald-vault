@@ -1,11 +1,12 @@
 //! # Contracts utils
 
-use super::Error;
+use contract::Error;
 use core::Address;
 use glob::glob;
 use serde_json;
 use std::fs::File;
 use std::path::{Path, PathBuf};
+
 
 /// Contracts Service
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -16,7 +17,7 @@ pub struct ContractStorage {
 impl ContractStorage {
     /// Initialize new contracts service for a dir
     pub fn new(dir: PathBuf) -> ContractStorage {
-        Contracts { dir: dir }
+        ContractStorage { dir: dir }
     }
 
     /// Validate contract structure
@@ -50,10 +51,13 @@ impl ContractStorage {
         let mut filename: PathBuf = self.dir.clone();
         filename.push(format!("{}.json", addr));
 
-        let mut f = File::create(filename.as_path()).unwrap();
-        match seread_jsonrde_json::to_writer_pretty(&mut f, contract) {
+        let mut f = File::create(filename.as_path())?;
+        println!(">> DEBUG created file {:?}", f);
+        match serde_json::to_writer_pretty(&mut f, contract) {
             Ok(_) => Ok(()),
-            Err(_) => Err(Error::IO("Can't write contract".to_string())),
+            Err(_) => Err(Error::IO(
+                format!("Can't write contract for address {}", addr),
+            )),
         }
     }
 
@@ -63,7 +67,7 @@ impl ContractStorage {
 
         files
             .filter(|x| x.is_ok())
-            .map(|x| Contracts::read_json(x.unwrap().as_path()))
+            .map(|x| ContractStorage::read_json(x.unwrap().as_path()))
             .filter(|x| x.is_ok())
             .map(|x| x.unwrap())
             .collect()

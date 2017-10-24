@@ -3,14 +3,14 @@ ifndef::rootdir[:rootdir: ..]
 :imagesdir: {rootdir}/images
 :toc:
 
-= JSON-RPC API
+# JSON-RPC API
 
 JSON-RPC is a remote procedure call protocol encoded in JSON.
-We use the http://www.jsonrpc.org/specification[version 2 of the protocol].
+We use the [version 2 of the protocol](http://www.jsonrpc.org/specification).
 
-== Methods
+## Methods
 
-=== emerald_heartbeat
+### emerald_heartbeat
 
 Identify if and when the originator fails or is no longer available.
 
@@ -20,27 +20,27 @@ Identify if and when the originator fails or is no longer available.
 
 *Examples*:
 
-----
+```
 --> {"jsonrpc": "2.0", "method": "emerald_heartbeat", "params": [], "id": 1}
 <-- {"jsonrpc": "2.0", "result": 1497439590, "id": 1}
-----
+```
 
-=== emerald_currentVersion
+### emerald_currentVersion
 
 Returns the client current version.
 
 *Parameters*: none
 
-*Result*: `version` (String) - current version according http://semver.org/[Semantic Versioning]
+*Result*: `version` (String) - current version according [Semantic Versioning](http://semver.org/)
 
 *Examples*:
 
-----
+```
 --> {"jsonrpc": "2.0", "method": "emerald_currentVersion", "params": [], "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0.9", "id": 1}
-----
+```
 
-=== emerald_listAccounts
+### emerald_listAccounts
 
 Return the list of all not hidden (by default) accounts from the keystore.
 
@@ -53,7 +53,7 @@ Return the list of all not hidden (by default) accounts from the keystore.
 
 *Result*:
 
-    * `accounts` (Array)
+    *`accounts` (Array)
     ** `account` (Object) - an account
     *** `address` (String) - hex-encoded 20 bytes public address
     *** `hardware_wallet` (Boolean) - flag to distinguish normal accounts from HD wallet accounts
@@ -62,7 +62,7 @@ Return the list of all not hidden (by default) accounts from the keystore.
 
 *Examples*:
 
-----
+```
 --> {"jsonrpc": "2.0", "method": "emerald_listAccounts", "params": [{"chain": "testnet", "show_hidden": true}], "id": 1}
 <-- {"jsonrpc": "2.0", "result":
       [{"address": "0x5e97870f263700f46aa00d967821199b9bc5a120"},
@@ -73,9 +73,9 @@ Return the list of all not hidden (by default) accounts from the keystore.
         "description": "A test account",
         "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}],
      "id": 1}
-----
+```
 
-=== emerald_hideAccount
+### emerald_hideAccount
 
 Hide an account from the list returned by default by `emerald_listAccounts`.
 
@@ -91,19 +91,19 @@ Hide an account from the list returned by default by `emerald_listAccounts`.
 
 *Examples*:
 
-.If required account exists
-----
+If required account exists
+```
 --> {"jsonrpc": "2.0", "method": "emerald_hideAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
+```
 
-.If required account doesn't exist
-----
+If required account doesn't exist
+```
 --> {"jsonrpc": "2.0", "method": "emerald_hideAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
-----
+```
 
-=== emerald_unhideAccount
+### emerald_unhideAccount
 
 Show an account that was hidden before by the command `emerald_hideAccount`.
 
@@ -119,19 +119,19 @@ Show an account that was hidden before by the command `emerald_hideAccount`.
 
 *Examples*:
 
-.If required account exists
-----
+If required account exists
+```
 --> {"jsonrpc": "2.0", "method": "emerald_unhideAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
+```
 
-.If required account doesn't exist
-----
+If required account doesn't exist
+```
 --> {"jsonrpc": "2.0", "method": "emerald_unhideAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
-----
+```
 
-=== emerald_newAccount
+### emerald_newAccount
 
 Creates a new account and stores it locally as a passphrase-encoded keystore file.
 
@@ -150,13 +150,13 @@ Creates a new account and stores it locally as a passphrase-encoded keystore fil
 *Examples*:
 
 .Simple format, only `passphrase`
-----
+```
 --> {"jsonrpc": "2.0", "method": "emerald_newAccount", "params": [{"passphrase": "1234567890"}], "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
-----
+```
 
 .Full format with all optional parameters for `testnet` (id: `62`)
-----
+```
 --> {"jsonrpc": "2.0",
      "method": "emerald_newAccount",
      "params":
@@ -166,9 +166,9 @@ Creates a new account and stores it locally as a passphrase-encoded keystore fil
         {"chain": "testnet"}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
-----
+```
 
-=== emerald_shakeAccount
+### emerald_shakeAccount
 
 Recreate account with the same public address, but with a different passphrase.
 
@@ -186,12 +186,12 @@ Recreate account with the same public address, but with a different passphrase.
 
 *Examples*:
 
-----
+```
 --> {"jsonrpc": "2.0", "method": "emerald_shakeAccount", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "old_passphrase": "1234567890", "new_passphrase": "123"}], "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
+```
 
-=== emerald_updateAccount
+### emerald_updateAccount
 
 Update not secured by passphrase account metadata, like `name` and `description`.
 
@@ -209,26 +209,26 @@ Update not secured by passphrase account metadata, like `name` and `description`
 
 *Examples*:
 
-.If required account exists
-----
+If required account exists
+```
 --> {"jsonrpc": "2.0", "method": "emerald_updateAccount", "params": [{"name": "new", "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
+```
 
-.If required account doesn't exist
-----
+If required account doesn't exist
+```
 --> {"jsonrpc": "2.0", "method": "emerald_updateAccount", "params": [{"address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}], "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Account doesn't exist"}, "id": "1"}
-----
+```
 
-=== emerald_importAccount
+### emerald_importAccount
 
 Import a new account from an external keyfile. Handle both cases: normal account & HD wallet account,
 
 *Parameters*:
 
     - Normal account:
-        * `keyfile` (Object) - should be totally comply with the https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format]
+        * `keyfile` (Object) - should be totally comply with the [Web3 UTC / JSON format](https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition)
         * `additional` (Object, optional)
         ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
         ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
@@ -244,7 +244,7 @@ Import a new account from an external keyfile. Handle both cases: normal account
 *Examples*:
 
 .Normal account:
-----
+```
 --> {"jsonrpc": "2.0",
      "method": "emerald_importAccount",
      "params":
@@ -268,10 +268,10 @@ Import a new account from an external keyfile. Handle both cases: normal account
            "mac": "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"}}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0x0047201aed0b69875b24b614dda0270bcd9f11cc", "id": 1}
-----
+```
 
 .HD wallet account:
-----
+```
 --> {"jsonrpc": "2.0",
      "method": "emerald_importAccount",
      "params":
@@ -284,9 +284,9 @@ Import a new account from an external keyfile. Handle both cases: normal account
             "hd_path": "44'/61'/0'/0/0"},
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0x8f5201aed0b69875b24b6accounaccoun14dda0e", "id": 1}
-----
+```
 
-=== emerald_exportAccount
+### emerald_exportAccount
 
 Returns an account keyfile associated with the account.
 
@@ -298,13 +298,13 @@ Returns an account keyfile associated with the account.
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
     ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
-*Result*: `keyfile` (Object) - normal account in https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition[Web3 UTC / JSON format],
+*Result*: `keyfile` (Object) - normal account in [Web3 UTC / JSON format](https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition),
  or HD wallet account (see example)
 
 *Examples*:
 
-.Normal account:
-----
+Normal account:
+```
 --> {"jsonrpc": "2.0", "method": "emerald_exportAccount", "params": [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc"}, {"chain_id": 62}], "id": 1}
 <-- {"jsonrpc": "2.0",
      "result":
@@ -327,10 +327,10 @@ Returns an account keyfile associated with the account.
            },
            "mac": "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5"}}],
      "id": 1}
-----
+```
 
-.HD wallet account:
-----
+HD wallet account:
+```
 --> {"jsonrpc": "2.0", "method": "emerald_exportAccount", "params": [{"address": "0x8f5201aed0b69875b24b6accounaccoun14dda0e"}, {"chain_id": 62}], "id": 1}
 <-- {"jsonrpc": "2.0",
      "method": "emerald_importAccount",
@@ -343,9 +343,9 @@ Returns an account keyfile associated with the account.
             type: "ledger-nano-s:v1",
             hd: "0'/0/0"},
      "id": 1}
-----
+```
 
-=== emerald_listContracts
+### emerald_listContracts
 
 Return the list of all not hidden (by default) smart contracts from the local storage.
 
@@ -366,7 +366,7 @@ Return the list of all not hidden (by default) smart contracts from the local st
 
 *Examples*:
 
-----
+```
 --> {"jsonrpc": "2.0", "method": "emerald_listContracts", "params": [{"chain": "testnet", "show_hidden": true}], "id": 1}
 <-- {"jsonrpc": "2.0", "result":
       [{"name": "BitEther",
@@ -376,9 +376,9 @@ Return the list of all not hidden (by default) smart contracts from the local st
         "description": "Dexaran Naming service",
         "address": "0x2906797a0a56a0c60525245c01788ecd34063b80"}],
      "id": 1}
-----
+```
 
-=== emerald_hideContract
+### emerald_hideContract
 
 Hide a smart contract from the list returned by default by `emerald_listContracts`.
 
@@ -394,19 +394,19 @@ Hide a smart contract from the list returned by default by `emerald_listContract
 
 *Examples*:
 
-.If required contract exists
-----
+If required contract exists
+```
 --> {"jsonrpc": "2.0", "method": "emerald_hideContract", "params": [{"address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}], "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
+```
 
-.If required contract doesn't exist
-----
+If required contract doesn't exist
+```
 --> {"jsonrpc": "2.0", "method": "emerald_hideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
-----
+```
 
-=== emerald_unhideContract
+### emerald_unhideContract
 
 Show a smart contract that was hidden before by the command `emerald_hideContract`.
 
@@ -422,19 +422,19 @@ Show a smart contract that was hidden before by the command `emerald_hideContrac
 
 *Examples*:
 
-.If required contract exists
-----
+If required contract exists
+```
 --> {"jsonrpc": "2.0", "method": "emerald_unhideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
+```
 
-.If required contract doesn't exist
-----
+If required contract doesn't exist
+```
 --> {"jsonrpc": "2.0", "method": "emerald_unhideContract", "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db"}], "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
-----
+```
 
-=== emerald_updateContract
+### emerald_updateContract
 
 Update contract metadata. Contract address and chain information are used to identify the contract, and may not be updated. 
 
@@ -452,8 +452,8 @@ Update contract metadata. Contract address and chain information are used to ide
 
 *Examples*:
 
-.If required contract exists
-----
+If required contract exists
+```
 --> {"jsonrpc": "2.0", 
      "method": "emerald_updateContract", 
      "params": [{"address": "0x085fb4f24031eaedbc2b611aa528f22343eb52db",
@@ -461,10 +461,10 @@ Update contract metadata. Contract address and chain information are used to ide
          "description": "Bit Ether"}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
+```
 
-.If required contract doesn't exist
-----
+If required contract doesn't exist
+```
 --> {"jsonrpc": "2.0", 
      "method": "emerald_updateContract", 
      "params": [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc",
@@ -472,10 +472,10 @@ Update contract metadata. Contract address and chain information are used to ide
          "description": "Bit Ether"}], 
      "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
-----
+```
 
 
-=== emerald_importContract
+### emerald_importContract
 
 Import a new smart contract Application Binary Interface (ABI) locally.
 
@@ -498,7 +498,7 @@ Import a new smart contract Application Binary Interface (ABI) locally.
 
 *Examples*:
 
-----
+```
 --> {"jsonrpc": "2.0",
      "method": "emerald_importContract",
      "params":
@@ -554,9 +554,9 @@ Import a new smart contract Application Binary Interface (ABI) locally.
              "type":"event"}]}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": true, "id": 1}
-----
+```
 
-=== emerald_exportContract
+### emerald_exportContract
 
 Returns contract object associated with the contract.
 
@@ -568,11 +568,11 @@ Returns contract object associated with the contract.
     ** `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `testnet`
     ** `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
 
-*Result*: `contract` (Object) - JSON format for a contract ABI, as defined https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI[here]. 
+*Result*: `contract` (Object) - JSON format for a contract ABI, as defined [here](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI).
 
 *Examples*:
 
-----
+```
 --> {"jsonrpc": "2.0", "method": "emerald_exportContract", "params": [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc"}, {"chain_id": 62}], "id": 1}
 <-- {"jsonrpc": "2.0",
      "result":
@@ -600,9 +600,9 @@ Returns contract object associated with the contract.
              "name":"Transfer",
              "type":"event"}]}],
      "id": 1}
-----
+```
 
-=== emerald_signTransaction
+### emerald_signTransaction
 
 Signs transaction offline with private key from keystore file with given passphrase.
 If `function` and `arguments` are provided, they will be encoded according smart contract ABI and used in the `data` field of the transaction.
@@ -631,7 +631,7 @@ If `function` and `arguments` are provided, they will be encoded according smart
 
 *Examples*:
 
-----
+```
 --> {"jsonrpc": "2.0",
      "method": "emerald_signTransaction",
      "params":
@@ -646,9 +646,9 @@ If `function` and `arguments` are provided, they will be encoded according smart
         {"chain": "testnet"}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675", "id": 1}
-----
+```
 
-----
+```
 --> {"jsonrpc": "2.0",
      "method": "emerald_signTransaction",
      "params":
@@ -664,14 +664,12 @@ If `function` and `arguments` are provided, they will be encoded according smart
                         "value": 10}]}}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0x085fb4f24031eaedbc2b611aa528f22343eb52dba9059cbb000000000000000000000000aa00000000bbbb000000000000000000000000aa000000000000000000000000000000000000000000000000000000000000000a", "id": 1}
-----
+```
 
-== Custom Errors
+## Custom Errors
 
-|===
-|Code |Message |Meaning
 
-|-32000
-|Account doesn't exist
-|Nothing is found at the specified account public address
-|===
+|Code   |Message |Meaning|
+|---   |:-------------:|:-----:|
+|-32000 | Account doesn't exist|Nothing is found at the specified account address|
+
