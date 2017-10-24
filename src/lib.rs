@@ -17,6 +17,7 @@ extern crate time;
 extern crate byteorder;
 extern crate chrono;
 extern crate crypto;
+extern crate ethabi;
 extern crate glob;
 extern crate jsonrpc_core;
 extern crate jsonrpc_http_server;
@@ -32,13 +33,14 @@ extern crate serde_json;
 extern crate uuid;
 extern crate hex;
 extern crate hidapi;
-extern crate rocksdb;
+extern crate emerald_rocksdb as rocksdb;
 
 mod core;
 pub mod addressbook;
 pub mod keystore;
 pub mod rpc;
 pub mod storage;
+mod contract;
 mod hdwallet;
 mod util;
 

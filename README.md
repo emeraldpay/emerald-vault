@@ -16,48 +16,48 @@ endif::[]
 Secure account management for Ethereum Classic.
 
 [NOTE]
-====
+```
 An offline wallet, also known as cold storage, provides the highest level of security for savings.
 It involves storing a wallet in a secured place that is not connected to the network (air-gapped).
 When done properly, it can offer a very good protection against computer vulnerabilities.
-====
+```
 
 Distributed as a Rust crate or can be embedded via foreign function interface (FFI).
 
-For minimalistic CLI tool refer to link:https://github.com/ethereumproject/emerald-cli[emerald-cli], or if you looking for a fully-featured UI online wallet, take a look at our link:https://github.com/ethereumproject/emerald-wallet[Ethereum Classic Emerald Wallet].
+For minimalistic CLI tool refer to [emerald-cli](https://github.com/ethereumproject/emerald-cli), or if you looking for a fully-featured UI online wallet, take a look at our [Ethereum Classic Emerald Wallet](https://github.com/ethereumproject/emerald-wallet)
 
-Developed by link:http://www.etcdevteam.com/[ETCDEV Team].
+Developed by [ETCDEV Team](http://www.etcdevteam.com/)
 
-== Features
+## Features
 
-=== General
+### General
 
 * [x] Accounts
 * [x] Transactions signing
 * [x] Smart contracts (ABI)
 * [ ] C interface (ABI)
 
-== Installation
+## Installation
 
 Ensure you have these dependencies installed:
 
-----
+```
 openssl pkgconfig rustc cargo
-----
+```
 
 `cargo` and `rustc` should be at least versions 0.18 and 1.17 respectively.
 
 Should your distribution or operating system not have a recent cargo and rustc binaries you can install them from: http://doc.crates.io/.
 
-----
+```
 $ cargo install emerald-cli
-----
+```
 
-If you use link:http://nixos.org/nix[Nix] you may execute the `nix-shell` command in your cloned repository and all dependencies will be made available in your environment automatically.
+If you use [Nix](http://nixos.org/nix) you may execute the `nix-shell` command in your cloned repository and all dependencies will be made available in your environment automatically.
 
-== Examples
+## Examples
 
-----
+```
 extern crate emerald_core as emerald;
 
 use std::net::SocketAddr;
@@ -69,15 +69,12 @@ fn main() {
 
     emerald::start(&addr, None, None);
 }
-----
+```
 
-For more see link:./examples[examples folder].
+## References
 
-== References
+ [JSON-RPC API](docs/api.adoc)
 
-=== <<docs/cli.adoc#,CLI API>>
-=== <<docs/api.adoc#,JSON-RPC API>>
-
-== License
+## License
 
 Apache 2.0

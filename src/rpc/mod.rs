@@ -155,6 +155,33 @@ pub fn start(
         });
     }
 
+    {
+        io.add_method("emerald_encodeFunctionCall", move |p: Params| {
+            wrapper(serves::encode_function_call(parse(p)?))
+        });
+    }
+
+    {
+        let storage_ctrl = storage_ctrl.clone();
+        io.add_method("emerald_listContracts", move |p: Params| {
+            wrapper(serves::list_contracts(parse(p)?, &storage_ctrl))
+        });
+    }
+
+    {
+        let storage_ctrl = storage_ctrl.clone();
+        io.add_method("emerald_importContract", move |p: Params| {
+            wrapper(serves::import_contract(parse(p)?, &storage_ctrl))
+        });
+    }
+
+    //    {
+    //        let storage_ctrl = storage_ctrl.clone();
+    //        io.add_method("emerald_exportContract", move |p: Params| {
+    //            wrapper(serves::export_contract(parse(p)?, &storage_ctrl))
+    //        });
+    //    }
+
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![
             AccessControlAllowOrigin::Any,

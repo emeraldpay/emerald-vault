@@ -42,8 +42,9 @@ rust-crypto = "0.2"
 secp256k1 = "0.6"
 rand = "0.3"
 byteorder="1.0"
+ethabi = "2.0.0"
 # optional dependencies
-rocksdb =  { version = "0.8", optional = true }
+emerald-rocksdb =  { version = "0.7", optional = true }
 hyper = { version = "0.11", optional = true }
 reqwest = { version = "0.6", optional = true }
 clippy = {version = "0.0", optional = true}
@@ -56,7 +57,7 @@ quickcheck = "0.4"
 # quickcheck_macros = "0.4"
 
 [features]
-default = ["http", "rocksdb"]
+default = ["http", "emerald-rocksdb"]
 http = ["hyper", "reqwest"]
 dev = ["clippy"]
 fs-storage = []
