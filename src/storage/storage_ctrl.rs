@@ -16,7 +16,7 @@ impl StorageController {
     pub fn new<P: AsRef<Path>>(base_path: P) -> Result<StorageController, KeyStorageError> {
         let mut st = StorageController::default();
 
-        for id in ["mainnet", "testnet"].iter() {
+        for id in ["mainnet", "morden"].iter() {
             st.keyfile_storages.insert(
                 id.to_string(),
                 build_keyfile_storage(

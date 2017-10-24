@@ -521,14 +521,12 @@ pub fn import_contract(
     storage.add(&raw)?;
     Ok(())
 }
-
+//
 //pub fn export_contract(
 //    params: Either<(Value,), (Value, FunctionParams)>,
 //    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
-//) -> Result<String, Error> {
+//) -> Result<Value, Error> {
 //    let storage_ctrl = storage.lock().unwrap();
 //    let (_, inputs) = params.into_full();
 //    let storage = storage_ctrl.get_contracts(&additional.chain)?;
-//
-//    Contract::serialize_params(inputs.types, inputs.values).map_err(From::from)
 //}

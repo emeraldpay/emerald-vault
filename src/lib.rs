@@ -33,7 +33,7 @@ extern crate serde_json;
 extern crate uuid;
 extern crate hex;
 extern crate hidapi;
-extern crate rocksdb;
+extern crate emerald_rocksdb as rocksdb;
 
 mod core;
 pub mod addressbook;
