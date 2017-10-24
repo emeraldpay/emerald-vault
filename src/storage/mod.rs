@@ -10,8 +10,8 @@ pub use self::keyfile::*;
 pub use self::storage_ctrl::StorageController;
 use std::boxed::Box;
 use std::env;
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
 #[derive(Debug, Clone)]
