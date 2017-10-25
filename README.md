@@ -1,5 +1,5 @@
 <p align="center">
-  <h3 align="center">Emerald Vault</a></h3>
+  <h2 align="center">Emerald Vault</a></h3>
   <p align="center">Secure account management for Ethereum Classic</a></p>
   <p align="center">
     <a href="https://travis/ethereumproject/emerald-rs/master"><img alt="Travis" src="https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square"></a>
