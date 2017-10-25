@@ -4,7 +4,7 @@
 ## Operating System (VM environment) ##
 
 # Rust needs at least Visual Studio 2013 Appveyor OS for MSVC targets.
-image: Visual Studio 2015
+os: Previous Visual Studio 2015
 
 ## Build Matrix ##
 
