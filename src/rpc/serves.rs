@@ -362,7 +362,7 @@ pub fn sign_transaction(
     {
         use openalias;
 
-        if !transaction.from.starts_with("0x") {
+        if !transaction.to.starts_with("0x") {
             if let Ok(addresses) = openalias::addresses(&transaction.to) {
                 for address in addresses {
                     if &address.cryptocurrency == "etc" {
