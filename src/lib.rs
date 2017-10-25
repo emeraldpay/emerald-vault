@@ -35,6 +35,9 @@ extern crate hex;
 extern crate hidapi;
 extern crate emerald_rocksdb as rocksdb;
 
+#[cfg(feature = "openalias-support")]
+extern crate openalias;
+
 mod core;
 pub mod addressbook;
 pub mod keystore;

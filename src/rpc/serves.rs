@@ -356,7 +356,24 @@ pub fn sign_transaction(
     wallet_manager: &Mutex<RefCell<WManager>>,
 ) -> Result<Params, Error> {
     let storage_ctrl = storage.lock().unwrap();
-    let (transaction, additional) = params.into_full();
+    let (mut transaction, additional) = params.into_full();
+
+    #[cfg(feature = "openalias-support")]
+    {
+        use openalias;
+
+        if !transaction.from.starts_with("0x") {
+            if let Ok(addresses) = openalias::addresses(&transaction.to) {
+                for address in addresses {
+                    if &address.cryptocurrency == "etc" {
+                        transaction.to = address.address;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let addr = Address::from_str(&transaction.from)?;
 
