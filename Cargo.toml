@@ -1,6 +1,6 @@
 [package]
 name = "emerald-rs"
-version = "0.13.0"
+version = "0.14.0"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Ethereum Classic secure account management core libary"
 homepage = "http://etcdevteam.com"
@@ -44,7 +44,7 @@ rand = "0.3"
 byteorder="1.0"
 ethabi = "2.0.0"
 # optional dependencies
-emerald-rocksdb =  { version = "1.0.0", optional = true }
+emerald-rocksdb =  { version = "0.8.0", optional = true }
 hyper = { version = "0.11", optional = true }
 reqwest = { version = "0.6", optional = true }
 clippy = {version = "0.0", optional = true}
