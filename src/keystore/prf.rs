@@ -2,24 +2,34 @@
 
 use super::Error;
 use crypto::hmac::Hmac;
-use crypto::sha2::Sha256;
+use crypto::sha2::{Sha256, Sha512};
 use std::fmt;
 use std::str::FromStr;
 
 /// `HMAC_SHA256` pseudo-random function name
 pub const HMAC_SHA256_PRF_NAME: &'static str = "hmac-sha256";
 
+/// `HMAC_SHA256` pseudo-random function name
+pub const HMAC_SHA512_PRF_NAME: &'static str = "hmac-sha512";
+
 /// Pseudo-Random Functions (PRFs)
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Prf {
     /// HMAC-SHA-256 (specified in (RFC 4868)[https://tools.ietf.org/html/rfc4868])
     HmacSha256,
+    /// HMAC-SHA-512 (specified in (RFC 4868)[https://tools.ietf.org/html/rfc4868])
+    HmacSha512,
 }
 
 impl Prf {
     /// Calculate hashed message authentication code using SHA-256 digest
     pub fn hmac(&self, passphrase: &str) -> Hmac<Sha256> {
         Hmac::new(Sha256::new(), passphrase.as_bytes())
+    }
+
+    /// Calculate hashed message authentication code using SHA-512 digest
+    pub fn hmac512(&self, passphrase: &str) -> Hmac<Sha512> {
+        Hmac::new(Sha512::new(), passphrase.as_bytes())
     }
 }
 
@@ -35,6 +45,7 @@ impl FromStr for Prf {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             _ if s == HMAC_SHA256_PRF_NAME => Ok(Prf::HmacSha256),
+            _ if s == HMAC_SHA512_PRF_NAME => Ok(Prf::HmacSha512),
             _ => Err(Error::UnsupportedPrf(s.to_string())),
         }
     }
@@ -44,6 +55,7 @@ impl fmt::Display for Prf {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Prf::HmacSha256 => f.write_str(HMAC_SHA256_PRF_NAME),
+            Prf::HmacSha512 => f.write_str(HMAC_SHA512_PRF_NAME),
         }
     }
 }

@@ -34,6 +34,7 @@ extern crate uuid;
 extern crate hex;
 extern crate hidapi;
 extern crate emerald_rocksdb as rocksdb;
+extern crate num;
 
 mod core;
 pub mod addressbook;
@@ -42,6 +43,7 @@ pub mod rpc;
 pub mod storage;
 mod contract;
 mod hdwallet;
+mod mnemonic;
 mod util;
 
 pub use self::core::*;

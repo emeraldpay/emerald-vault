@@ -24,3 +24,10 @@ impl Default for Language {
         Language::English
     }
 }
+
+fn gen_wordlist(lang_words: &str) -> Vec<String> {
+
+    lang_words.split_whitespace()
+        .map(|s| s.into())
+        .collect()
+}
