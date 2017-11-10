@@ -48,7 +48,7 @@ impl Contract {
     }
 
     /// Encode ABI input params to hex string
-    pub fn serialize_params(types: Vec<String>, values: Vec<String>) -> Result<String, Error> {
+    pub fn serialize_params(types: &[String], values: Vec<String>) -> Result<String, Error> {
         let types: Result<Vec<ParamType>, _> = types.iter().map(|s| Reader::read(s)).collect();
 
         let types = try!(types);

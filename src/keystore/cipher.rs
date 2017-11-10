@@ -6,7 +6,7 @@ use std::fmt;
 use std::str::FromStr;
 
 /// `AES128_CRT` cipher name
-pub const AES128_CTR_CIPHER_NAME: &'static str = "aes-128-ctr";
+pub const AES128_CTR_CIPHER_NAME: &str = "aes-128-ctr";
 
 /// Cipher type
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

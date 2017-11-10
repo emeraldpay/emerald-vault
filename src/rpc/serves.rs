@@ -496,7 +496,7 @@ pub fn encode_function_call(
 ) -> Result<String, Error> {
     let (_, inputs) = params.into_full();
 
-    Contract::serialize_params(inputs.types, inputs.values).map_err(From::from)
+    Contract::serialize_params(&inputs.types, inputs.values).map_err(From::from)
 }
 
 pub fn list_contracts(

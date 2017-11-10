@@ -7,14 +7,15 @@ mod error;
 mod language;
 
 use self::error::Error;
-use self::language::Language;
+use self::language::{Language, BIP39_ENGLISH_WORDLIST};
 use crypto::sha2;
 use keystore::{Kdf, Prf};
 use num::bigint::BigUint;
 use num::{FromPrimitive, ToPrimitive};
 use rand::{OsRng, Rng};
-use std::ops::{BitAnd, Shl};
+use std::ops::{BitAnd, Shr};
 use crypto::digest::Digest;
+use std::iter::repeat;
 
 
 /// Size of entropy in bytes
@@ -46,34 +47,45 @@ pub struct Seed {
 }
 
 
+/// Mnemonic phrase
 impl Mnemonic {
-    pub fn new(size: MnemonicSize, lang: Language) -> Result<Mnemonic, Error> {
+
+    /// Create new mnemonic phrase for selected language
+    ///
+    ///
+    pub fn new(lang: Language) -> Result<Mnemonic, Error> {
         let mut entropy = gen_entropy(ENTROPY_BYTE_LENGTH)?;
         let checksum = checksum(&entropy);
         entropy.push(checksum);
+
+        let indexes = get_indexes(&entropy)?;
+        let mut words = Vec::new();
+        for i in indexes.iter() {
+            words.push(BIP39_ENGLISH_WORDLIST[*i].clone());
+        }
 
         Ok(Mnemonic {
             size: size,
             entropy: entropy,
             language: lang,
-            words: Vec::new(),
+            words: words,
         })
     }
 
     pub fn sentence(&self) -> String {
         let mut s = String::new();
-        for w in self.words.iter() {
-            s.push_str(&w)
+        for w in &self.words {
+            s.push_str(w)
         };
         s
     }
 
-    fn seed(&self, password: String) -> Vec<u8> {
+    pub fn seed(&self, password: &str) -> Vec<u8> {
         let kdf = Kdf::Pbkdf2 {
             prf: Prf::HmacSha512,
             c: PBKDF2_ROUNDS as u32,
         };
-        let passphrase = "mnemonic".to_string() + &password;
+        let passphrase = "mnemonic".to_string() + password;
         let salt: Vec<u8> = passphrase.bytes().collect();
 
         kdf.derive(64, &salt, &self.sentence())
@@ -84,8 +96,8 @@ fn checksum(data: &[u8]) -> u8 {
     let mut hash = sha2::Sha256::new();
     hash.input(data);
 
-    let mut out = Vec::new();
-    hash.result(out.as_mut_slice());
+    let mut out: Vec<u8> = repeat(0).take(32).collect();
+    hash.result(&mut out);
 
     out[0]
 }
@@ -97,30 +109,41 @@ fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
     Ok(entropy)
 }
 
-fn get_indexes(entropy: &[u8; 32]) -> Result<Vec<u16>, Error> {
-    let data = BigUint::from_bytes_be(entropy);
-    let mut index = BigUint::from_u16(0x07ff).expect("expect initialize word index");
-    let mut out: Vec<u16> = vec!();
-
+fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
+    let mut data = BigUint::from_bytes_be(entropy);
+    let index = BigUint::from_u16(0x07ff).expect("expect initialize word index");
+    let mut out: Vec<usize> = Vec::with_capacity(24);
     for _ in 0..24 {
-        match data.clone().bitand(index.clone()).to_u16() {
+        match data.clone().bitand(index.clone()).to_usize() {
             Some(v) => out.push(v),
             None => return Err(Error::MnemonicError("can't extract words indexes".to_string())),
         }
-        index = index.shl(INDEX_BIT_SIZE);
+        data = data.shr(INDEX_BIT_SIZE);
     };
-
     Ok(out)
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+
     #[test]
     fn should_generate_mnemonic() {
+        let  res = Mnemonic::new(Language::English);
+        assert!(res.is_ok());
 
+        let m = res.unwrap();
+        assert_eq!(m.words.len(), 24);
+    }
+
+    #[test]
+    fn should_convert_to_seed() {
+        let  res = Mnemonic::new(Language::English);
+        assert!(res.is_ok());
+
+        let m = res.unwrap();
+        assert_eq!(m.words.len(), 24);
     }
 
 }

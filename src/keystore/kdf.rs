@@ -15,10 +15,10 @@ use std::fmt;
 use std::str::FromStr;
 
 /// PBKDF2 key derivation function name
-pub const PBKDF2_KDF_NAME: &'static str = "pbkdf2";
+pub const PBKDF2_KDF_NAME: &str = "pbkdf2";
 
 /// Scrypt key derivation function name
-pub const SCRYPT_KDF_NAME: &'static str = "scrypt";
+pub const SCRYPT_KDF_NAME: &str = "scrypt";
 
 /// Security level for `Kdf`
 #[derive(Clone, Copy, Debug)]

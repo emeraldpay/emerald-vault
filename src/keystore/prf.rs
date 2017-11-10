@@ -7,10 +7,10 @@ use std::fmt;
 use std::str::FromStr;
 
 /// `HMAC_SHA256` pseudo-random function name
-pub const HMAC_SHA256_PRF_NAME: &'static str = "hmac-sha256";
+pub const HMAC_SHA256_PRF_NAME: &str = "hmac-sha256";
 
 /// `HMAC_SHA256` pseudo-random function name
-pub const HMAC_SHA512_PRF_NAME: &'static str = "hmac-sha512";
+pub const HMAC_SHA512_PRF_NAME: &str = "hmac-sha512";
 
 /// Pseudo-Random Functions (PRFs)
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
