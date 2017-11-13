@@ -171,8 +171,11 @@ mod tests {
     #[test]
     fn should_convert_to_sentence() {
         let mnemonic = Mnemonic::new(Language::English).unwrap();
-        let s: Vec<String> = mnemonic.sentence().split_whitespace()
-            .map(|w| w.to_string()).collect();
+        let s: Vec<String> = mnemonic
+            .sentence()
+            .split_whitespace()
+            .map(|w| w.to_string())
+            .collect();
 
         assert_eq!(s, mnemonic.words)
     }
