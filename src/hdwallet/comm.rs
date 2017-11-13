@@ -32,8 +32,8 @@ pub const SW_USER_CANCEL: [u8; 2] = [0x6A, 0x85];
 
 
 /// Packs header with Ledgers magic numbers
-/// For more details refer:
-/// [General APDU](https://github.com/LedgerHQ/blue-app-eth/blob/master/doc/ethapp.asc#general-purpose-apdus)
+/// For more details refer APDU doc:
+/// https://github.com/LedgerHQ/blue-app-eth/blob/master/doc/ethapp.asc#general-purpose-apdus
 fn get_hid_header(index: usize) -> [u8; 5] {
     [0x01, 0x01, 0x05, (index >> 8) as u8, (index & 0xff) as u8]
 }
