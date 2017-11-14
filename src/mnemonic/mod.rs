@@ -42,12 +42,12 @@ impl Mnemonic {
     ///
     /// * lang - language for words selection
     ///
-    pub fn new(lang: Language) -> Result<Mnemonic, Error> {
-        let mut entropy = gen_entropy(ENTROPY_BYTE_LENGTH)?;
-        let checksum = checksum(&entropy);
-        entropy.push(checksum);
+    pub fn new(lang: Language, entropy: Vec<u8>) -> Result<Mnemonic, Error> {
+        let mut ent = entropy.clone();
+        let checksum = checksum(&ent);
+        ent.push(checksum);
 
-        let indexes = get_indexes(&entropy)?;
+        let indexes = get_indexes(&ent)?;
         let mut words = Vec::new();
         for i in indexes.iter() {
             words.push(BIP39_ENGLISH_WORDLIST[*i].clone());
@@ -63,23 +63,29 @@ impl Mnemonic {
     /// Convert mnemonic to single string
     pub fn sentence(&self) -> String {
         let mut s = String::new();
-        for w in &self.words {
-            s.push_str(" ");
+        for (i, w) in self.words.iter().enumerate() {
             s.push_str(w);
+            if i != self.words.len() - 1 {
+                s.push_str(" ");
+            }
         }
         s
     }
 
     /// Get seed from mnemonic sentence
+    ///
+    /// # Arguments:
+    ///
+    /// * password - password for seed generation
+    ///
     pub fn seed(&self, password: &str) -> Vec<u8> {
         let kdf = Kdf::Pbkdf2 {
             prf: Prf::HmacSha512,
             c: PBKDF2_ROUNDS as u32,
         };
-        let passphrase = "mnemonic".to_string() + password;
-        let salt: Vec<u8> = passphrase.bytes().collect();
+        let passphrase = "Mnemonic".to_string() + password;
 
-        kdf.derive(64, &salt, &self.sentence())
+        kdf.derive(64, &passphrase.into_bytes(), &self.sentence())
     }
 }
 
@@ -103,7 +109,20 @@ fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
 }
 
 /// Get indexes from entropy
+///
+/// # Arguments:
+///
+/// * entropy - slice with entropy
+///
 fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
+    if entropy.len() < ENTROPY_BYTE_LENGTH {
+        return Err(Error::MnemonicError(format!(
+            "invalid entropy length (required: {}, received: {})",
+            ENTROPY_BYTE_LENGTH,
+            entropy.len()
+        )));
+    }
+
     let mut data = BigUint::from_bytes_be(entropy);
     let index = BigUint::from_u16(0x07ff).expect("expect initialize word index");
     let mut out: Vec<usize> = Vec::with_capacity(24);
@@ -118,6 +137,8 @@ fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
         }
         data = data.shr(INDEX_BIT_SIZE);
     }
+    out.reverse();
+
     Ok(out)
 }
 
@@ -125,6 +146,7 @@ fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hex::FromHex;
 
 
     #[test]
@@ -141,28 +163,26 @@ mod tests {
     #[test]
     fn should_generate_indexes() {
         let ent = gen_entropy(ENTROPY_BYTE_LENGTH).unwrap();
-        let mut indexes = get_indexes(&ent);
-        assert!(indexes.is_ok());
+        let res = get_indexes(&ent);
+        assert!(res.is_ok());
 
-        let mut i = indexes.unwrap();
-        assert_eq!(i.len(), 24);
+        let mut indexes = res.unwrap();
+        assert_eq!(indexes.len(), 24);
 
-        i = i.into_iter().filter(|v| *v > 2048).collect();
-        assert_eq!(i.len(), 0);
+        indexes = indexes.into_iter().filter(|v| *v > 2048).collect();
+        assert_eq!(indexes.len(), 0);
     }
 
     #[test]
-    fn should_generate_mnemonic() {
-        let mnemonic = Mnemonic::new(Language::English);
-        assert!(mnemonic.is_ok());
-
-        let m = mnemonic.unwrap();
-        assert_eq!(m.words.len(), 24);
+    fn should_fail_generate_indexes() {
+        let res = get_indexes(&vec![0u8, 1u8]);
+        assert!(res.is_err())
     }
 
     #[test]
     fn should_convert_to_seed() {
-        let mnemonic = Mnemonic::new(Language::English).unwrap();
+        let entropy = gen_entropy(ENTROPY_BYTE_LENGTH).unwrap();
+        let mnemonic = Mnemonic::new(Language::English, entropy).unwrap();
 
         let seed = mnemonic.seed("12345");
         assert_eq!(seed.len(), 64);
@@ -170,7 +190,8 @@ mod tests {
 
     #[test]
     fn should_convert_to_sentence() {
-        let mnemonic = Mnemonic::new(Language::English).unwrap();
+        let entropy = gen_entropy(ENTROPY_BYTE_LENGTH).unwrap();
+        let mnemonic = Mnemonic::new(Language::English, entropy).unwrap();
         let s: Vec<String> = mnemonic
             .sentence()
             .split_whitespace()
@@ -179,4 +200,26 @@ mod tests {
 
         assert_eq!(s, mnemonic.words)
     }
+
+    #[test]
+    fn should_generate_english_mnemonic() {
+        let entropy = vec![0u8; ENTROPY_BYTE_LENGTH];
+        let res = Mnemonic::new(Language::English, entropy);
+        assert!(res.is_ok());
+
+        let mnemonic = res.unwrap();
+        assert_eq!(
+            mnemonic.sentence(),
+            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon \
+             abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon \
+             abandon abandon abandon art"
+        );
+
+        let seed = mnemonic.seed("TREZOR");
+        assert_eq!(seed, Vec::from_hex("bda85446c68413707090a52022edd26a\
+                                        1c9462295029f2e60cd7c4f2bbd309717\
+                                        0af7a4d73245cafa9c3cca8d561a7c3de6\
+                                        f5d4a10be8ed2a5e608d68f92fcc8").unwrap());
+    }
+
 }

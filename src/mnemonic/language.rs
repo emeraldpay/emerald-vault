@@ -1,4 +1,5 @@
-
+//! # `Language` for mnemonic codes
+//!
 
 static BIP39_ENGLISH: &'static str = include_str!("bip39_english.txt");
 lazy_static! {
