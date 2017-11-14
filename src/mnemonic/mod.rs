@@ -114,7 +114,7 @@ fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
 ///
 /// * entropy - slice with entropy
 ///
-fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
+fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {As
     if entropy.len() < ENTROPY_BYTE_LENGTH {
         return Err(Error::MnemonicError(format!(
             "invalid entropy length (required: {}, received: {})",
