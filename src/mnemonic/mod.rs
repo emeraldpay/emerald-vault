@@ -6,7 +6,7 @@
 mod error;
 mod language;
 
-use self::error::Error;
+pub use self::error::Error;
 pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
 use crypto::digest::Digest;
 use crypto::sha2;
@@ -19,7 +19,7 @@ use std::ops::{BitAnd, Shr};
 
 
 /// Size of entropy in bytes
-const ENTROPY_BYTE_LENGTH: usize = 32;
+pub const ENTROPY_BYTE_LENGTH: usize = 32;
 /// Count of iterations for `pbkdf2`
 const PBKDF2_ROUNDS: usize = 2048;
 /// word index size in bits
@@ -95,8 +95,8 @@ impl Mnemonic {
     /// * `lang` - A mnemonic language
     /// * `src` - A mnemonic sentence with `MNEMONIC_SIZE` length
     ///
-    fn try_from(lang: Language, src: &str) -> Result<Self, Error> {
-        let w: Vec<String> = src.sentence()
+    pub fn try_from(lang: Language, src: &str) -> Result<Self, Error> {
+        let w: Vec<String> = src.to_string()
             .split_whitespace()
             .map(|w| w.to_string())
             .collect();

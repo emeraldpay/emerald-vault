@@ -533,9 +533,14 @@ pub fn import_contract(
 //}
 
 
-#[derive(Deserialize)]
-pub struct ImportMnemonic {
-    mnemonic: String,
+#[derive(Deserialize, Debug)]
+pub struct NewMnemonicAccount {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    description: String,
+    password: String,
+    mnemonic_sentence: String,
 }
 
 pub fn generate_mnemonic() -> Result<String, Error> {
@@ -547,17 +552,29 @@ pub fn generate_mnemonic() -> Result<String, Error> {
 
 
 pub fn import_mnemonic(
-    params: Either<(ImportMnemonic,), (ImportMnemonic, CommonAdditional)>,
+    params: Either<(NewMnemonicAccount,), (NewMnemonicAccount, CommonAdditional)>,
+    sec: &KdfDepthLevel,
     storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<String, Error> {
     let storage_ctrl = storage.lock().unwrap();
-    let (m, additional) = params.into_full();
+    let (account, additional) = params.into_full();
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
+    if account.password.is_empty() {
+        return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
+    }
 
-    let mnemonic = Mnemonic::try_from(Language::English, m)?;
-    let kf = KeyFile::from_mnemonic(&mnemonic)?;
+    let mnemonic = Mnemonic::try_from(Language::English, &account.mnemonic_sentence)?;
+    let kf = KeyFile::from_mnemonic(
+        &account.password,
+        &mnemonic,
+        sec,
+        Some(account.name),
+        Some(account.description),
+    )?;
+
+    let addr = kf.address.to_string();
     storage.put(&kf)?;
+    debug!("New mnemonic account generated: {}", kf.address);
 
-    debug!("Mnemonic account imported: {}", kf.address);
-
-    Ok(format!("{}", kf.address))
+    Ok(addr)
 }
