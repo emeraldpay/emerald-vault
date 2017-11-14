@@ -269,7 +269,7 @@ mod tests {
         let s = "abandon abandon abandon abandon";
         let mnemonic = Mnemonic::try_from(Language::English, s);
 
-        assert!(s.is_err())
+        assert!(mnemonic.is_err())
     }
 
 }
