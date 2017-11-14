@@ -24,6 +24,8 @@ pub enum Error {
     StorageError(String),
     /// Storage error
     ContractAbiError(String),
+    /// Mnemonic phrase operations error
+    MnemonicError(String),
 }
 
 impl From<rustc_serialize::json::EncoderError> for Error {
@@ -89,6 +91,12 @@ impl From<storage::KeyStorageError> for Error {
 impl From<contract::Error> for Error {
     fn from(err: contract::Error) -> Self {
         Error::ContractAbiError(err.to_string())
+    }
+}
+
+impl Into<jsonrpc_core::Error> for Error {
+    fn into(self) -> jsonrpc_core::Error {
+        jsonrpc_core::Error::internal_error()
     }
 }
 

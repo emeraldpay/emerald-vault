@@ -6,6 +6,7 @@ use core::{Address, Transaction};
 use hdwallet::{WManager, to_prefixed_path};
 use jsonrpc_core::{Params, Value};
 use keystore::{CryptoType, KdfDepthLevel, KeyFile};
+use mnemonic::{ENTROPY_BYTE_LENGTH, Language, Mnemonic, gen_entropy};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::cell::RefCell;
@@ -530,3 +531,33 @@ pub fn import_contract(
 //    let (_, inputs) = params.into_full();
 //    let storage = storage_ctrl.get_contracts(&additional.chain)?;
 //}
+
+
+#[derive(Deserialize)]
+pub struct ImportMnemonic {
+    mnemonic: String,
+}
+
+pub fn generate_mnemonic() -> Result<String, Error> {
+    let entropy = gen_entropy(ENTROPY_BYTE_LENGTH)?;
+    let mnemonic = Mnemonic::new(Language::English, entropy)?;
+
+    Ok(mnemonic.sentence())
+}
+
+
+pub fn import_mnemonic(
+    params: Either<(ImportMnemonic,), (ImportMnemonic, CommonAdditional)>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+) -> Result<String, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (m, additional) = params.into_full();
+
+    let mnemonic = Mnemonic::try_from(Language::English, m)?;
+    let kf = KeyFile::from_mnemonic(&mnemonic)?;
+    storage.put(&kf)?;
+
+    debug!("Mnemonic account imported: {}", kf.address);
+
+    Ok(format!("{}", kf.address))
+}

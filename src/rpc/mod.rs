@@ -182,6 +182,20 @@ pub fn start(
     //        });
     //    }
 
+    {
+        let storage_ctrl = storage_ctrl.clone();
+        io.add_method("emerald_generateMnemonic", move |p: Params| {
+            wrapper(serves::import_contract(parse(p)?, &storage_ctrl))
+        });
+    }
+
+    {
+        let storage_ctrl = storage_ctrl.clone();
+        io.add_method("emerald_importContract", move |p: Params| {
+            wrapper(serves::import_contract(parse(p)?, &storage_ctrl))
+        });
+    }
+
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![
             AccessControlAllowOrigin::Any,

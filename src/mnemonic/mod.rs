@@ -7,7 +7,7 @@ mod error;
 mod language;
 
 use self::error::Error;
-use self::language::{BIP39_ENGLISH_WORDLIST, Language};
+pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
 use crypto::digest::Digest;
 use crypto::sha2;
 use keystore::{Kdf, Prf};
@@ -24,12 +24,12 @@ const ENTROPY_BYTE_LENGTH: usize = 32;
 const PBKDF2_ROUNDS: usize = 2048;
 /// word index size in bits
 const INDEX_BIT_SIZE: usize = 11;
-
+/// Size of mnemonic in words
+const MNEMONIC_SIZE: usize = 24;
 
 /// Mnemonic phrase
 #[derive(Debug, Clone)]
 pub struct Mnemonic {
-    entropy: Vec<u8>,
     language: Language,
     words: Vec<String>,
 }
@@ -48,15 +48,14 @@ impl Mnemonic {
         ent.push(checksum);
 
         let indexes = get_indexes(&ent)?;
-        let mut words = Vec::new();
+        let mut w = Vec::new();
         for i in indexes.iter() {
-            words.push(BIP39_ENGLISH_WORDLIST[*i].clone());
+            w.push(BIP39_ENGLISH_WORDLIST[*i].clone());
         }
 
         Ok(Mnemonic {
-            entropy: entropy,
             language: lang,
-            words: words,
+            words: w,
         })
     }
 
@@ -87,6 +86,42 @@ impl Mnemonic {
 
         kdf.derive(64, &passphrase.into_bytes(), &self.sentence())
     }
+
+
+    /// Try to convert a string into `Mnemonic`.
+    ///
+    /// # Arguments
+    ///
+    /// * `lang` - A mnemonic language
+    /// * `src` - A mnemonic sentence with `MNEMONIC_SIZE` length
+    ///
+    fn try_from(lang: Language, src: &str) -> Result<Self, Error> {
+        let w: Vec<String> = src.sentence()
+            .split_whitespace()
+            .map(|w| w.to_string())
+            .collect();
+
+        match w.len() {
+            MNEMONIC_SIZE => Ok(Mnemonic {
+                language: lang,
+                words: w,
+            }),
+            _ => Err(Error::MnemonicError(format!(
+                "invalid initial sentence length, required: {}, received: \
+                 {}",
+                MNEMONIC_SIZE,
+                w.len()
+            ))),
+        }
+    }
+}
+
+/// Generate entropy
+pub fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
+    let mut rng = OsRng::new()?;
+    let entropy = rng.gen_iter::<u8>().take(byte_length).collect::<Vec<u8>>();
+
+    Ok(entropy)
 }
 
 /// Calculate checksum for mnemonic
@@ -100,21 +135,13 @@ fn checksum(data: &[u8]) -> u8 {
     out[0]
 }
 
-/// Generate entropy
-fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
-    let mut rng = OsRng::new()?;
-    let entropy = rng.gen_iter::<u8>().take(byte_length).collect::<Vec<u8>>();
-
-    Ok(entropy)
-}
-
 /// Get indexes from entropy
 ///
 /// # Arguments:
 ///
 /// * entropy - slice with entropy
 ///
-fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {As
+fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
     if entropy.len() < ENTROPY_BYTE_LENGTH {
         return Err(Error::MnemonicError(format!(
             "invalid entropy length (required: {}, received: {})",
@@ -125,8 +152,8 @@ fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {As
 
     let mut data = BigUint::from_bytes_be(entropy);
     let index = BigUint::from_u16(0x07ff).expect("expect initialize word index");
-    let mut out: Vec<usize> = Vec::with_capacity(24);
-    for _ in 0..24 {
+    let mut out: Vec<usize> = Vec::with_capacity(MNEMONIC_SIZE);
+    for _ in 0..MNEMONIC_SIZE {
         match data.clone().bitand(index.clone()).to_usize() {
             Some(v) => out.push(v),
             None => {
@@ -167,7 +194,7 @@ mod tests {
         assert!(res.is_ok());
 
         let mut indexes = res.unwrap();
-        assert_eq!(indexes.len(), 24);
+        assert_eq!(indexes.len(), MNEMONIC_SIZE);
 
         indexes = indexes.into_iter().filter(|v| *v > 2048).collect();
         assert_eq!(indexes.len(), 0);
@@ -220,6 +247,29 @@ mod tests {
                                         1c9462295029f2e60cd7c4f2bbd309717\
                                         0af7a4d73245cafa9c3cca8d561a7c3de6\
                                         f5d4a10be8ed2a5e608d68f92fcc8").unwrap());
+    }
+
+    #[test]
+    fn should_create_from_sentence() {
+        let s = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon \
+                 abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon \
+                 abandon abandon abandon art";
+        let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
+        let w: Vec<String> = mnemonic
+            .sentence()
+            .split_whitespace()
+            .map(|w| w.to_string())
+            .collect();
+
+        assert_eq!(w, mnemonic.words)
+    }
+
+    #[test]
+    fn should_fail_from_sentence() {
+        let s = "abandon abandon abandon abandon";
+        let mnemonic = Mnemonic::try_from(Language::English, s);
+
+        assert!(s.is_err())
     }
 
 }
