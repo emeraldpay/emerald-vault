@@ -3,6 +3,7 @@
 use super::Error;
 use crypto::hmac::Hmac;
 use crypto::sha2::{Sha256, Sha512};
+use crypto::sha3::{Sha3, Sha3Mode};
 use std::fmt;
 use std::str::FromStr;
 
@@ -28,8 +29,8 @@ impl Prf {
     }
 
     /// Calculate hashed message authentication code using SHA-512 digest
-    pub fn hmac512(&self, passphrase: &str) -> Hmac<Sha512> {
-        Hmac::new(Sha512::new(), passphrase.as_bytes())
+    pub fn hmac512(&self, passphrase: &str) -> Hmac<Sha3> {
+        Hmac::new(Sha3::new(Sha3Mode::Keccak512), passphrase.as_bytes())
     }
 }
 

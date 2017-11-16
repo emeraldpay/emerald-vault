@@ -82,7 +82,7 @@ impl Mnemonic {
             prf: Prf::HmacSha512,
             c: PBKDF2_ROUNDS as u32,
         };
-        let passphrase = "Mnemonic".to_string() + password;
+        let passphrase = "mnemonic".to_string() + password;
 
         kdf.derive(64, &passphrase.into_bytes(), &self.sentence())
     }
@@ -251,17 +251,17 @@ mod tests {
 
     #[test]
     fn should_create_from_sentence() {
-        let s = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon \
-                 abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon \
-                 abandon abandon abandon art";
+        let s =
+            "beyond stage sleep clip because twist token leaf atom beauty genius food business \
+             side grid unable middle armed observe pair crouch tonight away coconut";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
-        let w: Vec<String> = mnemonic
-            .sentence()
+        let w: Vec<String> = s.to_string()
             .split_whitespace()
             .map(|w| w.to_string())
             .collect();
 
-        assert_eq!(w, mnemonic.words)
+        assert_eq!(w, mnemonic.words);
+        assert_eq!(mnemonic.seed("TREZOR"), Vec::from_hex("b15509eaa2d09d3efd3e006ef42151b30367dc6e3aa5e44caba3fe4d3e352e65101fbdb86a96776b91946ff06f8eac594dc6ee1d3e82a42dfe1b40fef6bcc3fd").unwrap());
     }
 
     #[test]
