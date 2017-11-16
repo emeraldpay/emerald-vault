@@ -182,8 +182,7 @@ pub fn start(
     //    }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
-        io.add_method("emerald_generateMnemonic", move |p: Params| {
+        io.add_method("emerald_generateMnemonic", move |_: Params| {
             wrapper(serves::generate_mnemonic())
         });
     }

@@ -540,7 +540,7 @@ pub struct NewMnemonicAccount {
     #[serde(default)]
     description: String,
     password: String,
-    mnemonic_sentence: String,
+    mnemonic: String,
 }
 
 pub fn generate_mnemonic() -> Result<String, Error> {
@@ -563,7 +563,7 @@ pub fn import_mnemonic(
         return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
     }
 
-    let mnemonic = Mnemonic::try_from(Language::English, &account.mnemonic_sentence)?;
+    let mnemonic = Mnemonic::try_from(Language::English, &account.mnemonic)?;
     let kf = KeyFile::from_mnemonic(
         &account.password,
         &mnemonic,

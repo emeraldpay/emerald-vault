@@ -10,10 +10,10 @@ pub use self::error::Error;
 pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
 use crypto::digest::Digest;
 use crypto::sha2;
-use keystore::{Kdf, Prf};
 use num::{FromPrimitive, ToPrimitive};
 use num::bigint::BigUint;
 use rand::{OsRng, Rng};
+use ring::{digest, pbkdf2};
 use std::iter::repeat;
 use std::ops::{BitAnd, Shr};
 
@@ -78,13 +78,18 @@ impl Mnemonic {
     /// * password - password for seed generation
     ///
     pub fn seed(&self, password: &str) -> Vec<u8> {
-        let kdf = Kdf::Pbkdf2 {
-            prf: Prf::HmacSha512,
-            c: PBKDF2_ROUNDS as u32,
-        };
+        let mut seed = vec![0u8; 64];
         let passphrase = "mnemonic".to_string() + password;
 
-        kdf.derive(64, &passphrase.into_bytes(), &self.sentence())
+        pbkdf2::derive(
+            &digest::SHA512,
+            PBKDF2_ROUNDS as u32,
+            passphrase.as_bytes(),
+            &self.sentence().as_bytes(),
+            &mut seed,
+        );
+
+        seed
     }
 
 
@@ -261,7 +266,10 @@ mod tests {
             .collect();
 
         assert_eq!(w, mnemonic.words);
-        assert_eq!(mnemonic.seed("TREZOR"), Vec::from_hex("b15509eaa2d09d3efd3e006ef42151b30367dc6e3aa5e44caba3fe4d3e352e65101fbdb86a96776b91946ff06f8eac594dc6ee1d3e82a42dfe1b40fef6bcc3fd").unwrap());
+        assert_eq!(mnemonic.seed("TREZOR"), Vec::from_hex("b15509eaa2d09d3efd3e006ef42151b3\
+            0367dc6e3aa5e44caba3fe4d3e352e65\
+            101fbdb86a96776b91946ff06f8eac59\
+            4dc6ee1d3e82a42dfe1b40fef6bcc3fd").unwrap());
     }
 
     #[test]

@@ -35,6 +35,7 @@ extern crate hex;
 extern crate hidapi;
 extern crate emerald_rocksdb as rocksdb;
 extern crate num;
+extern crate ring;
 
 mod core;
 pub mod addressbook;
