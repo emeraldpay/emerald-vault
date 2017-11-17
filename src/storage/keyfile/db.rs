@@ -22,7 +22,7 @@ pub struct DbStorage {
 /// Separator for composing value string
 /// `value = <filename> + SEPARATOR + <keyfile_json>`
 ///
-const SEPARATOR: &'static str = "<|>";
+const SEPARATOR: &str = "<|>";
 
 impl DbStorage {
     /// Create new database storage

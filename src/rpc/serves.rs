@@ -6,6 +6,7 @@ use core::{Address, Transaction};
 use hdwallet::{WManager, to_prefixed_path};
 use jsonrpc_core::{Params, Value};
 use keystore::{CryptoType, KdfDepthLevel, KeyFile};
+use mnemonic::{ENTROPY_BYTE_LENGTH, Language, Mnemonic, gen_entropy};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::cell::RefCell;
@@ -496,7 +497,7 @@ pub fn encode_function_call(
 ) -> Result<String, Error> {
     let (_, inputs) = params.into_full();
 
-    Contract::serialize_params(inputs.types, inputs.values).map_err(From::from)
+    Contract::serialize_params(&inputs.types, inputs.values).map_err(From::from)
 }
 
 pub fn list_contracts(
@@ -530,3 +531,50 @@ pub fn import_contract(
 //    let (_, inputs) = params.into_full();
 //    let storage = storage_ctrl.get_contracts(&additional.chain)?;
 //}
+
+
+#[derive(Deserialize, Debug)]
+pub struct NewMnemonicAccount {
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    description: String,
+    password: String,
+    mnemonic: String,
+}
+
+pub fn generate_mnemonic() -> Result<String, Error> {
+    let entropy = gen_entropy(ENTROPY_BYTE_LENGTH)?;
+    let mnemonic = Mnemonic::new(Language::English, entropy)?;
+
+    Ok(mnemonic.sentence())
+}
+
+
+pub fn import_mnemonic(
+    params: Either<(NewMnemonicAccount,), (NewMnemonicAccount, CommonAdditional)>,
+    sec: &KdfDepthLevel,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+) -> Result<String, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (account, additional) = params.into_full();
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
+    if account.password.is_empty() {
+        return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
+    }
+
+    let mnemonic = Mnemonic::try_from(Language::English, &account.mnemonic)?;
+    let kf = KeyFile::from_mnemonic(
+        &account.password,
+        &mnemonic,
+        sec,
+        Some(account.name),
+        Some(account.description),
+    )?;
+
+    let addr = kf.address.to_string();
+    storage.put(&kf)?;
+    debug!("New mnemonic account generated: {}", kf.address);
+
+    Ok(addr)
+}

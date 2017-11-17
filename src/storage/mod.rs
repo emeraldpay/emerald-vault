@@ -50,9 +50,9 @@ pub fn default_path() -> PathBuf {
 ///
 /// # Arguments:
 ///
-/// * base_path - base folder for storage
-/// * chain - chain name
-/// * folder - destination folder
+/// * `base_path` - base folder for storage
+/// * `chain` - chain name
+/// * `folder` - destination folder
 ///
 pub fn build_path(base_path: &Path, chain: &str, folder: &str) -> PathBuf {
     let mut path = PathBuf::from(base_path);
@@ -65,7 +65,7 @@ pub fn build_path(base_path: &Path, chain: &str, folder: &str) -> PathBuf {
 ///
 /// # Arguments:
 ///
-/// * keystore_path - path for `KeyFile` storage
+/// * `keystore_path` - path for `KeyFile` storage
 ///
 pub fn build_keyfile_storage<P>(path: P) -> Result<Box<KeyfileStorage>, KeyStorageError>
 where
@@ -96,7 +96,7 @@ where
 ///
 /// # Arguments:
 ///
-/// * keystore_path - path for `KeyFile` storage
+/// * `keystore_path` - path for `KeyFile` storage
 ///
 pub fn build_contract_storage<P>(path: P) -> Result<Box<ContractStorage>, KeyStorageError>
 where

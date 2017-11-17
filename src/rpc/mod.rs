@@ -135,11 +135,10 @@ pub fn start(
     }
 
     {
-        let sec = sec_level;
         let storage_ctrl = storage_ctrl.clone();
 
         io.add_method("emerald_newAccount", move |p: Params| {
-            wrapper(serves::new_account(parse(p)?, &sec, &storage_ctrl))
+            wrapper(serves::new_account(parse(p)?, &sec_level, &storage_ctrl))
         });
     }
 
@@ -181,6 +180,23 @@ pub fn start(
     //            wrapper(serves::export_contract(parse(p)?, &storage_ctrl))
     //        });
     //    }
+
+    {
+        io.add_method("emerald_generateMnemonic", move |_: Params| {
+            wrapper(serves::generate_mnemonic())
+        });
+    }
+
+    {
+        let storage_ctrl = storage_ctrl.clone();
+        io.add_method("emerald_importMnemonic", move |p: Params| {
+            wrapper(serves::import_mnemonic(
+                parse(p)?,
+                &sec_level,
+                &storage_ctrl,
+            ))
+        });
+    }
 
     let server = ServerBuilder::new(io)
         .cors(DomainsValidation::AllowOnly(vec![

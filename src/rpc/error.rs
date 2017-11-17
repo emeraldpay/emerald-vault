@@ -6,6 +6,7 @@ use contract;
 use hex;
 use jsonrpc_core;
 use keystore;
+use mnemonic;
 use reqwest;
 use rustc_serialize;
 use serde_json;
@@ -24,6 +25,8 @@ pub enum Error {
     StorageError(String),
     /// Storage error
     ContractAbiError(String),
+    /// Mnemonic phrase operations error
+    MnemonicError(String),
 }
 
 impl From<rustc_serialize::json::EncoderError> for Error {
@@ -92,6 +95,12 @@ impl From<contract::Error> for Error {
     }
 }
 
+impl From<mnemonic::Error> for Error {
+    fn from(err: mnemonic::Error) -> Self {
+        Error::MnemonicError(err.to_string())
+    }
+}
+
 impl Into<jsonrpc_core::Error> for Error {
     fn into(self) -> jsonrpc_core::Error {
         jsonrpc_core::Error::internal_error()
@@ -106,6 +115,7 @@ impl fmt::Display for Error {
             Error::InvalidDataFormat(ref str) => write!(f, "Invalid data format: {}", str),
             Error::StorageError(ref str) => write!(f, "Keyfile storage error: {}", str),
             Error::ContractAbiError(ref str) => write!(f, "Contract ABI error: {}", str),
+            Error::MnemonicError(ref str) => write!(f, "Mnemonic error: {}", str),
         }
     }
 }

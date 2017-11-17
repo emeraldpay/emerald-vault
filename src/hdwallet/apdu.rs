@@ -1,6 +1,6 @@
 //! # APDU for communication with Ledger HD wallet over HID
 //! For more details about protocol refer to
-//! [https://github.com/LedgerHQ/blue-app-eth/blob/master/doc/ethapp.asc]
+//! [APDU](https://github.com/LedgerHQ/blue-app-eth/blob/master/doc/ethapp.asc)
 
 pub const APDU_HEADER_SIZE: usize = 0x05;
 
