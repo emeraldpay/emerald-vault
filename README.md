@@ -3,7 +3,7 @@
   <p align="center">Secure account management for Ethereum Classic</a></p>
   <p align="center">
     <a href="https://travis-ci.org/ethereumproject/emerald-rs"><img alt="Travis" src="https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square"></a>
-    <a href="https://ci.appveyor.com/project/r8d8/emerald-rs"><img alt="AppVeyor" src="https://img.shields.io/appveyor/ci/r8d8/emerald-rs/master.svg?style=flat-square"></a>
+    <a href="https://ci.appveyor.com/project/splix/emerald-rs"><img alt="AppVeyor" src="https://img.shields.io/appveyor/ci/splix/emerald-rs/master.svg?style=flat-square"></a>
     <a href="https://crates.io/crates/emerald-rs"><img alt="crates.io" src="https://img.shields.io/crates/v/emerald-rs.svg?style=flat-square"></a>
     <a href="LICENSE"><img alt="Software License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000"></a>
   </p>
