@@ -93,7 +93,7 @@ impl Mnemonic {
     }
 
 
-    /// Try to convert a string into `Mnemonic`.
+    /// Convert a string into `Mnemonic`.
     ///
     /// # Arguments
     ///
@@ -107,21 +107,21 @@ impl Mnemonic {
             .collect();
 
         match w.len() {
-            MNEMONIC_SIZE => Ok(Mnemonic {
+            0 => Err(Error::MnemonicError("empty initial sentence".to_string())),
+            _ => Ok(Mnemonic {
                 language: lang,
                 words: w,
             }),
-            _ => Err(Error::MnemonicError(format!(
-                "invalid initial sentence length, required: {}, received: \
-                 {}",
-                MNEMONIC_SIZE,
-                w.len()
-            ))),
         }
     }
 }
 
 /// Generate entropy
+
+/// # Arguments:
+///
+/// * byte_length - size of entropy in bytes
+///
 pub fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
     let mut rng = OsRng::new()?;
     let entropy = rng.gen_iter::<u8>().take(byte_length).collect::<Vec<u8>>();
@@ -249,13 +249,30 @@ mod tests {
 
         let seed = mnemonic.seed("TREZOR");
         assert_eq!(seed, Vec::from_hex("bda85446c68413707090a52022edd26a\
-                                        1c9462295029f2e60cd7c4f2bbd309717\
-                                        0af7a4d73245cafa9c3cca8d561a7c3de6\
-                                        f5d4a10be8ed2a5e608d68f92fcc8").unwrap());
+            1c9462295029f2e60cd7c4f2bbd309717\
+            0af7a4d73245cafa9c3cca8d561a7c3de6\
+            f5d4a10be8ed2a5e608d68f92fcc8").unwrap());
     }
 
     #[test]
-    fn should_create_from_sentence() {
+    fn should_create_from_sentence_12() {
+        let s = "jelly better achieve collect unaware mountain thought cargo oxygen act hood \
+                 bridge";
+        let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
+        let w: Vec<String> = s.to_string()
+            .split_whitespace()
+            .map(|w| w.to_string())
+            .collect();
+
+        assert_eq!(w, mnemonic.words);
+        assert_eq!(mnemonic.seed("TREZOR"), Vec::from_hex("b5b6d0127db1a9d2226af0c3346031d7\
+            7af31e918dba64287a1b44b8ebf63cdd\
+            52676f672a290aae502472cf2d602c05\
+            1f3e6f18055e84e4c43897fc4e51a6ff").unwrap());
+    }
+
+    #[test]
+    fn should_create_from_sentence_24() {
         let s =
             "beyond stage sleep clip because twist token leaf atom beauty genius food business \
              side grid unable middle armed observe pair crouch tonight away coconut";
@@ -273,8 +290,8 @@ mod tests {
     }
 
     #[test]
-    fn should_fail_from_sentence() {
-        let s = "abandon abandon abandon abandon";
+    fn should_fail_from_empty() {
+        let s = "";
         let mnemonic = Mnemonic::try_from(Language::English, s);
 
         assert!(mnemonic.is_err())
