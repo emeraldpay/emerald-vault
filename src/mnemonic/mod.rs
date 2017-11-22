@@ -293,7 +293,7 @@ mod tests {
     #[test]
     fn should_create_from_sentence_24() {
         let s =
-            "beyond stage sleep clip because twist token leaf atom beauty genius food business \
+            "beyond           stage         sleep clip because twist token leaf atom beauty genius food business \
              side grid unable middle armed observe pair crouch tonight away coconut";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
         let w: Vec<String> = s.to_string()
