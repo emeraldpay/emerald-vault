@@ -34,6 +34,22 @@ pub struct Mnemonic {
     words: Vec<String>,
 }
 
+#[derive(Debug, PartialEq)]
+#[allow(dead_code)]
+pub enum MnemonicSize {
+    Size12 = 12,
+    Size15 = 15,
+    Size18 = 18,
+    Size21 = 21,
+    Size24 = 24,
+}
+
+impl MnemonicSize {
+    pub fn values() -> [usize; 5] {
+        [12, 15, 18, 21, 24]
+    }
+}
+
 
 impl Mnemonic {
     /// Create new mnemonic phrase for selected language
@@ -108,10 +124,13 @@ impl Mnemonic {
 
         match w.len() {
             0 => Err(Error::MnemonicError("empty initial sentence".to_string())),
-            _ => Ok(Mnemonic {
+            l if MnemonicSize::values().contains(&l) => Ok(Mnemonic {
                 language: lang,
                 words: w,
             }),
+            _ => Err(Error::MnemonicError(
+                "invalid initial sentence length".to_string(),
+            )),
         }
     }
 }
@@ -292,6 +311,23 @@ mod tests {
     #[test]
     fn should_fail_from_empty() {
         let s = "";
+        let mnemonic = Mnemonic::try_from(Language::English, s);
+
+        assert!(mnemonic.is_err())
+    }
+
+    #[test]
+    fn should_fail_from_longer() {
+        let s = "test test test test test test test test test test test test test test test test \
+                 test test test test test test test test test test test test test";
+        let mnemonic = Mnemonic::try_from(Language::English, s);
+
+        assert!(mnemonic.is_err())
+    }
+
+    #[test]
+    fn should_fail_from_outrange() {
+        let s = "test test test test test test test test test test test test test test test test";
         let mnemonic = Mnemonic::try_from(Language::English, s);
 
         assert!(mnemonic.is_err())
