@@ -5,6 +5,7 @@
 
 mod error;
 mod language;
+mod bip32;
 
 pub use self::error::Error;
 pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
@@ -292,9 +293,9 @@ mod tests {
 
     #[test]
     fn should_create_from_sentence_24() {
-        let s = "beyond           stage         sleep clip because twist token leaf atom beauty \
-                 genius food business side grid unable middle armed observe pair crouch tonight \
-                 away coconut";
+        let s = "beyond stage sleep clip because twist token leaf atom beauty \
+            genius food business side grid unable middle armed observe pair crouch tonight \
+            away coconut";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
         let w: Vec<String> = s.to_string()
             .split_whitespace()
