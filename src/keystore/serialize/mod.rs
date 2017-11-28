@@ -20,7 +20,7 @@ use uuid::Uuid;
 pub const CURRENT_VERSION: u8 = 3;
 
 /// Supported keystore file versions (only current V3 now)
-pub const SUPPORTED_VERSIONS: &'static [u8] = &[CURRENT_VERSION];
+pub const SUPPORTED_VERSIONS: &[u8] = &[CURRENT_VERSION];
 
 /// A serializable keystore file (UTC / JSON format)
 #[derive(Clone, Debug, RustcDecodable, RustcEncodable)]

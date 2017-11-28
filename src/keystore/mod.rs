@@ -19,7 +19,6 @@ pub use self::serialize::Error as SerializeError;
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
 pub use hdwallet::HdwalletCrypto;
-use mnemonic::Mnemonic;
 use rand::{OsRng, Rng};
 use std::{cmp, fmt};
 use std::convert::From;
@@ -129,33 +128,6 @@ impl KeyFile {
         kf.address = kf.decrypt_address(passphrase)?;
 
         Ok(kf)
-    }
-
-    /// Creates a new `KeyFile` from mnemonic with specified passphrase
-    ///
-    /// # Arguments
-    ///
-    /// * `passphrase` - password for key derivation function
-    ///
-    pub fn from_mnemonic(
-        password: &str,
-        mnemonic: &Mnemonic,
-        sec_level: &KdfDepthLevel,
-        name: Option<String>,
-        description: Option<String>,
-    ) -> Result<KeyFile, Error> {
-        let mut rng = os_random();
-
-        let kdf = if cfg!(target_os = "windows") {
-            Kdf::from_str(PBKDF2_KDF_NAME)?
-        } else {
-            Kdf::from(*sec_level)
-        };
-
-        let seed = mnemonic.seed(&password);
-        let pk = PrivateKey::try_from(&seed[0..32])?;
-
-        Self::new_custom(pk, password, kdf, &mut rng, name, description)
     }
 
     /// Decrypt public address from keystore file by a password
