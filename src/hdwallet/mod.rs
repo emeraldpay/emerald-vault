@@ -341,7 +341,7 @@ mod tests {
         let fd = &manager.devices()[0].1;
         let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
 
-        assert_eq!(tx.raw_from_sig(chain, sign).to_hex(),
+        assert_eq!(tx.raw_from_sig(chain, &sign).to_hex(),
                    "f86d80\
                    85\
                    04e3b29200\

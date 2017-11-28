@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn should_convert_to_seed() {
         let entropy = gen_entropy(ENTROPY_BYTE_LENGTH).unwrap();
-        let mnemonic = Mnemonic::new(Language::English, entropy).unwrap();
+        let mnemonic = Mnemonic::new(Language::English, &entropy).unwrap();
 
         let seed = mnemonic.seed("12345");
         assert_eq!(seed.len(), 64);
@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn should_convert_to_sentence() {
         let entropy = gen_entropy(ENTROPY_BYTE_LENGTH).unwrap();
-        let mnemonic = Mnemonic::new(Language::English, entropy).unwrap();
+        let mnemonic = Mnemonic::new(Language::English, &entropy).unwrap();
         let s: Vec<String> = mnemonic
             .sentence()
             .split_whitespace()
@@ -257,7 +257,7 @@ mod tests {
     #[test]
     fn should_generate_english_mnemonic() {
         let entropy = vec![0u8; ENTROPY_BYTE_LENGTH];
-        let res = Mnemonic::new(Language::English, entropy);
+        let res = Mnemonic::new(Language::English, &entropy);
         assert!(res.is_ok());
 
         let mnemonic = res.unwrap();

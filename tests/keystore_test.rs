@@ -63,7 +63,7 @@ fn should_decrypt_private_key_protected_by_scrypt() {
         "UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc",
     );
 
-    let keyfile = KeyFile::decode(file_content(path)).unwrap();
+    let keyfile = KeyFile::decode(&file_content(path)).unwrap();
 
     assert!(keyfile.decrypt_key("_").is_err());
     assert_eq!(
@@ -78,7 +78,7 @@ fn should_decrypt_private_key_protected_by_pbkdf2() {
         "UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9",
     );
 
-    let keyfile = KeyFile::decode(file_content(path)).unwrap();
+    let keyfile = KeyFile::decode(&file_content(path)).unwrap();
 
     assert!(keyfile.decrypt_key("_").is_err());
     assert_eq!(
@@ -132,10 +132,10 @@ fn should_decode_keyfile_without_address() {
     };
 
     // just first encoding
-    let key = KeyFile::decode(file_content(path)).unwrap();
+    let key = KeyFile::decode(&file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = KeyFile::decode(json::encode(&key).unwrap()).unwrap();
+    let key = KeyFile::decode(&json::encode(&key).unwrap()).unwrap();
 
     if let CryptoType::Core(ref exp_core) = exp.crypto {
         if let CryptoType::Core(ref recv_core) = key.crypto {
@@ -199,10 +199,10 @@ fn should_decode_keyfile_with_address() {
     };
 
     // just first encoding
-    let key = KeyFile::decode(file_content(path)).unwrap();
+    let key = KeyFile::decode(&file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = KeyFile::decode(json::encode(&key).unwrap()).unwrap();
+    let key = KeyFile::decode(&json::encode(&key).unwrap()).unwrap();
 
     if let CryptoType::Core(ref exp_core) = exp.crypto {
         if let CryptoType::Core(ref recv_core) = key.crypto {
@@ -241,10 +241,10 @@ fn should_decode_hd_wallet_keyfile() {
     };
 
     // just first encoding
-    let key = KeyFile::decode(file_content(path)).unwrap();
+    let key = KeyFile::decode(&file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = KeyFile::decode(json::encode(&key).unwrap()).unwrap();
+    let key = KeyFile::decode(&json::encode(&key).unwrap()).unwrap();
 
     if let CryptoType::HdWallet(ref exp_hd) = exp.crypto {
         if let CryptoType::HdWallet(ref recv_hd) = key.crypto {
@@ -314,7 +314,7 @@ fn should_search_by_address_db() {
     let path = keyfile_path(
         "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4",
     );
-    let key = KeyFile::decode(file_content(path)).unwrap();
+    let key = KeyFile::decode(&file_content(path)).unwrap();
 
     let storage = DbStorage::new(temp_dir().as_path()).unwrap();
     storage.put(&key).unwrap();
@@ -332,7 +332,7 @@ fn should_update_existing_addresses() {
     let path = keyfile_path(
         "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4",
     );
-    let mut key = KeyFile::decode(file_content(path)).unwrap();
+    let mut key = KeyFile::decode(&file_content(path)).unwrap();
 
     let storage = DbStorage::new(temp_dir().as_path()).unwrap();
     assert!(key.name.is_none());

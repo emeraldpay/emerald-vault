@@ -157,39 +157,39 @@ mod tests {
 
     #[test]
     fn should_catch_unsupported_keyfile_version() {
-        let str = r#"{
+        let s = r#"{
           "version": 2,
           "id": "9bec4728-37f9-4444-9990-2ba70ee038e9"
         }"#;
 
-        assert!(KeyFile::decode(str.to_string()).is_err());
+        assert!(KeyFile::decode(s).is_err());
     }
 
     #[test]
     fn should_catch_keyfile_version_malformed() {
-        let str = r#"{
+        let s = r#"{
           "version": "x",
           "id": "9bec4728-37f9-4444-9990-2ba70ee038e9"
         }"#;
 
-        assert!(KeyFile::decode(str.to_string()).is_err());
+        assert!(KeyFile::decode(s).is_err());
     }
 
     #[test]
     fn should_catch_keyfile_uuid_malformed() {
-        let str = r#"{
+        let s = r#"{
           "version": 3,
           "id": "__ec4728-37f9-4444-9990-2ba70ee038e9"
         }"#;
 
-        assert!(KeyFile::decode(str.to_string()).is_err());
+        assert!(KeyFile::decode(s).is_err());
     }
 
     #[test]
     fn should_catch_absent_keyfile_uuid() {
-        let str = r#"{"version": 3}"#;
+        let s = r#"{"version": 3}"#;
 
-        assert!(KeyFile::decode(str.to_string()).is_err());
+        assert!(KeyFile::decode(s).is_err());
     }
 
     #[test]
