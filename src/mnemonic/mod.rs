@@ -7,6 +7,7 @@ mod error;
 mod language;
 mod bip32;
 
+pub use self::bip32::{HDPath, generateKey};
 pub use self::error::Error;
 pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
 use crypto::digest::Digest;
@@ -102,7 +103,7 @@ impl Mnemonic {
             &digest::SHA512,
             PBKDF2_ROUNDS as u32,
             passphrase.as_bytes(),
-            &self.sentence().as_bytes(),
+            self.sentence().as_bytes(),
             &mut seed,
         );
 

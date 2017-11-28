@@ -5,8 +5,8 @@ use contract::Contract;
 use core::{Address, Transaction};
 use hdwallet::{WManager, to_prefixed_path};
 use jsonrpc_core::{Params, Value};
-use keystore::{CryptoType, KdfDepthLevel, KeyFile};
-use mnemonic::{ENTROPY_BYTE_LENGTH, Language, Mnemonic, gen_entropy};
+use keystore::{CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME, os_random};
+use mnemonic::{self, ENTROPY_BYTE_LENGTH, HDPath, Language, Mnemonic, gen_entropy};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::cell::RefCell;
@@ -541,6 +541,7 @@ pub struct NewMnemonicAccount {
     description: String,
     password: String,
     mnemonic: String,
+    hd_path: String,
 }
 
 pub fn generate_mnemonic() -> Result<String, Error> {
@@ -560,14 +561,25 @@ pub fn import_mnemonic(
     let (account, additional) = params.into_full();
     let storage = storage_ctrl.get_keystore(&additional.chain)?;
     if account.password.is_empty() {
-        return Err(Error::InvalidDataFormat("Empty passphase".to_string()));
+        return Err(Error::InvalidDataFormat("Empty password".to_string()));
     }
 
     let mnemonic = Mnemonic::try_from(Language::English, &account.mnemonic)?;
-    let kf = KeyFile::from_mnemonic(
+    let hd_path = HDPath::try_from(&account.hd_path)?;
+    let pk = mnemonic::generateKey(hd_path, &mnemonic.seed(""))?;
+
+    let kdf = if cfg!(target_os = "windows") {
+        Kdf::from_str(PBKDF2_KDF_NAME)?
+    } else {
+        Kdf::from(*sec)
+    };
+
+    let mut rng = os_random();
+    let kf = KeyFile::new_custom(
+        pk,
         &account.password,
-        &mnemonic,
-        sec,
+        kdf,
+        &mut rng,
         Some(account.name),
         Some(account.description),
     )?;
