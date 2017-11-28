@@ -81,7 +81,7 @@ impl KeyfileStorage for DbStorage {
             .and_then(|ref d| d.to_utf8().and_then(|v| Some(v.to_string())))
             .ok_or_else(|| Error::NotFound(format!("{}", addr)))?;
         let (filename, json) = DbStorage::split(&val)?;
-        let kf = KeyFile::decode(json)?;
+        let kf = KeyFile::decode(&json)?;
 
         let mut info = AccountInfo::from(kf.clone());
         info.filename = filename;
@@ -113,7 +113,7 @@ impl KeyfileStorage for DbStorage {
         for (addr, val) in self.db.iterator(IteratorMode::Start) {
             let vec = str::from_utf8(&val)?;
             let (filename, json) = DbStorage::split(vec)?;
-            match KeyFile::decode(json) {
+            match KeyFile::decode(&json) {
                 Ok(kf) => {
                     if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
                         let mut info = AccountInfo::from(kf);

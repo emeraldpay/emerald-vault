@@ -44,7 +44,7 @@ impl RPCTransaction {
 
 impl Transaction {
     /// Signed transaction into raw data
-    pub fn to_raw_params(signed_rlp: Vec<u8>) -> Params {
+    pub fn to_raw_params(signed_rlp: &[u8]) -> Params {
         let str = format!("0x{}", signed_rlp.to_hex());
         Params::Array(vec![JsonRpcValue::String(str)])
     }

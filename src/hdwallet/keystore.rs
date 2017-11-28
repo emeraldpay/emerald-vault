@@ -29,7 +29,7 @@ impl HdwalletCrypto {
     /// Try to convert from `Keyfile`
     /// Fail if type of `crypto` section than `Self`
     ///
-    pub fn try_from(kf: KeyFile) -> Result<Self, Error> {
+    pub fn try_from(kf: &KeyFile) -> Result<Self, Error> {
         match kf.crypto {
             CryptoType::HdWallet(ref hd) => {
                 Ok(Self {

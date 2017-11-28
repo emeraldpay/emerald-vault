@@ -40,20 +40,21 @@ impl HDPath {
         }
 
         let (_, raw) = path.split_at(2);
-        for i in raw.split("/") {
+        for i in raw.split('/') {
             let mut s = i.to_string();
 
             let mut is_hardened = false;
-            if s.ends_with("'") {
+            if s.ends_with('\'') {
                 is_hardened = true;
                 s.pop();
             }
 
             match s.parse::<u32>() {
                 Ok(v) => {
-                    match is_hardened {
-                        true => res.push(Hardened(v)),
-                        false => res.push(Normal(v)),
+                    if is_hardened {
+                        res.push(Hardened(v))
+                    } else {
+                        res.push(Normal(v))
                     }
                 }
                 Err(e) => {
@@ -64,7 +65,7 @@ impl HDPath {
             };
         }
 
-        return Ok(HDPath(res));
+        Ok(HDPath(res))
     }
 }
 
@@ -83,10 +84,10 @@ impl ops::Deref for HDPath {
 ///  * path - key derivation path
 ///  * seed - seed data for master node
 ///
-pub fn generateKey(path: HDPath, seed: &[u8]) -> Result<PrivateKey, Error> {
+pub fn generate_key(path: &HDPath, seed: &[u8]) -> Result<PrivateKey, Error> {
     let secp = Secp256k1::new();
-    let sk = ExtendedPrivKey::new_master(&secp, Network::Bitcoin, &seed)
-        .and_then(|k| ExtendedPrivKey::from_path(&secp, &k, &path))?;
+    let sk = ExtendedPrivKey::new_master(&secp, Network::Bitcoin, seed)
+        .and_then(|k| ExtendedPrivKey::from_path(&secp, &k, path))?;
     let key = PrivateKey::try_from(&sk.secret_key[0..PRIVATE_KEY_BYTES])?;
 
     Ok(key)

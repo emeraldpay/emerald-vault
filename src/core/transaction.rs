@@ -29,11 +29,11 @@ impl Transaction {
     /// Sign transaction data with provided private key
     pub fn to_signed_raw(&self, pk: PrivateKey, chain: u8) -> Result<Vec<u8>, Error> {
         let sig = pk.sign_hash(self.hash(chain))?;
-        Ok(self.raw_from_sig(chain, sig))
+        Ok(self.raw_from_sig(chain, &sig))
     }
 
     /// RLP packed signed transaction from provided `Signature`
-    pub fn raw_from_sig(&self, chain: u8, sig: Signature) -> Vec<u8> {
+    pub fn raw_from_sig(&self, chain: u8, sig: &Signature) -> Vec<u8> {
         let mut rlp = self.to_rlp_raw(None);
 
         // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)

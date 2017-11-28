@@ -256,7 +256,7 @@ pub fn import_account(
     let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let raw = serde_json::to_string(&raw)?;
 
-    let kf = KeyFile::decode(raw.to_lowercase())?;
+    let kf = KeyFile::decode(&raw.to_lowercase())?;
     storage.put(&kf)?;
 
     debug!("Account imported: {}", kf.address);
@@ -393,7 +393,7 @@ pub fn sign_transaction(
                                     "Expect to sign a \
                                      transaction",
                                 );
-                                let signed = Transaction::to_raw_params(raw);
+                                let signed = Transaction::to_raw_params(&raw);
                                 debug!("Signed transaction to: {:?}\n\t raw: {:?}", &tr.to, signed);
 
                                 Ok(signed)
@@ -448,8 +448,8 @@ pub fn sign_transaction(
 
                                 match wm.sign_transaction(&fd, &rlp, Some(hd_path.clone())) {
                                     Ok(s) => {
-                                        let raw = tr.raw_from_sig(chain_id, s);
-                                        let signed = Transaction::to_raw_params(raw);
+                                        let raw = tr.raw_from_sig(chain_id, &s);
+                                        let signed = Transaction::to_raw_params(&raw);
                                         debug!(
                                             "HD wallet addr:{:?} path: {:?} signed transaction to: \
                                              {:?}\n\t raw: {:?}",
@@ -546,7 +546,7 @@ pub struct NewMnemonicAccount {
 
 pub fn generate_mnemonic() -> Result<String, Error> {
     let entropy = gen_entropy(ENTROPY_BYTE_LENGTH)?;
-    let mnemonic = Mnemonic::new(Language::English, entropy)?;
+    let mnemonic = Mnemonic::new(Language::English, &entropy)?;
 
     Ok(mnemonic.sentence())
 }
@@ -566,7 +566,7 @@ pub fn import_mnemonic(
 
     let mnemonic = Mnemonic::try_from(Language::English, &account.mnemonic)?;
     let hd_path = HDPath::try_from(&account.hd_path)?;
-    let pk = mnemonic::generateKey(hd_path, &mnemonic.seed(""))?;
+    let pk = mnemonic::generate_key(&hd_path, &mnemonic.seed(""))?;
 
     let kdf = if cfg!(target_os = "windows") {
         Kdf::from_str(PBKDF2_KDF_NAME)?
