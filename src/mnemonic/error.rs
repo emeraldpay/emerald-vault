@@ -1,5 +1,6 @@
 //! # Mnemonic sentence generation errors
 
+use bitcoin::util::bip32;
 use core;
 use std::{error, fmt, io};
 
@@ -8,6 +9,9 @@ use std::{error, fmt, io};
 pub enum Error {
     /// Mnemonic sentence generation error
     MnemonicError(String),
+
+    /// BIP32 key generation error
+    KeyGenerationError(String),
 }
 
 impl From<core::Error> for Error {
@@ -28,11 +32,19 @@ impl<'a> From<&'a str> for Error {
     }
 }
 
+impl From<bip32::Error> for Error {
+    fn from(err: bip32::Error) -> Self {
+        Error::MnemonicError(err.to_string())
+    }
+}
+
+
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::MnemonicError(ref str) => write!(f, "Mnemonic generation error: {}", str),
+            Error::KeyGenerationError(ref str) => write!(f, "BIP32 generation error: {}", str),
         }
     }
 }
