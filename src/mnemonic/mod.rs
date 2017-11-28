@@ -276,8 +276,7 @@ mod tests {
 
     #[test]
     fn should_create_from_sentence_12() {
-        let s = "jelly better achieve collect unaware mountain thought cargo oxygen act hood \
-                 bridge";
+        let s = "ozone drill grab fiber curtain grace pudding thank cruise elder eight picnic";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
         let w: Vec<String> = s.to_string()
             .split_whitespace()
@@ -285,17 +284,17 @@ mod tests {
             .collect();
 
         assert_eq!(w, mnemonic.words);
-        assert_eq!(mnemonic.seed("TREZOR"), Vec::from_hex("b5b6d0127db1a9d2226af0c3346031d7\
-            7af31e918dba64287a1b44b8ebf63cdd\
-            52676f672a290aae502472cf2d602c05\
-            1f3e6f18055e84e4c43897fc4e51a6ff").unwrap());
+        assert_eq!(mnemonic.seed("TREZOR"), Vec::from_hex("274ddc525802f7c828d8ef7ddbcdc530\
+            4e87ac3535913611fbbfa986d0c9e547\
+            6c91689f9c8a54fd55bd38606aa6a859\
+            5ad213d4c9c9f9aca3fb217069a41028").unwrap());
     }
 
     #[test]
     fn should_create_from_sentence_24() {
-        let s = "beyond stage sleep clip because twist token leaf atom beauty \
-            genius food business side grid unable middle armed observe pair crouch tonight \
-            away coconut";
+        let s =
+            "beyond stage sleep clip because twist token leaf atom beauty genius food business \
+             side grid unable middle armed observe pair crouch tonight away coconut";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
         let w: Vec<String> = s.to_string()
             .split_whitespace()
@@ -333,5 +332,4 @@ mod tests {
 
         assert!(mnemonic.is_err())
     }
-
 }
