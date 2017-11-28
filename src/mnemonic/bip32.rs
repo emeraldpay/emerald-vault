@@ -131,7 +131,7 @@ mod test {
             Normal(0),
         ];
 
-        let priv_key = generateKey(HDPath(path), &seed).unwrap();
+        let priv_key = generate_key(&HDPath(path), &seed).unwrap();
         assert_eq!(
             Address::from_str("0x79B9E1af57Ebb2600a134e28eA05e52A312957A6").unwrap(),
             priv_key.to_address().unwrap()
