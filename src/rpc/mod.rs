@@ -79,7 +79,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
 
         io.add_method("emerald_listAccounts", move |p: Params| {
             wrapper(serves::list_accounts(parse(p)?, &storage_ctrl))
@@ -87,7 +87,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
 
         io.add_method("emerald_hideAccount", move |p: Params| {
             wrapper(serves::hide_account(parse(p)?, &storage_ctrl))
@@ -95,7 +95,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
 
         io.add_method("emerald_unhideAccount", move |p: Params| {
             wrapper(serves::unhide_account(parse(p)?, &storage_ctrl))
@@ -103,7 +103,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
 
         io.add_method("emerald_shakeAccount", move |p: Params| {
             wrapper(serves::shake_account(parse(p)?, &storage_ctrl))
@@ -111,7 +111,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
 
         io.add_method("emerald_updateAccount", move |p: Params| {
             wrapper(serves::update_account(parse(p)?, &storage_ctrl))
@@ -119,7 +119,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
 
         io.add_method("emerald_importAccount", move |p: Params| {
             wrapper(serves::import_account(parse(p)?, &storage_ctrl))
@@ -127,7 +127,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
 
         io.add_method("emerald_exportAccount", move |p: Params| {
             wrapper(serves::export_account(parse(p)?, &storage_ctrl))
@@ -135,7 +135,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
 
         io.add_method("emerald_newAccount", move |p: Params| {
             wrapper(serves::new_account(parse(p)?, &sec_level, &storage_ctrl))
@@ -143,7 +143,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,
@@ -161,21 +161,21 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
         io.add_method("emerald_listContracts", move |p: Params| {
             wrapper(serves::list_contracts(parse(p)?, &storage_ctrl))
         });
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
         io.add_method("emerald_importContract", move |p: Params| {
             wrapper(serves::import_contract(parse(p)?, &storage_ctrl))
         });
     }
 
     //    {
-    //        let storage_ctrl = storage_ctrl.clone();
+    //        let storage_ctrl = Arc::clone(&storage_ctrl);
     //        io.add_method("emerald_exportContract", move |p: Params| {
     //            wrapper(serves::export_contract(parse(p)?, &storage_ctrl))
     //        });
@@ -188,7 +188,7 @@ pub fn start(
     }
 
     {
-        let storage_ctrl = storage_ctrl.clone();
+        let storage_ctrl = Arc::clone(&storage_ctrl);
         io.add_method("emerald_importMnemonic", move |p: Params| {
             wrapper(serves::import_mnemonic(
                 parse(p)?,

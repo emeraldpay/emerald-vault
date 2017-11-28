@@ -102,7 +102,7 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
             let mut str = s.to_string();
             let mut v: u64 = 0;
 
-            if str.ends_with("'") {
+            if str.ends_with('\'') {
                 v += 0x8000_0000;
                 str.remove(s.len() - 1);
             }

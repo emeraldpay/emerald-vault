@@ -52,7 +52,7 @@ impl Default for CipherParams {
 
 impl CoreCrypto {
     ///
-    pub fn try_from(kf: KeyFile) -> Result<Self, Error> {
+    pub fn try_from(kf: &KeyFile) -> Result<Self, Error> {
         match kf.crypto {
             CryptoType::Core(ref core) => {
                 Ok(CoreCrypto {

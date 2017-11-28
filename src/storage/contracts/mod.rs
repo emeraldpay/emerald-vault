@@ -76,10 +76,9 @@ impl ContractStorage {
     fn read_json(path: &Path) -> Result<serde_json::Value, Error> {
         match File::open(path) {
             Ok(f) => {
-                serde_json::from_reader(f).or(Err(Error::IO(
-                    "Can't read contract file"
-                        .to_string(),
-                )))
+                serde_json::from_reader(f).or_else(|_| {
+                    Err(Error::IO("Can't read contract file".to_string()))
+                })
             }
             Err(_) => Err(Error::IO("Can't open contract file".to_string())),
         }

@@ -36,7 +36,7 @@ pub struct SerializableKeyFileCore {
 
 impl SerializableKeyFileCore {
     fn try_from(kf: KeyFile) -> Result<Self, Error> {
-        let cr = CoreCrypto::try_from(kf.clone())?;
+        let cr = CoreCrypto::try_from(&kf)?;
 
         Ok(SerializableKeyFileCore {
             version: CURRENT_VERSION,
@@ -76,8 +76,8 @@ pub struct SerializableKeyFileHD {
 }
 
 impl SerializableKeyFileHD {
-    fn try_from(kf: KeyFile) -> Result<Self, Error> {
-        let cr = HdwalletCrypto::try_from(kf.clone())?;
+    fn try_from(kf: &KeyFile) -> Result<Self, Error> {
+        let cr = HdwalletCrypto::try_from(kf)?;
 
         Ok(SerializableKeyFileHD {
             version: CURRENT_VERSION,
@@ -108,9 +108,9 @@ impl KeyFile {
     /// Decode `Keyfile` from JSON
     /// Handles different variants of `crypto` section
     ///
-    pub fn decode(f: String) -> Result<KeyFile, Error> {
-        let buf1 = f.clone();
-        let buf2 = f.clone();
+    pub fn decode(f: &str) -> Result<KeyFile, Error> {
+        let buf1 = f.to_string();
+        let buf2 = f.to_string();
         let mut ver = 0;
 
         let kf = json::decode::<SerializableKeyFileCore>(&buf1)
@@ -139,7 +139,7 @@ impl Encodable for KeyFile {
         match SerializableKeyFileCore::try_from(self.clone()) {
             Ok(sf) => sf.encode(s),
             Err(_) => {
-                match SerializableKeyFileHD::try_from(self.clone()) {
+                match SerializableKeyFileHD::try_from(self) {
                     Ok(sf) => sf.encode(s),
                     Err(_) => Ok(()),
                 }

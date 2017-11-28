@@ -7,7 +7,7 @@ mod error;
 mod language;
 mod bip32;
 
-pub use self::bip32::{HDPath, generateKey};
+pub use self::bip32::{HDPath, generate_key};
 pub use self::error::Error;
 pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
 use crypto::digest::Digest;
@@ -60,14 +60,14 @@ impl Mnemonic {
     ///
     /// * lang - language for words selection
     ///
-    pub fn new(lang: Language, entropy: Vec<u8>) -> Result<Mnemonic, Error> {
-        let mut ent = entropy.clone();
+    pub fn new(lang: Language, entropy: &[u8]) -> Result<Mnemonic, Error> {
+        let mut ent = entropy.to_owned();
         let checksum = checksum(&ent);
         ent.push(checksum);
 
         let indexes = get_indexes(&ent)?;
         let mut w = Vec::new();
-        for i in indexes.iter() {
+        for i in &indexes {
             w.push(BIP39_ENGLISH_WORDLIST[*i].clone());
         }
 
@@ -141,7 +141,7 @@ impl Mnemonic {
 
 /// # Arguments:
 ///
-/// * byte_length - size of entropy in bytes
+/// * `byte_length` - size of entropy in bytes
 ///
 pub fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
     let mut rng = OsRng::new()?;
@@ -165,7 +165,7 @@ fn checksum(data: &[u8]) -> u8 {
 ///
 /// # Arguments:
 ///
-/// * entropy - slice with entropy
+/// * `entropy` - slice with entropy
 ///
 fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
     if entropy.len() < ENTROPY_BYTE_LENGTH {

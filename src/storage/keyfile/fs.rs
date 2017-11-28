@@ -120,7 +120,7 @@ impl KeyfileStorage for FsStorage {
 
             match try_extract_address(&content) {
                 Some(a) if a == *addr => {
-                    let kf = KeyFile::decode(content)?;
+                    let kf = KeyFile::decode(&content)?;
                     let mut info = AccountInfo::from(kf.clone());
                     info.filename = match path.file_name().and_then(|s| s.to_str()) {
                         Some(s) => s.to_string(),
@@ -153,7 +153,7 @@ impl KeyfileStorage for FsStorage {
                     continue;
                 }
 
-                match KeyFile::decode(content) {
+                match KeyFile::decode(&content) {
                     Ok(kf) => {
                         if kf.visible.is_none() || kf.visible.unwrap() || show_hidden {
                             let mut info = AccountInfo::from(kf);
