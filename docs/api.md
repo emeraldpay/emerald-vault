@@ -56,22 +56,21 @@ Return the list of all not hidden (by default) accounts from the keystore.
 * `accounts` (Array)
     * `account` (Object) - an account
         * `address` (String) - hex-encoded 20 bytes public address
-        * `hardware_wallet` (Boolean) - flag to distinguish normal accounts from HD wallet accounts
+        * `hardware` (Boolean) - flag to distinguish normal accounts from HD wallet accounts
         * `name` (String, optional) - account name
         * `description` (String, optional) - account description
+        * `is_hidden` (Boolean) - flag to distinguish hidden accounts
 
 *Examples*:
 
 ```
 --> {"jsonrpc": "2.0", "method": "emerald_listAccounts", "params": [{"chain": "morden", "show_hidden": true}], "id": 1}
 <-- {"jsonrpc": "2.0", "result":
-      [{"address": "0x5e97870f263700f46aa00d967821199b9bc5a120"},
-       {"name": "main",
-        "address": "0x3d80b31a78c30fc628f20b2c89d7ddbf6e53cedc"}],
-       {"hardware_wallet": "true"
+      [{"address": "0x5e97870f263700f46aa00d967821199b9bc5a120",
+        "hardware": true
         "name": "test",
         "description": "A test account",
-        "address": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9"}],
+        "is_hidden": false}],
      "id": 1}
 ```
 
@@ -436,7 +435,7 @@ If required contract doesn't exist
 
 ### emerald_updateContract
 
-Update contract metadata. Contract address and chain information are used to identify the contract, and may not be updated. 
+Update contract metadata. Contract address and chain information are used to identify the contract, and may not be updated.
 
 *Parameters*:
 
@@ -469,7 +468,7 @@ If required contract doesn't exist
      "method": "emerald_updateContract", 
      "params": [{"address": "0x0047201aed0b69875b24b614dda0270bcd9f11cc",
          "name": "ERC20 token",
-         "description": "Bit Ether"}], 
+         "description": "Bit Ether"}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "error": {"code": -32000, "message": "Contract doesn't exist"}, "id": "1"}
 ```
@@ -655,7 +654,7 @@ If `function` and `arguments` are provided, they will be encoded according smart
        [{"from": "0xb60e8dd61c5d32be8058bb8eb970870f07233155",
          "to": "0x085fb4f24031eaedbc2b611aa528f22343eb52db",
          "gas": "0x0186a0",
-         "gasPrice": "0x04e3b29200",         
+         "gasPrice": "0x04e3b29200",
          "function":
            {"name": "transfer",
             "inputs": [{"name": "_to",
