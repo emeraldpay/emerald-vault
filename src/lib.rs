@@ -43,9 +43,9 @@ pub mod addressbook;
 pub mod keystore;
 pub mod rpc;
 pub mod storage;
+pub mod mnemonic;
 mod contract;
 mod hdwallet;
-mod mnemonic;
 mod util;
 
 pub use self::core::*;

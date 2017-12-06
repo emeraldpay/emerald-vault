@@ -36,8 +36,10 @@ pub struct Mnemonic {
     words: Vec<String>,
 }
 
+
+/// Length of mnemonic phrase in words
 #[derive(Debug, PartialEq)]
-#[allow(dead_code)]
+#[allow(dead_code, missing_docs)]
 pub enum MnemonicSize {
     Size12 = 12,
     Size15 = 15,
@@ -47,6 +49,7 @@ pub enum MnemonicSize {
 }
 
 impl MnemonicSize {
+    /// Number of words
     pub fn values() -> [usize; 5] {
         [12, 15, 18, 21, 24]
     }
