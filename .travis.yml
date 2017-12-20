@@ -42,7 +42,7 @@ after_success: |
   make &&
   sudo make install &&
   cd ../.. &&
-  kcov --exclude-pattern=/.cargo target/kcov target/debug/emerald_rs-* &&
+  kcov --exclude-pattern=/.cargo --verify target/cov target/debug/emerald_rs-* &&
   bash <(curl -s https://codecov.io/bash) &&
   echo "Uploaded code coverage"
 
