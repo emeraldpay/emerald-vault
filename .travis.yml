@@ -10,7 +10,10 @@ os:
 addons:
   apt:
     packages:
-      - kcov
+      - libcurl4-openssl-dev
+      - libdw-dev
+      - libelf-dev
+
 notifications:
   email:
     on_success: never
@@ -18,6 +21,7 @@ before_install:
 - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -qq update; else brew update; fi
 - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install -y libusb-1.0-0-dev; else brew install libusb; fi
 - travis_wait cargo install rustfmt --force || true
+
 before_script:
 - export PATH="$PATH":~/.cargo/bin
 - echo "\$ rustfmt --version"
@@ -30,8 +34,15 @@ script:
 - cargo build --all --verbose --release
 
 after_success: |
-  kcov --exclude-pattern=/.cargo,/usr/lib target/cov target/debug/emerald_rs-* &&
-  kcov --exclude-pattern=/.cargo,/usr/lib target/cov target/debug/keystore_test-* &&
+  wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
+  tar xzf master.tar.gz &&
+  mkdir kcov-master/build &&
+  cd kcov-master/build &&
+  cmake .. &&
+  make &&
+  sudo make install &&
+  cd ../.. &&
+  kcov --exclude-pattern=/.cargo target/kcov target/debug/emerald_rs-* &&
   bash <(curl -s https://codecov.io/bash) &&
   echo "Uploaded code coverage"
 
