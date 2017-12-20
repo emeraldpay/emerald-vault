@@ -13,6 +13,7 @@ addons:
       - libcurl4-openssl-dev
       - libdw-dev
       - libelf-dev
+      - binutils-dev
 
 notifications:
   email:
