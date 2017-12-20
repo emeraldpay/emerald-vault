@@ -20,7 +20,7 @@ before_script:
 - cargo fmt --all -- --version -f
 script:
 - export RUST_BACKTRACE=1
-- cargo fmt --all -- --verbose --write-mode=diff
+- cargo fmt --all -- --verbose --write-mode=diff -f
 - cargo test --all --verbose
 - cargo build --all --verbose --release
 
