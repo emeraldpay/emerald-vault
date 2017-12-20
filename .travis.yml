@@ -18,27 +18,18 @@ before_script:
 - export PATH="$PATH":~/.cargo/bin
 - echo "\$ rustfmt --version"
 - cargo fmt --all -- --version -f
+- |
+    pip install 'travis-cargo<0.2' --user &&
+    export PATH=$HOME/.local/bin:$PATH
+
 script:
 - export RUST_BACKTRACE=1
 - cargo fmt --all -- --verbose --write-mode=diff -f
 - cargo test --all --verbose
 - cargo build --all --verbose --release
 
-after_success: |
-  wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
-  tar xzf master.tar.gz &&
-  cd kcov-master &&
-  mkdir build &&
-  cd build &&
-  cmake .. &&
-  make &&
-  make install DESTDIR=../../kcov-build &&
-  cd ../.. &&
-  rm -rf kcov-master &&
-  ls -la ./kcov-build/usr/local/bin/ &&
-  for file in target/debug/emerald_rs-*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov-system-daemon --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
-  bash <(curl -s https://codecov.io/bash) &&
-  echo "Uploaded code coverage"
+after_success:
+- travis-cargo coveralls --no-sudo
 
 deploy:
   provider: releases
