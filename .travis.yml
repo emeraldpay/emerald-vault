@@ -7,6 +7,10 @@ rust:
 os:
 - linux
 - osx
+addons:
+  apt:
+    packages:
+      - kcov
 notifications:
   email:
     on_success: never
@@ -18,9 +22,6 @@ before_script:
 - export PATH="$PATH":~/.cargo/bin
 - echo "\$ rustfmt --version"
 - cargo fmt --all -- --version -f
-- |
-    pip install 'travis-cargo<0.2' --user &&
-    export PATH=$HOME/.local/bin:$PATH
 
 script:
 - export RUST_BACKTRACE=1
@@ -28,8 +29,11 @@ script:
 - cargo test --all --verbose
 - cargo build --all --verbose --release
 
-after_success:
-- travis-cargo coveralls --no-sudo
+after_success: |
+  kcov --exclude-pattern=/.cargo,/usr/lib target/cov target/debug/emerald_rs-* &&
+  kcov --exclude-pattern=/.cargo,/usr/lib target/cov target/debug/keystore_test-* &&
+  bash <(curl -s https://codecov.io/bash) &&
+  echo "Uploaded code coverage"
 
 deploy:
   provider: releases
