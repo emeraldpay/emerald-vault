@@ -49,7 +49,7 @@ after_success: |
         kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
       fi;
     done &&
-    kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/*'
+    kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/*
 
 deploy:
   provider: releases
