@@ -46,7 +46,7 @@ after_success: |
     for file in target/debug/*; do
       if [[ -x $file ]] && [[ -f $file ]]; then
         mkdir -p "target/cov/$(basename $file)";
-        kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
+        kcov --exclude-pattern=/.cargo,/usr/lib,/usr/include --verify "target/cov/$(basename $file)" "$file";
       fi;
     done &&
     kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/*
