@@ -52,6 +52,11 @@ pub const ETC_DERIVATION_PATH: [u8; 21] = [
 ]; // 44'/60'/160720'/0'/0
 
 
+lazy_static! {
+    static ref HD_PATH_RE: Regex = Regex::new(r#"^[m/][0-9'/]*"#).unwrap();
+}
+
+
 /// Type used for device listing,
 /// String corresponds to file descriptor of the device
 pub type DevicesList = Vec<(Address, String)>;
@@ -86,16 +91,13 @@ impl From<HidDeviceInfo> for Device {
 
 /// Parse HD path into byte array
 pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
-    lazy_static! {
-        static ref INVALID_PATH_RE: Regex = Regex::new(r#"[^0-9'/]"#).unwrap();
-    }
-
-    if INVALID_PATH_RE.is_match(hd_str) {
+    if !PATH_RE.is_match(hd_str) {
         return Err(Error::HDWalletError(
             format!("Invalid `hd_path` format: {}", hd_str),
         ));
     }
 
+    let (_, p) = hd_str.split_at(2);
     let mut buf = Vec::new();
     {
         let mut parse = |s: &str| {
@@ -110,7 +112,7 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
                 Ok(d) => v += d,
                 Err(_) => {
                     return Err(Error::HDWalletError(
-                        format!("Invalid `hd_path` format: {}", hd_str),
+                        format!("Invalid index: {}", hd_str),
                     ))
                 }
             }
@@ -118,7 +120,7 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
             Ok(())
         };
 
-        for val in hd_str.split('/') {
+        for val in p.split('/') {
             parse(val)?;
         }
     }
@@ -481,7 +483,7 @@ mod tests {
 
     #[test]
     pub fn should_fail_parse_hd_path() {
-        let mut path_str = "44'/60'/160A+_0'/0'/0";
+        let mut path_str = "44'/60'/160720'/0'/0";
         assert!(path_to_arr(&path_str).is_err());
 
         path_str = "44'/60'/16011_11111111111111111zz1111111111111111111111111111111'/0'/0";
@@ -490,13 +492,10 @@ mod tests {
 
     #[test]
     pub fn should_parse_hd_path_into_prefixed() {
-        let path_str = "44'/60'/160720'/0'/0";
+        let path_str = "m/44'/60'/160720'/0'/0";
         assert_eq!(
             ETC_DERIVATION_PATH.to_vec(),
             to_prefixed_path(&path_str).unwrap()
         );
-        debug!("prefixed: {:?}", to_prefixed_path(&path_str).unwrap());
     }
-
-
 }

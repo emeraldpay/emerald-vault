@@ -408,11 +408,7 @@ pub fn sign_transaction(
 
                             let hd_path = match to_prefixed_path(&hw.hd_path) {
                                 Ok(hd) => hd,
-                                Err(e) => {
-                                    return Err(Error::InvalidDataFormat(
-                                        format!("Invalid hd path format: {}", e.to_string()),
-                                    ))
-                                }
+                                Err(e) => return Err(Error::InvalidDataFormat(e.to_string()))
                             };
 
                             if let Err(e) = wm.update(Some(hd_path.clone())) {
