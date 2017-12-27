@@ -3,11 +3,11 @@
 use super::core;
 use super::storage;
 use contract;
+use hdwallet;
 use hex;
 use jsonrpc_core;
 use keystore;
 use mnemonic;
-use hdwallet;
 use reqwest;
 use rustc_serialize;
 use serde_json;

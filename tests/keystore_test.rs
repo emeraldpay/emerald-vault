@@ -1,12 +1,12 @@
 extern crate emerald_rs as emerald;
-extern crate rustc_serialize;
 extern crate hex;
-extern crate uuid;
+extern crate rustc_serialize;
 extern crate tempdir;
+extern crate uuid;
 
 use emerald::{Address, KECCAK256_BYTES};
-use emerald::keystore::{CIPHER_IV_BYTES, Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv,
-                        KDF_SALT_BYTES, Kdf, KdfDepthLevel, KeyFile, Mac, Prf, Salt};
+use emerald::keystore::{Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv, Kdf, KdfDepthLevel,
+                        KeyFile, Mac, Prf, Salt, CIPHER_IV_BYTES, KDF_SALT_BYTES};
 use emerald::storage::{DbStorage, FsStorage, KeyfileStorage};
 use hex::FromHex;
 use rustc_serialize::json;
@@ -26,7 +26,6 @@ macro_rules! arr {
         arr
     })
 }
-
 
 pub fn temp_dir() -> PathBuf {
     let dir = TempDir::new("emerald").unwrap();
@@ -59,9 +58,8 @@ pub fn keystore_path() -> PathBuf {
 
 #[test]
 fn should_decrypt_private_key_protected_by_scrypt() {
-    let path = keyfile_path(
-        "UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc",
-    );
+    let path =
+        keyfile_path("UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
     let keyfile = KeyFile::decode(&file_content(path)).unwrap();
 
@@ -74,9 +72,7 @@ fn should_decrypt_private_key_protected_by_scrypt() {
 
 #[test]
 fn should_decrypt_private_key_protected_by_pbkdf2() {
-    let path = keyfile_path(
-        "UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9",
-    );
+    let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
 
     let keyfile = KeyFile::decode(&file_content(path)).unwrap();
 
@@ -89,9 +85,7 @@ fn should_decrypt_private_key_protected_by_pbkdf2() {
 
 #[test]
 fn should_decode_keyfile_without_address() {
-    let path = keyfile_path(
-        "UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9",
-    );
+    let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
 
     let mut crypto = CoreCrypto::default();
     crypto.kdfparams_dklen = 32;
@@ -100,15 +94,13 @@ fn should_decode_keyfile_without_address() {
         c: 10240,
     };
     crypto.kdfparams_salt = Salt::from(arr!(
-        &Vec::from_hex(
-            "095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b",
-        ).unwrap(),
+        &Vec::from_hex("095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b",)
+            .unwrap(),
         KDF_SALT_BYTES
     ));
     crypto.cipher = Cipher::default();
-    crypto.cipher_text = Vec::from_hex(
-        "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126",
-    ).unwrap();
+    crypto.cipher_text =
+        Vec::from_hex("9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126").unwrap();
 
     crypto.cipher_params.iv = Iv::from(arr!(
         &Vec::from_hex("58d54158c3e27131b0a0f2b91201aedc").unwrap(),
@@ -116,9 +108,8 @@ fn should_decode_keyfile_without_address() {
     ));
 
     crypto.mac = Mac::from(arr!(
-        &Vec::from_hex(
-            "83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63",
-        ).unwrap(),
+        &Vec::from_hex("83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63",)
+            .unwrap(),
         KECCAK256_BYTES
     ));
 
@@ -155,9 +146,8 @@ fn should_decode_keyfile_without_address() {
 
 #[test]
 fn should_decode_keyfile_with_address() {
-    let path = keyfile_path(
-        "UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc",
-    );
+    let path =
+        keyfile_path("UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
     let mut crypto = CoreCrypto::default();
     crypto.kdfparams_dklen = 32;
@@ -167,15 +157,13 @@ fn should_decode_keyfile_with_address() {
         p: 1,
     };
     crypto.kdfparams_salt = Salt::from(arr!(
-        &Vec::from_hex(
-            "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
-        ).unwrap(),
+        &Vec::from_hex("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",)
+            .unwrap(),
         KDF_SALT_BYTES
     ));
     crypto.cipher = Cipher::default();
-    crypto.cipher_text = Vec::from_hex(
-        "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
-    ).unwrap();
+    crypto.cipher_text =
+        Vec::from_hex("c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1").unwrap();
 
     crypto.cipher_params.iv = Iv::from(arr!(
         &Vec::from_hex("9df1649dd1c50f2153917e3b9e7164e9").unwrap(),
@@ -183,9 +171,8 @@ fn should_decode_keyfile_with_address() {
     ));
 
     crypto.mac = Mac::from(arr!(
-        &Vec::from_hex(
-            "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5",
-        ).unwrap(),
+        &Vec::from_hex("9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5",)
+            .unwrap(),
         KECCAK256_BYTES
     ));
 
@@ -222,9 +209,7 @@ fn should_decode_keyfile_with_address() {
 
 #[test]
 fn should_decode_hd_wallet_keyfile() {
-    let path = keyfile_path(
-        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5",
-    );
+    let path = keyfile_path("UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac5");
 
     let mut crypto = HdwalletCrypto::default();
     crypto.cipher = "hardware".to_string();
@@ -304,16 +289,13 @@ fn should_search_by_address_filesystem() {
     );
 }
 
-
 #[test]
 fn should_search_by_address_db() {
     let addr = "0xc0de379b51d582e1600c76dd1efee8ed024b844a"
         .parse::<Address>()
         .unwrap();
 
-    let path = keyfile_path(
-        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4",
-    );
+    let path = keyfile_path("UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4");
     let key = KeyFile::decode(&file_content(path)).unwrap();
 
     let storage = DbStorage::new(temp_dir().as_path()).unwrap();
@@ -329,9 +311,7 @@ fn should_search_by_address_db() {
 
 #[test]
 fn should_update_existing_addresses() {
-    let path = keyfile_path(
-        "UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4",
-    );
+    let path = keyfile_path("UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4");
     let mut key = KeyFile::decode(&file_content(path)).unwrap();
 
     let storage = DbStorage::new(temp_dir().as_path()).unwrap();

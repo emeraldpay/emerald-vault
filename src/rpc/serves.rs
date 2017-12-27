@@ -6,8 +6,8 @@ use core::{Address, Transaction};
 use hdwallet::WManager;
 use hdwallet::bip32::to_prefixed_path;
 use jsonrpc_core::{Params, Value};
-use keystore::{CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME, os_random};
-use mnemonic::{self, ENTROPY_BYTE_LENGTH, HDPath, Language, Mnemonic, gen_entropy};
+use keystore::{os_random, CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME};
+use mnemonic::{self, gen_entropy, HDPath, Language, Mnemonic, ENTROPY_BYTE_LENGTH};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::cell::RefCell;
@@ -83,14 +83,10 @@ pub struct ListAccountAccount {
 
 #[derive(Deserialize, Default, Debug)]
 pub struct ListAccountsAdditional {
-    #[serde(default)]
-    chain: String,
-    #[serde(default)]
-    chain_id: Option<usize>,
-    #[serde(default)]
-    show_hidden: bool,
-    #[serde(default)]
-    hd_path: Option<String>,
+    #[serde(default)] chain: String,
+    #[serde(default)] chain_id: Option<usize>,
+    #[serde(default)] show_hidden: bool,
+    #[serde(default)] hd_path: Option<String>,
 }
 
 pub fn list_accounts(
@@ -103,20 +99,17 @@ pub fn list_accounts(
     let res = storage
         .list_accounts(additional.show_hidden)?
         .iter()
-        .map(|info| {
-            ListAccountAccount {
-                name: info.name.clone(),
-                address: info.address.clone(),
-                description: info.description.clone(),
-                hardware: info.is_hardware,
-                is_hidden: info.is_hidden,
-            }
+        .map(|info| ListAccountAccount {
+            name: info.name.clone(),
+            address: info.address.clone(),
+            description: info.description.clone(),
+            hardware: info.is_hardware,
+            is_hidden: info.is_hidden,
         })
         .collect();
     debug!(
         "Accounts listed with `show_hidden`: {}\n\t{:?}",
-        additional.show_hidden,
-        res
+        additional.show_hidden, res
     );
 
     Ok(res)
@@ -124,10 +117,8 @@ pub fn list_accounts(
 
 #[derive(Deserialize, Default, Debug)]
 pub struct CommonAdditional {
-    #[serde(default)]
-    chain: String,
-    #[serde(default)]
-    chain_id: Option<usize>,
+    #[serde(default)] chain: String,
+    #[serde(default)] chain_id: Option<usize>,
 }
 
 #[derive(Deserialize)]
@@ -213,10 +204,8 @@ pub fn shake_account(
 
 #[derive(Deserialize)]
 pub struct UpdateAccountAccount {
-    #[serde(default)]
-    address: String,
-    #[serde(default)]
-    name: String,
+    #[serde(default)] address: String,
+    #[serde(default)] name: String,
     description: String,
 }
 
@@ -289,10 +278,8 @@ pub fn export_account(
 
 #[derive(Deserialize, Debug)]
 pub struct NewAccountAccount {
-    #[serde(default)]
-    name: String,
-    #[serde(default)]
-    description: String,
+    #[serde(default)] name: String,
+    #[serde(default)] description: String,
     passphrase: String,
 }
 
@@ -327,25 +314,18 @@ pub struct SignTransactionTransaction {
     pub from: String,
     pub to: String,
     pub gas: String,
-    #[serde(rename = "gasPrice")]
-    pub gas_price: String,
-    #[serde(default)]
-    pub value: String,
-    #[serde(default)]
-    pub data: String,
+    #[serde(rename = "gasPrice")] pub gas_price: String,
+    #[serde(default)] pub value: String,
+    #[serde(default)] pub data: String,
     pub nonce: String,
-    #[serde(default)]
-    pub passphrase: Option<String>,
+    #[serde(default)] pub passphrase: Option<String>,
 }
 
 #[derive(Deserialize, Default, Debug)]
 pub struct SignTransactionAdditional {
-    #[serde(default)]
-    chain: String,
-    #[serde(default)]
-    chain_id: Option<usize>,
-    #[serde(default)]
-    hd_path: Option<String>,
+    #[serde(default)] chain: String,
+    #[serde(default)] chain_id: Option<usize>,
+    #[serde(default)] hd_path: Option<String>,
 }
 
 pub fn sign_transaction(
@@ -383,17 +363,15 @@ pub fn sign_transaction(
                     match kf.crypto {
                         CryptoType::Core(_) => {
                             if transaction.passphrase.is_none() {
-                                return Err(
-                                    Error::InvalidDataFormat("Missing passphrase".to_string()),
-                                );
+                                return Err(Error::InvalidDataFormat(
+                                    "Missing passphrase".to_string(),
+                                ));
                             }
                             let pass = transaction.passphrase.unwrap();
 
                             if let Ok(pk) = kf.decrypt_key(&pass) {
-                                let raw = tr.to_signed_raw(pk, chain_id).expect(
-                                    "Expect to sign a \
-                                     transaction",
-                                );
+                                let raw = tr.to_signed_raw(pk, chain_id)
+                                    .expect("Expect to sign a transaction");
                                 let signed = Transaction::to_raw_params(&raw);
                                 debug!("Signed transaction to: {:?}\n\t raw: {:?}", &tr.to, signed);
 
@@ -409,13 +387,14 @@ pub fn sign_transaction(
 
                             let hd_path = match to_prefixed_path(&hw.hd_path) {
                                 Ok(hd) => hd,
-                                Err(e) => return Err(Error::InvalidDataFormat(e.to_string()))
+                                Err(e) => return Err(Error::InvalidDataFormat(e.to_string())),
                             };
 
                             if let Err(e) = wm.update(Some(hd_path.clone())) {
-                                return Err(Error::InvalidDataFormat(
-                                    format!("Can't update HD wallets list : {}", e.to_string()),
-                                ));
+                                return Err(Error::InvalidDataFormat(format!(
+                                    "Can't update HD wallets list : {}",
+                                    e.to_string()
+                                )));
                             }
 
                             let mut err = String::new();
@@ -448,12 +427,9 @@ pub fn sign_transaction(
                                         let raw = tr.raw_from_sig(chain_id, &s);
                                         let signed = Transaction::to_raw_params(&raw);
                                         debug!(
-                                            "HD wallet addr:{:?} path: {:?} signed transaction to: \
-                                             {:?}\n\t raw: {:?}",
-                                            addr,
-                                            fd,
-                                            &tr.to,
-                                            signed
+                                            "HD wallet addr:{:?} path: {:?} signed transaction \
+                                             to: {:?}\n\t raw: {:?}",
+                                            addr, fd, &tr.to, signed
                                         );
                                         return Ok(signed);
                                     }
@@ -529,13 +505,10 @@ pub fn import_contract(
 //    let storage = storage_ctrl.get_contracts(&additional.chain)?;
 //}
 
-
 #[derive(Deserialize, Debug)]
 pub struct NewMnemonicAccount {
-    #[serde(default)]
-    name: String,
-    #[serde(default)]
-    description: String,
+    #[serde(default)] name: String,
+    #[serde(default)] description: String,
     password: String,
     mnemonic: String,
     hd_path: String,
@@ -547,7 +520,6 @@ pub fn generate_mnemonic() -> Result<String, Error> {
 
     Ok(mnemonic.sentence())
 }
-
 
 pub fn import_mnemonic(
     params: Either<(NewMnemonicAccount,), (NewMnemonicAccount, CommonAdditional)>,

@@ -1,6 +1,6 @@
 //! # Serialize JSON RPC parameters
 
-use super::{Error, ToHex, align_bytes, to_arr, to_even_str, to_u64, trim_hex};
+use super::{align_bytes, to_arr, to_even_str, trim_hex, Error, ToHex, to_u64};
 use super::core::{Address, Transaction};
 use hex::FromHex;
 use jsonrpc_core::{Params, Value as JsonRpcValue};
@@ -10,12 +10,9 @@ pub struct RPCTransaction {
     pub from: String,
     pub to: String,
     pub gas: String,
-    #[serde(rename = "gasPrice")]
-    pub gas_price: String,
-    #[serde(default)]
-    pub value: String,
-    #[serde(default)]
-    pub data: String,
+    #[serde(rename = "gasPrice")] pub gas_price: String,
+    #[serde(default)] pub value: String,
+    #[serde(default)] pub data: String,
     pub nonce: String,
 }
 

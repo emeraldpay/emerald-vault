@@ -9,8 +9,6 @@ use ethabi::token::{LenientTokenizer, Token, Tokenizer};
 use hex::ToHex;
 use std::fmt;
 
-
-
 /// Contract specification
 #[derive(Clone, Debug, Deserialize)]
 pub struct Contract {
@@ -57,9 +55,7 @@ impl Contract {
 
         let tokens = params
             .iter()
-            .map(|&(ref param, ref value)| {
-                LenientTokenizer::tokenize(param, value)
-            })
+            .map(|&(ref param, ref value)| LenientTokenizer::tokenize(param, value))
             .collect::<Result<_, _>>()?;
 
         let result = Encoder::encode(tokens);
@@ -67,7 +63,6 @@ impl Contract {
         Ok(result.to_hex())
     }
 }
-
 
 impl fmt::Display for Contract {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -19,7 +19,7 @@ pub enum Prf {
     HmacSha256,
 
     /// HMAC-SHA-512 (specified in (RFC 4868)[https://tools.ietf.org/html/rfc4868])
-    HmacSha512
+    HmacSha512,
 }
 
 impl Prf {

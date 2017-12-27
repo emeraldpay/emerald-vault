@@ -7,9 +7,9 @@ use std::str::FromStr;
 
 impl Decodable for Address {
     fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
-        d.read_str().map(|s| format!("0x{}", s)).and_then(|s| {
-            Address::from_str(&s).map_err(|e| d.error(&e.to_string()))
-        })
+        d.read_str()
+            .map(|s| format!("0x{}", s))
+            .and_then(|s| Address::from_str(&s).map_err(|e| d.error(&e.to_string())))
     }
 }
 
@@ -54,30 +54,10 @@ mod tests {
 
     #[test]
     fn should_encode_real_address() {
-        let addr = Address(
-            [
-                0x0e,
-                0x7c,
-                0x04,
-                0x51,
-                0x10,
-                0xb8,
-                0xdb,
-                0xf2,
-                0x97,
-                0x65,
-                0x04,
-                0x73,
-                0x80,
-                0x89,
-                0x89,
-                0x19,
-                0xc5,
-                0xcb,
-                0x56,
-                0xf4,
-            ],
-        );
+        let addr = Address([
+            0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04, 0x73, 0x80, 0x89,
+            0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4,
+        ]);
 
         assert_eq!(
             json::encode(&addr).unwrap(),
@@ -87,30 +67,10 @@ mod tests {
 
     #[test]
     fn should_decode_real_address() {
-        let addr = Address(
-            [
-                0x0e,
-                0x7c,
-                0x04,
-                0x51,
-                0x10,
-                0xb8,
-                0xdb,
-                0xf2,
-                0x97,
-                0x65,
-                0x04,
-                0x73,
-                0x80,
-                0x89,
-                0x89,
-                0x19,
-                0xc5,
-                0xcb,
-                0x56,
-                0xf4,
-            ],
-        );
+        let addr = Address([
+            0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04, 0x73, 0x80, 0x89,
+            0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4,
+        ]);
 
         assert_eq!(
             json::decode::<Address>("\"0e7c045110b8dbf29765047380898919c5cb56f4\"").unwrap(),

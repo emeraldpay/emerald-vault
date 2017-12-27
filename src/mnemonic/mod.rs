@@ -6,19 +6,17 @@
 mod error;
 mod language;
 
-pub use hdwallet::bip32::{HDPath, generate_key};
 pub use self::error::Error;
 pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
 use crypto::digest::Digest;
 use crypto::sha2;
+pub use hdwallet::bip32::{generate_key, HDPath};
+use keystore::{Kdf, Prf};
 use num::{FromPrimitive, ToPrimitive};
 use num::bigint::BigUint;
 use rand::{OsRng, Rng};
-use keystore::{Kdf, Prf};
-
 use std::iter::repeat;
 use std::ops::{BitAnd, Shr};
-
 
 /// Size of entropy in bytes
 pub const ENTROPY_BYTE_LENGTH: usize = 32;
@@ -35,7 +33,6 @@ pub struct Mnemonic {
     language: Language,
     words: Vec<String>,
 }
-
 
 /// Length of mnemonic phrase in words
 #[derive(Debug, PartialEq)]
@@ -54,7 +51,6 @@ impl MnemonicSize {
         [12, 15, 18, 21, 24]
     }
 }
-
 
 impl Mnemonic {
     /// Create new mnemonic phrase for selected language
@@ -100,13 +96,13 @@ impl Mnemonic {
     ///
     pub fn seed(&self, password: &str) -> Vec<u8> {
         let passphrase = "mnemonic".to_string() + password;
-//        pbkdf2::derive(
-//            &digest::SHA512,
-//            PBKDF2_ROUNDS as u32,
-//            passphrase.as_bytes(),
-//            self.sentence().as_bytes(),
-//            &mut seed,
-//        );
+        //        pbkdf2::derive(
+        //            &digest::SHA512,
+        //            PBKDF2_ROUNDS as u32,
+        //            passphrase.as_bytes(),
+        //            self.sentence().as_bytes(),
+        //            &mut seed,
+        //        );
         let prf = Kdf::Pbkdf2 {
             prf: Prf::HmacSha512,
             c: PBKDF2_ROUNDS as u32,
@@ -114,7 +110,6 @@ impl Mnemonic {
 
         prf.derive(64, passphrase.as_bytes(), &self.sentence())
     }
-
 
     /// Convert a string into `Mnemonic`.
     ///
@@ -200,12 +195,10 @@ fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
     Ok(out)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use hex::FromHex;
-
 
     #[test]
     fn should_generate_entropy() {
@@ -298,9 +291,8 @@ mod tests {
 
     #[test]
     fn should_create_from_sentence_24() {
-        let s =
-            "beyond stage sleep clip because twist token leaf atom beauty genius food business \
-             side grid unable middle armed observe pair crouch tonight away coconut";
+        let s = "beyond stage sleep clip because twist token leaf atom beauty genius food \
+                 business side grid unable middle armed observe pair crouch tonight away coconut";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
         let w: Vec<String> = s.to_string()
             .split_whitespace()

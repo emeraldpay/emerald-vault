@@ -1,7 +1,6 @@
 //! # Ethereum Classic web3 like connector library
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
-
 #![deny(missing_docs)]
 
 #[macro_use]
@@ -13,14 +12,18 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate time;
+extern crate bitcoin;
 extern crate byteorder;
 extern crate chrono;
 extern crate crypto;
+extern crate emerald_rocksdb as rocksdb;
 extern crate ethabi;
 extern crate glob;
+extern crate hex;
+extern crate hidapi;
 extern crate jsonrpc_core;
 extern crate jsonrpc_http_server;
+extern crate num;
 extern crate rand;
 extern crate regex;
 extern crate reqwest;
@@ -30,12 +33,8 @@ extern crate rustc_serialize;
 extern crate secp256k1;
 extern crate serde;
 extern crate serde_json;
+extern crate time;
 extern crate uuid;
-extern crate hex;
-extern crate hidapi;
-extern crate emerald_rocksdb as rocksdb;
-extern crate num;
-extern crate bitcoin;
 
 mod core;
 pub mod addressbook;

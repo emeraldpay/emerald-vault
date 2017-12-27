@@ -1,8 +1,8 @@
 //! # `HDWallet` Keystore files (UTC / JSON) module errors
 
+use bitcoin::util::bip32;
 use core;
 use std::{error, fmt, io};
-use bitcoin::util::bip32;
 
 /// `HDWallet` Keystore file errors
 #[derive(Debug)]

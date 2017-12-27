@@ -27,7 +27,6 @@ impl From<json::EncoderError> for Error {
     }
 }
 
-
 impl From<SerializeError> for Error {
     fn from(err: SerializeError) -> Self {
         Error::StorageError(err.to_string())

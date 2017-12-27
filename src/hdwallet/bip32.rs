@@ -6,47 +6,24 @@ use super::error::Error;
 use bitcoin::network::constants::Network;
 use bitcoin::util::bip32::ChildNumber::{self, Hardened, Normal};
 use bitcoin::util::bip32::ExtendedPrivKey;
-use core::{PRIVATE_KEY_BYTES, PrivateKey};
-use regex::Regex;
+use core::{PrivateKey, PRIVATE_KEY_BYTES};
 use hdwallet::DERIVATION_INDEX_SIZE;
+use regex::Regex;
 use secp256k1::Secp256k1;
 use std::ops;
 use util::to_bytes;
 
-
 pub const ETC_DERIVATION_PATH: [u8; 21] = [
-    5,
-    0x80,
-    0,
-    0,
-    44,
-    0x80,
-    0,
-    0,
-    60,
-    0x80,
-    0x02,
-    0x73,
-    0xd0,
-    0x80,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+    5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0
 ]; // 44'/60'/160720'/0'/0
 
 lazy_static! {
     static ref HD_PATH_RE: Regex = Regex::new(r#"^m/{1}[^0-9'/]*"#).unwrap();
 }
 
-
 /// HD path according to BIP32
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct HDPath(pub Vec<ChildNumber>);
-
 
 impl HDPath {
     /// Parse HD derivation path into `ChildNumber` array
@@ -60,9 +37,7 @@ impl HDPath {
         let mut res: Vec<ChildNumber> = vec![];
 
         if !HD_PATH_RE.is_match(path) {
-            return Err(Error::HDWalletError(
-                "Invalid HD path format".to_string(),
-            ));
+            return Err(Error::HDWalletError("Invalid HD path format".to_string()));
         }
 
         let (_, raw) = path.split_at(2);
@@ -84,9 +59,10 @@ impl HDPath {
                     }
                 }
                 Err(e) => {
-                    return Err(Error::HDWalletError(
-                        format!("Invalid HD path child index: {}", e.to_string()),
-                    ))
+                    return Err(Error::HDWalletError(format!(
+                        "Invalid HD path child index: {}",
+                        e.to_string()
+                    )))
                 }
             };
         }
@@ -127,9 +103,10 @@ pub fn generate_key(path: &HDPath, seed: &[u8]) -> Result<PrivateKey, Error> {
 ///
 pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
     if !HD_PATH_RE.is_match(hd_str) {
-        return Err(Error::HDWalletError(
-            format!("Invalid `hd_path` format: {}", hd_str),
-        ));
+        return Err(Error::HDWalletError(format!(
+            "Invalid `hd_path` format: {}",
+            hd_str
+        )));
     }
 
     let (_, p) = hd_str.split_at(2);
@@ -145,11 +122,7 @@ pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
             }
             match str.parse::<u64>() {
                 Ok(d) => v += d,
-                Err(_) => {
-                    return Err(Error::HDWalletError(
-                        format!("Invalid index: {}", hd_str),
-                    ))
-                }
+                Err(_) => return Err(Error::HDWalletError(format!("Invalid index: {}", hd_str))),
             }
             buf.extend(to_bytes(v, 4));
             Ok(())
@@ -176,14 +149,12 @@ pub fn to_prefixed_path(hd_str: &str) -> Result<Vec<u8>, Error> {
     Ok(buf)
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
     use core::Address;
     use hex::FromHex;
     use std::str::FromStr;
-
 
     #[test]
     fn parse_hdpath() {
@@ -204,7 +175,7 @@ mod test {
             0367dc6e3aa5e44caba3fe4d3e352e65\
             101fbdb86a96776b91946ff06f8eac59\
             4dc6ee1d3e82a42dfe1b40fef6bcc3fd").unwrap();
-        
+
         let path = vec![
             Hardened(44),
             Hardened(60),

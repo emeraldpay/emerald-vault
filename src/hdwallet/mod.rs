@@ -13,9 +13,8 @@ pub mod bip32;
 use self::apdu::ApduBuilder;
 use self::comm::sendrecv;
 pub use self::error::Error;
-
 pub use self::keystore::HdwalletCrypto;
-use super::{Address, ECDSA_SIGNATURE_BYTES, Signature, to_arr};
+use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
 use std::{thread, time};
 use std::str::{FromStr, from_utf8};
@@ -27,7 +26,6 @@ const CHUNK_SIZE: usize = 255;
 const LEDGER_VID: u16 = 0x2c97;
 const LEDGER_PID: u16 = 0x0001; // for Nano S model
 const DERIVATION_INDEX_SIZE: usize = 4;
-
 
 /// Type used for device listing,
 /// String corresponds to file descriptor of the device
@@ -141,7 +139,7 @@ impl WManager {
         fd: &str,
         tr: &[u8],
         hd_path: Option<Vec<u8>>,
-    ) -> Result<Signature, Error> {;
+    ) -> Result<Signature, Error> {
         let hd_path = self.pick_hd_path(hd_path)?;
 
         let _mock = Vec::new();
@@ -176,8 +174,7 @@ impl WManager {
             }
             v => Err(Error::HDWalletError(format!(
                 "Invalid signature length. Expected: {}, received: {}",
-                ECDSA_SIGNATURE_BYTES,
-                v
+                ECDSA_SIGNATURE_BYTES, v
             ))),
         }
     }
@@ -224,12 +221,11 @@ impl WManager {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hdwallet::bip32::{ETC_DERIVATION_PATH, path_to_arr, to_prefixed_path};
     use core::Transaction;
+    use hdwallet::bip32::{path_to_arr, to_prefixed_path, ETC_DERIVATION_PATH};
     use rustc_serialize::hex::ToHex;
     use tests::*;
 

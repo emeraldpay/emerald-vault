@@ -3,10 +3,9 @@
 
 static BIP39_ENGLISH: &'static str = include_str!("bip39_english.txt");
 lazy_static! {
-	/// List of words for `English` language
-	pub static ref BIP39_ENGLISH_WORDLIST: Vec<String> = { gen_wordlist(BIP39_ENGLISH) };
+    /// List of words for `English` language
+    pub static ref BIP39_ENGLISH_WORDLIST: Vec<String> = { gen_wordlist(BIP39_ENGLISH) };
 }
-
 
 /// Language of dictionary for mnemonic generation
 #[derive(Debug, Clone, Copy)]
