@@ -228,6 +228,7 @@ impl WManager {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hdwallet::bip32::{ETC_DERIVATION_PATH, path_to_arr, to_prefixed_path};
     use core::Transaction;
     use rustc_serialize::hex::ToHex;
     use tests::*;
@@ -394,7 +395,7 @@ mod tests {
 
     #[test]
     pub fn should_parse_hd_path() {
-        let path_str = "44'/60'/160720'/0'/0";
+        let path_str = "m/44'/60'/160720'/0'/0";
         assert_eq!(
             ETC_DERIVATION_PATH[1..].to_vec(),
             path_to_arr(&path_str).unwrap()

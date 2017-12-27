@@ -112,7 +112,7 @@ impl Mnemonic {
             c: PBKDF2_ROUNDS as u32,
         };
 
-        prf.derive(64, self.sentence().as_bytes(), &passphrase)
+        prf.derive(64, passphrase.as_bytes(), &self.sentence())
     }
 
 

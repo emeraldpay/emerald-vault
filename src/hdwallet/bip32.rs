@@ -204,8 +204,7 @@ mod test {
             0367dc6e3aa5e44caba3fe4d3e352e65\
             101fbdb86a96776b91946ff06f8eac59\
             4dc6ee1d3e82a42dfe1b40fef6bcc3fd").unwrap();
-
-        let secp = Secp256k1::new();
+        
         let path = vec![
             Hardened(44),
             Hardened(60),
