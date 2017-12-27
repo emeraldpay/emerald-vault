@@ -1,6 +1,5 @@
 //! # Mnemonic sentence generation errors
 
-use bitcoin::util::bip32;
 use core;
 use std::{error, fmt, io};
 
@@ -31,13 +30,6 @@ impl<'a> From<&'a str> for Error {
         Error::MnemonicError(err.to_string())
     }
 }
-
-impl From<bip32::Error> for Error {
-    fn from(err: bip32::Error) -> Self {
-        Error::MnemonicError(err.to_string())
-    }
-}
-
 
 
 impl fmt::Display for Error {

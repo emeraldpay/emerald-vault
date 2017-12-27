@@ -5,9 +5,8 @@
 
 mod error;
 mod language;
-mod bip32;
 
-pub use self::bip32::{HDPath, generate_key};
+pub use hdwallet::bip32::{HDPath, generate_key};
 pub use self::error::Error;
 pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
 use crypto::digest::Digest;
@@ -15,7 +14,8 @@ use crypto::sha2;
 use num::{FromPrimitive, ToPrimitive};
 use num::bigint::BigUint;
 use rand::{OsRng, Rng};
-use ring::{digest, pbkdf2};
+use keystore::{Kdf, Prf};
+
 use std::iter::repeat;
 use std::ops::{BitAnd, Shr};
 
@@ -99,18 +99,20 @@ impl Mnemonic {
     /// * password - password for seed generation
     ///
     pub fn seed(&self, password: &str) -> Vec<u8> {
-        let mut seed = vec![0u8; 64];
         let passphrase = "mnemonic".to_string() + password;
+//        pbkdf2::derive(
+//            &digest::SHA512,
+//            PBKDF2_ROUNDS as u32,
+//            passphrase.as_bytes(),
+//            self.sentence().as_bytes(),
+//            &mut seed,
+//        );
+        let prf = Kdf::Pbkdf2 {
+            prf: Prf::HmacSha512,
+            c: PBKDF2_ROUNDS as u32,
+        };
 
-        pbkdf2::derive(
-            &digest::SHA512,
-            PBKDF2_ROUNDS as u32,
-            passphrase.as_bytes(),
-            self.sentence().as_bytes(),
-            &mut seed,
-        );
-
-        seed
+        prf.derive(64, self.sentence().as_bytes(), &passphrase)
     }
 
 

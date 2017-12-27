@@ -7,6 +7,7 @@ use hex;
 use jsonrpc_core;
 use keystore;
 use mnemonic;
+use hdwallet;
 use reqwest;
 use rustc_serialize;
 use serde_json;
@@ -97,6 +98,12 @@ impl From<contract::Error> for Error {
 
 impl From<mnemonic::Error> for Error {
     fn from(err: mnemonic::Error) -> Self {
+        Error::MnemonicError(err.to_string())
+    }
+}
+
+impl From<hdwallet::Error> for Error {
+    fn from(err: hdwallet::Error) -> Self {
         Error::MnemonicError(err.to_string())
     }
 }

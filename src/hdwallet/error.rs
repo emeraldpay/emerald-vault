@@ -2,6 +2,7 @@
 
 use core;
 use std::{error, fmt, io};
+use bitcoin::util::bip32;
 
 /// `HDWallet` Keystore file errors
 #[derive(Debug)]
@@ -31,6 +32,11 @@ impl<'a> From<&'a str> for Error {
     }
 }
 
+impl From<bip32::Error> for Error {
+    fn from(err: bip32::Error) -> Self {
+        Error::HDWalletError(err.to_string())
+    }
+}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -95,8 +95,16 @@ impl Kdf {
 
         match *self {
             Kdf::Pbkdf2 { prf, c } => {
-                let mut hmac = prf.hmac(passphrase);
-                pbkdf2(&mut hmac, kdf_salt, c, &mut key);
+                match prf {
+                    Prf::HmacSha256 => {
+                        let mut hmac = prf.hmac(passphrase);
+                        pbkdf2(&mut hmac, kdf_salt, c, &mut key);
+                    },
+                    Prf::HmacSha512 => {
+                        let mut hmac = prf.hmac512(passphrase);
+                        pbkdf2(&mut hmac, kdf_salt, c, &mut key);
+                    },
+                };
             }
             #[cfg(target_os = "windows")]
             Kdf::Scrypt { n, r, p } => {

@@ -2,20 +2,21 @@
 //!
 //! Currently supports only Ledger Nano S & Ledger Blue
 //! `HD(Hierarchical Deterministic) Wallet` specified in
-//! [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.medёiawiki)
+//! [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
 
 mod error;
 mod apdu;
 mod keystore;
 mod comm;
+pub mod bip32;
 
 use self::apdu::ApduBuilder;
 use self::comm::sendrecv;
 pub use self::error::Error;
+
 pub use self::keystore::HdwalletCrypto;
-use super::{Address, ECDSA_SIGNATURE_BYTES, Signature, to_arr, to_bytes};
+use super::{Address, ECDSA_SIGNATURE_BYTES, Signature, to_arr};
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
-use regex::Regex;
 use std::{thread, time};
 use std::str::{FromStr, from_utf8};
 
@@ -26,35 +27,6 @@ const CHUNK_SIZE: usize = 255;
 const LEDGER_VID: u16 = 0x2c97;
 const LEDGER_PID: u16 = 0x0001; // for Nano S model
 const DERIVATION_INDEX_SIZE: usize = 4;
-#[allow(dead_code)]
-pub const ETC_DERIVATION_PATH: [u8; 21] = [
-    5,
-    0x80,
-    0,
-    0,
-    44,
-    0x80,
-    0,
-    0,
-    60,
-    0x80,
-    0x02,
-    0x73,
-    0xd0,
-    0x80,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-]; // 44'/60'/160720'/0'/0
-
-
-lazy_static! {
-    static ref HD_PATH_RE: Regex = Regex::new(r#"^[m/][0-9'/]*"#).unwrap();
-}
 
 
 /// Type used for device listing,
@@ -87,58 +59,6 @@ impl From<HidDeviceInfo> for Device {
             hid_info: info,
         }
     }
-}
-
-/// Parse HD path into byte array
-pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
-    if !PATH_RE.is_match(hd_str) {
-        return Err(Error::HDWalletError(
-            format!("Invalid `hd_path` format: {}", hd_str),
-        ));
-    }
-
-    let (_, p) = hd_str.split_at(2);
-    let mut buf = Vec::new();
-    {
-        let mut parse = |s: &str| {
-            let mut str = s.to_string();
-            let mut v: u64 = 0;
-
-            if str.ends_with('\'') {
-                v += 0x8000_0000;
-                str.remove(s.len() - 1);
-            }
-            match str.parse::<u64>() {
-                Ok(d) => v += d,
-                Err(_) => {
-                    return Err(Error::HDWalletError(
-                        format!("Invalid index: {}", hd_str),
-                    ))
-                }
-            }
-            buf.extend(to_bytes(v, 4));
-            Ok(())
-        };
-
-        for val in p.split('/') {
-            parse(val)?;
-        }
-    }
-
-    Ok(buf)
-}
-
-/// Parse HD path into byte array
-/// prefixed with count of derivation indexes
-pub fn to_prefixed_path(hd_str: &str) -> Result<Vec<u8>, Error> {
-    let v = path_to_arr(hd_str)?;
-    let count = (v.len() / DERIVATION_INDEX_SIZE) as u8;
-    let mut buf = Vec::with_capacity(v.len() + 1);
-
-    buf.push(count);
-    buf.extend(v);
-
-    Ok(buf)
 }
 
 /// `Wallet Manager` to handle all interaction with HD wallet
