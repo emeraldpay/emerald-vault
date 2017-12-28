@@ -1,9 +1,8 @@
-use super::{KeyfileStorage, build_contract_storage, build_keyfile_storage, build_path};
+use super::{build_contract_storage, build_keyfile_storage, build_path, KeyfileStorage};
 use super::contracts::ContractStorage;
 use super::keyfile::KeyStorageError;
 use std::collections::HashMap;
 use std::path::Path;
-
 
 /// Controller to switch storage according to specified chain
 pub struct StorageController {
@@ -19,15 +18,11 @@ impl StorageController {
         for id in &["mainnet", "morden"] {
             st.keyfile_storages.insert(
                 id.to_string(),
-                build_keyfile_storage(
-                    build_path(base_path.as_ref(), id, "keystore"),
-                )?,
+                build_keyfile_storage(build_path(base_path.as_ref(), id, "keystore"))?,
             );
             st.contract_storages.insert(
                 id.to_string(),
-                build_contract_storage(
-                    build_path(base_path.as_ref(), id, "contracts"),
-                )?,
+                build_contract_storage(build_path(base_path.as_ref(), id, "contracts"))?,
             );
         }
 
@@ -38,9 +33,10 @@ impl StorageController {
     pub fn get_keystore(&self, chain: &str) -> Result<&Box<KeyfileStorage>, KeyStorageError> {
         match self.keyfile_storages.get(chain) {
             Some(st) => Ok(st),
-            None => Err(KeyStorageError::StorageError(
-                format!("No storage for: {}", chain),
-            )),
+            None => Err(KeyStorageError::StorageError(format!(
+                "No storage for: {}",
+                chain
+            ))),
         }
     }
 
@@ -48,9 +44,10 @@ impl StorageController {
     pub fn get_contracts(&self, chain: &str) -> Result<&Box<ContractStorage>, KeyStorageError> {
         match self.contract_storages.get(chain) {
             Some(st) => Ok(st),
-            None => Err(KeyStorageError::StorageError(
-                format!("No storage for: {}", chain),
-            )),
+            None => Err(KeyStorageError::StorageError(format!(
+                "No storage for: {}",
+                chain
+            ))),
         }
     }
 }

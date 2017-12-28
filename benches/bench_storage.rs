@@ -1,10 +1,10 @@
 #![feature(test)]
-extern crate test;
 extern crate emerald_core;
-extern crate rustc_serialize;
 extern crate rand;
-extern crate uuid;
+extern crate rustc_serialize;
 extern crate tempdir;
+extern crate test;
+extern crate uuid;
 
 use emerald_core::PrivateKey;
 use emerald_core::keystore::{Kdf, KeyFile};
@@ -45,7 +45,6 @@ fn bench_db_put_1_m() {
         db.put(&get_keyfile()).unwrap();
     }
 }
-
 
 fn main() {
     println!("put 10K: {} sec", time(|| bench_db_put_10_k()));

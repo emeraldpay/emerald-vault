@@ -3,14 +3,11 @@
 use super::Error;
 use super::prf::Prf;
 use crypto::pbkdf2::pbkdf2;
-
 //TODO: solve `mmap` call on windows for `rust-scrypt`
 #[cfg(target_os = "windows")]
-use crypto::scrypt::{ScryptParams, scrypt};
-
+use crypto::scrypt::{scrypt, ScryptParams};
 #[cfg(all(unix))]
-use rust_scrypt::{ScryptParams, scrypt};
-
+use rust_scrypt::{scrypt, ScryptParams};
 use std::fmt;
 use std::str::FromStr;
 
@@ -95,8 +92,16 @@ impl Kdf {
 
         match *self {
             Kdf::Pbkdf2 { prf, c } => {
-                let mut hmac = prf.hmac(passphrase);
-                pbkdf2(&mut hmac, kdf_salt, c, &mut key);
+                match prf {
+                    Prf::HmacSha256 => {
+                        let mut hmac = prf.hmac(passphrase);
+                        pbkdf2(&mut hmac, kdf_salt, c, &mut key);
+                    }
+                    Prf::HmacSha512 => {
+                        let mut hmac = prf.hmac512(passphrase);
+                        pbkdf2(&mut hmac, kdf_salt, c, &mut key);
+                    }
+                };
             }
             #[cfg(target_os = "windows")]
             Kdf::Scrypt { n, r, p } => {
@@ -155,12 +160,10 @@ impl FromStr for Kdf {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            _ if s == PBKDF2_KDF_NAME => {
-                Ok(Kdf::Pbkdf2 {
-                    prf: Prf::default(),
-                    c: 262_144,
-                })
-            }
+            _ if s == PBKDF2_KDF_NAME => Ok(Kdf::Pbkdf2 {
+                prf: Prf::default(),
+                c: 262_144,
+            }),
             _ if s == SCRYPT_KDF_NAME => Ok(Kdf::default()),
             _ => Err(Error::UnsupportedKdf(s.to_string())),
         }
@@ -183,9 +186,8 @@ pub mod tests {
 
     #[test]
     fn should_derive_key_via_pbkdf2() {
-        let kdf_salt = to_32bytes(
-            "ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd",
-        );
+        let kdf_salt =
+            to_32bytes("ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd");
 
         assert_eq!(
             Kdf::from(8).derive(32, &kdf_salt, "testpassword").to_hex(),
@@ -195,9 +197,8 @@ pub mod tests {
 
     #[test]
     fn should_derive_key_via_scrypt() {
-        let kdf_salt = to_32bytes(
-            "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
-        );
+        let kdf_salt =
+            to_32bytes("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4");
 
         assert_eq!(
             Kdf::from((2, 8, 1))

@@ -91,8 +91,6 @@ pub fn trim_hex(val: &str) -> &str {
     s
 }
 
-
-
 /// Convert a slice into array
 ///
 /// # Arguments
@@ -235,26 +233,8 @@ mod tests {
         assert_eq!(
             to_20bytes("3f4e0668c20e100d7c2a27d4b177ac65b2875d26"),
             [
-                0x3f,
-                0x4e,
-                0x06,
-                0x68,
-                0xc2,
-                0x0e,
-                0x10,
-                0x0d,
-                0x7c,
-                0x2a,
-                0x27,
-                0xd4,
-                0xb1,
-                0x77,
-                0xac,
-                0x65,
-                0xb2,
-                0x87,
-                0x5d,
-                0x26,
+                0x3f, 0x4e, 0x06, 0x68, 0xc2, 0x0e, 0x10, 0x0d, 0x7c, 0x2a, 0x27, 0xd4, 0xb1, 0x77,
+                0xac, 0x65, 0xb2, 0x87, 0x5d, 0x26,
             ]
         );
     }
@@ -262,42 +242,11 @@ mod tests {
     #[test]
     fn should_convert_key_into_32bytes() {
         assert_eq!(
-            to_32bytes(
-                "fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f",
-            ),
+            to_32bytes("fa384e6fe915747cd13faa1022044b0def5e6bec4238bec53166487a5cca569f",),
             [
-                0xfa,
-                0x38,
-                0x4e,
-                0x6f,
-                0xe9,
-                0x15,
-                0x74,
-                0x7c,
-                0xd1,
-                0x3f,
-                0xaa,
-                0x10,
-                0x22,
-                0x04,
-                0x4b,
-                0x0d,
-                0xef,
-                0x5e,
-                0x6b,
-                0xec,
-                0x42,
-                0x38,
-                0xbe,
-                0xc5,
-                0x31,
-                0x66,
-                0x48,
-                0x7a,
-                0x5c,
-                0xca,
-                0x56,
-                0x9f,
+                0xfa, 0x38, 0x4e, 0x6f, 0xe9, 0x15, 0x74, 0x7c, 0xd1, 0x3f, 0xaa, 0x10, 0x22, 0x04,
+                0x4b, 0x0d, 0xef, 0x5e, 0x6b, 0xec, 0x42, 0x38, 0xbe, 0xc5, 0x31, 0x66, 0x48, 0x7a,
+                0x5c, 0xca, 0x56, 0x9f,
             ]
         );
     }
@@ -383,7 +332,6 @@ mod tests {
         assert_eq!(bytes_count(0xff), 1);
         assert_eq!(bytes_count(0xff01), 2);
         assert_eq!(bytes_count(0xffff01), 3);
-
     }
 
     #[test]

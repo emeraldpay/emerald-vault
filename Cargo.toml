@@ -44,7 +44,6 @@ rand = "0.3"
 byteorder="1.0"
 ethabi = "2.0.0"
 num = "0.1.40"
-ring = "^0.12"
 bitcoin = "0.10.1"
 # optional dependencies
 emerald-rocksdb =  { version = "0.10.0", optional = true }

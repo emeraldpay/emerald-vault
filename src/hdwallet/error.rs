@@ -1,5 +1,6 @@
 //! # `HDWallet` Keystore files (UTC / JSON) module errors
 
+use bitcoin::util::bip32;
 use core;
 use std::{error, fmt, io};
 
@@ -31,6 +32,11 @@ impl<'a> From<&'a str> for Error {
     }
 }
 
+impl From<bip32::Error> for Error {
+    fn from(err: bip32::Error) -> Self {
+        Error::HDWalletError(err.to_string())
+    }
+}
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
