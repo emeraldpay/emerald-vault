@@ -73,7 +73,7 @@ fn main() {
 
 ## References
 
- [JSON-RPC API](docs/api.adoc)
+ [JSON-RPC API](docs/api.md)
  
  # Contact
  Chat with us via [Gitter](https://gitter.im/ethereumproject/emerald-wallet)
