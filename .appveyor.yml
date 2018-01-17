@@ -60,6 +60,8 @@ environment:
       USE_CLANG: ON
       INSTALL_NEW_CLANG: ON
       CLANG_URL: http://llvm.org/pre-releases/win-snapshots/LLVM-5.0.0-r301646-win64.exe
+      channel: stable
+      target: x86_64-pc-windows-msvc
 # Only build against the branches that will have pull requests built against them (master).
 # Otherwise creating feature branches on this repository and a pull requests against them will
 # cause each commit to be tested twice, once for the branch and once for the pull request.
