@@ -37,19 +37,31 @@ environment:
 
 ### MSVC Toolchains ###
 
-  # Stable 64-bit MSVC
-    - channel: stable
+#  # Stable 64-bit MSVC
+#    - channel: stable
+#      target: x86_64-pc-windows-msvc
+#  # Stable 32-bit MSVC
+#    - channel: stable
+#      target: i686-pc-windows-msvc
+#  # Beta 64-bit MSVC
+#    - channel: beta
+#      target: x86_64-pc-windows-msvc
+#  # Beta 32-bit MSVC
+#    - channel: beta
+#      target: i686-pc-windows-msvc
+  ###########################################################################
+  # Build 64 bit version using clang-cl backed by MSVC 2017
+  # -------------------------------------------------------------------------
+  # Note that building against MSVC 2017 is only supported with a newer clang
+  ###########################################################################
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      MSVC_SETUP_PATH: C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat
+      MSVC_SETUP_ARG: x64
+      USE_CLANG: ON
+      INSTALL_NEW_CLANG: ON
+      CLANG_URL: http://llvm.org/pre-releases/win-snapshots/LLVM-5.0.0-r301646-win64.exe
+      channel: stable
       target: x86_64-pc-windows-msvc
-  # Stable 32-bit MSVC
-    - channel: stable
-      target: i686-pc-windows-msvc
-  # Beta 64-bit MSVC
-    - channel: beta
-      target: x86_64-pc-windows-msvc
-  # Beta 32-bit MSVC
-    - channel: beta
-      target: i686-pc-windows-msvc
-
 # Only build against the branches that will have pull requests built against them (master).
 # Otherwise creating feature branches on this repository and a pull requests against them will
 # cause each commit to be tested twice, once for the branch and once for the pull request.
