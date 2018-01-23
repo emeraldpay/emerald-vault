@@ -51,7 +51,6 @@ impl From<json::DecoderError> for Error {
     }
 }
 
-
 impl From<hdwallet::Error> for Error {
     fn from(err: hdwallet::Error) -> Self {
         Error::InvalidCrypto(err.to_string())

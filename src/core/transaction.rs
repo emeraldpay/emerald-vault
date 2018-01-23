@@ -1,7 +1,7 @@
 //! # Account transaction
 
 use super::{Address, Error, PrivateKey, Signature};
-use super::util::{KECCAK256_BYTES, RLPList, WriteRLP, keccak256, trim_bytes};
+use super::util::{trim_bytes, KECCAK256_BYTES, RLPList, WriteRLP, keccak256};
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -150,7 +150,6 @@ mod tests {
                     a0\
                     59648e92e975d9cdf5d12698d7267595c087e83e9598639e13525f6fe7c047f1");
     }
-
 
     #[test]
     fn should_sign_transaction_for_testnet() {

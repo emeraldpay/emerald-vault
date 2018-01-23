@@ -311,21 +311,18 @@ mod tests {
     #[test]
     fn encode_extra_long_str() {
         let mut buf = Vec::new();
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris \
-         magna, suscipit sed vehicula non, iaculis faucibus tortor. Proin suscipit \
-         ultricies malesuada. Duis tortor elit, dictum quis tristique eu, ultrices \
-         at risus. Morbi a est imperdiet mi ullamcorper aliquet suscipit nec lorem. \
-         Aenean quis leo mollis, vulputate elit varius, consequat enim. Nulla \
-         ultrices turpis justo, et posuere urna consectetur nec. Proin non \
-         convallis metus. Donec tempor ipsum in mauris congue sollicitudin. \
-         Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere \
-         cubilia Curae; Suspendisse convallis sem vel massa faucibus, eget lacinia \
-         lacus tempor. Nulla quis ultricies purus. Proin auctor rhoncus nibh \
-         condimentum mollis. Aliquam consequat enim at metus luctus, a eleifend \
-         purus egestas. Curabitur at nibh metus. Nam bibendum, neque at auctor \
-         tristique, lorem libero aliquet arcu, non interdum tellus lectus sit amet \
-         eros. Cras rhoncus, metus ac ornare cursus, dolor justo ultrices metus, \
-         at ullamcorper volutpat"
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur mauris magna, \
+         suscipit sed vehicula non, iaculis faucibus tortor. Proin suscipit ultricies malesuada. \
+         Duis tortor elit, dictum quis tristique eu, ultrices at risus. Morbi a est imperdiet mi \
+         ullamcorper aliquet suscipit nec lorem. Aenean quis leo mollis, vulputate elit varius, \
+         consequat enim. Nulla ultrices turpis justo, et posuere urna consectetur nec. Proin non \
+         convallis metus. Donec tempor ipsum in mauris congue sollicitudin. Vestibulum ante ipsum \
+         primis in faucibus orci luctus et ultrices posuere cubilia Curae; Suspendisse convallis \
+         sem vel massa faucibus, eget lacinia lacus tempor. Nulla quis ultricies purus. Proin \
+         auctor rhoncus nibh condimentum mollis. Aliquam consequat enim at metus luctus, a \
+         eleifend purus egestas. Curabitur at nibh metus. Nam bibendum, neque at auctor \
+         tristique, lorem libero aliquet arcu, non interdum tellus lectus sit amet eros. Cras \
+         rhoncus, metus ac ornare cursus, dolor justo ultrices metus, at ullamcorper volutpat"
             .write_rlp(&mut buf);
         assert_eq!("b904004c6f72656d20697073756d20646f6c6f722073697420616d65742c2063\
                     6f6e73656374657475722061646970697363696e6720656c69742e2043757261\

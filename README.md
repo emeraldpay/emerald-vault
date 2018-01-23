@@ -5,6 +5,7 @@
     <a href="https://travis-ci.org/ethereumproject/emerald-rs"><img alt="Travis" src="https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square"></a>
     <a href="https://ci.appveyor.com/project/splix/emerald-rs"><img alt="AppVeyor" src="https://img.shields.io/appveyor/ci/splix/emerald-rs/master.svg?style=flat-square"></a>
     <a href="https://crates.io/crates/emerald-rs"><img alt="crates.io" src="https://img.shields.io/crates/v/emerald-rs.svg?style=flat-square"></a>
+    <a href='https://coveralls.io/github/ethereumproject/emerald-rs'><img src='https://coveralls.io/repos/github/ethereumproject/emerald-rs/badge.svg' alt='Coverage Status' /></a>
     <a href="LICENSE"><img alt="Software License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000"></a>
   </p>
 </p>
@@ -72,7 +73,10 @@ fn main() {
 
 ## References
 
- [JSON-RPC API](docs/api.adoc)
+ [JSON-RPC API](docs/api.md)
+ 
+ # Contact
+ Chat with us via [Gitter](https://gitter.im/ethereumproject/emerald-wallet)
 
 ## License
 

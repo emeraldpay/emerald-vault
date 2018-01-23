@@ -30,7 +30,6 @@ pub const SW_WRONG_LENGTH: [u8; 2] = [0x67, 0x00];
 pub const SW_INCORRECT_PARAMETERS: [u8; 2] = [0x6b, 0x00];
 pub const SW_USER_CANCEL: [u8; 2] = [0x6A, 0x85];
 
-
 /// Packs header with Ledgers magic numbers
 /// For more details refer APDU doc:
 /// <https://github.com/LedgerHQ/blue-app-eth/blob/master/doc/ethapp.asc#general-purpose-apdus>
@@ -81,15 +80,15 @@ fn sw_to_error(sw_h: u8, sw_l: u8) -> Result<(), Error> {
         SW_WRONG_DATA => Err(Error::CommError("Invalid data".to_string())),
         SW_INCORRECT_PARAMETERS => Err(Error::CommError("Incorrect parameters".to_string())),
         SW_USER_CANCEL => Err(Error::CommError("Canceled by user".to_string())),
-        SW_CONDITIONS_NOT_SATISFIED => Err(
-            Error::CommError("Conditions not satisfied()".to_string()),
-        ),
-        v => Err(Error::CommError(
-            format!("Internal communication error: {:?}", v),
-        )),
+        SW_CONDITIONS_NOT_SATISFIED => {
+            Err(Error::CommError("Conditions not satisfied()".to_string()))
+        }
+        v => Err(Error::CommError(format!(
+            "Internal communication error: {:?}",
+            v
+        ))),
     }
 }
-
 
 ///
 pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
@@ -140,9 +139,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
     frame_index += 1;
     debug!(
         "\t\t|-- init data: {:?}, recvlen: {}, datalen: {}",
-        data,
-        recvlen,
-        datalen
+        data, recvlen, datalen
     );
 
     while recvlen < datalen {

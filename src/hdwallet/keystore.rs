@@ -1,5 +1,5 @@
 use super::Error;
-use keystore::{CryptoType, KeyFile, decode_str};
+use keystore::{decode_str, CryptoType, KeyFile};
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 
 /// `Keyfile` for HD Wallet
@@ -31,13 +31,11 @@ impl HdwalletCrypto {
     ///
     pub fn try_from(kf: &KeyFile) -> Result<Self, Error> {
         match kf.crypto {
-            CryptoType::HdWallet(ref hd) => {
-                Ok(Self {
-                    cipher: hd.cipher.clone(),
-                    hardware: hd.hardware.clone(),
-                    hd_path: hd.hd_path.clone(),
-                })
-            }
+            CryptoType::HdWallet(ref hd) => Ok(Self {
+                cipher: hd.cipher.clone(),
+                hardware: hd.hardware.clone(),
+                hd_path: hd.hd_path.clone(),
+            }),
             _ => Err(Error::HDWalletError("HD wallet".to_string())),
         }
     }
@@ -51,7 +49,6 @@ impl Into<KeyFile> for HdwalletCrypto {
         }
     }
 }
-
 
 impl Decodable for HdwalletCrypto {
     fn decode<D: Decoder>(d: &mut D) -> Result<Self, D::Error> {
@@ -72,21 +69,9 @@ impl Decodable for HdwalletCrypto {
 impl Encodable for HdwalletCrypto {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         s.emit_struct("Crypto", 3, |s| {
-            s.emit_struct_field(
-                "cipher",
-                0,
-                |s| s.emit_str(&self.cipher.to_string()),
-            )?;
-            s.emit_struct_field(
-                "hardware",
-                1,
-                |s| self.hardware.encode(s),
-            )?;
-            s.emit_struct_field(
-                "hd_path",
-                2,
-                |s| self.hd_path.encode(s),
-            )?;
+            s.emit_struct_field("cipher", 0, |s| s.emit_str(&self.cipher.to_string()))?;
+            s.emit_struct_field("hardware", 1, |s| self.hardware.encode(s))?;
+            s.emit_struct_field("hd_path", 2, |s| self.hd_path.encode(s))?;
 
             Ok(())
         })
