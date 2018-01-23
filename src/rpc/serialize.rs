@@ -10,9 +10,12 @@ pub struct RPCTransaction {
     pub from: String,
     pub to: String,
     pub gas: String,
-    #[serde(rename = "gasPrice")] pub gas_price: String,
-    #[serde(default)] pub value: String,
-    #[serde(default)] pub data: String,
+    #[serde(rename = "gasPrice")]
+    pub gas_price: String,
+    #[serde(default)]
+    pub value: String,
+    #[serde(default)]
+    pub data: String,
     pub nonce: String,
 }
 
