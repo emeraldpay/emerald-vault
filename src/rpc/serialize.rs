@@ -1,6 +1,6 @@
 //! # Serialize JSON RPC parameters
 
-use super::{align_bytes, to_arr, to_even_str, trim_hex, Error, ToHex, to_u64};
+use super::{Error, ToHex, align_bytes, to_arr, to_even_str, to_u64, trim_hex};
 use super::core::{Address, Transaction};
 use hex::FromHex;
 use jsonrpc_core::{Params, Value as JsonRpcValue};

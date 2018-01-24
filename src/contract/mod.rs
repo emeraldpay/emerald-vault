@@ -55,7 +55,9 @@ impl Contract {
 
         let tokens = params
             .iter()
-            .map(|&(ref param, ref value)| LenientTokenizer::tokenize(param, value))
+            .map(|&(ref param, ref value)| {
+                LenientTokenizer::tokenize(param, value)
+            })
             .collect::<Result<_, _>>()?;
 
         let result = Encoder::encode(tokens);

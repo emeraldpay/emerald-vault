@@ -6,7 +6,7 @@ use super::error::Error;
 use bitcoin::network::constants::Network;
 use bitcoin::util::bip32::ChildNumber::{self, Hardened, Normal};
 use bitcoin::util::bip32::ExtendedPrivKey;
-use core::{PrivateKey, PRIVATE_KEY_BYTES};
+use core::{PRIVATE_KEY_BYTES, PrivateKey};
 use hdwallet::DERIVATION_INDEX_SIZE;
 use regex::Regex;
 use secp256k1::Secp256k1;
@@ -14,7 +14,27 @@ use std::ops;
 use util::to_bytes;
 
 pub const ETC_DERIVATION_PATH: [u8; 21] = [
-    5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0
+    5,
+    0x80,
+    0,
+    0,
+    44,
+    0x80,
+    0,
+    0,
+    60,
+    0x80,
+    0x02,
+    0x73,
+    0xd0,
+    0x80,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 ]; // 44'/60'/160720'/0'/0
 
 lazy_static! {
@@ -59,10 +79,9 @@ impl HDPath {
                     }
                 }
                 Err(e) => {
-                    return Err(Error::HDWalletError(format!(
-                        "Invalid HD path child index: {}",
-                        e.to_string()
-                    )))
+                    return Err(Error::HDWalletError(
+                        format!("Invalid HD path child index: {}", e.to_string()),
+                    ))
                 }
             };
         }
@@ -103,10 +122,9 @@ pub fn generate_key(path: &HDPath, seed: &[u8]) -> Result<PrivateKey, Error> {
 ///
 pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
     if !HD_PATH_RE.is_match(hd_str) {
-        return Err(Error::HDWalletError(format!(
-            "Invalid `hd_path` format: {}",
-            hd_str
-        )));
+        return Err(Error::HDWalletError(
+            format!("Invalid `hd_path` format: {}", hd_str),
+        ));
     }
 
     let (_, p) = hd_str.split_at(2);

@@ -1,6 +1,6 @@
 //! # JSON serialize for crypto field (UTC / JSON)
 
-use super::{Cipher, CryptoType, Error, Kdf, KeyFile, CIPHER_IV_BYTES, KDF_SALT_BYTES};
+use super::{CIPHER_IV_BYTES, Cipher, CryptoType, Error, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::util::KECCAK256_BYTES;
 use hex::{FromHex, ToHex};
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
@@ -46,9 +46,7 @@ pub struct CipherParams {
 
 impl Default for CipherParams {
     fn default() -> Self {
-        CipherParams {
-            iv: Iv::from([0; CIPHER_IV_BYTES]),
-        }
+        CipherParams { iv: Iv::from([0; CIPHER_IV_BYTES]) }
     }
 }
 
@@ -98,12 +96,16 @@ impl Decodable for CoreCrypto {
         d.read_struct("Crypto", 6, |d| {
             let cipher = d.read_struct_field("cipher", 0, |d| decode_str(d))?;
 
-            let cipher_params =
-                d.read_struct_field("cipherparams", 1, |d| CipherParams::decode(d))?;
+            let cipher_params = d.read_struct_field(
+                "cipherparams",
+                1,
+                |d| CipherParams::decode(d),
+            )?;
 
             let cipher_text = d.read_struct_field("ciphertext", 2, |d| {
-                d.read_str()
-                    .and_then(|s| Vec::from_hex(s).map_err(|e| d.error(&e.to_string())))
+                d.read_str().and_then(|s| {
+                    Vec::from_hex(s).map_err(|e| d.error(&e.to_string()))
+                })
             })?;
 
             let mut kdf = d.read_struct_field("kdf", 3, |d| decode_str(d))?;
@@ -112,29 +114,33 @@ impl Decodable for CoreCrypto {
                 Kdf::Pbkdf2 {
                     ref mut prf,
                     ref mut c,
-                } => d.read_struct("KdfParams", 4, |d| {
-                    let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
-                    let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
+                } => {
+                    d.read_struct("KdfParams", 4, |d| {
+                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
+                        let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
 
-                    *prf = d.read_struct_field("prf", 2, |d| decode_str(d))?;
-                    *c = d.read_struct_field("c", 3, |d| d.read_u32())?;
+                        *prf = d.read_struct_field("prf", 2, |d| decode_str(d))?;
+                        *c = d.read_struct_field("c", 3, |d| d.read_u32())?;
 
-                    Ok((dklen, salt))
-                }),
+                        Ok((dklen, salt))
+                    })
+                }
                 Kdf::Scrypt {
                     ref mut n,
                     ref mut r,
                     ref mut p,
-                } => d.read_struct("KdfParams", 5, |d| {
-                    let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
-                    let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
+                } => {
+                    d.read_struct("KdfParams", 5, |d| {
+                        let dklen = d.read_struct_field("dklen", 0, |d| d.read_usize())?;
+                        let salt = d.read_struct_field("salt", 1, |d| Salt::decode(d))?;
 
-                    *n = d.read_struct_field("n", 2, |d| d.read_u32())?;
-                    *r = d.read_struct_field("r", 3, |d| d.read_u32())?;
-                    *p = d.read_struct_field("p", 4, |d| d.read_u32())?;
+                        *n = d.read_struct_field("n", 2, |d| d.read_u32())?;
+                        *r = d.read_struct_field("r", 3, |d| d.read_u32())?;
+                        *p = d.read_struct_field("p", 4, |d| d.read_u32())?;
 
-                    Ok((dklen, salt))
-                }),
+                        Ok((dklen, salt))
+                    })
+                }
             })?;
 
             let mac = d.read_struct_field("mac", 5, |d| Mac::decode(d))?;
@@ -155,28 +161,68 @@ impl Decodable for CoreCrypto {
 impl Encodable for CoreCrypto {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         s.emit_struct("Crypto", 6, |s| {
-            s.emit_struct_field("cipher", 0, |s| s.emit_str(&self.cipher.to_string()))?;
-            s.emit_struct_field("cipherparams", 1, |s| self.cipher_params.encode(s))?;
-            s.emit_struct_field("ciphertext", 2, |s| self.cipher_text.to_hex().encode(s))?;
-            s.emit_struct_field("kdf", 3, |s| s.emit_str(&self.kdf.to_string()))?;
+            s.emit_struct_field(
+                "cipher",
+                0,
+                |s| s.emit_str(&self.cipher.to_string()),
+            )?;
+            s.emit_struct_field(
+                "cipherparams",
+                1,
+                |s| self.cipher_params.encode(s),
+            )?;
+            s.emit_struct_field(
+                "ciphertext",
+                2,
+                |s| self.cipher_text.to_hex().encode(s),
+            )?;
+            s.emit_struct_field(
+                "kdf",
+                3,
+                |s| s.emit_str(&self.kdf.to_string()),
+            )?;
             s.emit_struct_field("kdfparams", 4, |s| match self.kdf {
-                Kdf::Pbkdf2 { prf, c } => s.emit_struct("KdfParams", 4, |s| {
-                    s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen))?;
-                    s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s))?;
-                    s.emit_struct_field("prf", 2, |s| s.emit_str(&prf.to_string()))?;
-                    s.emit_struct_field("c", 3, |s| s.emit_u32(c))?;
+                Kdf::Pbkdf2 { prf, c } => {
+                    s.emit_struct("KdfParams", 4, |s| {
+                        s.emit_struct_field(
+                            "dklen",
+                            0,
+                            |s| s.emit_usize(self.kdfparams_dklen),
+                        )?;
+                        s.emit_struct_field(
+                            "salt",
+                            1,
+                            |s| self.kdfparams_salt.encode(s),
+                        )?;
+                        s.emit_struct_field(
+                            "prf",
+                            2,
+                            |s| s.emit_str(&prf.to_string()),
+                        )?;
+                        s.emit_struct_field("c", 3, |s| s.emit_u32(c))?;
 
-                    Ok(())
-                }),
-                Kdf::Scrypt { n, r, p } => s.emit_struct("KdfParams", 5, |s| {
-                    s.emit_struct_field("dklen", 0, |s| s.emit_usize(self.kdfparams_dklen))?;
-                    s.emit_struct_field("salt", 1, |s| self.kdfparams_salt.encode(s))?;
-                    s.emit_struct_field("n", 2, |s| s.emit_u32(n))?;
-                    s.emit_struct_field("r", 3, |s| s.emit_u32(r))?;
-                    s.emit_struct_field("p", 4, |s| s.emit_u32(p))?;
+                        Ok(())
+                    })
+                }
+                Kdf::Scrypt { n, r, p } => {
+                    s.emit_struct("KdfParams", 5, |s| {
+                        s.emit_struct_field(
+                            "dklen",
+                            0,
+                            |s| s.emit_usize(self.kdfparams_dklen),
+                        )?;
+                        s.emit_struct_field(
+                            "salt",
+                            1,
+                            |s| self.kdfparams_salt.encode(s),
+                        )?;
+                        s.emit_struct_field("n", 2, |s| s.emit_u32(n))?;
+                        s.emit_struct_field("r", 3, |s| s.emit_u32(r))?;
+                        s.emit_struct_field("p", 4, |s| s.emit_u32(p))?;
 
-                    Ok(())
-                }),
+                        Ok(())
+                    })
+                }
             })?;
             s.emit_struct_field("mac", 5, |s| self.mac.encode(s))?;
 
@@ -191,8 +237,9 @@ pub fn decode_str<T: FromStr, D: Decoder>(d: &mut D) -> Result<T, D::Error>
 where
     <T as FromStr>::Err: ::std::fmt::Display,
 {
-    d.read_str()
-        .and_then(|s| T::from_str(&s).map_err(|e| d.error(&e.to_string())))
+    d.read_str().and_then(|s| {
+        T::from_str(&s).map_err(|e| d.error(&e.to_string()))
+    })
 }
 
 #[cfg(test)]

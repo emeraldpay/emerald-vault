@@ -1,7 +1,7 @@
 //! # Advanced encryption standard (AES) cipher
 
 use super::Error;
-use crypto::aes::{ctr, KeySize};
+use crypto::aes::{KeySize, ctr};
 use std::fmt;
 use std::str::FromStr;
 

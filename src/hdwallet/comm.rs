@@ -83,10 +83,9 @@ fn sw_to_error(sw_h: u8, sw_l: u8) -> Result<(), Error> {
         SW_CONDITIONS_NOT_SATISFIED => {
             Err(Error::CommError("Conditions not satisfied()".to_string()))
         }
-        v => Err(Error::CommError(format!(
-            "Internal communication error: {:?}",
-            v
-        ))),
+        v => Err(Error::CommError(
+            format!("Internal communication error: {:?}", v),
+        )),
     }
 }
 
@@ -139,7 +138,9 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
     frame_index += 1;
     debug!(
         "\t\t|-- init data: {:?}, recvlen: {}, datalen: {}",
-        data, recvlen, datalen
+        data,
+        recvlen,
+        datalen
     );
 
     while recvlen < datalen {
