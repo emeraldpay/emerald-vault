@@ -1,11 +1,12 @@
 language: rust
 cache: cargo
 rust:
-- stable
-- nightly
+  - stable
+  allow_failures:
+  - nightly
 os:
-- linux
-- osx
+  - linux
+  - osx
 addons:
   apt:
     packages:
