@@ -87,10 +87,30 @@ mod tests {
 
     #[test]
     fn should_display_real_address() {
-        let addr = Address([
-            0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04, 0x73, 0x80, 0x89,
-            0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4,
-        ]);
+        let addr = Address(
+            [
+                0x0e,
+                0x7c,
+                0x04,
+                0x51,
+                0x10,
+                0xb8,
+                0xdb,
+                0xf2,
+                0x97,
+                0x65,
+                0x04,
+                0x73,
+                0x80,
+                0x89,
+                0x89,
+                0x19,
+                0xc5,
+                0xcb,
+                0x56,
+                0xf4,
+            ],
+        );
 
         assert_eq!(
             addr.to_string(),
@@ -100,10 +120,30 @@ mod tests {
 
     #[test]
     fn should_parse_real_address() {
-        let addr = Address([
-            0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04, 0x73, 0x80, 0x89,
-            0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4,
-        ]);
+        let addr = Address(
+            [
+                0x0e,
+                0x7c,
+                0x04,
+                0x51,
+                0x10,
+                0xb8,
+                0xdb,
+                0xf2,
+                0x97,
+                0x65,
+                0x04,
+                0x73,
+                0x80,
+                0x89,
+                0x89,
+                0x19,
+                0xc5,
+                0xcb,
+                0x56,
+                0xf4,
+            ],
+        );
 
         assert_eq!(
             "0x0e7c045110b8dbf29765047380898919c5cb56f4"
@@ -115,10 +155,30 @@ mod tests {
 
     #[test]
     fn should_parse_real_address_without_prefix() {
-        let addr = Address([
-            0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04, 0x73, 0x80, 0x89,
-            0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4,
-        ]);
+        let addr = Address(
+            [
+                0x0e,
+                0x7c,
+                0x04,
+                0x51,
+                0x10,
+                0xb8,
+                0xdb,
+                0xf2,
+                0x97,
+                0x65,
+                0x04,
+                0x73,
+                0x80,
+                0x89,
+                0x89,
+                0x19,
+                0xc5,
+                0xcb,
+                0x56,
+                0xf4,
+            ],
+        );
 
         assert_eq!(
             "0e7c045110b8dbf29765047380898919c5cb56f4"

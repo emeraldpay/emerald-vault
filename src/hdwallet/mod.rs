@@ -14,7 +14,7 @@ use self::apdu::ApduBuilder;
 use self::comm::sendrecv;
 pub use self::error::Error;
 pub use self::keystore::HdwalletCrypto;
-use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
+use super::{Address, ECDSA_SIGNATURE_BYTES, Signature, to_arr};
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
 use std::{thread, time};
 use std::str::{FromStr, from_utf8};
@@ -174,7 +174,8 @@ impl WManager {
             }
             v => Err(Error::HDWalletError(format!(
                 "Invalid signature length. Expected: {}, received: {}",
-                ECDSA_SIGNATURE_BYTES, v
+                ECDSA_SIGNATURE_BYTES,
+                v
             ))),
         }
     }
@@ -225,7 +226,7 @@ impl WManager {
 mod tests {
     use super::*;
     use core::Transaction;
-    use hdwallet::bip32::{path_to_arr, to_prefixed_path, ETC_DERIVATION_PATH};
+    use hdwallet::bip32::{ETC_DERIVATION_PATH, path_to_arr, to_prefixed_path};
     use rustc_serialize::hex::ToHex;
     use tests::*;
 

@@ -54,10 +54,9 @@ impl ContractStorage {
         println!(">> DEBUG created file {:?}", f);
         match serde_json::to_writer_pretty(&mut f, contract) {
             Ok(_) => Ok(()),
-            Err(_) => Err(Error::IO(format!(
-                "Can't write contract for address {}",
-                addr
-            ))),
+            Err(_) => Err(Error::IO(
+                format!("Can't write contract for address {}", addr),
+            )),
         }
     }
 
@@ -75,8 +74,11 @@ impl ContractStorage {
 
     fn read_json(path: &Path) -> Result<serde_json::Value, Error> {
         match File::open(path) {
-            Ok(f) => serde_json::from_reader(f)
-                .or_else(|_| Err(Error::IO("Can't read contract file".to_string()))),
+            Ok(f) => {
+                serde_json::from_reader(f).or_else(|_| {
+                    Err(Error::IO("Can't read contract file".to_string()))
+                })
+            }
             Err(_) => Err(Error::IO("Can't open contract file".to_string())),
         }
     }

@@ -1,5 +1,5 @@
 use super::Error;
-use keystore::{decode_str, CryptoType, KeyFile};
+use keystore::{CryptoType, KeyFile, decode_str};
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 
 /// `Keyfile` for HD Wallet
@@ -69,9 +69,21 @@ impl Decodable for HdwalletCrypto {
 impl Encodable for HdwalletCrypto {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         s.emit_struct("Crypto", 3, |s| {
-            s.emit_struct_field("cipher", 0, |s| s.emit_str(&self.cipher.to_string()))?;
-            s.emit_struct_field("hardware", 1, |s| self.hardware.encode(s))?;
-            s.emit_struct_field("hd_path", 2, |s| self.hd_path.encode(s))?;
+            s.emit_struct_field(
+                "cipher",
+                0,
+                |s| s.emit_str(&self.cipher.to_string()),
+            )?;
+            s.emit_struct_field(
+                "hardware",
+                1,
+                |s| self.hardware.encode(s),
+            )?;
+            s.emit_struct_field(
+                "hd_path",
+                2,
+                |s| self.hd_path.encode(s),
+            )?;
 
             Ok(())
         })

@@ -7,13 +7,13 @@ mod crypto;
 mod error;
 
 pub use self::address::try_extract_address;
-pub use self::crypto::{decode_str, CoreCrypto, Iv, Mac, Salt};
+pub use self::crypto::{CoreCrypto, Iv, Mac, Salt, decode_str};
 pub use self::error::Error;
-use super::{Cipher, CryptoType, Kdf, KeyFile, CIPHER_IV_BYTES, KDF_SALT_BYTES};
+use super::{CIPHER_IV_BYTES, Cipher, CryptoType, KDF_SALT_BYTES, Kdf, KeyFile};
 use super::HdwalletCrypto;
 use super::core::{self, Address};
 use super::util;
-use rustc_serialize::{json, Encodable, Encoder};
+use rustc_serialize::{Encodable, Encoder, json};
 use uuid::Uuid;
 
 /// Keystore file current version used for serializing
@@ -138,10 +138,12 @@ impl Encodable for KeyFile {
     fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
         match SerializableKeyFileCore::try_from(self.clone()) {
             Ok(sf) => sf.encode(s),
-            Err(_) => match SerializableKeyFileHD::try_from(self) {
-                Ok(sf) => sf.encode(s),
-                Err(_) => Ok(()),
-            },
+            Err(_) => {
+                match SerializableKeyFileHD::try_from(self) {
+                    Ok(sf) => sf.encode(s),
+                    Err(_) => Ok(()),
+                }
+            }
         }
     }
 }
@@ -193,6 +195,8 @@ mod tests {
     fn should_generate_filename() {
         let re = Regex::new(r"^UTC--\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z--*").unwrap();
 
-        assert!(re.is_match(&generate_filename("9bec4728-37f9-4444-9990-2ba70ee038e9"),));
+        assert!(re.is_match(
+            &generate_filename("9bec4728-37f9-4444-9990-2ba70ee038e9"),
+        ));
     }
 }
