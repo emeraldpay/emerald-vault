@@ -75,7 +75,14 @@ fn main() {
 
  [JSON-RPC API](docs/api.md)
  
- # Contact
+ ## Build
+ 
+ ### Ubuntu
+ ```sudo apt-get install clang```
+ 
+ ```cargo build```
+ 
+ ## Contact
  Chat with us via [Gitter](https://gitter.im/ethereumproject/emerald-wallet)
 
 ## License
