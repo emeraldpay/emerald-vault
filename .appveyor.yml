@@ -74,7 +74,7 @@ install:
 ## Build Script ##
 
 cache:
-  - '%USERPROFILE%\.cargo'
+# - '%USERPROFILE%\.cargo'
 
 # Uses 'cargo build' to build. Alternatively, the project may call rustc directly or perform other
 # build commands. Rust will automatically be placed in the PATH environment variable.
