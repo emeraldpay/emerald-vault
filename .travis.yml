@@ -2,7 +2,7 @@ language: rust
 cache: cargo
 rust:
   - stable
-  allow_failures:
+allow_failures:
   - nightly
 os:
   - linux
