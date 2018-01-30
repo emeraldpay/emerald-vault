@@ -4,7 +4,7 @@
 ## Operating System (VM environment) ##
 
 # Rust needs at least Visual Studio 2013 Appveyor OS for MSVC targets.
-os: Visual Studio 2015
+os: Visual Studio 2017
 
 ## Build Matrix ##
 
@@ -74,7 +74,7 @@ install:
 ## Build Script ##
 
 cache:
-  - '%USERPROFILE%\.cargo'
+ - '%USERPROFILE%\.cargo'
 
 # Uses 'cargo build' to build. Alternatively, the project may call rustc directly or perform other
 # build commands. Rust will automatically be placed in the PATH environment variable.
@@ -87,6 +87,3 @@ build_script:
 test_script:
   - cargo test --all --verbose %cargoflags%
 
-artifacts:
-  - path: target\release\emerald.exe
-    name: emerald-cli

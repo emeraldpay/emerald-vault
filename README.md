@@ -42,7 +42,7 @@ Developed by [ETCDEV Team](http://www.etcdevteam.com/)
 Ensure you have these dependencies installed:
 
 ```
-openssl pkgconfig rustc cargo
+openssl pkgconfig rustc cargo clang
 ```
 
 `cargo` and `rustc` should be at least versions 0.18 and 1.17 respectively.
@@ -75,7 +75,7 @@ fn main() {
 
  [JSON-RPC API](docs/api.md)
  
- # Contact
+## Contact
  Chat with us via [Gitter](https://gitter.im/ethereumproject/emerald-wallet)
 
 ## License
