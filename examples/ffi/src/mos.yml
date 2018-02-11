@@ -1,0 +1,25 @@
+author: mongoose-os
+description: A demo Mongoose OS firmware for C/C++
+version: 1.0
+
+libs_version: ${mos.version}
+modules_version: ${mos.version}
+mongoose_os_version: ${mos.version}
+
+tags:
+  - c
+
+sources:
+  - src
+
+filesystem:
+  - fs
+
+config_schema:
+  - ["mqtt.server", "iot.eclipse.org:1883"]
+
+libs:
+  - origin: https://github.com/mongoose-os-libs/demo-bundle
+
+# Used by the mos tool to catch mos binaries incompatible with this file format
+manifest_version: 2017-05-18
