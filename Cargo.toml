@@ -59,7 +59,7 @@ quickcheck = "0.4"
 # quickcheck_macros = "0.4"
 
 [features]
-default = ["http", "emerald-rocksdb"]
+default = ["http", "rust-rocksdb"]
 http = ["hyper", "reqwest"]
 dev = ["clippy"]
 fs-storage = []
