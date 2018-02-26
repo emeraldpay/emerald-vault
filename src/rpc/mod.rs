@@ -153,6 +153,13 @@ pub fn start(
     }
 
     {
+        let storage_ctrl = Arc::clone(&storage_ctrl);
+        io.add_method("emerald_sign", move |p: Params| {
+            wrapper(serves::sign())
+        });
+    }
+
+    {
         io.add_method("emerald_encodeFunctionCall", move |p: Params| {
             wrapper(serves::encode_function_call(parse(p)?))
         });
