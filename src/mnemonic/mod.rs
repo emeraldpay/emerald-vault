@@ -10,7 +10,7 @@ pub use self::error::Error;
 pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
 use crypto::digest::Digest;
 use crypto::sha2;
-pub use hdwallet::bip32::{HDPath, generate_key};
+pub use hdwallet::bip32::{generate_key, HDPath};
 use keystore::{Kdf, Prf};
 use num::{FromPrimitive, ToPrimitive};
 use num::bigint::BigUint;
@@ -291,9 +291,8 @@ mod tests {
 
     #[test]
     fn should_create_from_sentence_24() {
-        let s =
-            "beyond stage sleep clip because twist token leaf atom beauty genius food business \
-             side grid unable middle armed observe pair crouch tonight away coconut";
+        let s = "beyond stage sleep clip because twist token leaf atom beauty genius food \
+                 business side grid unable middle armed observe pair crouch tonight away coconut";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
         let w: Vec<String> = s.to_string()
             .split_whitespace()

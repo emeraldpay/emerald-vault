@@ -13,11 +13,11 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::{Kdf, KdfDepthLevel, PBKDF2_KDF_NAME};
 pub use self::prf::Prf;
-pub use self::serialize::{CoreCrypto, Iv, Mac, Salt, SerializableKeyFileCore,
-                          SerializableKeyFileHD, decode_str, try_extract_address};
+pub use self::serialize::{decode_str, try_extract_address, CoreCrypto, Iv, Mac, Salt,
+                          SerializableKeyFileCore, SerializableKeyFileHD};
 pub use self::serialize::Error as SerializeError;
 use super::core::{self, Address, PrivateKey};
-use super::util::{self, KECCAK256_BYTES, keccak256, to_arr};
+use super::util::{self, to_arr, KECCAK256_BYTES, keccak256};
 pub use hdwallet::HdwalletCrypto;
 use rand::{OsRng, Rng};
 use std::{cmp, fmt};
@@ -140,11 +140,9 @@ impl KeyFile {
     pub fn decrypt_key(&self, passphrase: &str) -> Result<PrivateKey, Error> {
         match self.crypto {
             CryptoType::Core(ref core) => {
-                let derived = core.kdf.derive(
-                    core.kdfparams_dklen,
-                    &core.kdfparams_salt,
-                    passphrase,
-                );
+                let derived =
+                    core.kdf
+                        .derive(core.kdfparams_dklen, &core.kdfparams_salt, passphrase);
 
                 let mut v = derived[16..32].to_vec();
                 v.extend_from_slice(&core.cipher_text);
@@ -180,21 +178,17 @@ impl KeyFile {
                 rng.fill_bytes(&mut buf_salt);
                 core.kdfparams_salt = Salt::from(buf_salt);
 
-                let derived = core.kdf.derive(
-                    core.kdfparams_dklen,
-                    &core.kdfparams_salt,
-                    passphrase,
-                );
+                let derived =
+                    core.kdf
+                        .derive(core.kdfparams_dklen, &core.kdfparams_salt, passphrase);
 
                 let mut buf_iv: [u8; CIPHER_IV_BYTES] = [0; CIPHER_IV_BYTES];
                 rng.fill_bytes(&mut buf_iv);
                 core.cipher_params.iv = Iv::from(buf_iv);
 
-                core.cipher_text = core.cipher.encrypt(
-                    &pk,
-                    &derived[0..16],
-                    &core.cipher_params.iv,
-                );
+                core.cipher_text =
+                    core.cipher
+                        .encrypt(&pk, &derived[0..16], &core.cipher_params.iv);
 
                 let mut v = derived[16..32].to_vec();
                 v.extend_from_slice(&core.cipher_text);

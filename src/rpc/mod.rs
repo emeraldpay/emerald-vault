@@ -8,7 +8,7 @@ pub use self::error::Error;
 use super::core;
 use super::keystore::KdfDepthLevel;
 use super::storage::{self, StorageController};
-use super::util::{ToHex, align_bytes, to_arr, to_chain_id, to_even_str, to_u64, trim_hex};
+use super::util::{align_bytes, to_arr, to_chain_id, to_even_str, trim_hex, ToHex, to_u64};
 use hdwallet::WManager;
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
@@ -38,9 +38,8 @@ fn parse<T>(p: Params) -> Result<T, JsonRpcError>
 where
     T: DeserializeOwned,
 {
-    p.parse().map_err(|_| {
-        JsonRpcError::invalid_params("Corrupted input parameters".to_string())
-    })
+    p.parse()
+        .map_err(|_| JsonRpcError::invalid_params("Corrupted input parameters".to_string()))
 }
 
 /// Start an HTTP RPC endpoint
@@ -154,9 +153,7 @@ pub fn start(
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
-        io.add_method("emerald_sign", move |p: Params| {
-            wrapper(serves::sign())
-        });
+        io.add_method("emerald_sign", move |p: Params| wrapper(serves::sign()));
     }
 
     {

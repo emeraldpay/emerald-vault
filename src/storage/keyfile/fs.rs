@@ -1,13 +1,13 @@
 //! # `KeyFile` storage within filesystem
 
-use super::{AccountInfo, KeyfileStorage, generate_filename};
+use super::{generate_filename, AccountInfo, KeyfileStorage};
 use super::error::Error;
 use core::Address;
 use keystore::KeyFile;
 use keystore::try_extract_address;
 use rustc_serialize::json;
 use std::ffi::OsStr;
-use std::fs::{self, File, read_dir};
+use std::fs::{self, read_dir, File};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
@@ -30,7 +30,9 @@ impl FsStorage {
     where
         P: AsRef<Path> + AsRef<OsStr>,
     {
-        FsStorage { base_path: PathBuf::from(&dir) }
+        FsStorage {
+            base_path: PathBuf::from(&dir),
+        }
     }
 
     /// Hides/unhides `Keyfile` for specified `Address`
@@ -93,9 +95,10 @@ impl KeyfileStorage for FsStorage {
 
         match fs::remove_file(path) {
             Ok(_) => Ok(()),
-            Err(_) => Err(Error::StorageError(
-                format!("Can't delete KeyFile for address: {}", addr),
-            )),
+            Err(_) => Err(Error::StorageError(format!(
+                "Can't delete KeyFile for address: {}",
+                addr
+            ))),
         }
     }
 
@@ -123,9 +126,10 @@ impl KeyfileStorage for FsStorage {
                     info.filename = match path.file_name().and_then(|s| s.to_str()) {
                         Some(s) => s.to_string(),
                         None => {
-                            return Err(Error::StorageError(
-                                format!("Invalid filename format for address {}", addr),
-                            ))
+                            return Err(Error::StorageError(format!(
+                                "Invalid filename format for address {}",
+                                addr
+                            )))
                         }
                     };
 

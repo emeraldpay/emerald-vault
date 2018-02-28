@@ -2,7 +2,7 @@
 
 use super::Address;
 use super::Error;
-use super::util::{KECCAK256_BYTES, keccak256, to_arr};
+use super::util::{to_arr, KECCAK256_BYTES, keccak256};
 use hex::{FromHex, ToHex};
 use rand::{OsRng, Rng};
 use secp256k1::{ContextFlag, Message, Secp256k1};
@@ -219,15 +219,11 @@ mod tests {
         assert_eq!(s.v, 27);
         assert_eq!(
             s.r,
-            to_32bytes(
-                "99e71a99cb2270b8cac5254f9e99b6210c6c10224a1579cf389ef88b20a1abe9",
-            )
+            to_32bytes("99e71a99cb2270b8cac5254f9e99b6210c6c10224a1579cf389ef88b20a1abe9",)
         );
         assert_eq!(
             s.s,
-            to_32bytes(
-                "129ff05af364204442bdb53ab6f18a99ab48acc9326fa689f228040429e3ca66",
-            )
+            to_32bytes("129ff05af364204442bdb53ab6f18a99ab48acc9326fa689f228040429e3ca66",)
         );
     }
 
@@ -235,9 +231,7 @@ mod tests {
     fn should_calculate_message_hash() {
         assert_eq!(
             message_hash("Hello world"),
-            to_32bytes(
-                "8144a6fa26be252b86456491fbcd43c1de7e022241845ffea1c3df066f7cfede",
-            )
+            to_32bytes("8144a6fa26be252b86456491fbcd43c1de7e022241845ffea1c3df066f7cfede",)
         );
     }
 }
