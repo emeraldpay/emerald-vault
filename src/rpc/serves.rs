@@ -6,8 +6,8 @@ use core::{Address, Transaction};
 use hdwallet::WManager;
 use hdwallet::bip32::to_prefixed_path;
 use jsonrpc_core::{Params, Value};
-use keystore::{CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME, os_random};
-use mnemonic::{self, ENTROPY_BYTE_LENGTH, HDPath, Language, Mnemonic, gen_entropy};
+use keystore::{os_random, CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME};
+use mnemonic::{self, gen_entropy, HDPath, Language, Mnemonic, ENTROPY_BYTE_LENGTH};
 use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::cell::RefCell;
@@ -103,20 +103,17 @@ pub fn list_accounts(
     let res = storage
         .list_accounts(additional.show_hidden)?
         .iter()
-        .map(|info| {
-            ListAccountAccount {
-                name: info.name.clone(),
-                address: info.address.clone(),
-                description: info.description.clone(),
-                hardware: info.is_hardware,
-                is_hidden: info.is_hidden,
-            }
+        .map(|info| ListAccountAccount {
+            name: info.name.clone(),
+            address: info.address.clone(),
+            description: info.description.clone(),
+            hardware: info.is_hardware,
+            is_hidden: info.is_hidden,
         })
         .collect();
     debug!(
         "Accounts listed with `show_hidden`: {}\n\t{:?}",
-        additional.show_hidden,
-        res
+        additional.show_hidden, res
     );
 
     Ok(res)
@@ -131,12 +128,12 @@ pub struct CommonAdditional {
 }
 
 #[derive(Deserialize)]
-pub struct HideAccountAccount {
+pub struct SelectedAccount {
     address: String,
 }
 
 pub fn hide_account(
-    params: Either<(HideAccountAccount,), (HideAccountAccount, CommonAdditional)>,
+    params: Either<(SelectedAccount,), (SelectedAccount, CommonAdditional)>,
     storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
@@ -149,13 +146,8 @@ pub fn hide_account(
     Ok(res)
 }
 
-#[derive(Deserialize)]
-pub struct UnhideAccountAccount {
-    address: String,
-}
-
 pub fn unhide_account(
-    params: Either<(UnhideAccountAccount,), (UnhideAccountAccount, CommonAdditional)>,
+    params: Either<(SelectedAccount,), (SelectedAccount, CommonAdditional)>,
     storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
@@ -265,13 +257,8 @@ pub fn import_account(
     Ok(format!("{}", kf.address))
 }
 
-#[derive(Deserialize)]
-pub struct ExportAccountAccount {
-    address: String,
-}
-
 pub fn export_account(
-    params: Either<(ExportAccountAccount,), (ExportAccountAccount, CommonAdditional)>,
+    params: Either<(SelectedAccount,), (SelectedAccount, CommonAdditional)>,
     storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
 ) -> Result<Value, Error> {
     let storage_ctrl = storage.lock().unwrap();
@@ -323,7 +310,7 @@ pub fn new_account(
 }
 
 #[derive(Deserialize)]
-pub struct SignTransactionTransaction {
+pub struct SignTxTransaction {
     pub from: String,
     pub to: String,
     pub gas: String,
@@ -339,7 +326,7 @@ pub struct SignTransactionTransaction {
 }
 
 #[derive(Deserialize, Default, Debug)]
-pub struct SignTransactionAdditional {
+pub struct SignTxAdditional {
     #[serde(default)]
     chain: String,
     #[serde(default)]
@@ -349,10 +336,7 @@ pub struct SignTransactionAdditional {
 }
 
 pub fn sign_transaction(
-    params: Either<
-        (SignTransactionTransaction,),
-        (SignTransactionTransaction, SignTransactionAdditional),
-    >,
+    params: Either<(SignTxTransaction,), (SignTxTransaction, SignTxAdditional)>,
     storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
     default_chain_id: u8,
     wallet_manager: &Mutex<RefCell<WManager>>,
@@ -383,17 +367,15 @@ pub fn sign_transaction(
                     match kf.crypto {
                         CryptoType::Core(_) => {
                             if transaction.passphrase.is_none() {
-                                return Err(
-                                    Error::InvalidDataFormat("Missing passphrase".to_string()),
-                                );
+                                return Err(Error::InvalidDataFormat(
+                                    "Missing passphrase".to_string(),
+                                ));
                             }
                             let pass = transaction.passphrase.unwrap();
 
                             if let Ok(pk) = kf.decrypt_key(&pass) {
-                                let raw = tr.to_signed_raw(pk, chain_id).expect(
-                                    "Expect to sign a \
-                                     transaction",
-                                );
+                                let raw = tr.to_signed_raw(pk, chain_id)
+                                    .expect("Expect to sign a transaction");
                                 let signed = Transaction::to_raw_params(&raw);
                                 debug!("Signed transaction to: {:?}\n\t raw: {:?}", &tr.to, signed);
 
@@ -413,9 +395,10 @@ pub fn sign_transaction(
                             };
 
                             if let Err(e) = wm.update(Some(hd_path.clone())) {
-                                return Err(Error::InvalidDataFormat(
-                                    format!("Can't update HD wallets list : {}", e.to_string()),
-                                ));
+                                return Err(Error::InvalidDataFormat(format!(
+                                    "Can't update HD wallets list : {}",
+                                    e.to_string()
+                                )));
                             }
 
                             let mut err = String::new();
@@ -450,10 +433,7 @@ pub fn sign_transaction(
                                         debug!(
                                             "HD wallet addr:{:?} path: {:?} signed transaction \
                                              to: {:?}\n\t raw: {:?}",
-                                            addr,
-                                            fd,
-                                            &tr.to,
-                                            signed
+                                            addr, fd, &tr.to, signed
                                         );
                                         return Ok(signed);
                                     }
@@ -479,6 +459,115 @@ pub fn sign_transaction(
             }
         }
 
+        Err(_) => Err(Error::InvalidDataFormat("Can't find account".to_string())),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct SignData {
+    address: String,
+    data: String,
+    #[serde(default)]
+    passphrase: Option<String>,
+}
+
+pub fn sign(
+    params: Either<(SignData,), (SignData, CommonAdditional)>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    default_chain_id: u8,
+    wallet_manager: &Mutex<RefCell<WManager>>,
+) -> Result<Params, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (data, additional) = params.into_full();
+    let storage = storage_ctrl.get_keystore(&additional.chain)?;
+    let addr = Address::from_str(&data.address)?;
+
+    match storage.search_by_address(&addr) {
+        Ok((_, kf)) => {
+            match kf.crypto {
+                CryptoType::Core(_) => {
+                    if data.passphrase.is_none() {
+                        return Err(Error::InvalidDataFormat(
+                            "Missing passphrase".to_string(),
+                        ));
+                    }
+                    let pass = data.passphrase.unwrap();
+                    if let Ok(pk) = kf.decrypt_key(&pass) {
+
+                        Ok(signed)
+                    } else {
+                        Err(Error::InvalidDataFormat("Invalid passphrase".to_string()))
+                    }
+                }
+
+                CryptoType::HdWallet(hw) => {
+                    let guard = wallet_manager.lock().unwrap();
+                    let mut wm = guard.borrow_mut();
+
+                    let hd_path = match to_prefixed_path(&hw.hd_path) {
+                        Ok(hd) => hd,
+                        Err(e) => return Err(Error::InvalidDataFormat(e.to_string())),
+                    };
+
+                    if let Err(e) = wm.update(Some(hd_path.clone())) {
+                        return Err(Error::InvalidDataFormat(format!(
+                            "Can't update HD wallets list : {}",
+                            e.to_string()
+                        )));
+                    }
+
+                    let mut err = String::new();
+                    for (addr, fd) in wm.devices() {
+                        debug!("Selected device: {:?} {:?}", &addr, &fd);
+
+                        // MUST verify address before making a signature, or a malicious
+                        // person can replace HD path with another one and convince user to
+                        // make signature from this address
+                        match wm.get_address(&fd, Some(hd_path.clone())) {
+                            Ok(actual_addr) => {
+                                if actual_addr != addr {
+                                    return Err(Error::InvalidDataFormat(
+                                        "Address for stored HD path is incorrect"
+                                            .to_string(),
+                                    ));
+                                }
+                            }
+                            Err(e) => {
+                                return Err(Error::InvalidDataFormat(format!(
+                                    "Can't get Address for HD Path: {}",
+                                    e.to_string()
+                                )))
+                            }
+                        }
+
+                        match wm.sign(&fd, &rlp, Some(hd_path.clone())) {
+                            Ok(s) => {
+
+                                debug!(
+                                    "HD wallet addr:{:?} path: {:?} signed data \
+                                     to: {:?}\n\t raw: {:?}",
+                                    addr, fd, s
+                                );
+                                return Ok(signed);
+                            }
+                            Err(e) => {
+                                err = format!(
+                                    "{}\nWallet addr:{} on path:{}, can't sign \
+                                     data: {}",
+                                    err,
+                                    addr,
+                                    fd,
+                                    e.to_string()
+                                );
+                                continue;
+                            }
+                        }
+                    }
+
+                    Err(Error::InvalidDataFormat(err))
+                }
+            }
+        }
         Err(_) => Err(Error::InvalidDataFormat("Can't find account".to_string())),
     }
 }

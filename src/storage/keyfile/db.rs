@@ -1,10 +1,10 @@
 //! # Storage for `Keystore` files
 
-use super::{AccountInfo, KeyfileStorage, generate_filename};
+use super::{generate_filename, AccountInfo, KeyfileStorage};
 use super::error::Error;
 use core::Address;
 use keystore::KeyFile;
-use rocksdb::{DB, IteratorMode};
+use rocksdb::{IteratorMode, DB};
 use rustc_serialize::json;
 use std::path::Path;
 use std::str;
@@ -158,7 +158,8 @@ mod tests {
 
     #[test]
     fn should_split() {
-        let db_item = r#"UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc<|>{
+        let db_item =
+            r#"UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc<|>{
           "version": 3,
           "id": "f7ab2bfa-e336-4f45-a31f-beb3dd0689f3",
           "name":"test<|><\\\|>"
