@@ -57,7 +57,7 @@ pub fn start(
     };
 
     let wallet_manager = match WManager::new(None) {
-        Ok(wm) => Mutex::new(RefCell::new(wm)),
+        Ok(wm) => Arc::new(Mutex::new(RefCell::new(wm))),
         Err(e) => panic!("Can't create HID endpoint: {}", e.to_string()),
     };
 
@@ -141,19 +141,23 @@ pub fn start(
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
+        let wm = Arc::clone(&wallet_manager);
         io.add_method("emerald_signTransaction", move |p: Params| {
             wrapper(serves::sign_transaction(
                 parse(p)?,
                 &storage_ctrl,
                 chain_id,
-                &wallet_manager,
+                &wm,
             ))
         });
     }
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
-        io.add_method("emerald_sign", move |p: Params| wrapper(serves::sign()));
+        let wm = Arc::clone(&wallet_manager);
+        io.add_method("emerald_sign", move |p: Params| {
+            wrapper(serves::sign(parse(p)?, &storage_ctrl, &wm))
+        });
     }
 
     {

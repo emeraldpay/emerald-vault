@@ -339,7 +339,7 @@ pub fn sign_transaction(
     params: Either<(SignTxTransaction,), (SignTxTransaction, SignTxAdditional)>,
     storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
     default_chain_id: u8,
-    wallet_manager: &Mutex<RefCell<WManager>>,
+    wallet_manager: &Arc<Mutex<RefCell<WManager>>>,
 ) -> Result<Params, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (transaction, additional) = params.into_full();
@@ -474,27 +474,31 @@ pub struct SignData {
 pub fn sign(
     params: Either<(SignData,), (SignData, CommonAdditional)>,
     storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
-    default_chain_id: u8,
-    wallet_manager: &Mutex<RefCell<WManager>>,
+    wallet_manager: &Arc<Mutex<RefCell<WManager>>>,
 ) -> Result<Params, Error> {
     let storage_ctrl = storage.lock().unwrap();
-    let (data, additional) = params.into_full();
+    let (input, additional) = params.into_full();
     let storage = storage_ctrl.get_keystore(&additional.chain)?;
-    let addr = Address::from_str(&data.address)?;
+    let addr = Address::from_str(&input.address)?;
 
+    let hash = util::keccak256(
+        format!(
+            "\x19Ethereum Signed Message:\n{}{}",
+            input.data.len(),
+            input.data
+        ).as_bytes(),
+    );
     match storage.search_by_address(&addr) {
         Ok((_, kf)) => {
             match kf.crypto {
                 CryptoType::Core(_) => {
-                    if data.passphrase.is_none() {
-                        return Err(Error::InvalidDataFormat(
-                            "Missing passphrase".to_string(),
-                        ));
+                    if input.passphrase.is_none() {
+                        return Err(Error::InvalidDataFormat("Missing passphrase".to_string()));
                     }
-                    let pass = data.passphrase.unwrap();
+                    let pass = input.passphrase.unwrap();
                     if let Ok(pk) = kf.decrypt_key(&pass) {
-
-                        Ok(signed)
+                        let signed = pk.sign_hash(hash)?;
+                        Ok(Params::Array(vec![Value::String(signed.into())]))
                     } else {
                         Err(Error::InvalidDataFormat("Invalid passphrase".to_string()))
                     }
@@ -527,8 +531,7 @@ pub fn sign(
                             Ok(actual_addr) => {
                                 if actual_addr != addr {
                                     return Err(Error::InvalidDataFormat(
-                                        "Address for stored HD path is incorrect"
-                                            .to_string(),
+                                        "Address for stored HD path is incorrect".to_string(),
                                     ));
                                 }
                             }
@@ -540,20 +543,18 @@ pub fn sign(
                             }
                         }
 
-                        match wm.sign(&fd, &rlp, Some(hd_path.clone())) {
+                        match wm.sign(&fd, &hash, Some(hd_path.clone())) {
                             Ok(s) => {
-
                                 debug!(
-                                    "HD wallet addr:{:?} path: {:?} signed data \
-                                     to: {:?}\n\t raw: {:?}",
-                                    addr, fd, s
+                                    "HD wallet addr:{:?} path: {:?} signed data to: {:?}\n\t raw: \
+                                     {:?}",
+                                    addr, fd, input.data, s
                                 );
-                                return Ok(signed);
+                                return Ok(Params::Array(vec![Value::String(s.into())]));
                             }
                             Err(e) => {
                                 err = format!(
-                                    "{}\nWallet addr:{} on path:{}, can't sign \
-                                     data: {}",
+                                    "{}\nWallet addr:{} on path:{}, can't sign data: {}",
                                     err,
                                     addr,
                                     fd,

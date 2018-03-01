@@ -50,6 +50,12 @@ impl Into<(u8, [u8; 32], [u8; 32])> for Signature {
     }
 }
 
+impl Into<String> for Signature {
+    fn into(self) -> String {
+        format!("0x{:X}{}{}", self.v, self.r.to_hex(), self.s.to_hex())
+    }
+}
+
 /// Private key used as x in an ECDSA signature
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct PrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
