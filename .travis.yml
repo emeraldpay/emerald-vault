@@ -25,7 +25,7 @@ before_install:
 
 before_script:
 - export PATH="$PATH":~/.cargo/bin
-- cargo fmt --version
+- cargo fmt -- --version
 
 script:
 - export RUST_BACKTRACE=1
