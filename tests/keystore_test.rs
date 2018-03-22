@@ -20,11 +20,11 @@ use uuid::Uuid;
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 
 macro_rules! arr {
-    ($bytes: expr, $num: expr) => ({
+    ($bytes: expr, $num: expr) => {{
         let mut arr = [0u8; $num];
         arr.copy_from_slice($bytes);
         arr
-    })
+    }};
 }
 
 pub fn temp_dir() -> PathBuf {
