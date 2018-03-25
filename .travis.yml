@@ -24,12 +24,9 @@ before_install:
 
 before_script:
 - export PATH="$PATH":~/.cargo/bin
-- rustup component add rustfmt-preview
-- cargo fmt --all -- --version --force
 
 script:
 - export RUST_BACKTRACE=1
-- cargo fmt --all -- --verbose --force --write-mode=diff
 - cargo test --all --verbose
 - cargo build --all --verbose --release
 
