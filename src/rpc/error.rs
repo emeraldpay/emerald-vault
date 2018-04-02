@@ -84,8 +84,8 @@ impl From<jsonrpc_core::Error> for Error {
     }
 }
 
-impl From<storage::KeyStorageError> for Error {
-    fn from(err: storage::KeyStorageError) -> Self {
+impl From<storage::KeystoreError> for Error {
+    fn from(err: storage::KeystoreError) -> Self {
         Error::StorageError(err.to_string())
     }
 }

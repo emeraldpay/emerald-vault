@@ -1,6 +1,6 @@
 use super::{build_contract_storage, build_keyfile_storage, build_path, KeyfileStorage};
 use super::contracts::ContractStorage;
-use super::keyfile::KeyStorageError;
+use super::keyfile::KeystoreError;
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -12,7 +12,7 @@ pub struct StorageController {
 
 impl StorageController {
     /// Create new `StorageController`
-    pub fn new<P: AsRef<Path>>(base_path: P) -> Result<StorageController, KeyStorageError> {
+    pub fn new<P: AsRef<Path>>(base_path: P) -> Result<StorageController, KeystoreError> {
         let mut st = StorageController::default();
 
         for id in &["mainnet", "morden"] {
@@ -30,10 +30,10 @@ impl StorageController {
     }
 
     /// Get `KeyFile` storage for specified chain
-    pub fn get_keystore(&self, chain: &str) -> Result<&Box<KeyfileStorage>, KeyStorageError> {
+    pub fn get_keystore(&self, chain: &str) -> Result<&Box<KeyfileStorage>, KeystoreError> {
         match self.keyfile_storages.get(chain) {
             Some(st) => Ok(st),
-            None => Err(KeyStorageError::StorageError(format!(
+            None => Err(KeystoreError::StorageError(format!(
                 "No storage for: {}",
                 chain
             ))),
@@ -41,10 +41,10 @@ impl StorageController {
     }
 
     /// Get `Contract` storage for specified chain
-    pub fn get_contracts(&self, chain: &str) -> Result<&Box<ContractStorage>, KeyStorageError> {
+    pub fn get_contracts(&self, chain: &str) -> Result<&Box<ContractStorage>, KeystoreError> {
         match self.contract_storages.get(chain) {
             Some(st) => Ok(st),
-            None => Err(KeyStorageError::StorageError(format!(
+            None => Err(KeystoreError::StorageError(format!(
                 "No storage for: {}",
                 chain
             ))),

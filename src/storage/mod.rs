@@ -4,7 +4,7 @@ mod keyfile;
 mod contracts;
 mod storage_ctrl;
 
-pub use self::KeyStorageError;
+pub use self::KeystoreError;
 pub use self::contracts::ContractStorage;
 pub use self::keyfile::*;
 pub use self::storage_ctrl::StorageController;
@@ -67,7 +67,7 @@ pub fn build_path(base_path: &Path, chain: &str, folder: &str) -> PathBuf {
 ///
 /// * `keystore_path` - path for `KeyFile` storage
 ///
-pub fn build_keyfile_storage<P>(path: P) -> Result<Box<KeyfileStorage>, KeyStorageError>
+pub fn build_keyfile_storage<P>(path: P) -> Result<Box<KeyfileStorage>, KeystoreError>
 where
     P: AsRef<Path>,
 {
@@ -78,7 +78,7 @@ where
         p.push(".db");
         match DbStorage::new(p) {
             Ok(db) => Ok(Box::new(db)),
-            Err(_) => Err(KeyStorageError::StorageError(
+            Err(_) => Err(KeystoreError::StorageError(
                 "Can't create database Keyfile storage".to_string(),
             )),
         }
@@ -86,7 +86,7 @@ where
     #[cfg(feature = "fs-storage")]
     match FsStorage::new(path) {
         Ok(fs) => Ok(Box::new(fs)),
-        Err(_) => Err(KeyStorageError::StorageError(
+        Err(_) => Err(KeystoreError::StorageError(
             "Can't create filesystem Keyfile storage".to_string(),
         )),
     }
@@ -98,7 +98,7 @@ where
 ///
 /// * `keystore_path` - path for `KeyFile` storage
 ///
-pub fn build_contract_storage<P>(path: P) -> Result<Box<ContractStorage>, KeyStorageError>
+pub fn build_contract_storage<P>(path: P) -> Result<Box<ContractStorage>, KeystoreError>
 where
     P: AsRef<Path>,
 {
