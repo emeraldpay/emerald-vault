@@ -7,7 +7,7 @@ use std::{error, fmt, io, str};
 
 ///
 #[derive(Debug)]
-pub enum Error {
+pub enum KeystoreError {
     /// General storage error
     StorageError(String),
 
@@ -15,46 +15,46 @@ pub enum Error {
     NotFound(String),
 }
 
-impl From<rocksdb::Error> for Error {
+impl From<rocksdb::Error> for KeystoreError {
     fn from(err: rocksdb::Error) -> Self {
-        Error::StorageError(format!("Keyfile storage error: {}", err.to_string()))
+        KeystoreError::StorageError(format!("Keyfile storage error: {}", err.to_string()))
     }
 }
 
-impl From<json::EncoderError> for Error {
+impl From<json::EncoderError> for KeystoreError {
     fn from(err: json::EncoderError) -> Self {
-        Error::StorageError(err.to_string())
+        KeystoreError::StorageError(err.to_string())
     }
 }
 
-impl From<SerializeError> for Error {
+impl From<SerializeError> for KeystoreError {
     fn from(err: SerializeError) -> Self {
-        Error::StorageError(err.to_string())
+        KeystoreError::StorageError(err.to_string())
     }
 }
 
-impl From<str::Utf8Error> for Error {
+impl From<str::Utf8Error> for KeystoreError {
     fn from(err: str::Utf8Error) -> Self {
-        Error::StorageError(err.to_string())
+        KeystoreError::StorageError(err.to_string())
     }
 }
 
-impl From<io::Error> for Error {
+impl From<io::Error> for KeystoreError {
     fn from(err: io::Error) -> Self {
-        Error::StorageError(err.to_string())
+        KeystoreError::StorageError(err.to_string())
     }
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for KeystoreError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::StorageError(ref str) => write!(f, "KeyFile storage error: {}", str),
-            Error::NotFound(ref str) => write!(f, "Missing KeyFile for address: {}", str),
+            KeystoreError::StorageError(ref str) => write!(f, "KeyFile storage error: {}", str),
+            KeystoreError::NotFound(ref str) => write!(f, "Missing KeyFile for address: {}", str),
         }
     }
 }
 
-impl error::Error for Error {
+impl error::Error for KeystoreError {
     fn description(&self) -> &str {
         "KeyFile storage error"
     }

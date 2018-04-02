@@ -10,7 +10,7 @@ mod fs;
 mod error;
 
 pub use self::db::DbStorage;
-pub use self::error::Error as KeyStorageError;
+pub use self::error::KeystoreError;
 pub use self::fs::FsStorage;
 use core::Address;
 use keystore::{CryptoType, KeyFile};
@@ -76,7 +76,7 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     ///  * kf - `KeyFile` to insert
     ///
-    fn put(&self, kf: &KeyFile) -> Result<(), KeyStorageError>;
+    fn put(&self, kf: &KeyFile) -> Result<(), KeystoreError>;
 
     /// Delete `KeyFile` from storage for specified `Address`
     ///
@@ -84,7 +84,7 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     ///  * addr - target `Address`
     ///
-    fn delete(&self, addr: &Address) -> Result<(), KeyStorageError>;
+    fn delete(&self, addr: &Address) -> Result<(), KeystoreError>;
 
     /// Hide account for given address from being listed
     ///
@@ -92,7 +92,7 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     ///  * addr - target `Address`
     ///
-    fn hide(&self, addr: &Address) -> Result<bool, KeyStorageError>;
+    fn hide(&self, addr: &Address) -> Result<bool, KeystoreError>;
 
     /// Unhide account for given address from being listed
     ///
@@ -100,7 +100,7 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     ///  * addr - target `Address`
     ///
-    fn unhide(&self, addr: &Address) -> Result<bool, KeyStorageError>;
+    fn unhide(&self, addr: &Address) -> Result<bool, KeystoreError>;
 
     /// Update account for given address with new name and description
     ///
@@ -115,7 +115,7 @@ pub trait KeyfileStorage: Send + Sync {
         addr: &Address,
         name: Option<String>,
         desc: Option<String>,
-    ) -> Result<(), KeyStorageError>;
+    ) -> Result<(), KeystoreError>;
 
     /// Lists info for `Keystore` files inside storage
     /// Can include hidden files if flag set.
@@ -128,7 +128,7 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     /// Array of `AccountInfo` struct
     ///
-    fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, KeyStorageError>;
+    fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, KeystoreError>;
 
     /// Search of `KeyFile` by specified `Address`
     /// Provides additional meta info for account
@@ -137,7 +137,7 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     ///  * addr - target `Address`
     ///
-    fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), KeyStorageError>;
+    fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), KeystoreError>;
 
     /// Check whether specified address is already
     /// inserted into the storage
@@ -146,11 +146,11 @@ pub trait KeyfileStorage: Send + Sync {
     ///
     /// * `addr` - address to check
     ///
-    fn is_addr_exist(&self, addr: &Address) -> Result<(), KeyStorageError> {
+    fn is_addr_exist(&self, addr: &Address) -> Result<(), KeystoreError> {
         match self.search_by_address(addr) {
             Ok((_, _)) => Ok(()),
             Err(e) => match e {
-                KeyStorageError::NotFound(_) => Err(KeyStorageError::StorageError(format!(
+                KeystoreError::NotFound(_) => Err(KeystoreError::StorageError(format!(
                     "Address {} not in a storage",
                     addr
                 ))),

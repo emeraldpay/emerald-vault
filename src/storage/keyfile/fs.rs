@@ -1,7 +1,7 @@
 //! # `KeyFile` storage within filesystem
 
 use super::{generate_filename, AccountInfo, KeyfileStorage};
-use super::error::Error;
+use super::error::KeystoreError;
 use core::Address;
 use keystore::KeyFile;
 use keystore::try_extract_address;
@@ -42,7 +42,7 @@ impl FsStorage {
     /// * addr - target address
     /// * is_visible - visibility flag
     ///
-    fn toogle_visibility(&self, addr: &Address, is_visible: bool) -> Result<(), Error> {
+    fn toogle_visibility(&self, addr: &Address, is_visible: bool) -> Result<(), KeystoreError> {
         let (info, mut kf) = self.search_by_address(addr)?;
 
         kf.visible = Some(is_visible);
@@ -71,7 +71,7 @@ impl FsStorage {
     /// * kf - target `Keyfile`
     /// * name - filename
     ///
-    fn put_with_name(&self, kf: &KeyFile, name: &str) -> Result<(), Error> {
+    fn put_with_name(&self, kf: &KeyFile, name: &str) -> Result<(), KeystoreError> {
         let json = json::encode(&kf)?;
         let path = self.build_path(name);
 
@@ -83,26 +83,26 @@ impl FsStorage {
 }
 
 impl KeyfileStorage for FsStorage {
-    fn put(&self, kf: &KeyFile) -> Result<(), Error> {
+    fn put(&self, kf: &KeyFile) -> Result<(), KeystoreError> {
         let name = generate_filename(&kf.uuid.to_string());
 
         self.put_with_name(kf, &name)
     }
 
-    fn delete(&self, addr: &Address) -> Result<(), Error> {
+    fn delete(&self, addr: &Address) -> Result<(), KeystoreError> {
         let (info, _) = self.search_by_address(addr)?;
         let path = self.build_path(&info.filename);
 
         match fs::remove_file(path) {
             Ok(_) => Ok(()),
-            Err(_) => Err(Error::StorageError(format!(
+            Err(_) => Err(KeystoreError::StorageError(format!(
                 "Can't delete KeyFile for address: {}",
                 addr
             ))),
         }
     }
 
-    fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), Error> {
+    fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), KeystoreError> {
         let entries = fs::read_dir(&self.base_path)?;
 
         for entry in entries {
@@ -126,7 +126,7 @@ impl KeyfileStorage for FsStorage {
                     info.filename = match path.file_name().and_then(|s| s.to_str()) {
                         Some(s) => s.to_string(),
                         None => {
-                            return Err(Error::StorageError(format!(
+                            return Err(KeystoreError::StorageError(format!(
                                 "Invalid filename format for address {}",
                                 addr
                             )))
@@ -139,10 +139,10 @@ impl KeyfileStorage for FsStorage {
             }
         }
 
-        Err(Error::NotFound(addr.to_string()))
+        Err(KeystoreError::NotFound(addr.to_string()))
     }
 
-    fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, Error> {
+    fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, KeystoreError> {
         let mut accounts = vec![];
         for e in read_dir(&self.base_path)? {
             if e.is_err() {
@@ -176,13 +176,13 @@ impl KeyfileStorage for FsStorage {
         Ok(accounts)
     }
 
-    fn hide(&self, addr: &Address) -> Result<bool, Error> {
+    fn hide(&self, addr: &Address) -> Result<bool, KeystoreError> {
         self.toogle_visibility(addr, false)?;
 
         Ok(true)
     }
 
-    fn unhide(&self, addr: &Address) -> Result<bool, Error> {
+    fn unhide(&self, addr: &Address) -> Result<bool, KeystoreError> {
         self.toogle_visibility(addr, true)?;
 
         Ok(true)
@@ -193,7 +193,7 @@ impl KeyfileStorage for FsStorage {
         addr: &Address,
         name: Option<String>,
         desc: Option<String>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), KeystoreError> {
         let (info, mut kf) = self.search_by_address(addr)?;
 
         if name.is_some() {

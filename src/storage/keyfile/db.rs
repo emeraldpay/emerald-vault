@@ -1,7 +1,7 @@
 //! # Storage for `Keystore` files
 
 use super::{generate_filename, AccountInfo, KeyfileStorage};
-use super::error::Error;
+use super::error::KeystoreError;
 use core::Address;
 use keystore::KeyFile;
 use rocksdb::{IteratorMode, DB};
@@ -33,7 +33,7 @@ impl DbStorage {
     ///
     /// * dir - parent folder
     ///
-    pub fn new<P: AsRef<Path>>(dir: P) -> Result<DbStorage, Error> {
+    pub fn new<P: AsRef<Path>>(dir: P) -> Result<DbStorage, KeystoreError> {
         let db = DB::open_default(dir)?;
 
         Ok(DbStorage { db: db })
@@ -49,7 +49,7 @@ impl DbStorage {
     ///
     /// Tuple of `String` (<filename>, <keyfile_json>)
     ///
-    fn split(val: &str) -> Result<(String, String), Error> {
+    fn split(val: &str) -> Result<(String, String), KeystoreError> {
         let arr: Vec<&str> = val.split(SEPARATOR).collect();
         let json = arr[1..arr.len()].join(SEPARATOR);
 
@@ -58,7 +58,7 @@ impl DbStorage {
 }
 
 impl KeyfileStorage for DbStorage {
-    fn put(&self, kf: &KeyFile) -> Result<(), Error> {
+    fn put(&self, kf: &KeyFile) -> Result<(), KeystoreError> {
         let json = json::encode(&kf)?;
         let val = generate_filename(&kf.uuid.to_string()) + SEPARATOR + &json;
         self.db.put(&kf.address, val.as_bytes())?;
@@ -66,18 +66,18 @@ impl KeyfileStorage for DbStorage {
         Ok(())
     }
 
-    fn delete(&self, addr: &Address) -> Result<(), Error> {
+    fn delete(&self, addr: &Address) -> Result<(), KeystoreError> {
         self.db.delete(addr)?;
 
         Ok(())
     }
 
-    fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), Error> {
+    fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), KeystoreError> {
         let dbvec = self.db.get(addr)?;
 
         let val = dbvec
             .and_then(|ref d| d.to_utf8().and_then(|v| Some(v.to_string())))
-            .ok_or_else(|| Error::NotFound(format!("{}", addr)))?;
+            .ok_or_else(|| KeystoreError::NotFound(format!("{}", addr)))?;
         let (filename, json) = DbStorage::split(&val)?;
         let kf = KeyFile::decode(&json)?;
 
@@ -87,7 +87,7 @@ impl KeyfileStorage for DbStorage {
         Ok((info, kf))
     }
 
-    fn hide(&self, addr: &Address) -> Result<bool, Error> {
+    fn hide(&self, addr: &Address) -> Result<bool, KeystoreError> {
         let (_, mut kf) = self.search_by_address(addr)?;
 
         kf.visible = Some(false);
@@ -96,7 +96,7 @@ impl KeyfileStorage for DbStorage {
         Ok(true)
     }
 
-    fn unhide(&self, addr: &Address) -> Result<bool, Error> {
+    fn unhide(&self, addr: &Address) -> Result<bool, KeystoreError> {
         let (_, mut kf) = self.search_by_address(addr)?;
 
         kf.visible = Some(true);
@@ -105,7 +105,7 @@ impl KeyfileStorage for DbStorage {
         Ok(true)
     }
 
-    fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, Error> {
+    fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, KeystoreError> {
         let mut accounts = vec![];
 
         for (addr, val) in self.db.iterator(IteratorMode::Start) {
@@ -137,7 +137,7 @@ impl KeyfileStorage for DbStorage {
         addr: &Address,
         name: Option<String>,
         desc: Option<String>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), KeystoreError> {
         let (_, mut kf) = self.search_by_address(addr)?;
 
         if name.is_some() {
