@@ -2,7 +2,7 @@
   <h2 align="center">Emerald Vault</a></h3>
   <p align="center">Secure account management for Ethereum Classic</a></p>
   <p align="center">
-    <a href="https://travis-ci.org/ETCDEVTeam/emerald-rs"><img alt="Travis" src="https://img.shields.io/travis/ethereumproject/emerald-rs/master.svg?style=flat-square"></a>
+    <a href="https://travis-ci.org/ETCDEVTeam/emerald-rs"><img alt="Travis" src="https://travis-ci.org/ETCDEVTeam/emerald-rs.svg?branch=master"></a>
     <a href="https://ci.appveyor.com/project/splix/emerald-rs-dgg5i"><img alt="AppVeyor" src="https://ci.appveyor.com/api/projects/status/m5uvg5yytn6q51qn?svg=true"></a>
     <a href="https://crates.io/crates/emerald-rs"><img alt="crates.io" src="https://img.shields.io/crates/v/emerald-rs.svg?style=flat-square"></a>
     <a href='https://coveralls.io/github/ETCDEVTeam/emerald-rs'><img src='https://coveralls.io/repos/github/ethereumproject/emerald-rs/badge.svg' alt='Coverage Status' /></a>
