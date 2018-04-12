@@ -36,6 +36,9 @@ extern crate serde_json;
 extern crate time;
 extern crate uuid;
 
+#[cfg(feature = "openalias-support")]
+extern crate openalias;
+
 mod core;
 pub mod addressbook;
 pub mod keystore;

@@ -30,6 +30,6 @@ with pkgs;
 stdenv.mkDerivation {
   name = "emerald-env";
   buildInputs = [
-    rustc cargo openssl pkgconfig
+    rustc cargo openssl pkgconfig libusb
   ];
 }
