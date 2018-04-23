@@ -1,6 +1,6 @@
 [package]
 name = "emerald-rs"
-version = "0.21.1"
+version = "0.22.0"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Ethereum Classic secure account management core libary"
 homepage = "http://etcdevteam.com"
@@ -12,8 +12,8 @@ readme = "README.md"
 license = "Apache-2.0"
 
 [badges]
-travis-ci = { repository = "ethereumproject/emerald-rs" }
-appveyor = { repository = "ethereumproject/emerald-rs" }
+travis-ci = { repository = "ETCDEVTeam/emerald-rs" }
+appveyor = { repository = "ETCDEVTeam/emerald-rs" }
 
 [lib]
 name = "emerald_rs"
@@ -26,8 +26,8 @@ rust-scrypt = "0.1"
 [dependencies]
 time = "0.1"
 futures = "0.1"
-jsonrpc-core = "7.1.1"
-jsonrpc-http-server = "7.1.1"
+jsonrpc-core = "8.0"
+jsonrpc-http-server = "8.0"
 lazy_static = "0.2"
 log = "0.3"
 regex = "0.2"
