@@ -377,6 +377,14 @@ Return the list of all not hidden (by default) smart contracts from the local st
      "id": 1}
 ```
 
+```
+// Request
+curl -X POST -d '{"jsonrpc":"2.0", "method":"emerald_listContracts", "params":[{"chain":"mainnet"}], "id":76}' -H "Content-Type: application/json" localhost:1920
+
+// Result
+{"jsonrpc":"2.0","result":[{"address":"0x085fb4f24031eaedbc2b611aa528f22343eb52db","name":"BEC"}],"id":76}
+
+```
 ### emerald_hideContract
 
 Hide a smart contract from the list returned by default by `emerald_listContracts`.
@@ -687,10 +695,12 @@ Creates a new account from a mnemonic and stores it locally as a passphrase-enco
 
 *Parameters*:
 
-* `mnemonic` (String)
+* `item` (Object)
+    * `mnemonic` (String)
     * `name` (String, optional) - account name
     * `description` (String, optional) - account description
-    * `passphrase` (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
+    * `password` (String) - passphrase used to encode keyfile (recommend to use 8+ words with good entropy)
+    * `hd_path` (String)
 * `additional` (Object, optional)
     * `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `morden`
     * `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
@@ -716,6 +726,73 @@ Creates a new account from a mnemonic and stores it locally as a passphrase-enco
         {"chain": "morden"}],
      "id": 1}
 <-- {"jsonrpc": "2.0", "result": "0xe9a7e26bf5c05fe3bae272d4c940bd7158611ce9", "id": 1}
+```
+
+
+### emerald_importAddress
+
+Add new contact into address book
+
+*Parameters*:
+
+* `contact` (Object)
+    * `address` (String) - hex-encoded 20 bytes public address
+    * `name` (String, optional) - short name for address
+    * `description` (String, optional) - address' description 
+* `additional` (Object, optional)
+    * `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `morden`
+    * `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+*Result*: `address` (String) - hex-encoded 20 bytes public address
+
+*Examples*
+```
+// Request
+curl -X POST -d '{"jsonrpc":"2.0", "method":"emerald_importAddress", "params":[{"address":"0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2"},{"chain":"mainnet"}], "id":76}' -H "Content-Type: application/json" localhost:1920
+
+// Result
+{"jsonrpc":"2.0","result":"0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2","id":76}
+```
+
+### emerald_listAddresses
+
+Return all addresses for particular chain
+
+*Parameters* 
+
+* `additional` (Object, optional)
+    * `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `morden`
+    * `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+
+*Examples*
+```
+// Request
+curl -X POST -d '{"jsonrpc":"2.0", "method":"emerald_listAddresses", "params":[{"chain":"mainnet"}], "id":76}' -H "Content-Type: application/json" localhost:1920
+
+// Result
+{"jsonrpc":"2.0","result":[{"address":"0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2"}],"id":76}
+```
+
+### emerald_deleteAddress
+
+Delete contact from address book
+
+*Parameters*
+
+* `address` (String) - hex-encoded 20 bytes public address
+* `additional` (Object, optional)
+    * `chain` (String, optional) - chain name, by default `mainnet`, other possible variant `morden`
+    * `chain_id` (Number, optional) - chain id number, by default for `mainnet` it equals `61`
+
+
+*Examples*
+```
+// Request
+curl -X POST -d '{"jsonrpc":"2.0", "method":"emerald_deleteAddress", "params":["0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2",{"chain":"mainnet"}], "id":76}' -H "Content-Type: application/json" localhost:1920
+
+// Result
+{"jsonrpc":"2.0","result":null,"id":76}
 ```
 
 

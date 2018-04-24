@@ -609,6 +609,41 @@ pub fn import_contract(
     storage.add(&raw)?;
     Ok(())
 }
+
+pub fn list_addresses(
+    params: Either<(), (CommonAdditional,)>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+) -> Result<Vec<serde_json::Value>, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (additional,) = params.into_right();
+    let storage = storage_ctrl.get_addressbook(&additional.chain)?;
+
+    Ok(storage.list())
+}
+
+pub fn import_address(
+    params: Either<(Value,), (Value, CommonAdditional)>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+) -> Result<String, Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (raw, additional) = params.into_full();
+    let storage = storage_ctrl.get_addressbook(&additional.chain)?;
+
+    storage.add(&raw)?;
+    Ok(raw.get("address").unwrap().to_string())
+}
+
+pub fn delete_address(
+    params: Either<(Value,), (Value, CommonAdditional)>,
+    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+) -> Result<(), Error> {
+    let storage_ctrl = storage.lock().unwrap();
+    let (addr, additional) = params.into_full();
+    let storage = storage_ctrl.get_addressbook(&additional.chain)?;
+
+    storage.delete(&addr)?;
+    Ok(())
+}
 //
 //pub fn export_contract(
 //    params: Either<(Value,), (Value, FunctionParams)>,
