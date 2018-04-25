@@ -2,10 +2,13 @@
 
 mod keyfile;
 mod contracts;
+pub mod addressbook;
 mod storage_ctrl;
 
 pub use self::KeystoreError;
 pub use self::contracts::ContractStorage;
+pub use self::addressbook::AddressbookStorage;
+pub use self::addressbook::error::AddressbookError;
 pub use self::keyfile::*;
 pub use self::storage_ctrl::StorageController;
 use std::boxed::Box;
@@ -92,11 +95,11 @@ where
     }
 }
 
-/// Creates specific type of `KeyFile` storage (database or filesystem)
+/// Creates specific type of `Contract` storage (database or filesystem)
 ///
 /// # Arguments:
 ///
-/// * `keystore_path` - path for `KeyFile` storage
+/// * `path` - path for `Contract` storage
 ///
 pub fn build_contract_storage<P>(path: P) -> Result<Box<ContractStorage>, KeystoreError>
 where
@@ -109,3 +112,22 @@ where
 
     Ok(Box::new(ContractStorage::new(p)))
 }
+
+/// Creates specific type of `Addressbook` storage (database or filesystem)
+///
+/// # Arguments:
+///
+/// * `path` - path for `Addressbook` storage
+///
+pub fn build_addressbook_storage<P>(path: P) -> Result<Box<AddressbookStorage>, KeystoreError>
+where
+    P: AsRef<Path>,
+{
+    // TODO: implement DB storage. Add conditional compilation.
+    let mut p = PathBuf::new();
+    p.push(path);
+    fs::create_dir_all(&p)?;
+
+    Ok(Box::new(AddressbookStorage::new(p)))
+}
+

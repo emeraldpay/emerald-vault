@@ -37,7 +37,6 @@ extern crate time;
 extern crate uuid;
 
 mod core;
-pub mod addressbook;
 pub mod keystore;
 pub mod rpc;
 pub mod storage;
