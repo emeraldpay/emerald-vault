@@ -1,7 +1,7 @@
 //! # JSON serialize for hex encoded byte arrays (without '0x' prefix)
 /// Macro to generate hex serialazable byte arrays
 macro_rules! byte_array_struct {
-    ($name: ident, $num: expr) => {
+    ($name:ident, $num:expr) => {
         #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
         ///
         pub struct $name([u8; $num]);

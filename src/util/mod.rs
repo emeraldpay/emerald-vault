@@ -2,7 +2,7 @@
 mod crypto;
 mod rlp;
 
-pub use self::crypto::{KECCAK256_BYTES, keccak256};
+pub use self::crypto::{keccak256, KECCAK256_BYTES};
 pub use self::rlp::{RLPList, WriteRLP};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use chrono::prelude::Utc;

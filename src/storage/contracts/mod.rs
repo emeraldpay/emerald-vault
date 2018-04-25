@@ -16,7 +16,7 @@ pub struct ContractStorage {
 impl ContractStorage {
     /// Initialize new contracts service for a dir
     pub fn new(dir: PathBuf) -> ContractStorage {
-        ContractStorage { dir: dir }
+        ContractStorage { dir }
     }
 
     /// Validate contract structure

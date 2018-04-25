@@ -1,10 +1,10 @@
 //! # Account address (20 bytes)
 
-use super::Error;
 use super::util::to_arr;
+use super::Error;
 use hex::{FromHex, ToHex};
-use std::{fmt, ops};
 use std::str::FromStr;
+use std::{fmt, ops};
 
 /// Fixed bytes number to represent `Address`
 pub const ADDRESS_BYTES: usize = 20;

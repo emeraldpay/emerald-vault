@@ -1,12 +1,12 @@
 //! # Account ECDSA signatures using the SECG curve secp256k1
 
+use super::util::{keccak256, to_arr, KECCAK256_BYTES};
 use super::Address;
 use super::Error;
-use super::util::{to_arr, KECCAK256_BYTES, keccak256};
 use hex::{FromHex, ToHex};
 use rand::{OsRng, Rng};
-use secp256k1::{ContextFlag, Message, Secp256k1};
 use secp256k1::key::{PublicKey, SecretKey};
+use secp256k1::{ContextFlag, Message, Secp256k1};
 use std::{fmt, ops, str};
 
 /// Private key length in bytes

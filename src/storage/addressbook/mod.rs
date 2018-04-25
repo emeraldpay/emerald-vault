@@ -5,8 +5,8 @@ use self::error::AddressbookError;
 use core::Address;
 use glob::glob;
 use serde_json;
-use std::fs::File;
 use std::fs::remove_file;
+use std::fs::File;
 use std::path::{Path, PathBuf};
 
 /// Addressbook Service
@@ -18,13 +18,14 @@ pub struct AddressbookStorage {
 impl AddressbookStorage {
     /// Initialize new addressbook service for a dir
     pub fn new(dir: PathBuf) -> AddressbookStorage {
-        AddressbookStorage { dir: dir }
+        AddressbookStorage { dir }
     }
 
     /// Read addressbook files
     pub fn read_json(path: &Path) -> Result<serde_json::Value, AddressbookError> {
         match File::open(path) {
-            Ok(f) => serde_json::from_reader(f).or(Err(AddressbookError::IO("Can't read address file".to_string()))),
+            Ok(f) => serde_json::from_reader(f)
+                .or_else(|_| Err(AddressbookError::IO("Can't read address file".to_string()))),
             Err(_) => Err(AddressbookError::IO("Can't open adress file".to_string())),
         }
     }
@@ -44,18 +45,30 @@ impl AddressbookStorage {
     /// Validate addressbook entry structure
     pub fn validate(&self, entry: &serde_json::Value) -> Result<(), AddressbookError> {
         if !entry.is_object() {
-            return Err(AddressbookError::InvalidAddress("Invalid data format".to_string()));
+            return Err(AddressbookError::InvalidAddress(
+                "Invalid data format".to_string(),
+            ));
         }
         let addr = match entry.get("address") {
             Some(addr) => addr,
-            None => return Err(AddressbookError::InvalidAddress("Missing address".to_string())),
+            None => {
+                return Err(AddressbookError::InvalidAddress(
+                    "Missing address".to_string(),
+                ))
+            }
         };
         if !addr.is_string() {
-            return Err(AddressbookError::InvalidAddress("Invalid address format".to_string()));
+            return Err(AddressbookError::InvalidAddress(
+                "Invalid address format".to_string(),
+            ));
         }
         match addr.as_str().unwrap().parse::<Address>() {
             Ok(_) => {}
-            Err(_) => return Err(AddressbookError::InvalidAddress("Can't parse address".to_string())),
+            Err(_) => {
+                return Err(AddressbookError::InvalidAddress(
+                    "Can't parse address".to_string(),
+                ))
+            }
         }
         Ok(())
     }
@@ -112,7 +125,7 @@ impl AddressbookStorage {
             Err(_) => Err(AddressbookError::IO(format!(
                 "Can't delete file for address {}",
                 addr
-                ))),
+            ))),
         }
     }
 }

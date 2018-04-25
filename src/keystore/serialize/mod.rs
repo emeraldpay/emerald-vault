@@ -9,10 +9,10 @@ mod error;
 pub use self::address::try_extract_address;
 pub use self::crypto::{decode_str, CoreCrypto, Iv, Mac, Salt};
 pub use self::error::Error;
-use super::{Cipher, CryptoType, Kdf, KeyFile, CIPHER_IV_BYTES, KDF_SALT_BYTES};
-use super::HdwalletCrypto;
 use super::core::{self, Address};
 use super::util;
+use super::HdwalletCrypto;
+use super::{Cipher, CryptoType, Kdf, KeyFile, CIPHER_IV_BYTES, KDF_SALT_BYTES};
 use rustc_serialize::{json, Encodable, Encoder};
 use uuid::Uuid;
 

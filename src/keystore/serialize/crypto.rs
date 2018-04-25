@@ -1,7 +1,7 @@
 //! # JSON serialize for crypto field (UTC / JSON)
 
-use super::{Cipher, CryptoType, Error, Kdf, KeyFile, CIPHER_IV_BYTES, KDF_SALT_BYTES};
 use super::util::KECCAK256_BYTES;
+use super::{Cipher, CryptoType, Error, Kdf, KeyFile, CIPHER_IV_BYTES, KDF_SALT_BYTES};
 use hex::{FromHex, ToHex};
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use std::default::Default;
@@ -140,13 +140,13 @@ impl Decodable for CoreCrypto {
             let mac = d.read_struct_field("mac", 5, |d| Mac::decode(d))?;
 
             Ok(CoreCrypto {
-                cipher: cipher,
-                cipher_text: cipher_text,
-                cipher_params: cipher_params,
-                kdf: kdf,
+                cipher,
+                cipher_text,
+                cipher_params,
+                kdf,
                 kdfparams_dklen: dklen,
                 kdfparams_salt: salt,
-                mac: mac,
+                mac,
             })
         })
     }

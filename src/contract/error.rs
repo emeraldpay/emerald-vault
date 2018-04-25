@@ -1,6 +1,6 @@
 use ethabi;
-use std::{error, fmt, io};
 use std::string::ToString;
+use std::{error, fmt, io};
 
 /// Contract Service Errors
 #[derive(Debug, Clone)]

@@ -1,7 +1,7 @@
 //! # Storage for `Keystore` files
 
-use super::{generate_filename, AccountInfo, KeyfileStorage};
 use super::error::KeystoreError;
+use super::{generate_filename, AccountInfo, KeyfileStorage};
 use core::Address;
 use keystore::KeyFile;
 use rocksdb::{IteratorMode, DB};
@@ -36,7 +36,7 @@ impl DbStorage {
     pub fn new<P: AsRef<Path>>(dir: P) -> Result<DbStorage, KeystoreError> {
         let db = DB::open_default(dir)?;
 
-        Ok(DbStorage { db: db })
+        Ok(DbStorage { db })
     }
 
     /// Splits value into `filename` and `Keyfile` json

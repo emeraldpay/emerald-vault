@@ -4,11 +4,11 @@
 //! `HD(Hierarchical Deterministic) Wallet` specified in
 //! [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
 
-mod error;
 mod apdu;
-mod keystore;
-mod comm;
 pub mod bip32;
+mod comm;
+mod error;
+mod keystore;
 
 use self::apdu::ApduBuilder;
 use self::comm::sendrecv;
@@ -16,8 +16,8 @@ pub use self::error::Error;
 pub use self::keystore::HdwalletCrypto;
 use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
+use std::str::{from_utf8, FromStr};
 use std::{thread, time};
-use std::str::{FromStr, from_utf8};
 
 const GET_ETH_ADDRESS: u8 = 0x02;
 const SIGN_ETH_TRANSACTION: u8 = 0x04;
@@ -76,7 +76,7 @@ impl WManager {
         Ok(Self {
             hid: HidApi::new()?,
             devices: Vec::new(),
-            hd_path: hd_path,
+            hd_path,
         })
     }
 
@@ -138,7 +138,7 @@ impl WManager {
         &self,
         fd: &str,
         data: &[u8],
-        hd_path: Option<Vec<u8>>,
+        hd_path: &Option<Vec<u8>>,
     ) -> Result<Signature, Error> {
         Err(Error::HDWalletError("Can't sign data".to_string()))
     }
@@ -241,9 +241,13 @@ impl WManager {
 mod tests {
     use super::*;
     use core::Transaction;
-    use hdwallet::bip32::{path_to_arr, to_prefixed_path, ETC_DERIVATION_PATH};
+    use hdwallet::bip32::{path_to_arr, to_prefixed_path};
     use rustc_serialize::hex::ToHex;
     use tests::*;
+
+    pub const ETC_DERIVATION_PATH: [u8; 21] = [
+        5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0,
+    ]; // 44'/60'/160720'/0'/0
 
     #[test]
     #[ignore]
