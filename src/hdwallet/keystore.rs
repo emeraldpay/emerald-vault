@@ -58,9 +58,9 @@ impl Decodable for HdwalletCrypto {
             let hd_path = d.read_struct_field("hd_path", 2, |d| decode_str(d))?;
 
             Ok(Self {
-                cipher: cipher,
-                hardware: hardware,
-                hd_path: hd_path,
+                cipher,
+                hardware,
+                hd_path,
             })
         })
     }

@@ -58,7 +58,7 @@ impl ApduBuilder {
         let mut apdu = APDU::default();
         apdu.ins = cmd;
 
-        Self { apdu: apdu }
+        Self { apdu }
     }
 
     /// Add parameter 1

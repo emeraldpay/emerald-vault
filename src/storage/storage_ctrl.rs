@@ -1,8 +1,8 @@
-use super::{build_addressbook_storage, build_contract_storage, build_keyfile_storage, build_path,
-            KeyfileStorage};
 use super::addressbook::AddressbookStorage;
 use super::contracts::ContractStorage;
 use super::keyfile::KeystoreError;
+use super::{build_addressbook_storage, build_contract_storage, build_keyfile_storage, build_path,
+            KeyfileStorage};
 use std::collections::HashMap;
 use std::path::Path;
 

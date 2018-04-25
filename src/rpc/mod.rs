@@ -1,20 +1,20 @@
 //! # JSON RPC module
 
-mod serialize;
 mod error;
+mod serialize;
 mod serves;
 
 pub use self::error::Error;
 use super::core;
 use super::keystore::KdfDepthLevel;
 use super::storage::{self, StorageController};
-use super::util::{align_bytes, to_arr, to_chain_id, to_even_str, trim_hex, ToHex, to_u64};
+use super::util::{align_bytes, to_arr, to_chain_id, to_even_str, to_u64, trim_hex, ToHex};
 use hdwallet::WManager;
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::LogLevel;
-use serde::Serialize;
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::{self, Value};
 use std::cell::RefCell;
 use std::net::SocketAddr;

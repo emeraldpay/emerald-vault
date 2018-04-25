@@ -1,7 +1,7 @@
 //! # Keystore files key derivation function
 
-use super::Error;
 use super::prf::Prf;
+use super::Error;
 use crypto::pbkdf2::pbkdf2;
 //TODO: solve `mmap` call on windows for `rust-scrypt`
 #[cfg(target_os = "windows")]
@@ -140,7 +140,7 @@ impl From<u32> for Kdf {
     fn from(c: u32) -> Self {
         Kdf::Pbkdf2 {
             prf: Prf::default(),
-            c: c,
+            c,
         }
     }
 }

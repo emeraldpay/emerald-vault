@@ -6,9 +6,9 @@ extern crate tempdir;
 extern crate test;
 extern crate uuid;
 
-use emerald_core::PrivateKey;
 use emerald_core::keccak256;
 use emerald_core::keystore::{os_random, Kdf, KdfDepthLevel, KeyFile};
+use emerald_core::PrivateKey;
 use rustc_serialize::json;
 use std::fs::File;
 use std::io::Read;

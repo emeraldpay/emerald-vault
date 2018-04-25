@@ -1,11 +1,11 @@
 //! # Contract
-
+#[allow(dead_code)]
 mod error;
 
 pub use self::error::Error;
-use ethabi::{Encoder, Function, Interface};
 use ethabi::spec::param_type::{ParamType, Reader};
 use ethabi::token::{LenientTokenizer, Token, Tokenizer};
+use ethabi::{Encoder, Function, Interface};
 use hex::ToHex;
 use std::fmt;
 
@@ -24,7 +24,7 @@ impl Contract {
     ///
     pub fn try_from(data: &[u8]) -> Result<Self, Error> {
         let abi = Interface::load(data)?;
-        Ok(Contract { abi: abi })
+        Ok(Contract { abi })
     }
 
     /// Returns specification of contract function given the function name.
@@ -92,18 +92,14 @@ mod tests {
                  \"function\"}]";
         let interface = FunctionInterface {
             name: "balanceOf".to_owned(),
-            inputs: vec![
-                Param {
-                    name: "".to_owned(),
-                    kind: ParamType::Address,
-                },
-            ],
-            outputs: vec![
-                Param {
-                    name: "a".to_owned(),
-                    kind: ParamType::Uint(256),
-                },
-            ],
+            inputs: vec![Param {
+                name: "".to_owned(),
+                kind: ParamType::Address,
+            }],
+            outputs: vec![Param {
+                name: "a".to_owned(),
+                kind: ParamType::Uint(256),
+            }],
         };
         let contract = Contract::try_from(c).unwrap();
         let f = contract.get_function("balanceOf".to_string()).unwrap();

@@ -4,10 +4,10 @@ extern crate rustc_serialize;
 extern crate tempdir;
 extern crate uuid;
 
-use emerald::{Address, KECCAK256_BYTES};
 use emerald::keystore::{Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv, Kdf, KdfDepthLevel,
                         KeyFile, Mac, Prf, Salt, CIPHER_IV_BYTES, KDF_SALT_BYTES};
 use emerald::storage::{DbStorage, FsStorage, KeyfileStorage};
+use emerald::{Address, KECCAK256_BYTES};
 use hex::FromHex;
 use rustc_serialize::json;
 use std::fs::File;
@@ -20,7 +20,7 @@ use uuid::Uuid;
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 
 macro_rules! arr {
-    ($bytes: expr, $num: expr) => {{
+    ($bytes:expr, $num:expr) => {{
         let mut arr = [0u8; $num];
         arr.copy_from_slice($bytes);
         arr

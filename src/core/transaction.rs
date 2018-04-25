@@ -1,7 +1,7 @@
 //! # Account transaction
 
+use super::util::{keccak256, trim_bytes, KECCAK256_BYTES, RLPList, WriteRLP};
 use super::{Address, Error, PrivateKey, Signature};
-use super::util::{trim_bytes, KECCAK256_BYTES, RLPList, WriteRLP, keccak256};
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]

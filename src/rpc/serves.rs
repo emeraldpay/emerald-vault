@@ -1,10 +1,10 @@
+use super::serialize::RPCTransaction;
 use super::Error;
 use super::StorageController;
-use super::serialize::RPCTransaction;
 use contract::Contract;
 use core::{Address, Transaction};
-use hdwallet::WManager;
 use hdwallet::bip32::to_prefixed_path;
+use hdwallet::WManager;
 use jsonrpc_core::{Params, Value};
 use keystore::{os_random, CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME};
 use mnemonic::{self, gen_entropy, HDPath, Language, Mnemonic, ENTROPY_BYTE_LENGTH};
@@ -543,7 +543,7 @@ pub fn sign(
                             }
                         }
 
-                        match wm.sign(&fd, &hash, Some(hd_path.clone())) {
+                        match wm.sign(&fd, &hash, &Some(hd_path.clone())) {
                             Ok(s) => {
                                 debug!(
                                     "HD wallet addr:{:?} path: {:?} signed data to: {:?}\n\t raw: \

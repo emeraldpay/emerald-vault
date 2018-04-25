@@ -13,10 +13,6 @@ use secp256k1::Secp256k1;
 use std::ops;
 use util::to_bytes;
 
-pub const ETC_DERIVATION_PATH: [u8; 21] = [
-    5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0
-]; // 44'/60'/160720'/0'/0
-
 lazy_static! {
     static ref HD_PATH_RE: Regex = Regex::new(r#"^m/{1}[^0-9'/]*"#).unwrap();
 }

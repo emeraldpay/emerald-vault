@@ -1,10 +1,10 @@
 //! # `KeyFile` storage within filesystem
 
-use super::{generate_filename, AccountInfo, KeyfileStorage};
 use super::error::KeystoreError;
+use super::{generate_filename, AccountInfo, KeyfileStorage};
 use core::Address;
-use keystore::KeyFile;
 use keystore::try_extract_address;
+use keystore::KeyFile;
 use rustc_serialize::json;
 use std::ffi::OsStr;
 use std::fs::{self, read_dir, File};

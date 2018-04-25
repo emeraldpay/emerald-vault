@@ -36,13 +36,13 @@ extern crate serde_json;
 extern crate time;
 extern crate uuid;
 
+mod contract;
 mod core;
+mod hdwallet;
 pub mod keystore;
+pub mod mnemonic;
 pub mod rpc;
 pub mod storage;
-pub mod mnemonic;
-mod contract;
-mod hdwallet;
 mod util;
 
 pub use self::core::*;

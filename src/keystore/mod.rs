@@ -3,8 +3,8 @@
 //! [Web3 Secret Storage Definition](
 //! https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition)
 
-mod error;
 mod cipher;
+mod error;
 mod kdf;
 mod prf;
 mod serialize;
@@ -13,16 +13,16 @@ pub use self::cipher::Cipher;
 pub use self::error::Error;
 pub use self::kdf::{Kdf, KdfDepthLevel, PBKDF2_KDF_NAME};
 pub use self::prf::Prf;
+pub use self::serialize::Error as SerializeError;
 pub use self::serialize::{decode_str, try_extract_address, CoreCrypto, Iv, Mac, Salt,
                           SerializableKeyFileCore, SerializableKeyFileHD};
-pub use self::serialize::Error as SerializeError;
 use super::core::{self, Address, PrivateKey};
-use super::util::{self, to_arr, KECCAK256_BYTES, keccak256};
+use super::util::{self, keccak256, to_arr, KECCAK256_BYTES};
 pub use hdwallet::HdwalletCrypto;
 use rand::{OsRng, Rng};
-use std::{cmp, fmt};
 use std::convert::From;
 use std::str::FromStr;
+use std::{cmp, fmt};
 use uuid::Uuid;
 
 /// Key derivation function salt length in bytes
@@ -115,8 +115,8 @@ impl KeyFile {
     ) -> Result<KeyFile, Error> {
         let mut kf = KeyFile {
             uuid: rng.gen::<Uuid>(),
-            name: name,
-            description: description,
+            name,
+            description,
             ..Default::default()
         };
 
@@ -215,7 +215,7 @@ impl Default for KeyFile {
 impl From<Uuid> for KeyFile {
     fn from(uuid: Uuid) -> Self {
         KeyFile {
-            uuid: uuid,
+            uuid,
             ..Default::default()
         }
     }

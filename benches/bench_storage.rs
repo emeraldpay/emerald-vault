@@ -6,9 +6,9 @@ extern crate tempdir;
 extern crate test;
 extern crate uuid;
 
-use emerald_core::PrivateKey;
 use emerald_core::keystore::{Kdf, KeyFile};
 use emerald_core::storage::{DbStorage, KeyfileStorage};
+use emerald_core::PrivateKey;
 use std::fs::File;
 use std::path::PathBuf;
 use tempdir::TempDir;

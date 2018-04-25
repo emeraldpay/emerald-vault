@@ -1,16 +1,16 @@
 //! # Storage for `KeyFiles` and `Contracts`
 
-mod keyfile;
-mod contracts;
 pub mod addressbook;
+mod contracts;
+mod keyfile;
 mod storage_ctrl;
 
-pub use self::KeystoreError;
-pub use self::contracts::ContractStorage;
-pub use self::addressbook::AddressbookStorage;
 pub use self::addressbook::error::AddressbookError;
+pub use self::addressbook::AddressbookStorage;
+pub use self::contracts::ContractStorage;
 pub use self::keyfile::*;
 pub use self::storage_ctrl::StorageController;
+pub use self::KeystoreError;
 use std::boxed::Box;
 use std::env;
 use std::fs;
@@ -130,4 +130,3 @@ where
 
     Ok(Box::new(AddressbookStorage::new(p)))
 }
-

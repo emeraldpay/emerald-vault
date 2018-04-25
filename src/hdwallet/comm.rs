@@ -1,10 +1,10 @@
 //! # Module providing commnication using HID API
 //!
 
-use super::HidDevice;
 use super::apdu::APDU;
 use super::error::Error;
 use super::to_arr;
+use super::HidDevice;
 use log;
 use std::cmp::min;
 use std::mem::size_of_val;

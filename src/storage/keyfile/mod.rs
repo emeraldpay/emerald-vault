@@ -4,10 +4,9 @@
 /// * backed with `db`
 /// * plain filesystem
 ///
-
 mod db;
-mod fs;
 mod error;
+mod fs;
 
 pub use self::db::DbStorage;
 pub use self::error::KeystoreError;
