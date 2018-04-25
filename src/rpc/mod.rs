@@ -77,6 +77,27 @@ pub fn start(
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
+        io.add_method("emerald_listAddresses", move |p: Params| {
+            wrapper(serves::list_addresses(parse(p)?, &storage_ctrl))
+        });
+    }
+
+    {
+        let storage_ctrl = Arc::clone(&storage_ctrl);
+        io.add_method("emerald_importAddress", move |p: Params| {
+            wrapper(serves::import_address(parse(p)?, &storage_ctrl))
+        });
+    }
+
+    {
+        let storage_ctrl = Arc::clone(&storage_ctrl);
+        io.add_method("emerald_deleteAddress", move |p: Params| {
+            wrapper(serves::delete_address(parse(p)?, &storage_ctrl))
+        });
+    }
+
+    {
+        let storage_ctrl = Arc::clone(&storage_ctrl);
 
         io.add_method("emerald_listAccounts", move |p: Params| {
             wrapper(serves::list_accounts(parse(p)?, &storage_ctrl))
@@ -85,7 +106,6 @@ pub fn start(
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
-
         io.add_method("emerald_hideAccount", move |p: Params| {
             wrapper(serves::hide_account(parse(p)?, &storage_ctrl))
         });
@@ -101,7 +121,6 @@ pub fn start(
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
-
         io.add_method("emerald_shakeAccount", move |p: Params| {
             wrapper(serves::shake_account(parse(p)?, &storage_ctrl))
         });
@@ -109,7 +128,6 @@ pub fn start(
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
-
         io.add_method("emerald_updateAccount", move |p: Params| {
             wrapper(serves::update_account(parse(p)?, &storage_ctrl))
         });
@@ -117,7 +135,6 @@ pub fn start(
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
-
         io.add_method("emerald_importAccount", move |p: Params| {
             wrapper(serves::import_account(parse(p)?, &storage_ctrl))
         });
@@ -125,7 +142,6 @@ pub fn start(
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
-
         io.add_method("emerald_exportAccount", move |p: Params| {
             wrapper(serves::export_account(parse(p)?, &storage_ctrl))
         });
@@ -133,7 +149,6 @@ pub fn start(
 
     {
         let storage_ctrl = Arc::clone(&storage_ctrl);
-
         io.add_method("emerald_newAccount", move |p: Params| {
             wrapper(serves::new_account(parse(p)?, &sec_level, &storage_ctrl))
         });

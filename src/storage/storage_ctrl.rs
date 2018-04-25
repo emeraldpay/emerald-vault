@@ -1,4 +1,6 @@
-use super::{build_contract_storage, build_keyfile_storage, build_path, KeyfileStorage};
+use super::{build_addressbook_storage, build_contract_storage, build_keyfile_storage, build_path,
+            KeyfileStorage};
+use super::addressbook::AddressbookStorage;
 use super::contracts::ContractStorage;
 use super::keyfile::KeystoreError;
 use std::collections::HashMap;
@@ -8,6 +10,7 @@ use std::path::Path;
 pub struct StorageController {
     keyfile_storages: HashMap<String, Box<KeyfileStorage>>,
     contract_storages: HashMap<String, Box<ContractStorage>>,
+    addressbook_storages: HashMap<String, Box<AddressbookStorage>>,
 }
 
 impl StorageController {
@@ -23,6 +26,10 @@ impl StorageController {
             st.contract_storages.insert(
                 id.to_string(),
                 build_contract_storage(build_path(base_path.as_ref(), id, "contracts"))?,
+            );
+            st.addressbook_storages.insert(
+                id.to_string(),
+                build_addressbook_storage(build_path(base_path.as_ref(), id, "addressbook"))?,
             );
         }
 
@@ -50,6 +57,17 @@ impl StorageController {
             ))),
         }
     }
+
+    /// Get `Addressbook` storage for specified chain
+    pub fn get_addressbook(&self, chain: &str) -> Result<&Box<AddressbookStorage>, KeystoreError> {
+        match self.addressbook_storages.get(chain) {
+            Some(st) => Ok(st),
+            None => Err(KeystoreError::StorageError(format!(
+                "No storage for: {}",
+                chain
+            ))),
+        }
+    }
 }
 
 impl Default for StorageController {
@@ -57,6 +75,7 @@ impl Default for StorageController {
         StorageController {
             keyfile_storages: HashMap::new(),
             contract_storages: HashMap::new(),
+            addressbook_storages: HashMap::new(),
         }
     }
 }
