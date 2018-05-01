@@ -136,9 +136,9 @@ impl WManager {
     ///
     pub fn sign(
         &self,
-        fd: &str,
-        data: &[u8],
-        hd_path: &Option<Vec<u8>>,
+        _fd: &str,
+        _data: &[u8],
+        _hd_path: &Option<Vec<u8>>,
     ) -> Result<Signature, Error> {
         Err(Error::HDWalletError("Can't sign data".to_string()))
     }

@@ -249,7 +249,7 @@ pub fn import_account(
     let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let raw = serde_json::to_string(&raw)?;
 
-    let kf = KeyFile::decode(&raw.to_lowercase())?;
+    let kf = KeyFile::decode(&raw)?;
     storage.put(&kf)?;
 
     debug!("Account imported: {}", kf.address);
