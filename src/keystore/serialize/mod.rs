@@ -109,17 +109,16 @@ impl KeyFile {
     /// Handles different variants of `crypto` section
     ///
     pub fn decode(f: &str) -> Result<KeyFile, Error> {
-        let buf1 = f.to_string();
-        let buf2 = f.to_string();
+        let buf = f.to_string().to_lowercase();
         let mut ver = 0;
 
-        let kf = json::decode::<SerializableKeyFileCore>(&buf1)
+        let kf = json::decode::<SerializableKeyFileCore>(&buf)
             .and_then(|core| {
                 ver = core.version;
                 Ok(core.into())
             })
             .or_else(|_| {
-                json::decode::<SerializableKeyFileHD>(&buf2).and_then(|hd| {
+                json::decode::<SerializableKeyFileHD>(&buf).and_then(|hd| {
                     ver = hd.version;
                     Ok(hd.into())
                 })

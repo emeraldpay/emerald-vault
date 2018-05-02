@@ -2,11 +2,12 @@
 //! For more details about protocol refer to
 //! [APDU](https://github.com/LedgerHQ/blue-app-eth/blob/master/doc/ethapp.asc)
 
+use std::fmt;
+
 pub const APDU_HEADER_SIZE: usize = 0x05;
 
 ///
 #[repr(packed)]
-#[derive(Debug, Clone)]
 pub struct APDU {
     pub cla: u8,
     pub ins: u8,
@@ -14,6 +15,30 @@ pub struct APDU {
     pub p2: u8,
     pub len: u8,
     pub data: Vec<u8>,
+}
+
+impl fmt::Debug for APDU {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let d = vec![].clone_from(&self.data);
+        write!(
+            f,
+            "APDU {{ cla: {}, ins: {}, p1: {}, p2: {}, len: {}, data: {:?} }}",
+            self.cla, self.ins, self.p1, self.p2, self.len, d
+        )
+    }
+}
+
+impl Clone for APDU {
+    fn clone(&self) -> APDU {
+        APDU {
+            cla: self.cla,
+            ins: self.ins,
+            p1: self.p1,
+            p2: self.p2,
+            len: self.len,
+            data: self.data.clone(),
+        }
+    }
 }
 
 impl Default for APDU {
@@ -42,7 +67,8 @@ impl APDU {
     }
 
     pub fn len(&self) -> usize {
-        self.data.len() + APDU_HEADER_SIZE
+        let len = self.data.len();
+        len + APDU_HEADER_SIZE
     }
 }
 

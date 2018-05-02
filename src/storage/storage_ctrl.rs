@@ -15,6 +15,7 @@ pub struct StorageController {
 
 impl StorageController {
     /// Create new `StorageController`
+    /// with a subfolders for
     pub fn new<P: AsRef<Path>>(base_path: P) -> Result<StorageController, KeystoreError> {
         let mut st = StorageController::default();
 
