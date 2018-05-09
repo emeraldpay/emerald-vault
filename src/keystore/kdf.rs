@@ -61,7 +61,7 @@ impl Default for KdfDepthLevel {
 }
 
 /// Key derivation function
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Kdf {
     /// PBKDF2 (not recommended, specified in (RFC 2898)[https://tools.ietf.org/html/rfc2898])
     Pbkdf2 {

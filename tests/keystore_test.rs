@@ -1,15 +1,18 @@
 extern crate emerald_rs as emerald;
 extern crate hex;
 extern crate rustc_serialize;
+extern crate serde_json;
 extern crate tempdir;
 extern crate uuid;
 
-use emerald::keystore::{Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv, Kdf, KdfDepthLevel,
-                        KeyFile, Mac, Prf, Salt, CIPHER_IV_BYTES, KDF_SALT_BYTES};
+use emerald::keystore::{
+    Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv, Kdf, KdfDepthLevel, KeyFile, Mac, Prf,
+    Salt, CIPHER_IV_BYTES, KDF_SALT_BYTES,
+};
 use emerald::storage::{DbStorage, FsStorage, KeyfileStorage};
 use emerald::{Address, KECCAK256_BYTES};
 use hex::FromHex;
-use rustc_serialize::json;
+
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -126,7 +129,7 @@ fn should_decode_keyfile_without_address() {
     let key = KeyFile::decode(&file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = KeyFile::decode(&json::encode(&key).unwrap()).unwrap();
+    let key = KeyFile::decode(&serde_json::to_string(&key).unwrap()).unwrap();
 
     if let CryptoType::Core(ref exp_core) = exp.crypto {
         if let CryptoType::Core(ref recv_core) = key.crypto {
@@ -189,7 +192,7 @@ fn should_decode_keyfile_with_address() {
     let key = KeyFile::decode(&file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = KeyFile::decode(&json::encode(&key).unwrap()).unwrap();
+    let key = KeyFile::decode(&serde_json::to_string(&key).unwrap()).unwrap();
 
     if let CryptoType::Core(ref exp_core) = exp.crypto {
         if let CryptoType::Core(ref recv_core) = key.crypto {
@@ -229,7 +232,7 @@ fn should_decode_hd_wallet_keyfile() {
     let key = KeyFile::decode(&file_content(path)).unwrap();
 
     // verify encoding & decoding full cycle logic
-    let key = KeyFile::decode(&json::encode(&key).unwrap()).unwrap();
+    let key = KeyFile::decode(&serde_json::to_string(&key).unwrap()).unwrap();
 
     if let CryptoType::HdWallet(ref exp_hd) = exp.crypto {
         if let CryptoType::HdWallet(ref recv_hd) = key.crypto {

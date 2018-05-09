@@ -10,8 +10,11 @@ use std::{fmt, ops};
 pub const ADDRESS_BYTES: usize = 20;
 
 /// Account address (20 bytes)
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Address(pub [u8; ADDRESS_BYTES]);
+#[derive(Deserialize, Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd,
+         Ord)]
+pub struct Address(
+    pub [u8; ADDRESS_BYTES]
+);
 
 impl Address {
     /// Try to convert a byte vector to `Address`.

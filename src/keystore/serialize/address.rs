@@ -4,20 +4,43 @@ use super::core::Address;
 use regex::Regex;
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use std::str::FromStr;
+use serde::{Serialize, Serializer, Deserialize, Deserializer, ser::SerializeStruct};
+//
+//impl Decodable for Address {
+//    fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
+//        d.read_str()
+//            .map(|s| format!("0x{}", s))
+//            .and_then(|s| Address::from_str(&s).map_err(|e| d.error(&e.to_string())))
+//    }
+//}
 
-impl Decodable for Address {
-    fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
-        d.read_str()
-            .map(|s| format!("0x{}", s))
-            .and_then(|s| Address::from_str(&s).map_err(|e| d.error(&e.to_string())))
+
+//impl Deserialize for Address {
+//    fn deserialize<D>(deserializer: &mut D) -> Result<Address, D::Error>
+//        where D: Deserializer
+//    {
+//        Deserialize::deserialize(deserializer)
+//            .map(|s| format!("0x{}", s))
+//            .and_then(|s| Address::from_str(&s).map_err(|e| D::Error(&e.to_string())))
+//    }
+//}
+
+impl Serialize for Address {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Address", 1)?;
+        state.serialize_field("Address", &self.to_string()[2..])?; /* cut '0x' prefix */
+        state.end()
     }
 }
-
-impl Encodable for Address {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        s.emit_str(&self.to_string()[2..]) /* cut '0x' prefix */
-    }
-}
+//
+//impl Encodable for Address {
+//    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+//        s.emit_str(&self.to_string()[2..]) /* cut '0x' prefix */
+//    }
+//}
 
 /// Try to extract `Address` from JSON formatted text
 pub fn try_extract_address(text: &str) -> Option<Address> {
@@ -39,7 +62,7 @@ mod tests {
     #[test]
     fn should_encode_default_address() {
         assert_eq!(
-            json::encode(&Address::default()).unwrap(),
+            serde_json::to_string(&Address::default()).unwrap(),
             "\"0000000000000000000000000000000000000000\""
         );
     }
@@ -47,7 +70,8 @@ mod tests {
     #[test]
     fn should_decode_zero_address() {
         assert_eq!(
-            json::decode::<Address>("\"0000000000000000000000000000000000000000\"").unwrap(),
+            serde_json::from_str::<Address>("\"0000000000000000000000000000000000000000\"")
+                .unwrap(),
             Address::default()
         );
     }
@@ -60,7 +84,7 @@ mod tests {
         ]);
 
         assert_eq!(
-            json::encode(&addr).unwrap(),
+            serde_json::to_string(&addr).unwrap(),
             "\"0e7c045110b8dbf29765047380898919c5cb56f4\""
         );
     }
@@ -73,29 +97,33 @@ mod tests {
         ]);
 
         assert_eq!(
-            json::decode::<Address>("\"0e7c045110b8dbf29765047380898919c5cb56f4\"").unwrap(),
+            serde_json::from_str::<Address>("\"0e7c045110b8dbf29765047380898919c5cb56f4\"")
+                .unwrap(),
             addr
         );
     }
 
     #[test]
     fn should_not_decode_wrong_address() {
-        assert!(json::decode::<Address>("\"__7c045110b8dbf29765047380898919c5cb56f4\"").is_err());
+        assert!(
+            serde_json::from_str::<Address>("\"__7c045110b8dbf29765047380898919c5cb56f4\"")
+                .is_err()
+        );
     }
 
     #[test]
     fn should_not_decode_not_string_address() {
-        assert!(json::decode::<Address>("1234567890").is_err());
+        assert!(serde_json::from_str::<Address>("1234567890").is_err());
     }
 
     #[test]
     fn should_not_decode_empty_address() {
-        assert!(json::decode::<Address>("\"\"").is_err());
+        assert!(serde_json::from_str::<Address>("\"\"").is_err());
     }
 
     #[test]
     fn should_not_decode_absent_address() {
-        assert!(json::decode::<Address>("").is_err());
+        assert!(serde_json::from_str::<Address>("").is_err());
     }
 
     #[test]

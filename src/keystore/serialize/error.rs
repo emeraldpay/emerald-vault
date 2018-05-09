@@ -2,7 +2,8 @@
 
 use hdwallet;
 use rpc;
-use rustc_serialize::json;
+use serde_json;
+
 use std::{error, fmt, io};
 
 /// Keystore file serialize errors
@@ -15,10 +16,10 @@ pub enum Error {
     IO(io::Error),
 
     /// Invalid `Keyfile` decoding
-    InvalidDecoding(json::DecoderError),
+    InvalidDecoding(serde_json::Error),
 
     /// Invalid `Keyfile` encoding
-    InvalidEncoding(json::EncoderError),
+    InvalidEncoding(serde_json::Error),
 
     /// `KeyFile` wasn't found
     NotFound,
@@ -39,17 +40,17 @@ impl From<io::Error> for Error {
     }
 }
 
-impl From<json::EncoderError> for Error {
-    fn from(err: json::EncoderError) -> Self {
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
         Error::InvalidEncoding(err)
     }
 }
 
-impl From<json::DecoderError> for Error {
-    fn from(err: json::DecoderError) -> Self {
-        Error::InvalidDecoding(err)
-    }
-}
+//impl From<serde_json::Error> for Error {
+//    fn from(err: serde_json::Error) -> Self {
+//        Error::InvalidDecoding(err)
+//    }
+//}
 
 impl From<hdwallet::Error> for Error {
     fn from(err: hdwallet::Error) -> Self {

@@ -8,7 +8,6 @@ use hdwallet::WManager;
 use jsonrpc_core::{Params, Value};
 use keystore::{os_random, CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME};
 use mnemonic::{self, gen_entropy, HDPath, Language, Mnemonic, ENTROPY_BYTE_LENGTH};
-use rustc_serialize::json as rustc_json;
 use serde_json;
 use std::cell::RefCell;
 use std::str::FromStr;
@@ -72,7 +71,7 @@ pub fn current_version(_params: ()) -> Result<&'static str, Error> {
     Ok(::version())
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ListAccountAccount {
     name: String,
     address: String,
@@ -267,8 +266,7 @@ pub fn export_account(
     let addr = Address::from_str(&account.address)?;
 
     let (_, kf) = storage.search_by_address(&addr)?;
-    let raw = rustc_json::encode(&kf)?;
-    let value = serde_json::to_value(&raw)?;
+    let value = serde_json::to_value(&kf)?;
     debug!("Account exported: {}", kf.address);
 
     Ok(value)
