@@ -61,5 +61,4 @@ mod tests {
     pub use super::*;
     pub use hex::{FromHex, ToHex};
     pub use regex::Regex;
-    pub use rustc_serialize::json;
 }

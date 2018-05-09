@@ -1,14 +1,13 @@
 #![feature(test)]
-extern crate emerald_core;
+extern crate emerald_rs as emerald;
 extern crate rand;
-extern crate rustc_serialize;
 extern crate tempdir;
 extern crate test;
 extern crate uuid;
 
-use emerald_core::keystore::{Kdf, KeyFile};
-use emerald_core::storage::{DbStorage, KeyfileStorage};
-use emerald_core::PrivateKey;
+use emerald::keystore::{Kdf, KeyFile};
+use emerald::storage::{DbStorage, KeyfileStorage};
+use emerald::PrivateKey;
 use std::fs::File;
 use std::path::PathBuf;
 use tempdir::TempDir;

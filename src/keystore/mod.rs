@@ -14,8 +14,9 @@ pub use self::error::Error;
 pub use self::kdf::{Kdf, KdfDepthLevel, PBKDF2_KDF_NAME};
 pub use self::prf::Prf;
 pub use self::serialize::Error as SerializeError;
-pub use self::serialize::{decode_str, try_extract_address, CoreCrypto, Iv, Mac, Salt,
-                          SerializableKeyFileCore, SerializableKeyFileHD};
+pub use self::serialize::{
+    try_extract_address, CoreCrypto, Iv, Mac, Salt, SerializableKeyFileCore, SerializableKeyFileHD,
+};
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, keccak256, to_arr, KECCAK256_BYTES};
 pub use hdwallet::HdwalletCrypto;
@@ -32,7 +33,7 @@ pub const KDF_SALT_BYTES: usize = 32;
 pub const CIPHER_IV_BYTES: usize = 16;
 
 /// A keystore file (account private core encrypted with a passphrase)
-#[derive(Debug, Clone, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq)]
 pub struct KeyFile {
     /// Specifies if `Keyfile` is visible
     pub visible: Option<bool>,
@@ -55,7 +56,7 @@ pub struct KeyFile {
 
 /// Variants of `crypto` section in `Keyfile`
 ///
-#[derive(Debug, Clone, PartialEq, Eq, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 pub enum CryptoType {
     /// normal Web3 Secret Storage
     Core(CoreCrypto),

@@ -9,7 +9,7 @@ use std::str::FromStr;
 pub const AES128_CTR_CIPHER_NAME: &str = "aes-128-ctr";
 
 /// Cipher type
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Cipher {
     /// AES-CTR (specified in (RFC 3686)[https://tools.ietf.org/html/rfc3686])
     Aes128Ctr,

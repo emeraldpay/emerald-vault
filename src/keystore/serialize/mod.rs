@@ -7,13 +7,13 @@ mod crypto;
 mod error;
 
 pub use self::address::try_extract_address;
-pub use self::crypto::{decode_str, CoreCrypto, Iv, Mac, Salt};
+pub use self::crypto::{CoreCrypto, Iv, Mac, Salt};
 pub use self::error::Error;
 use super::core::{self, Address};
 use super::util;
 use super::HdwalletCrypto;
 use super::{Cipher, CryptoType, Kdf, KeyFile, CIPHER_IV_BYTES, KDF_SALT_BYTES};
-use rustc_serialize::{json, Encodable, Encoder};
+use serde_json;
 use uuid::Uuid;
 
 /// Keystore file current version used for serializing
@@ -23,7 +23,7 @@ pub const CURRENT_VERSION: u8 = 3;
 pub const SUPPORTED_VERSIONS: &[u8] = &[CURRENT_VERSION];
 
 /// A serializable keystore file (UTC / JSON format)
-#[derive(Clone, Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SerializableKeyFileCore {
     version: u8,
     id: Uuid,
@@ -64,7 +64,7 @@ impl Into<KeyFile> for SerializableKeyFileCore {
 }
 
 /// A serializable keystore file (UTC / JSON format)
-#[derive(Clone, Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SerializableKeyFileHD {
     version: u8,
     id: Uuid,
@@ -112,13 +112,13 @@ impl KeyFile {
         let buf = f.to_string().to_lowercase();
         let mut ver = 0;
 
-        let kf = json::decode::<SerializableKeyFileCore>(&buf)
+        let kf = serde_json::from_str::<SerializableKeyFileCore>(&buf)
             .and_then(|core| {
                 ver = core.version;
                 Ok(core.into())
             })
             .or_else(|_| {
-                json::decode::<SerializableKeyFileHD>(&buf).and_then(|hd| {
+                serde_json::from_str::<SerializableKeyFileHD>(&buf).and_then(|hd| {
                     ver = hd.version;
                     Ok(hd.into())
                 })
@@ -132,18 +132,18 @@ impl KeyFile {
         Ok(kf)
     }
 }
-
-impl Encodable for KeyFile {
-    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-        match SerializableKeyFileCore::try_from(self.clone()) {
-            Ok(sf) => sf.encode(s),
-            Err(_) => match SerializableKeyFileHD::try_from(self) {
-                Ok(sf) => sf.encode(s),
-                Err(_) => Ok(()),
-            },
-        }
-    }
-}
+//
+//impl Encodable for KeyFile {
+//    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+//        match SerializableKeyFileCore::try_from(self.clone()) {
+//            Ok(sf) => sf.encode(s),
+//            Err(_) => match SerializableKeyFileHD::try_from(self) {
+//                Ok(sf) => sf.encode(s),
+//                Err(_) => Ok(()),
+//            },
+//        }
+//    }
+//}
 
 #[cfg(test)]
 mod tests {

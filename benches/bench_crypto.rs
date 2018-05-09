@@ -1,15 +1,15 @@
 #![feature(test)]
-extern crate emerald_core;
+extern crate emerald_rs as emerald;
 extern crate rand;
 extern crate rustc_serialize;
 extern crate tempdir;
 extern crate test;
 extern crate uuid;
 
-use emerald_core::keccak256;
-use emerald_core::keystore::{os_random, Kdf, KdfDepthLevel, KeyFile};
-use emerald_core::PrivateKey;
-use rustc_serialize::json;
+use emerald::keccak256;
+use emerald::keystore::{os_random, Kdf, KdfDepthLevel, KeyFile};
+use emerald::PrivateKey;
+
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};

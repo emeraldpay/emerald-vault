@@ -5,7 +5,8 @@ use super::{generate_filename, AccountInfo, KeyfileStorage};
 use core::Address;
 use keystore::try_extract_address;
 use keystore::KeyFile;
-use rustc_serialize::json;
+
+use serde_json;
 use std::ffi::OsStr;
 use std::fs::{self, read_dir, File};
 use std::io::{Read, Write};
@@ -72,7 +73,7 @@ impl FsStorage {
     /// * name - filename
     ///
     fn put_with_name(&self, kf: &KeyFile, name: &str) -> Result<(), KeystoreError> {
-        let json = json::encode(&kf)?;
+        let json = serde_json::to_string(&kf)?;
         let path = self.build_path(name);
 
         let mut file = File::create(&path)?;
