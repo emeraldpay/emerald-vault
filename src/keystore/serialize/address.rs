@@ -2,45 +2,29 @@
 
 use super::core::Address;
 use regex::Regex;
-use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
+use serde::de;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
-use serde::{Serialize, Serializer, Deserialize, Deserializer, ser::SerializeStruct};
-//
-//impl Decodable for Address {
-//    fn decode<D: Decoder>(d: &mut D) -> Result<Address, D::Error> {
-//        d.read_str()
-//            .map(|s| format!("0x{}", s))
-//            .and_then(|s| Address::from_str(&s).map_err(|e| d.error(&e.to_string())))
-//    }
-//}
 
-
-//impl Deserialize for Address {
-//    fn deserialize<D>(deserializer: &mut D) -> Result<Address, D::Error>
-//        where D: Deserializer
-//    {
-//        Deserialize::deserialize(deserializer)
-//            .map(|s| format!("0x{}", s))
-//            .and_then(|s| Address::from_str(&s).map_err(|e| D::Error(&e.to_string())))
-//    }
-//}
+impl<'de> Deserialize<'de> for Address {
+    fn deserialize<D>(deserializer: D) -> Result<Address, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        String::deserialize(deserializer)
+            .map(|s| format!("0x{}", s))
+            .and_then(|s| Address::from_str(&s).map_err(de::Error::custom))
+    }
+}
 
 impl Serialize for Address {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Address", 1)?;
-        state.serialize_field("Address", &self.to_string()[2..])?; /* cut '0x' prefix */
-        state.end()
+        serializer.serialize_str(&self.to_string()[2..]) /* cut '0x' prefix */
     }
 }
-//
-//impl Encodable for Address {
-//    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-//        s.emit_str(&self.to_string()[2..]) /* cut '0x' prefix */
-//    }
-//}
 
 /// Try to extract `Address` from JSON formatted text
 pub fn try_extract_address(text: &str) -> Option<Address> {

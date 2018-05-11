@@ -2,6 +2,7 @@
 
 use super::prf::Prf;
 use super::Error;
+use super::Salt;
 use crypto::pbkdf2::pbkdf2;
 //TODO: solve `mmap` call on windows for `rust-scrypt`
 #[cfg(target_os = "windows")]
@@ -11,11 +12,38 @@ use rust_scrypt::{scrypt, ScryptParams};
 use std::fmt;
 use std::str::FromStr;
 
-/// PBKDF2 key derivation function name
+/// `PBKDF2` key derivation function name
 pub const PBKDF2_KDF_NAME: &str = "pbkdf2";
 
-/// Scrypt key derivation function name
+/// `Scrypt` key derivation function name
 pub const SCRYPT_KDF_NAME: &str = "scrypt";
+
+/// Derived core length in bytes (by default)
+pub const DEFAULT_DK_LENGTH: usize = 32;
+
+/// Key derivation function parameters
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
+pub struct KdfParams {
+    /// Key derivation function
+    #[serde(flatten)]
+    pub kdf: Kdf,
+
+    /// `Kdf` length for parameters
+    pub dklen: usize,
+
+    /// Cryptographic salt for `Kdf`
+    pub salt: Salt,
+}
+
+impl Default for KdfParams {
+    fn default() -> Self {
+        Self {
+            kdf: Kdf::default(),
+            dklen: DEFAULT_DK_LENGTH,
+            salt: Salt::default(),
+        }
+    }
+}
 
 /// Security level for `Kdf`
 #[derive(Clone, Copy, Debug)]
@@ -62,8 +90,10 @@ impl Default for KdfDepthLevel {
 
 /// Key derivation function
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[serde(untagged)]
 pub enum Kdf {
     /// PBKDF2 (not recommended, specified in (RFC 2898)[https://tools.ietf.org/html/rfc2898])
+    #[serde(rename = "pbkdf2")]
     Pbkdf2 {
         /// Pseudo-Random Functions (`HMAC-SHA-256` by default)
         prf: Prf,
@@ -73,6 +103,7 @@ pub enum Kdf {
     },
 
     /// Scrypt (by default, specified in (RPC 7914)[https://tools.ietf.org/html/rfc7914])
+    #[serde(rename = "scrypt")]
     Scrypt {
         /// Number of iterations (`19201` by default)
         n: u32,

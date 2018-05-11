@@ -37,7 +37,7 @@ fn invalidate_entry_wo_addr() {
     let json = serde_json::from_str::<Value>("{\"name\": \"elaine\"}").unwrap();
     let a = AddressbookStorage::new(addressbook_path());
     match a.validate(&json) {
-        Err(AddressbookError::InvalidAddress(ref str)) => {}
+        Err(AddressbookError::InvalidAddress(ref _str)) => {}
         Err(_) => panic!("Should be InvalidAddress"),
         Ok(_) => panic!("Should fail"),
     }

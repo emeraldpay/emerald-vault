@@ -59,7 +59,7 @@ impl<T, U: Default> Either<(T,), (T, U)> {
     }
 }
 
-pub fn heartbeat(_params: ()) -> Result<i64, Error> {
+pub fn heartbeat() -> Result<i64, Error> {
     use time::get_time;
     let res = get_time().sec;
     debug!("Emerald heartbeat: {}", res);
@@ -67,7 +67,7 @@ pub fn heartbeat(_params: ()) -> Result<i64, Error> {
     Ok(res)
 }
 
-pub fn current_version(_params: ()) -> Result<&'static str, Error> {
+pub fn current_version() -> Result<&'static str, Error> {
     Ok(::version())
 }
 
@@ -184,7 +184,7 @@ pub fn shake_account(
             let new_kf = KeyFile::new_custom(
                 pk,
                 &account.new_passphrase,
-                core.kdf,
+                core.kdf_params.kdf,
                 &mut os_random(),
                 kf.name,
                 kf.description,

@@ -2,7 +2,7 @@
 /// Macro to generate hex serialazable byte arrays
 macro_rules! byte_array_struct {
     ($name:ident, $num:expr) => {
-        #[derive(Serialize, Deserialize, Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+        #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
         ///
         pub struct $name([u8; $num]);
 
@@ -26,6 +26,36 @@ macro_rules! byte_array_struct {
             }
         }
 
+        impl<'de> ::serde::Deserialize<'de> for $name {
+            fn deserialize<D>(deserializer: D) -> Result<$name, D::Error>
+            where
+                D: ::serde::Deserializer<'de>,
+            {
+                use hex::FromHex;
+                let v = String::deserialize(deserializer)
+                    .and_then(|s| Vec::from_hex(s).map_err(::serde::de::Error::custom))?;
+
+                if v.len() != $num {
+                    return Err(::serde::de::Error::custom(&format!("Byte array invalid length: {}", v.len())));
+                }
+
+                let mut bytes = [0u8; $num];
+                bytes.copy_from_slice(&v);
+
+                Ok($name(bytes))
+            }
+        }
+
+        impl ::serde::Serialize for $name {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: ::serde::Serializer,
+            {
+                use hex::ToHex;
+                serializer.serialize_str(&self.0.to_hex())
+            }
+        }
+//
 //        impl ::rustc_serialize::Decodable for $name {
 //            fn decode<D: ::rustc_serialize::Decoder>(d: &mut D) -> Result<$name, D::Error> {
 //                use hex::FromHex;

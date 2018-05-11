@@ -16,9 +16,11 @@ pub const HMAC_SHA512_PRF_NAME: &str = "hmac-sha512";
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Prf {
     /// HMAC-SHA-256 (specified in (RFC 4868)[https://tools.ietf.org/html/rfc4868])
+    #[serde(rename = "hmac-sha256")]
     HmacSha256,
 
     /// HMAC-SHA-512 (specified in (RFC 4868)[https://tools.ietf.org/html/rfc4868])
+    #[serde(rename = "hmac-sha512")]
     HmacSha512,
 }
 
