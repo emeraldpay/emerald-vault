@@ -52,7 +52,7 @@ fn bench_decrypt_scrypt(b: &mut Bencher) {
     let path =
         keyfile_path("UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
 
-    let keyfile = KeyFile::decode(file_content(path)).unwrap();
+    let keyfile = KeyFile::decode(&file_content(path)).unwrap();
 
     b.iter(|| keyfile.decrypt_key("12345e67890"));
 }
@@ -60,7 +60,7 @@ fn bench_decrypt_scrypt(b: &mut Bencher) {
 #[bench]
 fn bench_decrypt_pbkdf2(b: &mut Bencher) {
     let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
-    let keyfile = KeyFile::decode(file_content(path)).unwrap();
+    let keyfile = KeyFile::decode(&file_content(path)).unwrap();
 
     b.iter(|| keyfile.decrypt_key("1234567890"));
 }

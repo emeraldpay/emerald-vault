@@ -2,17 +2,19 @@
 
 mod address;
 #[macro_use]
-mod byte_array;
+pub mod byte_array;
 mod crypto;
 mod error;
 
 pub use self::address::try_extract_address;
-pub use self::crypto::{CoreCrypto, Iv, Mac, Salt};
+pub use self::crypto::{CoreCrypto, Iv, Mac};
 pub use self::error::Error;
 use super::core::{self, Address};
 use super::util;
 use super::HdwalletCrypto;
-use super::{Cipher, CryptoType, Kdf, KeyFile, CIPHER_IV_BYTES, KDF_SALT_BYTES};
+use super::{Cipher, CryptoType, KdfParams, KeyFile, Salt, CIPHER_IV_BYTES};
+use serde::ser;
+use serde::{Serialize, Serializer};
 use serde_json;
 use uuid::Uuid;
 
@@ -132,18 +134,21 @@ impl KeyFile {
         Ok(kf)
     }
 }
-//
-//impl Encodable for KeyFile {
-//    fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-//        match SerializableKeyFileCore::try_from(self.clone()) {
-//            Ok(sf) => sf.encode(s),
-//            Err(_) => match SerializableKeyFileHD::try_from(self) {
-//                Ok(sf) => sf.encode(s),
-//                Err(_) => Ok(()),
-//            },
-//        }
-//    }
-//}
+
+impl Serialize for KeyFile {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match SerializableKeyFileCore::try_from(self.clone()) {
+            Ok(sf) => sf.serialize(serializer),
+            Err(_) => match SerializableKeyFileHD::try_from(self) {
+                Ok(s) => s.serialize(serializer),
+                Err(e) => Err(ser::Error::custom(e)),
+            },
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {

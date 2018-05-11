@@ -51,7 +51,6 @@ impl ContractStorage {
         filename.push(format!("{}.json", addr));
 
         let mut f = File::create(filename.as_path())?;
-        println!(">> DEBUG created file {:?}", f);
         match serde_json::to_writer_pretty(&mut f, contract) {
             Ok(_) => Ok(()),
             Err(_) => Err(Error::IO(format!(
