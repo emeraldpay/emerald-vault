@@ -1,0 +1,26 @@
+version: 2
+jobs:
+  build:
+    macos:
+      xcode: "9.0"
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install required software
+          command: |
+              curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+
+      - run:
+          name: Unit tests
+          command: |
+                export PATH=$PATH:$HOME/.cargo/bin
+                cargo test
+
+      - run:
+          name: Build
+          command: |
+              export PATH=$PATH:$HOME/.cargo/bin:$PWD/janusbin
+              cargo build --all --verbose --release
+              
