@@ -119,7 +119,8 @@ impl Mnemonic {
     /// * `src` - A mnemonic sentence with `MNEMONIC_SIZE` length
     ///
     pub fn try_from(lang: Language, src: &str) -> Result<Self, Error> {
-        let w: Vec<String> = src.to_string()
+        let w: Vec<String> = src
+            .to_string()
             .split_whitespace()
             .map(|w| w.to_string())
             .collect();
@@ -277,7 +278,8 @@ mod tests {
     fn should_create_from_sentence_12() {
         let s = "ozone drill grab fiber curtain grace pudding thank cruise elder eight picnic";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
-        let w: Vec<String> = s.to_string()
+        let w: Vec<String> = s
+            .to_string()
             .split_whitespace()
             .map(|w| w.to_string())
             .collect();
@@ -294,7 +296,8 @@ mod tests {
         let s = "beyond stage sleep clip because twist token leaf atom beauty genius food \
                  business side grid unable middle armed observe pair crouch tonight away coconut";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
-        let w: Vec<String> = s.to_string()
+        let w: Vec<String> = s
+            .to_string()
             .split_whitespace()
             .map(|w| w.to_string())
             .collect();
