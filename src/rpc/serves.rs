@@ -372,7 +372,8 @@ pub fn sign_transaction(
                             let pass = transaction.passphrase.unwrap();
 
                             if let Ok(pk) = kf.decrypt_key(&pass) {
-                                let raw = tr.to_signed_raw(pk, chain_id)
+                                let raw = tr
+                                    .to_signed_raw(pk, chain_id)
                                     .expect("Expect to sign a transaction");
                                 let signed = Transaction::to_raw_params(&raw);
                                 debug!("Signed transaction to: {:?}\n\t raw: {:?}", &tr.to, signed);
