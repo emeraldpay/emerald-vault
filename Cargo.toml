@@ -18,36 +18,36 @@ appveyor = { repository = "ETCDEVTeam/emerald-rs" }
 [lib]
 name = "emerald_rs"
 path = "src/lib.rs"
-#crate-type = ["rlib", "cdylib"]
+crate-type = ["cdylib"]
 
 [target.'cfg(unix)'.dependencies]
-rust-scrypt = "0.1"
+rust-scrypt = {version = "0.1", default_features = false}
 
 [dependencies]
 time = "0.1"
 futures = "0.1"
+wasm-bindgen = "0.2.8"
 jsonrpc-core = "8.0"
 jsonrpc-http-server = "8.0"
 lazy_static = "0.2"
 log = "0.3"
 regex = "0.2"
-rustc-serialize = "0.3"
 hex = "0.2"
-serde = "1.0"
+serde = {version = "1.0", default_features = false}
 serde_json = "1.0"
 serde_derive = "1.0"
 glob = "0.2"
 uuid = { version = "0.5", features = ["serde", "v4"] }
-rust-crypto = "0.2"
-secp256k1 = "0.6"
+rust-crypto = {version = "0.2", default_features = false}
+secp256k1 = {version = "0.9", default_features = false}
 rand = "0.3"
 byteorder="1.0"
 ethabi = "2.0.0"
-num = "0.1.40"
-bitcoin = "0.10.1"
+num = {version = "0.1.40", default_features = false}
+bitcoin = {version = "0.13.1", default_features = false}
 # optional dependencies
-emerald-rocksdb =  { version = "0.10.3", optional = true }
-hyper = { version = "0.11", optional = true }
+emerald-rocksdb =  { path = "../emerald-rocksdb", version = "0.10.3", optional = true }
+hyper = { version = "0.11", default_features = false, optional = true }
 reqwest = { version = "0.6", optional = true }
 clippy = {version = "0.0", optional = true}
 chrono = "0.4"

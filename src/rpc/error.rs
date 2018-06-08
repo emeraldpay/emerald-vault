@@ -9,9 +9,13 @@ use jsonrpc_core;
 use keystore;
 use mnemonic;
 use reqwest;
-use rustc_serialize;
 use serde_json;
 use std::{error, fmt, io};
+
+extern crate serde_json;
+
+#[macro_use]
+extern crate serde_derive;
 
 /// JSON RPC errors
 #[derive(Debug)]
@@ -38,15 +42,9 @@ impl From<storage::addressbook::error::AddressbookError> for Error {
     }
 }
 
-impl From<rustc_serialize::json::EncoderError> for Error {
-    fn from(err: rustc_serialize::json::EncoderError) -> Self {
-        Error::InvalidDataFormat(format!("decoder: {}", err.to_string()))
-    }
-}
-
-impl From<rustc_serialize::json::DecoderError> for Error {
-    fn from(err: rustc_serialize::json::DecoderError) -> Self {
-        Error::InvalidDataFormat(format!("decoder: {}", err.to_string()))
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Error {
+        Error::Json(err)
     }
 }
 
@@ -70,12 +68,6 @@ impl From<reqwest::Error> for Error {
 
 impl From<core::Error> for Error {
     fn from(err: core::Error) -> Self {
-        Error::InvalidDataFormat(err.to_string())
-    }
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Self {
         Error::InvalidDataFormat(err.to_string())
     }
 }

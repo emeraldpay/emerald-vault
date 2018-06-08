@@ -242,7 +242,7 @@ mod tests {
     use super::*;
     use core::Transaction;
     use hdwallet::bip32::{path_to_arr, to_prefixed_path};
-    use rustc_serialize::hex::ToHex;
+    use hex::{FromHex, ToHex};
     use tests::*;
 
     pub const ETC_DERIVATION_PATH: [u8; 21] = [
