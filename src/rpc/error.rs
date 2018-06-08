@@ -12,6 +12,11 @@ use reqwest;
 use serde_json;
 use std::{error, fmt, io};
 
+extern crate serde_json;
+
+#[macro_use]
+extern crate serde_derive;
+
 /// JSON RPC errors
 #[derive(Debug)]
 pub enum Error {
@@ -57,12 +62,6 @@ impl From<reqwest::Error> for Error {
 
 impl From<core::Error> for Error {
     fn from(err: core::Error) -> Self {
-        Error::InvalidDataFormat(err.to_string())
-    }
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Self {
         Error::InvalidDataFormat(err.to_string())
     }
 }

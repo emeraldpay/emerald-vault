@@ -1,3 +1,8 @@
+#![feature(proc_macro, wasm_custom_section, wasm_import_module)]
+extern crate wasm_bindgen;
+
+use wasm_bindgen::prelude::*;
+
 //! # Ethereum Classic web3 like connector library
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
@@ -46,13 +51,18 @@ pub mod rpc;
 pub mod storage;
 mod util;
 
+#[wasm_bindgen]
 pub use self::core::*;
+
+#[wasm_bindgen]
 pub use self::rpc::start;
+#[wasm_bindgen]
 pub use self::util::*;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
 /// Get the current Emerald version.
+#[wasm_bindgen]
 pub fn version() -> &'static str {
     VERSION.unwrap_or("unknown")
 }
