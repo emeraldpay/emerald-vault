@@ -46,7 +46,7 @@ ethabi = "2.0.0"
 num = {version = "0.1.40", default_features = false}
 bitcoin = {version = "0.13.1", default_features = false}
 # optional dependencies
-emerald-rocksdb =  { path = "../emerald-rocksdb", version = "0.10.3", optional = true }
+emerald-rocksdb =  { git = "https://github.com/ETCDEVTeam/emerald-rocksdb.git", branch = "master", optional = true }
 hyper = { version = "0.11", default_features = false, optional = true }
 reqwest = { version = "0.6", optional = true }
 clippy = {version = "0.0", optional = true}
