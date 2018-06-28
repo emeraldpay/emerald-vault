@@ -1,6 +1,6 @@
 [package]
 name = "emerald-rs"
-version = "0.22.0"
+version = "0.23.0"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Ethereum Classic secure account management core libary"
 homepage = "http://etcdevteam.com"
@@ -21,7 +21,7 @@ path = "src/lib.rs"
 crate-type = ["cdylib"]
 
 [target.'cfg(unix)'.dependencies]
-rust-scrypt = {version = "0.1", default_features = false}
+rust-scrypt = "1.0"
 
 [dependencies]
 time = "0.1"
