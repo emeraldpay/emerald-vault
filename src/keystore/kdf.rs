@@ -6,11 +6,7 @@ use super::Salt;
 use pbkdf2::pbkdf2;
 use hmac::Hmac;
 use sha2::{Sha256, Sha512};
-//TODO: solve `mmap` call on windows for `rust-scrypt`
-#[cfg(target_os = "windows")]
 use scrypt::{scrypt, ScryptParams};
-#[cfg(all(unix))]
-use rust_scrypt::{scrypt, ScryptParams};
 use std::fmt;
 use std::str::FromStr;
 
@@ -135,22 +131,12 @@ impl Kdf {
                     }
                 };
             }
-            #[cfg(target_os = "windows")]
             Kdf::Scrypt { n, r, p } => {
                 let log_n = (n as f64).log2().round() as u8;
                 let params = ScryptParams::new(log_n, r, p)
                     .expect("Invalid Scrypt parameters");
                 scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key)
                     .expect("Scrypt failed");
-            }
-            #[cfg(all(unix))]
-            Kdf::Scrypt { n, r, p } => {
-                let params = ScryptParams::new(
-                    u64::from(n),
-                    r,
-                    p,
-                );
-                scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key);
             }
         }
 

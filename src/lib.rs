@@ -32,8 +32,6 @@ extern crate num;
 extern crate rand;
 extern crate regex;
 extern crate reqwest;
-#[cfg(all(unix))]
-extern crate rust_scrypt;
 extern crate rustc_serialize;
 extern crate secp256k1;
 extern crate serde;
