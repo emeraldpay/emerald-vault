@@ -1,19 +1,18 @@
 //! # Crypto util functions
 
-use crypto::digest::Digest;
-use crypto::sha3::{Sha3, Sha3Mode};
-
+use sha3::Digest;
+use sha3::Keccak256;
+use hmac::digest::FixedOutput;
 /// Keccak-256 crypto hash length in bytes
 pub const KECCAK256_BYTES: usize = 32;
 
 /// Calculate Keccak-256 crypto hash
 pub fn keccak256(data: &[u8]) -> [u8; KECCAK256_BYTES] {
-    let mut sha3 = Sha3::new(Sha3Mode::Keccak256);
-    sha3.input(data);
-
-    let mut hash = [0u8; KECCAK256_BYTES];
-    sha3.result(&mut hash);
-    hash
+    let mut keccak = Keccak256::default();
+    keccak.input(data);
+    let mut out = [0u8; KECCAK256_BYTES];
+    out.copy_from_slice(&keccak.result()[..]);
+    out
 }
 
 #[cfg(test)]

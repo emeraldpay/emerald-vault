@@ -3,10 +3,12 @@
 use super::prf::Prf;
 use super::Error;
 use super::Salt;
-use crypto::pbkdf2::pbkdf2;
+use pbkdf2::pbkdf2;
+use hmac::Hmac;
+use sha2::{Sha256, Sha512};
 //TODO: solve `mmap` call on windows for `rust-scrypt`
 #[cfg(target_os = "windows")]
-use crypto::scrypt::{scrypt, ScryptParams};
+use scrypt::{scrypt, ScryptParams};
 #[cfg(all(unix))]
 use rust_scrypt::{scrypt, ScryptParams};
 use std::fmt;
@@ -126,11 +128,10 @@ impl Kdf {
                 match prf {
                     Prf::HmacSha256 => {
                         let mut hmac = prf.hmac(passphrase);
-                        pbkdf2(&mut hmac, kdf_salt, c, &mut key);
+                        pbkdf2::<Hmac<Sha256>>(passphrase.as_bytes(), kdf_salt, c as usize, &mut key);
                     }
                     Prf::HmacSha512 => {
-                        let mut hmac = prf.hmac512(passphrase);
-                        pbkdf2(&mut hmac, kdf_salt, c, &mut key);
+                        pbkdf2::<Hmac<Sha512>>(passphrase.as_bytes(), kdf_salt, c as usize, &mut key);
                     }
                 };
             }
