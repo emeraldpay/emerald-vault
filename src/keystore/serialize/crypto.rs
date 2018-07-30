@@ -2,7 +2,7 @@
 
 use super::util::KECCAK256_BYTES;
 use super::{Cipher, CryptoType, Error, KdfParams, KeyFile, Salt, CIPHER_IV_BYTES};
-use hex::{FromHex, ToHex};
+use hex;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::default::Default;
 
@@ -106,7 +106,7 @@ impl From<SerCoreCrypto> for CoreCrypto {
     fn from(ser: SerCoreCrypto) -> Self {
         CoreCrypto {
             cipher: ser.cipher,
-            cipher_text: Vec::from_hex(ser.cipher_text).unwrap(),
+            cipher_text: hex::decode(ser.cipher_text).unwrap(),
             cipher_params: ser.cipher_params,
             kdf_params: ser.kdf_params,
             mac: ser.mac,
@@ -118,7 +118,7 @@ impl Into<SerCoreCrypto> for CoreCrypto {
     fn into(self) -> SerCoreCrypto {
         SerCoreCrypto {
             cipher: self.cipher,
-            cipher_text: self.cipher_text.to_hex(),
+            cipher_text: hex::encode(self.cipher_text),
             cipher_params: self.cipher_params,
             kdf: self.kdf_params.kdf.to_string(),
             kdf_params: self.kdf_params,

@@ -260,19 +260,19 @@ mod tests {
             .unwrap()
             .as_slice()
             .write_rlp(&mut buf);
-        assert_eq!("8f102030405060708090a0b0c0d0e0f2", buf.to_hex());
+        assert_eq!("8f102030405060708090a0b0c0d0e0f2", hex::encode(buf));
     }
 
     #[test]
     fn encode_mediumint5() {
         let mut buf = Vec::new();
-        Vec::from_hex("0100020003000400050006000700080009000a000b000c000d000e01")
+        hex::decode("0100020003000400050006000700080009000a000b000c000d000e01")
             .unwrap()
             .as_slice()
             .write_rlp(&mut buf);
         assert_eq!(
             "9c0100020003000400050006000700080009000a000b000c000d000e01",
-            buf.to_hex()
+            hex::encode(buf)
         );
     }
 
@@ -296,7 +296,7 @@ mod tests {
         "Lorem ipsum dolor sit amet, consectetur adipisicing eli".write_rlp(&mut buf);
         assert_eq!("b74c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f6e\
                     7365637465747572206164697069736963696e6720656c69",
-                   buf.to_hex());
+                   hex::encode(buf));
     }
 
     #[test]
@@ -305,7 +305,7 @@ mod tests {
         "Lorem ipsum dolor sit amet, consectetur adipisicing elit".write_rlp(&mut buf);
         assert_eq!("b8384c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f\
                     6e7365637465747572206164697069736963696e6720656c6974",
-                   buf.to_hex());
+                   hex::encode(buf));
     }
 
     #[test]
@@ -357,7 +357,7 @@ mod tests {
                     206f726e617265206375727375732c20646f6c6f72206a7573746f20756c7472\
                     69636573206d657475732c20617420756c6c616d636f7270657220766f6c7574\
                     706174",
-                   buf.to_hex());
+                   hex::encode(buf));
     }
 
     #[test]

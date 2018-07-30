@@ -112,7 +112,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
             set_data(&mut frame[6..], &mut data_itr, CONT_DATA_SIZE);
         }
 
-        if log_enabled!(log::LogLevel::Trace) {
+        if log_enabled!(log::Level::Trace) {
             let parts: Vec<String> = frame.iter().map(|byte| format!("{:02x}", byte)).collect();
             trace!(">> USB send: {}", parts.join(""));
         }

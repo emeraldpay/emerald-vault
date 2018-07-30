@@ -2,7 +2,7 @@
 
 use super::util::to_arr;
 use super::Error;
-use hex::{FromHex, ToHex};
+use hex;
 use std::str::FromStr;
 use std::{fmt, ops};
 
@@ -63,13 +63,13 @@ impl FromStr for Address {
             s
         };
 
-        Address::try_from(Vec::from_hex(&value)?.as_slice())
+        Address::try_from(hex::decode(&value)?.as_slice())
     }
 }
 
 impl fmt::Display for Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0x{}", self.0.to_hex())
+        write!(f, "0x{}", hex::encode(self.0))
     }
 }
 

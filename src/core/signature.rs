@@ -3,7 +3,7 @@
 use super::util::{keccak256, to_arr, KECCAK256_BYTES};
 use super::Address;
 use super::Error;
-use hex::{FromHex, ToHex};
+use hex;
 use rand::{OsRng, Rng};
 use secp256k1::key::{PublicKey, SecretKey};
 use secp256k1::{ContextFlag, Message, Secp256k1};
@@ -52,7 +52,7 @@ impl Into<(u8, [u8; 32], [u8; 32])> for Signature {
 
 impl Into<String> for Signature {
     fn into(self) -> String {
-        format!("0x{:X}{}{}", self.v, self.r.to_hex(), self.s.to_hex())
+        format!("0x{:X}{}{}", self.v, hex::encode(self.r), hex::encode(self.s))
     }
 }
 
@@ -96,7 +96,7 @@ impl PrivateKey {
     /// Extract `Address` from current private key.
     pub fn to_address(self) -> Result<Address, Error> {
         let key = PublicKey::from_secret_key(&ECDSA, &self.into())?;
-        let hash = keccak256(&key.serialize_vec(&ECDSA, false)[1..] /* cut '04' */);
+        let hash = keccak256(&key.serialize_uncompressed()[1..] /* cut '04' */);
         Ok(Address(to_arr(&hash[12..])))
     }
 
@@ -166,13 +166,13 @@ impl str::FromStr for PrivateKey {
             s
         };
 
-        PrivateKey::try_from(Vec::from_hex(&value)?.as_slice())
+        PrivateKey::try_from(hex::decode(&value)?.as_slice())
     }
 }
 
 impl fmt::Display for PrivateKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0x{}", self.0.to_hex())
+        write!(f, "0x{}", hex::encode(self.0))
     }
 }
 
