@@ -138,8 +138,10 @@ impl Kdf {
             #[cfg(target_os = "windows")]
             Kdf::Scrypt { n, r, p } => {
                 let log_n = (n as f64).log2().round() as u8;
-                let params = ScryptParams::new(log_n, r, p);
-                scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key);
+                let params = ScryptParams::new(log_n, r, p)
+                    .expect("Invalid Scrypt parameters");
+                scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key)
+                    .expect("Scrypt failed");
             }
             #[cfg(all(unix))]
             Kdf::Scrypt { n, r, p } => {
