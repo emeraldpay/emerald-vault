@@ -20,9 +20,6 @@ name = "emerald_rs"
 path = "src/lib.rs"
 #crate-type = ["rlib", "cdylib"]
 
-[target.'cfg(unix)'.dependencies]
-rust-scrypt = "1.0"
-
 [dependencies]
 time = "0.1"
 futures = "0.1"
