@@ -38,13 +38,18 @@ serde_json = "1.0"
 serde_derive = "1.0"
 glob = "0.2"
 uuid = { version = "0.5", features = ["serde", "v4"] }
-rust-crypto = "0.2"
 secp256k1 = "0.6"
 rand = "0.3"
 byteorder="1.0"
 ethabi = "2.0.0"
 num = "0.1.40"
 bitcoin = "0.10.1"
+aes-ctr = "0.1.0"
+sha2 = "0.7.1"
+sha3 = "0.7.3"
+pbkdf2 = "0.2.0"
+scrypt = "0.1.1"
+hmac = "0.6.2"
 # optional dependencies
 emerald-rocksdb =  { version = "0.10.3", optional = true }
 hyper = { version = "0.11", optional = true }

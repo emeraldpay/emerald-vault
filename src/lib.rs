@@ -13,9 +13,14 @@ extern crate lazy_static;
 extern crate serde_derive;
 
 extern crate bitcoin;
+extern crate aes_ctr;
+extern crate sha2;
+extern crate sha3;
+extern crate pbkdf2;
+extern crate scrypt;
+extern crate hmac;
 extern crate byteorder;
 extern crate chrono;
-extern crate crypto;
 extern crate emerald_rocksdb as rocksdb;
 extern crate ethabi;
 extern crate glob;
