@@ -54,7 +54,7 @@ fn bench_decrypt_scrypt(b: &mut Bencher) {
 
     let keyfile = KeyFile::decode(&file_content(path)).unwrap();
 
-    b.iter(|| keyfile.decrypt_key("12345e67890"));
+    b.iter(|| keyfile.decrypt_key("1234567890"));
 }
 
 #[bench]
