@@ -51,8 +51,8 @@ macro_rules! byte_array_struct {
             where
                 S: ::serde::Serializer,
             {
-                use hex::ToHex;
-                serializer.serialize_str(&self.0.to_hex())
+                use hex;
+                serializer.serialize_str(&hex::encode(&self.0))
             }
         }
 //

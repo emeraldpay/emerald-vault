@@ -12,7 +12,7 @@ use super::util::{align_bytes, to_arr, to_chain_id, to_even_str, to_u64, trim_he
 use hdwallet::WManager;
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
-use log::LogLevel;
+use log::Level;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -229,7 +229,7 @@ pub fn start(
         .start_http(addr)
         .expect("Expect to build HTTP RPC server");
 
-    if log_enabled!(LogLevel::Info) {
+    if log_enabled!(Level::Info) {
         info!("Connector started on http://{}", server.address());
     }
 

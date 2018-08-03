@@ -6,7 +6,7 @@ pub use self::error::Error;
 use ethabi::spec::param_type::{ParamType, Reader};
 use ethabi::token::{LenientTokenizer, Token, Tokenizer};
 use ethabi::{Encoder, Function, Interface};
-use hex::ToHex;
+use hex;
 use std::fmt;
 
 /// Contract specification
@@ -60,7 +60,7 @@ impl Contract {
 
         let result = Encoder::encode(tokens);
 
-        Ok(result.to_hex())
+        Ok(hex::encode(result))
     }
 }
 
