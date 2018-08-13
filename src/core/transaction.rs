@@ -204,4 +204,32 @@ mod tests {
                     d890a03c0a3985771bc0f10cf9fe85e3ea3c17132e3f09551eaedb8d2ae97cec3ad9f7");
     }
 
+    #[test]
+    fn should_sign_transaction_EIP155() {
+        let tx = Transaction {
+            nonce: 9,
+            gas_price: /* 20,000,000,000 */
+            to_32bytes("00000000000000000000000000000\
+                        000000000000000000000000004a817c800"),
+            gas_limit: 21000,
+            to: Some("0x3535353535353535353535353535353535353535"
+                .parse::<Address>()
+                .unwrap()),
+            value: 
+            to_32bytes("00000000000000000000000000000000000000\
+                        00000000008AC7230489E80000"),
+            data: Vec::new(),
+        };
+
+        let pk = PrivateKey(to_32bytes(
+            "4646464646464646464646464646464646464646464646464646464646464646",
+        ));
+
+        assert_eq!(hex::encode(tx.to_signed_raw(pk, 62 /*TESTNET_ID*/).unwrap()),
+                    "f86\
+                    c098504a817c800825208943535353535353535353535353535353535353535880de0b6b\
+                    3a76400008025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa\
+                    636276a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83");
+    }
+
 }

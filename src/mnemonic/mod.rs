@@ -8,12 +8,12 @@ mod language;
 
 pub use self::error::Error;
 pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
-use sha2::{self, Digest};
 pub use hdwallet::bip32::{generate_key, HDPath};
 use keystore::{Kdf, Prf};
 use num::bigint::BigUint;
 use num::{FromPrimitive, ToPrimitive};
 use rand::{OsRng, Rng};
+use sha2::{self, Digest};
 use std::iter::repeat;
 use std::ops::{BitAnd, Shr};
 
