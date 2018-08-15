@@ -9,7 +9,6 @@ use jsonrpc_core;
 use keystore;
 use mnemonic;
 use reqwest;
-use rustc_serialize;
 use serde_json;
 use std::{error, fmt, io};
 
@@ -35,18 +34,6 @@ pub enum Error {
 impl From<storage::addressbook::error::AddressbookError> for Error {
     fn from(err: storage::addressbook::error::AddressbookError) -> Self {
         Error::AddressbookError(err.to_string())
-    }
-}
-
-impl From<rustc_serialize::json::EncoderError> for Error {
-    fn from(err: rustc_serialize::json::EncoderError) -> Self {
-        Error::InvalidDataFormat(format!("decoder: {}", err.to_string()))
-    }
-}
-
-impl From<rustc_serialize::json::DecoderError> for Error {
-    fn from(err: rustc_serialize::json::DecoderError) -> Self {
-        Error::InvalidDataFormat(format!("decoder: {}", err.to_string()))
     }
 }
 

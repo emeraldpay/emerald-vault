@@ -32,7 +32,6 @@ extern crate num;
 extern crate rand;
 extern crate regex;
 extern crate reqwest;
-extern crate rustc_serialize;
 extern crate secp256k1;
 extern crate serde;
 extern crate serde_json;
