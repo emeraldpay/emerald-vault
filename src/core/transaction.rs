@@ -49,6 +49,8 @@ impl Transaction {
         rlp.push(&sig.r[..]);
         rlp.push(&sig.s[..]);
 
+        println!(">> DEBUG: {:?} {:x?} {:x?}", v, sig.r, sig.s);
+
         let mut buf = Vec::new();
         rlp.write_rlp(&mut buf);
 
@@ -155,7 +157,7 @@ mod tests {
     fn should_sign_transaction_for_testnet() {
         let tx = Transaction {
             nonce: 1048585,
-            gas_price: /* 21000000000 */
+            gas_price: /* 20000000000 */
             to_32bytes("00000000000000000000000000000\
                         000000000000000000000000004a817c800"),
             gas_limit: 21000,
@@ -205,7 +207,7 @@ mod tests {
     }
 
     #[test]
-    fn should_sign_transaction_EIP155() {
+    fn should_sign_transaction_eip155() {
         let tx = Transaction {
             nonce: 9,
             gas_price: /* 20,000,000,000 */
@@ -215,8 +217,7 @@ mod tests {
             to: Some("0x3535353535353535353535353535353535353535"
                 .parse::<Address>()
                 .unwrap()),
-            value: 
-            to_32bytes("00000000000000000000000000000000000000\
+            value: to_32bytes("00000000000000000000000000000000000000\
                         00000000008AC7230489E80000"),
             data: Vec::new(),
         };
@@ -225,11 +226,10 @@ mod tests {
             "4646464646464646464646464646464646464646464646464646464646464646",
         ));
 
-        assert_eq!(hex::encode(tx.to_signed_raw(pk, 62 /*TESTNET_ID*/).unwrap()),
+        assert_eq!(hex::encode(tx.to_signed_raw(pk, 1 /*ETH mainnet*/).unwrap()),
                     "f86\
                     c098504a817c800825208943535353535353535353535353535353535353535880de0b6b\
                     3a76400008025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa\
                     636276a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83");
     }
-
 }
