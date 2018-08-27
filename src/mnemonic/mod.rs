@@ -7,7 +7,7 @@ mod error;
 mod language;
 
 pub use self::error::Error;
-pub use self::language::{BIP39_ENGLISH_WORDLIST, Language};
+pub use self::language::{Language, BIP39_ENGLISH_WORDLIST};
 pub use hdwallet::bip32::{generate_key, HDPath};
 use keystore::{Kdf, Prf};
 use num::bigint::BigUint;

@@ -36,7 +36,10 @@ macro_rules! byte_array_struct {
                     .and_then(|s| Vec::from_hex(s).map_err(::serde::de::Error::custom))?;
 
                 if v.len() != $num {
-                    return Err(::serde::de::Error::custom(&format!("Byte array invalid length: {}", v.len())));
+                    return Err(::serde::de::Error::custom(&format!(
+                        "Byte array invalid length: {}",
+                        v.len()
+                    )));
                 }
 
                 let mut bytes = [0u8; $num];
@@ -55,30 +58,30 @@ macro_rules! byte_array_struct {
                 serializer.serialize_str(&hex::encode(&self.0))
             }
         }
-//
-//        impl ::rustc_serialize::Decodable for $name {
-//            fn decode<D: ::rustc_serialize::Decoder>(d: &mut D) -> Result<$name, D::Error> {
-//                use hex::FromHex;
-//                let v = d.read_str()
-//                    .and_then(|s| Vec::from_hex(s).map_err(|e| d.error(&e.to_string())))?;
-//
-//                if v.len() != $num {
-//                    return Err(d.error(&format!("Byte array invalid length: {}", v.len())));
-//                }
-//
-//                let mut bytes = [0u8; $num];
-//
-//                bytes.copy_from_slice(&v);
-//
-//                Ok($name(bytes))
-//            }
-//        }
-//
-//        impl ::rustc_serialize::Encodable for $name {
-//            fn encode<S: ::rustc_serialize::Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
-//                s.emit_str(&self.0.to_hex())
-//            }
-//        }
+        //
+        //        impl ::rustc_serialize::Decodable for $name {
+        //            fn decode<D: ::rustc_serialize::Decoder>(d: &mut D) -> Result<$name, D::Error> {
+        //                use hex::FromHex;
+        //                let v = d.read_str()
+        //                    .and_then(|s| Vec::from_hex(s).map_err(|e| d.error(&e.to_string())))?;
+        //
+        //                if v.len() != $num {
+        //                    return Err(d.error(&format!("Byte array invalid length: {}", v.len())));
+        //                }
+        //
+        //                let mut bytes = [0u8; $num];
+        //
+        //                bytes.copy_from_slice(&v);
+        //
+        //                Ok($name(bytes))
+        //            }
+        //        }
+        //
+        //        impl ::rustc_serialize::Encodable for $name {
+        //            fn encode<S: ::rustc_serialize::Encoder>(&self, s: &mut S) -> Result<(), S::Error> {
+        //                s.emit_str(&self.0.to_hex())
+        //            }
+        //        }
     };
 }
 
