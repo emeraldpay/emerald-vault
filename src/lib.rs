@@ -29,7 +29,6 @@ extern crate pbkdf2;
 extern crate rand;
 extern crate regex;
 extern crate reqwest;
-extern crate rustc_serialize;
 extern crate scrypt;
 extern crate secp256k1;
 extern crate serde;
@@ -38,7 +37,6 @@ extern crate sha2;
 extern crate sha3;
 extern crate time;
 extern crate uuid;
-
 mod contract;
 mod core;
 mod hdwallet;

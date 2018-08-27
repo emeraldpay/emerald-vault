@@ -49,8 +49,6 @@ impl Transaction {
         rlp.push(&sig.r[..]);
         rlp.push(&sig.s[..]);
 
-        println!(">> DEBUG: {:?} {:?} {:x?}", v, sig.r, sig.s);
-
         let mut buf = Vec::new();
         rlp.write_rlp(&mut buf);
 

@@ -240,7 +240,7 @@ mod tests {
     use super::*;
     use core::Transaction;
     use hdwallet::bip32::{path_to_arr, to_prefixed_path};
-    use rustc_serialize::hex::ToHex;
+    use hex;
     use tests::*;
 
     pub const ETC_DERIVATION_PATH: [u8; 21] = [
@@ -278,7 +278,7 @@ mod tests {
         let fd = &manager.devices()[0].1;
         let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
 
-        assert_eq!(tx.raw_from_sig(chain, &sign).to_hex(),
+        assert_eq!(hex::encode(tx.raw_from_sig(chain, &sign)),
                    "f86d80\
                    85\
                    04e3b29200\
@@ -369,7 +369,7 @@ mod tests {
             11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11\
             11cccccccccccc1111cccccccccccc1111cccccccccccc1111cccccccccccc11
         */
-        println!(">> RLP: {:?}", &rlp.to_hex());
+        println!(">> RLP: {:?}", hex::encode(&rlp));
         let sign = manager.sign_transaction(&fd, &rlp, None);
         assert!(sign.is_ok());
         debug!("Signature: {:?}", &sign.unwrap());
@@ -388,7 +388,10 @@ mod tests {
 
         let fd = &manager.devices()[0].1;
         let addr = manager.get_address(fd, None).unwrap();
-        assert_eq!("78296f1058dd49c5d6500855f59094f0a2876397", addr.to_hex());
+        assert_eq!(
+            "78296f1058dd49c5d6500855f59094f0a2876397",
+            hex::encode(&*addr)
+        );
     }
 
     #[test]

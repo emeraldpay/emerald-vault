@@ -1,6 +1,5 @@
 extern crate emerald_rs as emerald;
 extern crate hex;
-extern crate rustc_serialize;
 extern crate serde_json;
 extern crate tempdir;
 extern crate uuid;
