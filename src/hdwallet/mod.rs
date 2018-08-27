@@ -110,15 +110,13 @@ impl WManager {
                 _ => Err(Error::HDWalletError(
                     "Address read returned invalid data length".to_string(),
                 )),
-            })
-            .and_then(|res: Vec<u8>| {
+            }).and_then(|res: Vec<u8>| {
                 from_utf8(&res[67..107])
                     .map(|ptr| ptr.to_string())
                     .map_err(|e| {
                         Error::HDWalletError(format!("Can't parse address: {}", e.to_string()))
                     })
-            })
-            .and_then(|s| {
+            }).and_then(|s| {
                 Address::from_str(&s).map_err(|e| {
                     Error::HDWalletError(format!("Can't parse address: {}", e.to_string()))
                 })
@@ -390,7 +388,10 @@ mod tests {
 
         let fd = &manager.devices()[0].1;
         let addr = manager.get_address(fd, None).unwrap();
-        assert_eq!("78296f1058dd49c5d6500855f59094f0a2876397", hex::encode(&*addr));
+        assert_eq!(
+            "78296f1058dd49c5d6500855f59094f0a2876397",
+            hex::encode(&*addr)
+        );
     }
 
     #[test]

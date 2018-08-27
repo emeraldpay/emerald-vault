@@ -1,8 +1,8 @@
 //! # Crypto util functions
 
+use hmac::digest::FixedOutput;
 use sha3::Digest;
 use sha3::Keccak256;
-use hmac::digest::FixedOutput;
 /// Keccak-256 crypto hash length in bytes
 pub const KECCAK256_BYTES: usize = 32;
 

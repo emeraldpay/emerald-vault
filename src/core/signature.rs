@@ -52,7 +52,12 @@ impl Into<(u8, [u8; 32], [u8; 32])> for Signature {
 
 impl Into<String> for Signature {
     fn into(self) -> String {
-        format!("0x{:X}{}{}", self.v, hex::encode(self.r), hex::encode(self.s))
+        format!(
+            "0x{:X}{}{}",
+            self.v,
+            hex::encode(self.r),
+            hex::encode(self.s)
+        )
     }
 }
 
@@ -218,8 +223,8 @@ mod tests {
             "3c9229289a6125f7fdf1885a77bb12c37a8d3b4962d936f7e3084dece32a3ca1",
         ));
 
-        let s =
-            key.sign_hash(to_32bytes(
+        let s = key
+            .sign_hash(to_32bytes(
                 "82ff40c0a986c6a5cfad4ddf4c3aa6996f1a7837f9c398e17e5de5cbd5a12b28",
             )).unwrap();
 
