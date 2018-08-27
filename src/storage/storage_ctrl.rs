@@ -8,6 +8,18 @@ use super::{
 use std::collections::HashMap;
 use std::path::Path;
 
+const CHAIN_NAMES: &'static [&'static str; 9] = &[
+    "eth",
+    "morden",
+    "ropsten",
+    "rinkeby",
+    "rootstock-main",
+    "rootstock-test",
+    "kovan",
+    "etc-main",
+    "etc-test",
+];
+
 /// Controller to switch storage according to specified chain
 pub struct StorageController {
     keyfile_storages: HashMap<String, Box<KeyfileStorage>>,
@@ -21,7 +33,7 @@ impl StorageController {
     pub fn new<P: AsRef<Path>>(base_path: P) -> Result<StorageController, KeystoreError> {
         let mut st = StorageController::default();
 
-        for id in &["mainnet", "morden"] {
+        for id in CHAIN_NAMES {
             st.keyfile_storages.insert(
                 id.to_string(),
                 build_keyfile_storage(build_path(base_path.as_ref(), id, "keystore"))?,
