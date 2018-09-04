@@ -401,7 +401,14 @@ mod tests {
 
     #[test]
     fn should_convert_to_chain_id() {
-        assert_eq!(to_chain_id("testnet"), Some(62));
-        assert_eq!(to_chain_id("testnet"), to_chain_id("morden"));
+        assert_eq!(to_chain_id("eth"), Some(1));
+        assert_eq!(to_chain_id("morden"), Some(2));
+        assert_eq!(to_chain_id("ropsten"), Some(3));
+        assert_eq!(to_chain_id("rinkeby"), Some(4));
+        assert_eq!(to_chain_id("rootstock-main"), Some(30));
+        assert_eq!(to_chain_id("rootstock-test"), Some(31));
+        assert_eq!(to_chain_id("kovan"), Some(42));
+        assert_eq!(to_chain_id("etc-main"), Some(61));
+        assert_eq!(to_chain_id("etc-test"), Some(62));
     }
 }
