@@ -3,3 +3,4 @@
 format_strings = true
 newline_style = "Unix"
 reorder_imports = true
+write_mode = "overwrite"
