@@ -3,7 +3,6 @@ extern crate wasm_bindgen;
 
 use wasm_bindgen::prelude::*;
 
-//! # Ethereum Classic web3 like connector library
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
 #![deny(missing_docs)]
