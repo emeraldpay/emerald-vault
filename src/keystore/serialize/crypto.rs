@@ -203,7 +203,8 @@ mod tests {
             dklen: 32,
             salt: serde_json::from_str(
                 "\"095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b\"",
-            ).unwrap(),
+            )
+            .unwrap(),
         };
 
         let mut act: KdfParams = serde_json::from_str(KDF_PARAMS_PBKDF2).unwrap();
@@ -218,7 +219,8 @@ mod tests {
             cipher: Cipher::default(),
             cipher_text: Vec::from_hex(
                 "9c9e3ebbf01a512f3bea41ac6fe7676344c0da77236b38847c02718ec9b66126",
-            ).unwrap(),
+            )
+            .unwrap(),
             cipher_params: CipherParams {
                 iv: serde_json::from_str("\"58d54158c3e27131b0a0f2b91201aedc\"").unwrap(),
             },
@@ -230,11 +232,13 @@ mod tests {
                 dklen: 32,
                 salt: serde_json::from_str(
                     "\"095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b\"",
-                ).unwrap(),
+                )
+                .unwrap(),
             },
             mac: serde_json::from_str(
                 "\"83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63\"",
-            ).unwrap(),
+            )
+            .unwrap(),
         };
 
         // just first encoding
@@ -250,7 +254,8 @@ mod tests {
             cipher: Cipher::default(),
             cipher_text: Vec::from_hex(
                 "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
-            ).unwrap(),
+            )
+            .unwrap(),
             cipher_params: CipherParams {
                 iv: serde_json::from_str("\"9df1649dd1c50f2153917e3b9e7164e9\"").unwrap(),
             },
@@ -263,11 +268,13 @@ mod tests {
                 dklen: 32,
                 salt: serde_json::from_str(
                     "\"fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4\"",
-                ).unwrap(),
+                )
+                .unwrap(),
             },
             mac: serde_json::from_str(
                 "\"9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5\"",
-            ).unwrap(),
+            )
+            .unwrap(),
         };
 
         // just first encoding

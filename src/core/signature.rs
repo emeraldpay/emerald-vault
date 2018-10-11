@@ -226,7 +226,8 @@ mod tests {
         let s = key
             .sign_hash(to_32bytes(
                 "82ff40c0a986c6a5cfad4ddf4c3aa6996f1a7837f9c398e17e5de5cbd5a12b28",
-            )).unwrap();
+            ))
+            .unwrap();
 
         assert_eq!(s.v, 27);
         assert_eq!(
