@@ -48,8 +48,8 @@ scrypt = "0.1"
 hmac = "0.6"
 # optional dependencies
 emerald-rocksdb =  { version = "0.10.3", optional = true }
-hyper = { version = "0.11", optional = true }
-reqwest = { version = "0.6", optional = true }
+hyper = { version = "0.12", optional = true }
+reqwest = { version = "0.9", optional = true }
 clippy = { version = "0.0", optional = true }
 chrono = "0.4"
 hidapi = "0.4"

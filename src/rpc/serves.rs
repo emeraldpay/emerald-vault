@@ -642,7 +642,7 @@ pub fn delete_address(
     storage.delete(&addr)?;
     Ok(())
 }
-//
+
 //pub fn export_contract(
 //    params: Either<(Value,), (Value, FunctionParams)>,
 //    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
