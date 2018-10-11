@@ -118,12 +118,14 @@ impl KeyFile {
             .and_then(|core| {
                 ver = core.version;
                 Ok(core.into())
-            }).or_else(|_| {
+            })
+            .or_else(|_| {
                 serde_json::from_str::<SerializableKeyFileHD>(&buf).and_then(|hd| {
                     ver = hd.version;
                     Ok(hd.into())
                 })
-            }).map_err(Error::from)?;
+            })
+            .map_err(Error::from)?;
 
         if !SUPPORTED_VERSIONS.contains(&ver) {
             return Err(Error::UnsupportedVersion(ver));
