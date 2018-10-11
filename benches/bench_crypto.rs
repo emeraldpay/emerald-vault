@@ -1,7 +1,6 @@
 #![feature(test)]
 extern crate emerald_rs as emerald;
 extern crate rand;
-extern crate rustc_serialize;
 extern crate tempdir;
 extern crate test;
 extern crate uuid;

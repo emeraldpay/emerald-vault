@@ -3,10 +3,10 @@
 use super::prf::Prf;
 use super::Error;
 use super::Salt;
-use pbkdf2::pbkdf2;
 use hmac::Hmac;
-use sha2::{Sha256, Sha512};
+use pbkdf2::pbkdf2;
 use scrypt::{scrypt, ScryptParams};
+use sha2::{Sha256, Sha512};
 use std::fmt;
 use std::str::FromStr;
 
@@ -124,19 +124,27 @@ impl Kdf {
                 match prf {
                     Prf::HmacSha256 => {
                         let mut hmac = prf.hmac(passphrase);
-                        pbkdf2::<Hmac<Sha256>>(passphrase.as_bytes(), kdf_salt, c as usize, &mut key);
+                        pbkdf2::<Hmac<Sha256>>(
+                            passphrase.as_bytes(),
+                            kdf_salt,
+                            c as usize,
+                            &mut key,
+                        );
                     }
                     Prf::HmacSha512 => {
-                        pbkdf2::<Hmac<Sha512>>(passphrase.as_bytes(), kdf_salt, c as usize, &mut key);
+                        pbkdf2::<Hmac<Sha512>>(
+                            passphrase.as_bytes(),
+                            kdf_salt,
+                            c as usize,
+                            &mut key,
+                        );
                     }
                 };
             }
             Kdf::Scrypt { n, r, p } => {
                 let log_n = (n as f64).log2().round() as u8;
-                let params = ScryptParams::new(log_n, r, p)
-                    .expect("Invalid Scrypt parameters");
-                scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key)
-                    .expect("Scrypt failed");
+                let params = ScryptParams::new(log_n, r, p).expect("Invalid Scrypt parameters");
+                scrypt(passphrase.as_bytes(), kdf_salt, &params, &mut key).expect("Scrypt failed");
             }
         }
 
@@ -225,9 +233,7 @@ pub mod tests {
             to_32bytes("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4");
 
         assert_eq!(
-            hex::encode(
-                Kdf::from((2, 8, 1))
-                        .derive(32, &kdf_salt, "1234567890")),
+            hex::encode(Kdf::from((2, 8, 1)).derive(32, &kdf_salt, "1234567890")),
             "52a5dacfcf80e5111d2c7fbed177113a1b48a882b066a017f2c856086680fac7"
         );
     }

@@ -1,9 +1,9 @@
 //! # Advanced encryption standard (AES) cipher
 
 use super::Error;
-use aes_ctr::Aes128Ctr;
 use aes_ctr::stream_cipher::generic_array::GenericArray;
-use aes_ctr::stream_cipher::{StreamCipherCore, NewFixStreamCipher};
+use aes_ctr::stream_cipher::{NewFixStreamCipher, StreamCipherCore};
+use aes_ctr::Aes128Ctr;
 use std::fmt;
 use std::str::FromStr;
 

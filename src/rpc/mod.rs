@@ -225,8 +225,7 @@ pub fn start(
         .cors(DomainsValidation::AllowOnly(vec![
             AccessControlAllowOrigin::Any,
             AccessControlAllowOrigin::Null,
-        ]))
-        .start_http(addr)
+        ])).start_http(addr)
         .expect("Expect to build HTTP RPC server");
 
     if log_enabled!(Level::Info) {

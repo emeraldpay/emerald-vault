@@ -1,6 +1,6 @@
 //! # Account transaction
 
-use super::util::{keccak256, trim_bytes, KECCAK256_BYTES, RLPList, WriteRLP};
+use super::util::{keccak256, trim_bytes, RLPList, WriteRLP, KECCAK256_BYTES};
 use super::{Address, Error, PrivateKey, Signature};
 
 /// Transaction data
@@ -155,7 +155,7 @@ mod tests {
     fn should_sign_transaction_for_testnet() {
         let tx = Transaction {
             nonce: 1048585,
-            gas_price: /* 21000000000 */
+            gas_price: /* 20000000000 */
             to_32bytes("00000000000000000000000000000\
                         000000000000000000000000004a817c800"),
             gas_limit: 21000,
@@ -197,11 +197,44 @@ mod tests {
                     5208\
                     94\
                     163b454d1ccdd0a12e88341b12afb2c98044c599\
-                    891e77511665\
-                    79\
-                    8800\
-                    0080819fa0cc6cd05d41bbbeb71913bf403a09db118f22e4ed7ebf707fcfb483dd1cde\
-                    d890a03c0a3985771bc0f10cf9fe85e3ea3c17132e3f09551eaedb8d2ae97cec3ad9f7");
+                    89\
+                    1e7751166579880000\
+                    80819fa0cc6cd05d41bbbeb71913bf403a09db118f22e4ed7ebf707fcfb483dd1cded\
+                    890a03c0a3985771bc0f10cf9fe85e3ea3c17132e3f09551eaedb8d2ae97cec3ad9f7");
     }
 
+    #[test]
+    fn should_sign_transaction_eip155() {
+        let tx = Transaction {
+            nonce: 9,
+            gas_price: /* 20,000,000,000 */
+            to_32bytes("00000000000000000000000000000\
+                        000000000000000000000000004a817c800"),
+            gas_limit: 21000,
+            to: Some("0x3535353535353535353535353535353535353535"
+                .parse::<Address>()
+                .unwrap()),
+            value: to_32bytes("000000000000000000000000000000\
+                0000000000000000000de0b6b3a7640000"),
+            data: Vec::new(),
+        };
+
+        let pk = PrivateKey(to_32bytes(
+            "4646464646464646464646464646464646464646464646464646464646464646",
+        ));
+
+        assert_eq!(hex::encode(tx.to_signed_raw(pk, 1 /*ETH mainnet*/).unwrap()),
+                    "f86c\
+                    09\
+                    85\
+                    04a817c800\
+                    82\
+                    5208\
+                    94\
+                    3535353535353535353535353535353535353535\
+                    88\
+                    0de0b6b3a7640000\
+                    8025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa\
+                    636276a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83");
+    }
 }
