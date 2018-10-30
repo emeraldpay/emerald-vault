@@ -44,8 +44,15 @@ impl ToHex for u64 {
 ///
 pub fn to_chain_name(id: u8) -> Option<String> {
     match id {
-        61 => Some("mainnet".to_string()),
-        62 => Some("testnet".to_string()),
+        1 => Some("eth".to_string()),
+        2 => Some("morden".to_string()),
+        3 => Some("ropsten".to_string()),
+        4 => Some("rinkeby".to_string()),
+        30 => Some("rootstock-main".to_string()),
+        31 => Some("rootstock-test".to_string()),
+        42 => Some("kovan".to_string()),
+        61 => Some("etc-main".to_string()),
+        62 => Some("etc-test".to_string()),
         _ => None,
     }
 }
@@ -57,8 +64,15 @@ pub fn to_chain_name(id: u8) -> Option<String> {
 ///
 pub fn to_chain_id(name: &str) -> Option<u8> {
     match name {
-        "mainnet" => Some(61),
-        "testnet" | "morden" => Some(62),
+        "eth" => Some(1),
+        "morden" => Some(2),
+        "ropsten" => Some(3),
+        "rinkeby" => Some(4),
+        "rootstock-main" => Some(30),
+        "rootstock-test" => Some(31),
+        "kovan" => Some(42),
+        "etc-main" => Some(61),
+        "etc-test" => Some(62),
         _ => None,
     }
 }
@@ -387,7 +401,14 @@ mod tests {
 
     #[test]
     fn should_convert_to_chain_id() {
-        assert_eq!(to_chain_id("testnet"), Some(62));
-        assert_eq!(to_chain_id("testnet"), to_chain_id("morden"));
+        assert_eq!(to_chain_id("eth"), Some(1));
+        assert_eq!(to_chain_id("morden"), Some(2));
+        assert_eq!(to_chain_id("ropsten"), Some(3));
+        assert_eq!(to_chain_id("rinkeby"), Some(4));
+        assert_eq!(to_chain_id("rootstock-main"), Some(30));
+        assert_eq!(to_chain_id("rootstock-test"), Some(31));
+        assert_eq!(to_chain_id("kovan"), Some(42));
+        assert_eq!(to_chain_id("etc-main"), Some(61));
+        assert_eq!(to_chain_id("etc-test"), Some(62));
     }
 }
