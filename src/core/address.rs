@@ -130,38 +130,30 @@ mod tests {
 
     #[test]
     fn should_catch_wrong_address_encoding() {
-        assert!(
-            "0x___c045110b8dbf29765047380898919c5cb56f4"
-                .parse::<Address>()
-                .is_err()
-        );
+        assert!("0x___c045110b8dbf29765047380898919c5cb56f4"
+            .parse::<Address>()
+            .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_insufficient_length() {
-        assert!(
-            "0x0e7c045110b8dbf297650473808989"
-                .parse::<Address>()
-                .is_err()
-        );
+        assert!("0x0e7c045110b8dbf297650473808989"
+            .parse::<Address>()
+            .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_excess_length() {
-        assert!(
-            "0x0e7c045110b8dbf29765047380898919c5cb56f400000000"
-                .parse::<Address>()
-                .is_err()
-        );
+        assert!("0x0e7c045110b8dbf29765047380898919c5cb56f400000000"
+            .parse::<Address>()
+            .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_prefix() {
-        assert!(
-            "0_0e7c045110b8dbf29765047380898919c5cb56f4"
-                .parse::<Address>()
-                .is_err()
-        );
+        assert!("0_0e7c045110b8dbf29765047380898919c5cb56f4"
+            .parse::<Address>()
+            .is_err());
     }
 
     #[test]

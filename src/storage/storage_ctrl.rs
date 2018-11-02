@@ -16,8 +16,8 @@ const CHAIN_NAMES: &'static [&'static str; 9] = &[
     "rootstock-main",
     "rootstock-test",
     "kovan",
-    "etc-main",
-    "etc-test",
+    "etc",
+    "etc-morden",
 ];
 
 /// Controller to switch storage according to specified chain
