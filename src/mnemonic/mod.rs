@@ -14,7 +14,6 @@ use num::bigint::BigUint;
 use num::{FromPrimitive, ToPrimitive};
 use rand::{OsRng, Rng};
 use sha2::{self, Digest};
-use std::iter::repeat;
 use std::ops::{BitAnd, Shr};
 
 /// Size of entropy in bytes
