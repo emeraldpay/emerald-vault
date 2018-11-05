@@ -71,7 +71,7 @@ pub fn to_chain_id(name: &str) -> Option<u8> {
         "rootstock-main" => Some(30),
         "rootstock-test" => Some(31),
         "kovan" => Some(42),
-        "etc" => Some(61),
+        "etc" | "mainnet" => Some(61),
         "etc-morden" => Some(62),
         _ => None,
     }
@@ -409,6 +409,7 @@ mod tests {
         assert_eq!(to_chain_id("rootstock-test"), Some(31));
         assert_eq!(to_chain_id("kovan"), Some(42));
         assert_eq!(to_chain_id("etc"), Some(61));
+        assert_eq!(to_chain_id("mainnet"), Some(61));
         assert_eq!(to_chain_id("etc-morden"), Some(62));
     }
 }
