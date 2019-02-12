@@ -1,5 +1,5 @@
 <p align="center">
-  <h2 align="center">Emerald Vault</a></h3>
+  <h2 align="center">emerald-rs</a></h3>
   <p align="center">Secure account management for Ethereum Classic</a></p>
   <p align="center">
     <a href="https://travis-ci.org/ETCDEVTeam/emerald-rs"><img alt="Travis" src="https://travis-ci.org/ETCDEVTeam/emerald-rs.svg?branch=master"></a>
@@ -27,7 +27,7 @@ When done properly, it can offer a very good protection against computer vulnera
 
 Distributed as a Rust crate or can be embedded via foreign function interface (FFI).
 
-For minimalistic CLI tool refer to [Emerald-cli](https://github.com/ethereumproject/emerald-cli), or if you looking for a fully-featured UI online wallet, take a look at our [Ethereum Classic Emerald Wallet](https://github.com/ethereumproject/emerald-wallet)
+For minimalistic CLI tool refer to [Emerald Vault](https://github.com/ETCDEVTeam/emerald-vault), or if you looking for a fully-featured UI wallet, take a look at our [Ethereum Classic Emerald Wallet](https://emeraldwallet.io)
 
 Developed by [ETCDEV Team](http://www.etcdevteam.com/)
 
@@ -79,7 +79,7 @@ fn main() {
  [JSON-RPC API](docs/api.md)
  
 ## Contact
- Chat with us via [Gitter](https://gitter.im/ethereumproject/emerald-wallet)
+ Chat with us via [Gitter](https://gitter.im/etcdev-public/Lobby)
 
 ## License
 
