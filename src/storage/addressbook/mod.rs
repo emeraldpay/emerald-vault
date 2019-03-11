@@ -54,7 +54,7 @@ impl AddressbookStorage {
             None => {
                 return Err(AddressbookError::InvalidAddress(
                     "Missing address".to_string(),
-                ))
+                ));
             }
         };
         if !addr.is_string() {
@@ -67,7 +67,7 @@ impl AddressbookStorage {
             Err(_) => {
                 return Err(AddressbookError::InvalidAddress(
                     "Can't parse address".to_string(),
-                ))
+                ));
             }
         }
         Ok(())

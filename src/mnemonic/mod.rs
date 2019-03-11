@@ -180,7 +180,7 @@ fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
             None => {
                 return Err(Error::MnemonicError(
                     "can't extract words indexes".to_string(),
-                ))
+                ));
             }
         }
         data = data.shr(INDEX_BIT_SIZE);

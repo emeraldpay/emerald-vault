@@ -130,7 +130,7 @@ impl KeyfileStorage for FsStorage {
                             return Err(KeystoreError::StorageError(format!(
                                 "Invalid filename format for address {}",
                                 addr
-                            )))
+                            )));
                         }
                     };
 
