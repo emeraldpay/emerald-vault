@@ -1,22 +1,22 @@
 [package]
-name = "emerald-rs"
-version = "0.26.0"
+name = "jade-rs"
+version = "0.2.0"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Ethereum Classic secure account management core libary"
 homepage = "http://etclabscore.com"
-repository = "https://github.com/etclabscore/emerald-rs"
-documentation = "https://docs.rs/emerald-core"
+repository = "https://github.com/etclabscore/jade-rs"
+documentation = "https://docs.rs/jade-core"
 keywords = ["ethereum-classic", "blockchain", "ffi", "crypto-wallet", "cold-storage"]
 categories = ["embedded", "external-ffi-bindings"]
 readme = "README.md"
 license = "Apache-2.0"
 
 [badges]
-travis-ci = { repository = "etclabscore/emerald-rs" }
-appveyor = { repository = "etclabscore/emerald-rs" }
+travis-ci = { repository = "etclabscore/jade-rs" }
+appveyor = { repository = "etclabscore/jade-rs" }
 
 [lib]
-name = "emerald_rs"
+name = "jade_rs"
 path = "src/lib.rs"
 #crate-type = ["rlib", "cdylib"]
 

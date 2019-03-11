@@ -58,7 +58,7 @@ impl HDPath {
                     return Err(Error::HDWalletError(format!(
                         "Invalid HD path child index: {}",
                         e.to_string()
-                    )))
+                    )));
                 }
             };
         }

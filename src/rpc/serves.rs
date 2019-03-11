@@ -195,7 +195,7 @@ pub fn shake_account(
         _ => {
             return Err(Error::InvalidDataFormat(
                 "Can't shake account from HD wallet".to_string(),
-            ))
+            ));
         }
     };
 
@@ -421,7 +421,7 @@ pub fn sign_transaction(
                                         return Err(Error::InvalidDataFormat(format!(
                                             "Can't get Address for HD Path: {}",
                                             e.to_string()
-                                        )))
+                                        )));
                                     }
                                 }
 
@@ -539,7 +539,7 @@ pub fn sign(
                                 return Err(Error::InvalidDataFormat(format!(
                                     "Can't get Address for HD Path: {}",
                                     e.to_string()
-                                )))
+                                )));
                             }
                         }
 
