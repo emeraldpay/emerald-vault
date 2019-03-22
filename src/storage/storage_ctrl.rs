@@ -8,7 +8,7 @@ use super::{
 use std::collections::HashMap;
 use std::path::Path;
 
-const CHAIN_NAMES: &'static [&'static str; 9] = &[
+const CHAIN_NAMES: &'static [&'static str; 8] = &[
     "eth",
     "morden",
     "ropsten",
@@ -16,8 +16,7 @@ const CHAIN_NAMES: &'static [&'static str; 9] = &[
     "rootstock-main",
     "rootstock-test",
     "kovan",
-    "etc",
-    "etc-morden",
+    "mainnet",
 ];
 
 /// Controller to switch storage according to specified chain
@@ -25,6 +24,14 @@ pub struct StorageController {
     keyfile_storages: HashMap<String, Box<KeyfileStorage>>,
     contract_storages: HashMap<String, Box<ContractStorage>>,
     addressbook_storages: HashMap<String, Box<AddressbookStorage>>,
+}
+
+fn chain_dir(name: &str) -> &str {
+    match name {
+        "etc" => "mainnet",
+        "etc-morden" => "morden",
+        _ => name
+    }
 }
 
 impl StorageController {
@@ -53,7 +60,7 @@ impl StorageController {
 
     /// Get `KeyFile` storage for specified chain
     pub fn get_keystore(&self, chain: &str) -> Result<&Box<KeyfileStorage>, KeystoreError> {
-        match self.keyfile_storages.get(chain) {
+        match self.keyfile_storages.get(chain_dir(chain)) {
             Some(st) => Ok(st),
             None => Err(KeystoreError::StorageError(format!(
                 "No storage for: {}",
@@ -64,7 +71,7 @@ impl StorageController {
 
     /// Get `Contract` storage for specified chain
     pub fn get_contracts(&self, chain: &str) -> Result<&Box<ContractStorage>, KeystoreError> {
-        match self.contract_storages.get(chain) {
+        match self.contract_storages.get(chain_dir(chain)) {
             Some(st) => Ok(st),
             None => Err(KeystoreError::StorageError(format!(
                 "No storage for: {}",
@@ -75,7 +82,7 @@ impl StorageController {
 
     /// Get `Addressbook` storage for specified chain
     pub fn get_addressbook(&self, chain: &str) -> Result<&Box<AddressbookStorage>, KeystoreError> {
-        match self.addressbook_storages.get(chain) {
+        match self.addressbook_storages.get(chain_dir(chain)) {
             Some(st) => Ok(st),
             None => Err(KeystoreError::StorageError(format!(
                 "No storage for: {}",
