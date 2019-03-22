@@ -1,6 +1,6 @@
 [package]
 name = "emerald-rs"
-version = "0.25.2"
+version = "0.25.3"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Ethereum Classic secure account management core libary"
 homepage = "http://etcdevteam.com"
