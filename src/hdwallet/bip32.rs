@@ -186,4 +186,23 @@ mod test {
             priv_key.to_address().unwrap()
         );
     }
+
+    #[test]
+    fn test_key_generation_eth() {
+        let seed = Vec::from_hex("b016ba229b339e148dd72843a8423499ade5ddee29d3d1eb18315\
+        516661c63a3e700fb4b995a7173ad0987ffcec7aa1ddb6bbdd2d2299b9ed23cce5d514b4986").unwrap();
+
+        let path = vec![
+            Hardened(44),
+            Hardened(60),
+            Hardened(0),
+            Normal(1),
+        ];
+
+        let priv_key = generate_key(&HDPath(path), &seed).unwrap();
+        assert_eq!(
+            Address::from_str("0x7545D615643F933c34C3E083E68CC831167F31af").unwrap(),
+            priv_key.to_address().unwrap()
+        );
+    }
 }

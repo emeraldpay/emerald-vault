@@ -175,7 +175,7 @@ fn get_indexes(entropy: &[u8]) -> Result<Vec<usize>, Error> {
     let index = BigUint::from_u16(0x07ff).expect("expect initialize word index");
     let mut out: Vec<usize> = Vec::with_capacity(MNEMONIC_SIZE);
     for _ in 0..MNEMONIC_SIZE {
-        match data.clone().bitand(index.clone()).to_usize() {
+        match data.clone().bitand(&index.clone()).to_usize() {
             Some(v) => out.push(v),
             None => {
                 return Err(Error::MnemonicError(
@@ -283,6 +283,28 @@ mod tests {
             4e87ac3535913611fbbfa986d0c9e547\
             6c91689f9c8a54fd55bd38606aa6a859\
             5ad213d4c9c9f9aca3fb217069a41028").unwrap());
+    }
+
+    #[test]
+    fn should_be_compatible_with_bip39js() {
+        let s = "abandon abandon abandon abandon abandon abandon abandon abandon abandon \
+                 abandon abandon about";
+        let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
+
+        assert_eq!(mnemonic.seed("TREZOR"), Vec::from_hex("c55257c360c07c72029aebc1b53c05ed03\
+            62ada38ead3e3e9efa3708e53495531f0\
+            9a6987599d18264c1e1c92f2cf141630c7a3c4ab7c81b2f001698e7463b04").unwrap());
+    }
+
+    #[test]
+    fn should_be_compatible_with_bip39js_emptypass() {
+        let s = "abandon abandon abandon abandon abandon abandon abandon abandon abandon \
+                 abandon abandon about";
+        let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
+
+        assert_eq!(mnemonic.seed(""), Vec::from_hex("5eb00bbddcf069084889a8ab9155568165f5c4\
+            53ccb85e70811aaed6f6da5fc19a5ac40b3\
+            89cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4").unwrap());
     }
 
     #[test]
