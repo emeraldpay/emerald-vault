@@ -33,8 +33,8 @@ impl From<ethabi::Error> for Error {
     }
 }
 
-impl From<ethabi::spec::Error> for Error {
-    fn from(err: ethabi::spec::Error) -> Self {
+impl From<ethabi::Error> for Error {
+    fn from(err: ethabi::Error) -> Self {
         Error::InvalidABI(format!("Invalid ABI Spec {:?}", err))
     }
 }
@@ -45,8 +45,8 @@ impl From<ethabi::token::Error> for Error {
     }
 }
 
-impl From<ethabi::spec::param_type::Error> for Error {
-    fn from(err: ethabi::spec::param_type::Error) -> Self {
+impl From<ethabi::param_type::Error> for Error {
+    fn from(err: ethabi::param_type::Error) -> Self {
         Error::InvalidABI(format!("Invalid ABI Param {:?}", err))
     }
 }
