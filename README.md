@@ -1,5 +1,4 @@
 <p align="center">
-  <p align="center">Secure account management for Ethereum Classic</a></p>
   <p align="center">
     <a href="https://travis-ci.org/ETCDEVTeam/emerald-rs"><img alt="Travis" src="https://travis-ci.org/ETCDEVTeam/emerald-rs.svg?branch=master"></a>
     <a href="https://ci.appveyor.com/project/splix/emerald-rs-dgg5i"><img alt="AppVeyor" src="https://ci.appveyor.com/api/projects/status/m5uvg5yytn6q51qn?svg=true"></a>
