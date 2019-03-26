@@ -1,5 +1,4 @@
 <p align="center">
-  <h2 align="center">Emerald Vault</a></h3>
   <p align="center">Secure account management for Ethereum Classic</a></p>
   <p align="center">
     <a href="https://travis-ci.org/ETCDEVTeam/emerald-rs"><img alt="Travis" src="https://travis-ci.org/ETCDEVTeam/emerald-rs.svg?branch=master"></a>
