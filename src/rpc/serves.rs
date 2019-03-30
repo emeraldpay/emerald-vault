@@ -1,4 +1,8 @@
-use super::serialize::RPCTransaction;
+use super::common::{
+    extract_chain_params, CommonAdditional, Either, FunctionParams, ListAccountAccount,
+    ListAccountsAdditional, NewAccountAccount, NewMnemonicAccount, SelectedAccount,
+    ShakeAccountAccount, SignData, SignTxAdditional, SignTxTransaction, UpdateAccountAccount,
+};
 use super::Error;
 use super::StorageController;
 use contract::Contract;
@@ -14,49 +18,8 @@ use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use util;
 
-fn to_chain_id(chain: &str, chain_id: Option<usize>, default_id: u8) -> u8 {
-    if chain_id.is_some() {
-        return chain_id.unwrap() as u8;
-    }
-
-    util::to_chain_id(chain).unwrap_or(default_id)
-}
-
-fn check_chain_params(chain: &str, chain_id: usize) -> Result<(), Error> {
-    if let Some(id) = util::to_chain_id(chain) {
-        if id as usize != chain_id {
-            return Err(Error::InvalidDataFormat(
-                "Inconsistent chain parameters".to_string(),
-            ));
-        }
-    };
-
-    Ok(())
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(untagged)]
-pub enum Either<T, U> {
-    Left(T),
-    Right(U),
-}
-
-impl<T, U: Default> Either<T, U> {
-    pub fn into_right(self) -> U {
-        match self {
-            Either::Left(_) => U::default(),
-            Either::Right(u) => u,
-        }
-    }
-}
-
-impl<T, U: Default> Either<(T,), (T, U)> {
-    fn into_full(self) -> (T, U) {
-        match self {
-            Either::Left((t,)) => (t, U::default()),
-            Either::Right((t, u)) => (t, u),
-        }
-    }
+pub fn current_version() -> Result<&'static str, Error> {
+    Ok(::version())
 }
 
 pub fn heartbeat() -> Result<i64, Error> {
@@ -67,34 +30,9 @@ pub fn heartbeat() -> Result<i64, Error> {
     Ok(res)
 }
 
-pub fn current_version() -> Result<&'static str, Error> {
-    Ok(::version())
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ListAccountAccount {
-    name: String,
-    address: String,
-    description: String,
-    hardware: bool,
-    is_hidden: bool,
-}
-
-#[derive(Deserialize, Default, Debug)]
-pub struct ListAccountsAdditional {
-    #[serde(default)]
-    chain: String,
-    #[serde(default)]
-    chain_id: Option<usize>,
-    #[serde(default)]
-    show_hidden: bool,
-    #[serde(default)]
-    hd_path: Option<String>,
-}
-
 pub fn list_accounts(
     params: Either<(), (ListAccountsAdditional,)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<Vec<ListAccountAccount>, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (additional,) = params.into_right();
@@ -118,22 +56,9 @@ pub fn list_accounts(
     Ok(res)
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct CommonAdditional {
-    #[serde(default)]
-    chain: String,
-    #[serde(default)]
-    chain_id: Option<usize>,
-}
-
-#[derive(Deserialize)]
-pub struct SelectedAccount {
-    address: String,
-}
-
 pub fn hide_account(
     params: Either<(SelectedAccount,), (SelectedAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -147,7 +72,7 @@ pub fn hide_account(
 
 pub fn unhide_account(
     params: Either<(SelectedAccount,), (SelectedAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -159,16 +84,9 @@ pub fn unhide_account(
     Ok(res)
 }
 
-#[derive(Deserialize)]
-pub struct ShakeAccountAccount {
-    address: String,
-    old_passphrase: String,
-    new_passphrase: String,
-}
-
 pub fn shake_account(
     params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<bool, Error> {
     use keystore::os_random;
 
@@ -195,25 +113,16 @@ pub fn shake_account(
         _ => {
             return Err(Error::InvalidDataFormat(
                 "Can't shake account from HD wallet".to_string(),
-            ))
+            ));
         }
     };
 
     Ok(true)
 }
 
-#[derive(Deserialize)]
-pub struct UpdateAccountAccount {
-    #[serde(default)]
-    address: String,
-    #[serde(default)]
-    name: String,
-    description: String,
-}
-
 pub fn update_account(
     params: Either<(UpdateAccountAccount,), (UpdateAccountAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<bool, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -241,7 +150,7 @@ pub fn update_account(
 
 pub fn import_account(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<String, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (raw, additional) = params.into_full();
@@ -258,7 +167,7 @@ pub fn import_account(
 
 pub fn export_account(
     params: Either<(SelectedAccount,), (SelectedAccount, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<Value, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -272,19 +181,10 @@ pub fn export_account(
     Ok(value)
 }
 
-#[derive(Deserialize, Debug)]
-pub struct NewAccountAccount {
-    #[serde(default)]
-    name: String,
-    #[serde(default)]
-    description: String,
-    passphrase: String,
-}
-
 pub fn new_account(
     params: Either<(NewAccountAccount,), (NewAccountAccount, CommonAdditional)>,
     sec: &KdfDepthLevel,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<String, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
@@ -307,69 +207,30 @@ pub fn new_account(
     Ok(addr)
 }
 
-#[derive(Deserialize)]
-pub struct SignTxTransaction {
-    pub from: String,
-    pub to: String,
-    pub gas: String,
-    #[serde(rename = "gasPrice")]
-    pub gas_price: String,
-    #[serde(default)]
-    pub value: String,
-    #[serde(default)]
-    pub data: String,
-    pub nonce: String,
-    #[serde(default)]
-    pub passphrase: Option<String>,
-}
-
-#[derive(Deserialize, Default, Debug)]
-pub struct SignTxAdditional {
-    #[serde(default)]
-    chain: String,
-    #[serde(default)]
-    chain_id: Option<usize>,
-    #[serde(default)]
-    hd_path: Option<String>,
-}
-
 pub fn sign_transaction(
     params: Either<(SignTxTransaction,), (SignTxTransaction, SignTxAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
-    default_chain_id: u8,
+    storage: &Arc<Mutex<StorageController>>,
     wallet_manager: &Arc<Mutex<RefCell<WManager>>>,
 ) -> Result<Params, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (transaction, additional) = params.into_full();
     let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let addr = Address::from_str(&transaction.from)?;
-
-    if additional.chain_id.is_some() {
-        check_chain_params(&additional.chain, additional.chain_id.unwrap())?;
-    }
+    let (_chain, chain_id) = extract_chain_params(&additional)?;
+    let passphrase = transaction.passphrase.clone();
 
     match storage.search_by_address(&addr) {
         Ok((_, kf)) => {
-            let rpc_transaction = RPCTransaction {
-                from: transaction.from,
-                to: transaction.to,
-                gas: transaction.gas,
-                gas_price: transaction.gas_price,
-                value: transaction.value,
-                data: transaction.data,
-                nonce: transaction.nonce,
-            };
-            let chain_id = to_chain_id(&additional.chain, additional.chain_id, default_chain_id);
-            match rpc_transaction.try_into() {
+            match transaction.try_into() {
                 Ok(tr) => {
                     match kf.crypto {
                         CryptoType::Core(_) => {
-                            if transaction.passphrase.is_none() {
+                            if passphrase.is_none() {
                                 return Err(Error::InvalidDataFormat(
                                     "Missing passphrase".to_string(),
                                 ));
                             }
-                            let pass = transaction.passphrase.unwrap();
+                            let pass = passphrase.unwrap();
 
                             if let Ok(pk) = kf.decrypt_key(&pass) {
                                 let raw = tr
@@ -421,7 +282,7 @@ pub fn sign_transaction(
                                         return Err(Error::InvalidDataFormat(format!(
                                             "Can't get Address for HD Path: {}",
                                             e.to_string()
-                                        )))
+                                        )));
                                     }
                                 }
 
@@ -462,31 +323,22 @@ pub fn sign_transaction(
     }
 }
 
-#[derive(Deserialize)]
-pub struct SignData {
-    address: String,
-    data: String,
-    #[serde(default)]
-    passphrase: Option<String>,
-}
-
 pub fn sign(
     params: Either<(SignData,), (SignData, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
     wallet_manager: &Arc<Mutex<RefCell<WManager>>>,
 ) -> Result<Params, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (input, additional) = params.into_full();
     let storage = storage_ctrl.get_keystore(&additional.chain)?;
     let addr = Address::from_str(&input.address)?;
-
     let hash = util::keccak256(
         format!(
             "\x19Ethereum Signed Message:\n{}{}",
             input.data.len(),
             input.data
         )
-        .as_bytes(),
+            .as_bytes(),
     );
     match storage.search_by_address(&addr) {
         Ok((_, kf)) => {
@@ -539,7 +391,7 @@ pub fn sign(
                                 return Err(Error::InvalidDataFormat(format!(
                                     "Can't get Address for HD Path: {}",
                                     e.to_string()
-                                )))
+                                )));
                             }
                         }
 
@@ -573,12 +425,6 @@ pub fn sign(
     }
 }
 
-#[derive(Deserialize, Default, Debug)]
-pub struct FunctionParams {
-    pub values: Vec<String>,
-    pub types: Vec<String>,
-}
-
 pub fn encode_function_call(
     params: Either<(Value,), (Value, FunctionParams)>,
 ) -> Result<String, Error> {
@@ -589,7 +435,7 @@ pub fn encode_function_call(
 
 pub fn list_contracts(
     params: Either<(), (CommonAdditional,)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<Vec<serde_json::Value>, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (additional,) = params.into_right();
@@ -600,7 +446,7 @@ pub fn list_contracts(
 
 pub fn import_contract(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<(), Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (raw, additional) = params.into_full();
@@ -612,7 +458,7 @@ pub fn import_contract(
 
 pub fn list_addresses(
     params: Either<(), (CommonAdditional,)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<Vec<serde_json::Value>, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (additional,) = params.into_right();
@@ -623,7 +469,7 @@ pub fn list_addresses(
 
 pub fn import_address(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<String, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (raw, additional) = params.into_full();
@@ -635,7 +481,7 @@ pub fn import_address(
 
 pub fn delete_address(
     params: Either<(Value,), (Value, CommonAdditional)>,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<(), Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (addr, additional) = params.into_full();
@@ -647,23 +493,12 @@ pub fn delete_address(
 
 //pub fn export_contract(
 //    params: Either<(Value,), (Value, FunctionParams)>,
-//    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+//    storage: &Arc<Mutex<StorageController>>,
 //) -> Result<Value, Error> {
 //    let storage_ctrl = storage.lock().unwrap();
 //    let (_, inputs) = params.into_full();
 //    let storage = storage_ctrl.get_contracts(&additional.chain)?;
 //}
-
-#[derive(Deserialize, Debug)]
-pub struct NewMnemonicAccount {
-    #[serde(default)]
-    name: String,
-    #[serde(default)]
-    description: String,
-    password: String,
-    mnemonic: String,
-    hd_path: String,
-}
 
 pub fn generate_mnemonic() -> Result<String, Error> {
     let entropy = gen_entropy(ENTROPY_BYTE_LENGTH)?;
@@ -675,7 +510,7 @@ pub fn generate_mnemonic() -> Result<String, Error> {
 pub fn import_mnemonic(
     params: Either<(NewMnemonicAccount,), (NewMnemonicAccount, CommonAdditional)>,
     sec: &KdfDepthLevel,
-    storage: &Arc<Mutex<Arc<Box<StorageController>>>>,
+    storage: &Arc<Mutex<StorageController>>,
 ) -> Result<String, Error> {
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();
