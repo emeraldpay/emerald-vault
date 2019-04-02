@@ -1,5 +1,6 @@
 //! # JSON RPC module
 
+mod common;
 mod error;
 mod serialize;
 mod serves;
