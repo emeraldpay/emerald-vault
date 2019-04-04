@@ -1,25 +1,12 @@
 //! # Serialize JSON RPC parameters
 
+use super::common::SignTxTransaction;
 use super::core::{Address, Transaction};
 use super::{align_bytes, to_arr, to_even_str, to_u64, trim_hex, Error, ToHex};
 use hex::FromHex;
 use jsonrpc_core::{Params, Value as JsonRpcValue};
 
-#[derive(Deserialize, Debug)]
-pub struct RPCTransaction {
-    pub from: String,
-    pub to: String,
-    pub gas: String,
-    #[serde(rename = "gasPrice")]
-    pub gas_price: String,
-    #[serde(default)]
-    pub value: String,
-    #[serde(default)]
-    pub data: String,
-    pub nonce: String,
-}
-
-impl RPCTransaction {
+impl SignTxTransaction {
     pub fn try_into(self) -> Result<Transaction, Error> {
         let gp_str = to_even_str(trim_hex(self.gas_price.as_str()));
         let v_str = to_even_str(trim_hex(self.value.as_str()));
