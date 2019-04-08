@@ -29,20 +29,25 @@ impl Transaction {
     /// Sign transaction data with provided private key
     pub fn to_signed_raw(&self, pk: PrivateKey, chain: u8) -> Result<Vec<u8>, Error> {
         let sig = pk.sign_hash(self.hash(chain))?;
-        Ok(self.raw_from_sig(chain, &sig))
+        Ok(self.raw_from_sig(Some(chain), &sig))
     }
 
     /// RLP packed signed transaction from provided `Signature`
-    pub fn raw_from_sig(&self, chain: u8, sig: &Signature) -> Vec<u8> {
+    pub fn raw_from_sig(&self, chain: Option<u8>, sig: &Signature) -> Vec<u8> {
         let mut rlp = self.to_rlp_raw(None);
 
-        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        // Can be already applied by HD wallet.
-        // TODO: refactor to avoid this check
         let mut v = u16::from(sig.v);
-        let stamp = u16::from(chain * 2 + 35 - 27);
-        if v + stamp <= 0xff {
-            v += stamp;
+        match chain {
+            Some(chain_id) => {
+                // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
+                // Can be already applied by HD wallet.
+                // TODO: refactor to avoid this check
+                let stamp = u16::from(chain_id * 2 + 35 - 27);
+                if v + stamp <= 0xff {
+                    v += stamp;
+                }
+            }
+            _ => {}
         }
 
         rlp.push(&(v as u8));

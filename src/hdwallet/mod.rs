@@ -280,7 +280,7 @@ mod tests {
         let fd = &manager.devices()[0].1;
         let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
 
-        assert_eq!(hex::encode(tx.raw_from_sig(chain, &sign)),
+        assert_eq!(hex::encode(tx.raw_from_sig(Some(chain), &sign)),
                    "f86d80\
                    85\
                    04e3b29200\

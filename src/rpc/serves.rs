@@ -288,7 +288,8 @@ pub fn sign_transaction(
 
                                 match wm.sign_transaction(&fd, &rlp, Some(hd_path.clone())) {
                                     Ok(s) => {
-                                        let raw = tr.raw_from_sig(chain_id, &s);
+                                        // chain is None because don't need it for Ledger
+                                        let raw = tr.raw_from_sig(None, &s);
                                         let signed = Transaction::to_raw_params(&raw);
                                         debug!(
                                             "HD wallet addr:{:?} path: {:?} signed transaction \
