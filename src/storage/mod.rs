@@ -4,6 +4,7 @@ pub mod addressbook;
 mod contracts;
 mod keyfile;
 mod storage_ctrl;
+mod migrate;
 
 pub use self::addressbook::error::AddressbookError;
 pub use self::addressbook::AddressbookStorage;

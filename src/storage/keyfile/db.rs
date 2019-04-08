@@ -56,6 +56,28 @@ impl DbStorage {
 
         Ok((arr[0].to_string(), json))
     }
+
+    ///
+    pub fn list_keyfiles(&self) -> Result<Vec<KeyFile>, KeystoreError> {
+        let mut keyfiles = vec![];
+
+        for (addr, val) in self.db.iterator(IteratorMode::Start) {
+            let vec = str::from_utf8(&val)?;
+            let (filename, json) = DbStorage::split(vec)?;
+            match KeyFile::decode(&json) {
+                Ok(kf) => { keyfiles.push(kf);}
+                Err(_) => {
+                    let data: [u8; 20] = util::to_arr(&*addr);
+                    info!(
+                        "Invalid keystore file format for address: {}",
+                        Address::from(data)
+                    )
+                }
+            }
+        }
+
+        Ok(keyfiles)
+    }
 }
 
 impl KeyfileStorage for DbStorage {

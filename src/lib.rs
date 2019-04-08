@@ -37,6 +37,7 @@ extern crate sha2;
 extern crate sha3;
 extern crate time;
 extern crate uuid;
+
 mod contract;
 mod core;
 mod hdwallet;

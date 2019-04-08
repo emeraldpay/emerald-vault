@@ -81,6 +81,15 @@ impl FsStorage {
 
         Ok(())
     }
+
+    ///
+    pub fn put_batch(&self, keyfiles: &Vec<KeyFile>) -> Result<(), KeystoreError> {
+        for kf in keyfiles {
+            self.put(kf)?;
+        }
+
+        Ok(())
+    }
 }
 
 impl KeyfileStorage for FsStorage {
