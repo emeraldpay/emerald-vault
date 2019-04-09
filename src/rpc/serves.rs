@@ -17,6 +17,7 @@ use std::cell::RefCell;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use util;
+use hex;
 
 pub fn current_version() -> Result<&'static str, Error> {
     Ok(::version())
@@ -253,6 +254,8 @@ pub fn sign_transaction(
                                 Ok(hd) => hd,
                                 Err(e) => return Err(Error::InvalidDataFormat(e.to_string())),
                             };
+                            debug!("Sign with HD Wallet. HDPath {} (={}), chain_id {}",
+                                   &hw.hd_path, hex::encode(&hd_path), &chain_id);
 
                             if let Err(e) = wm.update(Some(hd_path.clone())) {
                                 return Err(Error::InvalidDataFormat(format!(
