@@ -10,7 +10,7 @@ use std::{fmt, ops};
 pub const ADDRESS_BYTES: usize = 20;
 
 /// Account address (20 bytes)
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Address(pub [u8; ADDRESS_BYTES]);
 
 impl Address {
@@ -68,6 +68,12 @@ impl FromStr for Address {
 }
 
 impl fmt::Display for Address {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "0x{}", hex::encode(self.0))
+    }
+}
+
+impl fmt::Debug for Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "0x{}", hex::encode(self.0))
     }

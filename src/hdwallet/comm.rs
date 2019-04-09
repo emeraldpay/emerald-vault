@@ -9,6 +9,7 @@ use log;
 use std::cmp::min;
 use std::mem::size_of_val;
 use std::slice;
+use hex;
 
 ///
 pub const HID_RPT_SIZE: usize = 64;
@@ -139,7 +140,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
     frame_index += 1;
     debug!(
         "\t\t|-- init data: {:?}, recvlen: {}, datalen: {}",
-        data, recvlen, datalen
+        hex::encode(&data), recvlen, datalen
     );
 
     while recvlen < datalen {
@@ -154,7 +155,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
             "\t\t|-- cont_{:?} size:{:?}, data: {:?}",
             frame_index,
             data.len(),
-            data
+            hex::encode(&data)
         );
     }
     data.truncate(datalen);
