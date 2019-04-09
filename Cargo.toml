@@ -1,9 +1,9 @@
 [package]
 name = "emerald-rs"
-version = "0.25.4"
+version = "0.25.5"
 authors = ["Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
-description = "Ethereum Classic secure account management core libary"
-homepage = "http://etcdevteam.com"
+description = "Ethereum secure account management core libary"
+homepage = "https://etcdevteam.com"
 repository = "https://github.com/ETCDEVTeam/emerald-rs"
 documentation = "https://docs.rs/emerald-core"
 keywords = ["ethereum-classic", "blockchain", "ffi", "crypto-wallet", "cold-storage"]
