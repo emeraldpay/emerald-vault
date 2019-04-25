@@ -51,8 +51,8 @@ impl Transaction {
         }
 
         rlp.push(&(v as u8));
-        rlp.push(&sig.r[..]);
-        rlp.push(&sig.s[..]);
+        rlp.push(trim_bytes(&sig.r[..]));
+        rlp.push(trim_bytes(&sig.s[..]));
 
         let mut buf = Vec::new();
         rlp.write_rlp(&mut buf);
@@ -241,5 +241,61 @@ mod tests {
                     0de0b6b3a7640000\
                     8025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa\
                     636276a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83");
+    }
+
+    #[test]
+    fn rs_should_be_quantity_1() {
+        // ref https://github.com/ethereum/web3.js/issues/1170
+        let tx = Transaction {
+            nonce: 0,
+            gas_price: /* 234,567,897,654,321 */
+            to_32bytes("0000000000000000000000000000000000000000000000000000D55698372431"),
+            gas_limit: 2000000,
+            to: Some("0xF0109fC8DF283027b6285cc889F5aA624EaC1F55"
+                .parse::<Address>()
+                .unwrap()),
+            value:
+            to_32bytes("000000000000000000000000000000000000000000000000000000003B9ACA00"),
+            data: Vec::new(),
+        };
+
+        let pk = PrivateKey(to_32bytes(
+            "4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318",
+        ));
+
+        let hex = hex::encode(tx.to_signed_raw(pk, 1).unwrap());
+        assert_eq!(hex,
+                   "f86a8086d55698372431831e848094f0109fc8df283027b6285cc889f5aa624eac1f55843b9aca008025a00\
+                   9ebb6ca057a0535d6186462bc0b465b561c94a295bdb0621fc19208ab149a9c\
+                   a0\
+                   440ffd775ce91a833ab410777204d5341a6f9fa91216a6f3ee2c051fea6a0428");
+    }
+
+    #[test]
+    fn rs_should_be_quantity_2() {
+        // ref https://github.com/ethereum/web3.js/issues/1170
+        let tx = Transaction {
+            nonce: 0,
+            gas_price: /* 234,567,897,654,321 */
+            to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
+            gas_limit: 31853,
+            to: Some("0xF0109fC8DF283027b6285cc889F5aA624EaC1F55"
+                .parse::<Address>()
+                .unwrap()),
+            value:
+            to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
+            data: Vec::new(),
+        };
+
+        let pk = PrivateKey(to_32bytes(
+            "4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318",
+        ));
+
+        let hex = hex::encode(tx.to_signed_raw(pk, 1).unwrap());
+        assert_eq!(hex,
+                   "f85d8080827c6d94f0109fc8df283027b6285cc889f5aa624eac1f558080269f\
+                   22f17b38af35286ffbb0c6376c86ec91c20ecbad93f84913a0cc15e7580cd9\
+                   9f\
+                   83d6e12e82e3544cb4439964d5087da78f74cefeec9a450b16ae179fd8fe20");
     }
 }

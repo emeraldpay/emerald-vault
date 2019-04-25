@@ -10,7 +10,7 @@ jobs:
       - run:
           name: Install required software
           command: |
-              curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
 
       - run:
           name: Unit tests
@@ -23,4 +23,3 @@ jobs:
           command: |
               export PATH=$PATH:$HOME/.cargo/bin:$PWD/janusbin
               cargo build --all --verbose --release
-              
