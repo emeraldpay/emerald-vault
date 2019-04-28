@@ -1,20 +1,11 @@
-<p align="center">
-  <h2 align="center">emerald-rs</a></h3>
-  <p align="center">Secure account management for Ethereum Classic</a></p>
-  <p align="center">
-    <a href="https://travis-ci.org/ETCDEVTeam/emerald-rs"><img alt="Travis" src="https://travis-ci.org/ETCDEVTeam/emerald-rs.svg?branch=master"></a>
-    <a href="https://ci.appveyor.com/project/splix/emerald-rs-dgg5i"><img alt="AppVeyor" src="https://ci.appveyor.com/api/projects/status/m5uvg5yytn6q51qn?svg=true"></a>
-    <a href="https://ci.appveyor.com/project/etcdevteam/emerald-rs">
-      <img alt="AppVeyor" src="https://circleci.com/gh/ETCDEVTeam/emerald-rs/tree/master.svg?style=svg">       
-    </a> 
-    <a href="https://crates.io/crates/emerald-rs"><img alt="crates.io" src="https://img.shields.io/crates/v/emerald-rs.svg?style=flat-square"></a> 
-    <a href='https://coveralls.io/github/ETCDEVTeam/emerald-rs'><img src='https://coveralls.io/repos/github/ethereumproject/emerald-rs/badge.svg' alt='Coverage Status' /></a>
-    <a href="LICENSE"><img alt="Software License" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000"></a>
-  </p>
-</p>
+# Emerald-rs - Rust library to operate Ethereum blockchains
 
----
-
+[![Travis CI](https://travis-ci.org/ETCDEVTeam/emerald-rs.svg?branch=master)](https://travis-ci.org/ETCDEVTeam/emerald-rs)
+[![Circle CI](https://circleci.com/gh/ETCDEVTeam/emerald-rs/tree/master.svg?style=shield)](https://circleci.com/gh/etcdevteam/emerald-rs)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/er3wb073udepk3bl/branch/master?svg=true)](https://ci.appveyor.com/project/etcdevteam/emerald-rs)
+![Coveralls](https://coveralls.io/repos/github/ethereumproject/emerald-rs/badge.svg)
+[![Crates](https://img.shields.io/crates/v/emerald-rs.svg?style=flat-square)](https://crates.io/crates/emerald-rs)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000)
 
 
 ```
@@ -27,18 +18,19 @@ When done properly, it can offer a very good protection against computer vulnera
 
 Distributed as a Rust crate or can be embedded via foreign function interface (FFI).
 
-For minimalistic CLI tool refer to [Emerald Vault](https://github.com/ETCDEVTeam/emerald-vault), or if you looking for a fully-featured UI wallet, take a look at our [Ethereum Classic Emerald Wallet](https://emeraldwallet.io)
+For minimalistic CLI tool refer to [Emerald Console](https://github.com/ETCDEVTeam/emerald-vault), or 
+if you looking for a fully-featured UI wallet, take a look at our [Emerald Wallet](https://emeraldwallet.io)
 
-Developed by [ETCDEV Team](http://www.etcdevteam.com/)
 
 ## Features
 
 ### General
 
-* [x] Accounts
-* [x] Transactions signing
-* [x] Smart contracts (ABI)
-* [ ] C interface (ABI)
+* Create and read Private Keys
+* Compatible with Parity and Geth private key JSON files
+* Import Private Key from Mnemonic Phrase
+* Support of Ledger Nano hardware wallet 
+* Transactions signing
 
 ## Installation
 
@@ -83,4 +75,16 @@ fn main() {
 
 ## License
 
-Apache 2.0
+Copyright 2019 ETCDEV GmbH
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
