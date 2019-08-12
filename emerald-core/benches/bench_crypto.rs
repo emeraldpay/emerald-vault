@@ -1,9 +1,9 @@
-#![feature(test)]
 extern crate emerald_rs as emerald;
 extern crate rand;
 extern crate tempdir;
-extern crate test;
 extern crate uuid;
+#[macro_use]
+extern crate bencher;
 
 use emerald::keccak256;
 use emerald::keystore::{os_random, Kdf, KdfDepthLevel, KeyFile};
@@ -13,7 +13,7 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use tempdir::TempDir;
-use test::Bencher;
+use bencher::Bencher;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 
@@ -46,7 +46,6 @@ pub fn keystore_path() -> PathBuf {
     buf
 }
 
-#[bench]
 fn bench_decrypt_scrypt(b: &mut Bencher) {
     let path =
         keyfile_path("UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
@@ -56,7 +55,6 @@ fn bench_decrypt_scrypt(b: &mut Bencher) {
     b.iter(|| keyfile.decrypt_key("1234567890"));
 }
 
-#[bench]
 fn bench_decrypt_pbkdf2(b: &mut Bencher) {
     let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
     let keyfile = KeyFile::decode(&file_content(path)).unwrap();
@@ -64,13 +62,11 @@ fn bench_decrypt_pbkdf2(b: &mut Bencher) {
     b.iter(|| keyfile.decrypt_key("1234567890"));
 }
 
-#[bench]
 fn bench_encrypt_scrypt(b: &mut Bencher) {
     let sec = KdfDepthLevel::Ultra;
     b.iter(|| KeyFile::new("1234567890", &sec, None, None));
 }
 
-#[bench]
 fn bench_encrypt_pbkdf2(b: &mut Bencher) {
     let mut rng = os_random();
     let pk = PrivateKey::gen_custom(&mut rng);
@@ -78,12 +74,13 @@ fn bench_encrypt_pbkdf2(b: &mut Bencher) {
     b.iter(|| KeyFile::new_custom(pk, "1234567890", Kdf::from(10240), &mut rng, None, None));
 }
 
-#[bench]
 fn bench_small_sha3(b: &mut Bencher) {
     b.iter(|| keccak256(&[b'-'; 16]));
 }
 
-#[bench]
 fn bench_big_sha3(b: &mut Bencher) {
     b.iter(|| keccak256(&[b'-'; 1024]));
 }
+
+benchmark_group!(benches, bench_decrypt_scrypt, bench_decrypt_pbkdf2, bench_encrypt_scrypt, bench_encrypt_pbkdf2, bench_small_sha3, bench_big_sha3);
+benchmark_main!(benches);

@@ -57,6 +57,7 @@ hidapi = "0.4"
 [dev-dependencies]
 tempdir = "0.3"
 quickcheck = "0.6"
+bencher = "0.1.5"
 # quickcheck_macros = "0.4"
 
 [features]
@@ -64,3 +65,7 @@ default = ["http", "emerald-rocksdb"]
 http = ["hyper", "reqwest"]
 dev = ["clippy"]
 fs-storage = []
+
+[[bench]]
+name = "bench_crypto"
+harness = false

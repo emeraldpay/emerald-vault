@@ -1,4 +1,3 @@
-#![feature(test)]
 extern crate emerald_rs as emerald;
 extern crate rand;
 extern crate tempdir;
