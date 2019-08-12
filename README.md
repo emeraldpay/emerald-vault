@@ -18,7 +18,7 @@ When done properly, it can offer a very good protection against computer vulnera
 
 Distributed as a Rust crate or can be embedded via foreign function interface (FFI).
 
-For minimalistic CLI tool refer to [Emerald Console](https://github.com/ETCDEVTeam/emerald-vault), or 
+For minimalistic CLI tool refer to [Emerald Console](emerald-cli/), or 
 if you looking for a fully-featured UI wallet, take a look at our [Emerald Wallet](https://emeraldwallet.io)
 
 

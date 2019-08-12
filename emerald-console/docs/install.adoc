@@ -1,0 +1,63 @@
+# Installing Emerald Vault
+
+## Download stable binary
+
+Binaries for all platforms are currently published at https://github.com/ETCDEVTeam/emerald-vault/releases
+
+## Install with Homebrew (OSX only)
+
+Installs latest stable binary.
+
+```
+$ brew install ethereumproject/classic/emerald-vault
+```
+
+## Download development build
+
+[WARNING]
+====
+Development builds are usually unstable and may contain critical issues that can lead to loss of funds. Use it on your risk
+====
+
+ETCDEV has a dedicated website for all build artifacts, which are published on each new commit into `master` branch.
+To download a latest development build, please open https://builds.etcdevteam.com and choose _Emerald CLI_ tab
+
+
+## Build from sources
+
+### Requirements
+
+Install Rust from https://www.rust-lang.org/en-US/install.html
+
+  
+Unix one-liner:
+```shell
+$ curl https://sh.rustup.rs -sSf | sh
+```
+  
+[NOTE]
+====
+On Windows, Rust additionally requires the C++ build tools for Visual Studio 2013 or later. The easiest way to acquire
+the build tools is by installing Microsoft Visual C++ Build Tools 2017 which provides just the Visual C++ build tools.
+====
+  
+### Compile
+
+#### Step 1
+Clone the repository
+```shell
+$ git clone https://github.com/etcdevteam/emerald-vault.git
+$ cd emerald-vault
+```
+
+#### Step 2
+Compile with cargo
+```shell
+$ cargo build --release
+```
+
+#### Step 3
+Run `emerald` 
+```shell
+$ ./target/release/emerald --help
+```

@@ -1,0 +1,50 @@
+[package]
+name = "emerald-vault"
+version = "0.25.6"
+authors = ["Constantine Kryvomaz <kostiyantynk@gmail.com>"]
+description = "Console utility for secure account management"
+homepage = "https://emeraldwallet.io"
+repository = "https://github.com/ETCDEVTeam/emerald-rs"
+documentation = "https://docs.rs/emerald-vault"
+keywords = ["ethereum-classic", "blockchain", "crypto-wallet", "cold-storage", "cli"]
+categories = ["console", "bash"]
+readme = "README.md"
+license = "Apache-2.0"
+
+[badges]
+travis-ci = { repository = "ETCDEVTeam/emerald-rs" }
+appveyor = { repository = "ETCDEVTeam/emerald-rs" }
+
+[[bin]]
+name = "emerald-vault"
+path = "src/main.rs"
+
+[dependencies]
+log = "0.3"
+jsonrpc-core = "8.0"
+serde = "1.0"
+hex = "0.2"
+lazy_static = "0.2"
+serde_json = "1.0"
+serde_derive = "1.0"
+emerald-rs = "0.25.6"
+regex = "0.2"
+hyper = "0.12"
+reqwest = "0.9"
+http = "0.1"
+rpassword = "1.0"
+url = "1.7.0"
+text_io = "0.1"
+clap = {version = "2.31", features = ["yaml", "color"]}
+env_logger = { version = "0.4", optional = true }
+clippy = {version = "0.0", optional = true}
+
+[dev-dependencies]
+tempdir = "0.3"
+quickcheck = "0.4"
+# quickcheck_macros = "0.4"
+
+[features]
+default = ["cli"]
+cli = ["env_logger"]
+dev = ["clippy"]

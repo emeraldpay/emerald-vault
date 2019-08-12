@@ -1,0 +1,216 @@
+name: emerald-vault
+about: Command-line interface for Emerald platform
+
+settings:
+    - [ArgRequiredElseHelp, GlobalVersion]
+
+args:
+    - version:
+        short: V
+        long: version
+        help: Display version
+    - verbose:
+        short: v
+        multiple: true
+        help: Sets the level of verbosity
+    - base-path:
+        short: p
+        long: base-path
+        help: Set path for chain storage
+        takes_value: true
+    - chain:
+        short: c
+        long: chain
+        help: Sets a chain name
+        default_value: mainnet
+        takes_value: true
+subcommands:
+    - server:
+        about: Start local RPC server
+        args:
+        - host:
+            help: Host for RPC server
+            takes_value: true
+            default_value: "127.0.0.1"
+        - port:
+            help: Port for RPC server
+            takes_value: true
+            default_value: "1920"
+    - balance:
+            about: Request account's balance from ethereum node through RPC
+            args:
+            - address:
+                help: Account address
+                required: true
+                takes_value: true
+            - upstream:
+                short: u
+                long: upstream
+                help: Network address for a remote ethereum node with RPC endpoint
+                takes_value: true
+    - mnemonic:
+        about: Create mnemonic phrase according to BIP39 spec
+    - nonce:
+        about: Get `nonce` value for selected address
+        args:
+        - address:
+            help: Address of account
+            required: true
+            takes_value: true
+        - upstream:
+            short: u
+            long: upstream
+            help: Network address for a remote ethereum node with RPC endpoint
+            required: true
+            takes_value: true
+        - hex:
+            help: Print nonce in hexadecimal format
+    - transaction:
+        about: Transaction related commands
+        subcommands:
+        - new:
+            about: Build new transaction
+            args:
+            - from:
+                help: Senders address
+                required: true
+                takes_value: true
+            - to:
+                help: Receiver address
+                required: true
+                takes_value: true
+            - value:
+                help: Amount ot send
+                required: true
+                takes_value: true
+            - gas:
+                help: Gas limit for transaction
+                takes_value: true
+            - gas-price:
+                help: Gas price
+                takes_value: true
+            - data:
+                help: Transation data
+                takes_value: true
+            - nonce:
+                help: Nonce value for sender
+                takes_value: true
+        - send:
+            about: Send raw rlp-encoded transaction
+            args:
+                - signed-tx:
+                    help: Signed RLP-encoded transaction
+                    takes_value: true
+                - upstream:
+                    short: u
+                    long: upstream
+                    help: Network address for a remote ethereum node with RPC endpoint
+                    required: true
+                    takes_value: true
+
+    - account:
+        about: Account related commands
+        subcommands:
+        - list:
+            about: List account from `Keyfile` storage
+            args:
+            - show-hidden:
+                help: Show hidden accounts
+                long: show-hidden
+                global: false
+        - new:
+            about: Create new account
+            args:
+            - name:
+                short: n
+                long: name
+                help: Name for a new account
+                takes_value: true
+            - description:
+                short: d
+                long: description
+                help: Description for a new account
+                takes_value: true
+            - security-level:
+                short: s
+                long: security-level
+                help: Specify security level(key derivation depth) for Keyfile encryption.Higher value requires more CPU time
+                takes_value: true
+                multiple: true
+                possible_values: [normal, high, ultra]
+            - raw:
+                help: Create new account from a hex encoded private key
+                short: r
+                long: raw
+        - update:
+            about: Update `name` and `description` for selected account
+            args:
+            - address:
+                help: Address of account to be updated
+                required: true
+                takes_value: true
+            - name:
+                short: n
+                long: name
+                help: Name for a new account
+                takes_value: true
+            - description:
+                short: d
+                long: description
+                help: Description for a new account
+                takes_value: true
+        - hide:
+            about: Hide selected account from being listed
+            args:
+            - address:
+                help: Address of account to be hided
+                takes_value: true
+            - all:
+                help: Unhide all accounts
+                short: a
+                long: all
+                global: false
+                conflicts_with:
+                    - address
+        - unhide:
+            about: Unhide selected account from being listed
+            args:
+            - address:
+                help: Address of account to be unhided
+                takes_value: true
+            - all:
+                help: Unhide all accounts
+                short: a
+                long: all
+                global: false
+                conflicts_with:
+                    - address
+        - strip:
+            about: Extract private key from a keyfile
+            args:
+            - address:
+                help: Address of account to be striped
+                required: true
+                takes_value: true
+        - import:
+            about: Import keyfile(s) into storage
+            args:
+            - path:
+                help: Path to keyfile to be imported into keystore, or folder with keyfiles.
+                required: true
+                takes_value: true
+            - force:
+                help: Force to overwrite existing keyfiles(s) with a new one
+                short: f
+                global: false
+        - export:
+            about: Export keyfile(s) from keystore
+            args:
+            - path:
+                help: Export folder path
+                required: true
+                takes_value: true
+            - all:
+                help: Export all accounts
+                short: a
+                global: false
