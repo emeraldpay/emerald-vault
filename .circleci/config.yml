@@ -8,31 +8,31 @@ jobs:
       - checkout
 
       - run:
-        name: Install required software
-        command: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
-          brew install bats
-          brew install gpg2
+          name: Install required software
+          command: |
+            curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+            brew install bats
+            brew install gpg2
 
       - run:
-        name: Unit tests
-        command: |
-          export PATH=$PATH:$HOME/.cargo/bin
-          cargo test
+          name: Unit tests
+          command: |
+            export PATH=$PATH:$HOME/.cargo/bin
+            cargo test
 
       - run:
-        name: Build
-        command: |
-          export PATH=$PATH:$HOME/.cargo/bin
-          cargo build --all --verbose --release
-          cp ./target/release/emerald-vault "$HOME/.cargo/bin/"
-          bats emerald-console/cli.bats
+          name: Build
+          command: |
+            export PATH=$PATH:$HOME/.cargo/bin
+            cargo build --all --verbose --release
+            cp ./target/release/emerald-vault "$HOME/.cargo/bin/"
+            bats emerald-console/cli.bats
 
       - deploy:
-        name: Deploy to builds.etcdevteam.com
-        command: |
-          export PATH=$PATH:$PWD/janusbin
-          export APP_VERSION="$(janus version -format 'TAG_OR_NIGHTLY')"
-          if [ "${CIRCLE_BRANCH}" == "ci" ]; then
-            .circleci/deploy.sh
-          fi
+          name: Deploy to builds.etcdevteam.com
+          command: |
+            export PATH=$PATH:$PWD/janusbin
+            export APP_VERSION="$(janus version -format 'TAG_OR_NIGHTLY')"
+            if [ "${CIRCLE_BRANCH}" == "ci" ]; then
+              .circleci/deploy.sh
+            fi
