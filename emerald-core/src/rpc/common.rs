@@ -17,7 +17,7 @@ limitations under the License.
 //!
 
 use super::Error;
-use util;
+use crate::util;
 
 /// Trait to access a common chain name and id params
 ///
@@ -41,7 +41,7 @@ pub trait CommonChainParams {
 pub fn extract_chain_params(p: &CommonChainParams) -> Result<(String, u8), Error> {
     let name_param = p.get_chain();
     let id_param = p.get_chain_id();
-    let mut id: u8;
+    let id: u8;
     let mut name: String;
 
     if !name_param.is_empty() && id_param.is_some() {

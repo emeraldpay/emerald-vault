@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 use super::Error;
-use keystore::{CryptoType, KeyFile};
+use crate::keystore::{CryptoType, KeyFile};
 
 /// `Keyfile` for HD Wallet
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq)]

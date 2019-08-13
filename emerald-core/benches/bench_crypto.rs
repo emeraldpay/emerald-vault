@@ -5,9 +5,9 @@ extern crate uuid;
 #[macro_use]
 extern crate bencher;
 
-use emerald::keccak256;
-use emerald::keystore::{os_random, Kdf, KdfDepthLevel, KeyFile};
-use emerald::PrivateKey;
+use crate::emerald::keccak256;
+use crate::emerald::keystore::{os_random, Kdf, KdfDepthLevel, KeyFile};
+use crate::emerald::PrivateKey;
 
 use std::fs::File;
 use std::io::Read;

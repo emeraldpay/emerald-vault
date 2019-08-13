@@ -16,7 +16,7 @@ limitations under the License.
 //! # `HDWallet` Keystore files (UTC / JSON) module errors
 
 use bitcoin::util::bip32;
-use core;
+use crate::core;
 use std::{error, fmt, io};
 
 /// `HDWallet` Keystore file errors

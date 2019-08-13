@@ -15,8 +15,8 @@ limitations under the License.
 */
 //! # Errors for storage of `Keyfiles`
 
-use keystore::SerializeError;
-use rocksdb;
+use crate::keystore::SerializeError;
+use crate::rocksdb;
 use serde_json;
 
 use std::{error, fmt, io, str};

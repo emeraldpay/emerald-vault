@@ -218,7 +218,7 @@ fn prefix(data: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tests::*;
+    use crate::tests::*;
 
     #[test]
     fn should_convert_into_address() {

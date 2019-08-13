@@ -4,8 +4,8 @@ mod comm;
 mod serialize;
 
 pub use self::comm::{ClientMethod, MethodParams, RpcConnector};
-use cmd::Error;
-use emerald::Address;
+use crate::cmd::Error;
+use crate::emerald::Address;
 use hex::ToHex;
 use jsonrpc_core::{Params, Value};
 

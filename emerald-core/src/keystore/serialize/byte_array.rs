@@ -102,7 +102,7 @@ macro_rules! byte_array_struct {
 
 #[cfg(test)]
 mod tests {
-    use tests::*;
+    use crate::tests::*;
 
     byte_array_struct!(Hex8, 8);
 

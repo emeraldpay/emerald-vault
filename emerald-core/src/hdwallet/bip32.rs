@@ -21,12 +21,12 @@ use super::error::Error;
 use bitcoin::network::constants::Network;
 use bitcoin::util::bip32::ChildNumber::{self, Hardened, Normal};
 use bitcoin::util::bip32::ExtendedPrivKey;
-use core::{PrivateKey, PRIVATE_KEY_BYTES};
-use hdwallet::DERIVATION_INDEX_SIZE;
+use crate::core::{PrivateKey, PRIVATE_KEY_BYTES};
+use crate::hdwallet::DERIVATION_INDEX_SIZE;
 use regex::Regex;
 use secp256k1::Secp256k1;
 use std::ops;
-use util::to_bytes;
+use crate::util::to_bytes;
 
 lazy_static! {
     static ref HD_PATH_RE: Regex = Regex::new(r#"^m/{1}[^0-9'/]*"#).unwrap();
@@ -163,7 +163,7 @@ pub fn to_prefixed_path(hd_str: &str) -> Result<Vec<u8>, Error> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use core::Address;
+    use crate::core::Address;
     use hex::FromHex;
     use std::str::FromStr;
 

@@ -3,7 +3,7 @@
 use super::arg_handlers::*;
 use super::emerald::storage::KeystoreError;
 use super::{EnvVars, Error, ExecResult, KeyfileStorage};
-use indicator::ProgressIndicator;
+use crate::indicator::ProgressIndicator;
 use serde_json;
 use std::fs::File;
 use std::io::Read;

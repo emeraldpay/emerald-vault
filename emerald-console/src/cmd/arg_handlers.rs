@@ -8,7 +8,7 @@ use super::{
 use hex::FromHex;
 use reqwest::Url;
 use rpassword;
-use rpc::{self, RpcConnector};
+use crate::rpc::{self, RpcConnector};
 use std::env;
 use std::net::SocketAddr;
 use std::str::FromStr;

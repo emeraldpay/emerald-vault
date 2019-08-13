@@ -19,12 +19,12 @@ extern crate serde_json;
 extern crate tempdir;
 extern crate uuid;
 
-use emerald::keystore::{
+use crate::emerald::keystore::{
     Cipher, CoreCrypto, CryptoType, HdwalletCrypto, Iv, Kdf, KdfDepthLevel, KeyFile, Mac, Prf,
     Salt, CIPHER_IV_BYTES, KDF_SALT_BYTES,
 };
-use emerald::storage::{DbStorage, FsStorage, KeyfileStorage};
-use emerald::{Address, KECCAK256_BYTES};
+use crate::emerald::storage::{DbStorage, FsStorage, KeyfileStorage};
+use crate::emerald::{Address, KECCAK256_BYTES};
 use hex::FromHex;
 
 use std::fs::File;

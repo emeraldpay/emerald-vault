@@ -256,10 +256,10 @@ impl WManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::Transaction;
-    use hdwallet::bip32::{path_to_arr, to_prefixed_path};
+    use crate::core::Transaction;
+    use crate::hdwallet::bip32::{path_to_arr, to_prefixed_path};
     use hex;
-    use tests::*;
+    use crate::tests::*;
 
     pub const ETC_DERIVATION_PATH: [u8; 21] = [
         5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0,

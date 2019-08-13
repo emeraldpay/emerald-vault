@@ -138,7 +138,7 @@ impl Kdf {
             Kdf::Pbkdf2 { prf, c } => {
                 match prf {
                     Prf::HmacSha256 => {
-                        let mut hmac = prf.hmac(passphrase);
+                        let _hmac = prf.hmac(passphrase);
                         pbkdf2::<Hmac<Sha256>>(
                             passphrase.as_bytes(),
                             kdf_salt,
@@ -229,7 +229,7 @@ impl fmt::Display for Kdf {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use tests::*;
+    use crate::tests::*;
 
     #[test]
     fn should_derive_key_via_pbkdf2() {

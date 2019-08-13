@@ -34,7 +34,7 @@ pub use self::serialize::{
 };
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, keccak256, to_arr, KECCAK256_BYTES};
-pub use hdwallet::HdwalletCrypto;
+pub use crate::hdwallet::HdwalletCrypto;
 use rand::{OsRng, Rng};
 use std::convert::From;
 use std::str::FromStr;
@@ -276,7 +276,7 @@ pub fn os_random() -> OsRng {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tests::*;
+    use crate::tests::*;
 
     #[test]
     fn should_create_keyfile() {

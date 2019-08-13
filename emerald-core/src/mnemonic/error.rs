@@ -15,7 +15,7 @@ limitations under the License.
 */
 //! # Mnemonic sentence generation errors
 
-use core;
+use crate::core;
 use std::{error, fmt, io};
 
 /// `Mnemonic` generation errors

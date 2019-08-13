@@ -168,8 +168,8 @@ impl Serialize for KeyFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use storage::generate_filename;
-    use tests::*;
+    use crate::storage::generate_filename;
+    use crate::tests::*;
 
     #[test]
     fn should_catch_unsupported_keyfile_version() {

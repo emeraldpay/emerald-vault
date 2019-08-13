@@ -32,7 +32,7 @@ pub fn keccak256(data: &[u8]) -> [u8; KECCAK256_BYTES] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tests::*;
+    use crate::tests::*;
 
     #[test]
     fn should_calculate_empty_keccak256() {

@@ -10,6 +10,7 @@ keywords = ["ethereum-classic", "blockchain", "crypto-wallet", "cold-storage", "
 categories = ["console", "bash"]
 readme = "README.md"
 license = "Apache-2.0"
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "ETCDEVTeam/emerald-rs" }
@@ -20,6 +21,7 @@ name = "emerald-vault"
 path = "src/main.rs"
 
 [dependencies]
+emerald-rs = { path = "../emerald-core" }
 log = "0.3"
 jsonrpc-core = "8.0"
 serde = "1.0"
@@ -27,7 +29,6 @@ hex = "0.2"
 lazy_static = "0.2"
 serde_json = "1.0"
 serde_derive = "1.0"
-emerald-rs = "0.25.6"
 regex = "0.2"
 hyper = "0.12"
 reqwest = "0.9"

@@ -25,7 +25,7 @@ use super::core;
 use super::keystore::KdfDepthLevel;
 use super::storage::{self, StorageController};
 use super::util::{align_bytes, to_arr, to_even_str, to_u64, trim_hex, ToHex};
-use hdwallet::WManager;
+use crate::hdwallet::WManager;
 use jsonrpc_core::{Error as JsonRpcError, IoHandler, Params};
 use jsonrpc_http_server::{AccessControlAllowOrigin, DomainsValidation, ServerBuilder};
 use log::Level;

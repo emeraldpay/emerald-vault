@@ -15,8 +15,8 @@ limitations under the License.
 */
 //! # Serialize keystore files (UTC / JSON) module errors
 
-use hdwallet;
-use rpc;
+use crate::hdwallet;
+use crate::rpc;
 use serde_json;
 
 use std::{error, fmt, io};

@@ -17,9 +17,9 @@ limitations under the License.
 
 use super::error::KeystoreError;
 use super::{generate_filename, AccountInfo, KeyfileStorage};
-use core::Address;
-use keystore::try_extract_address;
-use keystore::KeyFile;
+use crate::core::Address;
+use crate::keystore::try_extract_address;
+use crate::keystore::KeyFile;
 
 use serde_json;
 use std::ffi::OsStr;

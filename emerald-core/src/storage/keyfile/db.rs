@@ -17,14 +17,14 @@ limitations under the License.
 
 use super::error::KeystoreError;
 use super::{generate_filename, AccountInfo, KeyfileStorage};
-use core::Address;
-use keystore::KeyFile;
-use rocksdb::{IteratorMode, DB};
+use crate::core::Address;
+use crate::keystore::KeyFile;
+use crate::rocksdb::{IteratorMode, DB};
 
 use serde_json;
 use std::path::Path;
 use std::str;
-use util;
+use crate::util;
 
 /// Database backed storage for `KeyFile`
 ///

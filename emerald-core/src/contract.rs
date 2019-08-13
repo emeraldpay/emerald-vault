@@ -64,7 +64,7 @@ impl Contract {
     pub fn serialize_params(types: &[String], values: Vec<String>) -> Result<String, Error> {
         let types: Result<Vec<ParamType>, _> = types.iter().map(|s| Reader::read(s)).collect();
 
-        let types = try!(types);
+        let types = r#try!(types);
 
         let params: Vec<_> = types.into_iter().zip(values.into_iter()).collect();
 

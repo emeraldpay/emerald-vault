@@ -165,8 +165,8 @@ impl Serialize for CoreCrypto {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use keystore::{Kdf, Prf};
-    use tests::*;
+    use crate::keystore::{Kdf, Prf};
+    use crate::tests::*;
 
     const KDF_PARAMS_PBKDF2: &'static str = r#"{
         "c": 10240,

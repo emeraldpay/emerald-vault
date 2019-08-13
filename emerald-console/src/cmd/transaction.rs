@@ -2,7 +2,7 @@
 
 use super::arg_handlers::*;
 use super::{rpc, ArgMatches, EnvVars, Error, ExecResult, KeyfileStorage, PrivateKey, Transaction};
-use emerald::{to_chain_id, Address};
+use crate::emerald::{to_chain_id, Address};
 use hex::{FromHex, ToHex};
 use std::io;
 use std::io::Read;

@@ -20,22 +20,22 @@ use super::common::{
 };
 use super::Error;
 use super::StorageController;
-use contract::Contract;
-use core::{Address, Transaction};
-use hdwallet::bip32::to_prefixed_path;
-use hdwallet::WManager;
+use crate::contract::Contract;
+use crate::core::{Address, Transaction};
+use crate::hdwallet::bip32::to_prefixed_path;
+use crate::hdwallet::WManager;
 use jsonrpc_core::{Params, Value};
-use keystore::{os_random, CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME};
-use mnemonic::{self, gen_entropy, HDPath, Language, Mnemonic, ENTROPY_BYTE_LENGTH};
+use crate::keystore::{os_random, CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME};
+use crate::mnemonic::{self, gen_entropy, HDPath, Language, Mnemonic, ENTROPY_BYTE_LENGTH};
 use serde_json;
 use std::cell::RefCell;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
-use util;
+use crate::util;
 use hex;
 
 pub fn current_version() -> Result<&'static str, Error> {
-    Ok(::version())
+    Ok(crate::version())
 }
 
 pub fn heartbeat() -> Result<i64, Error> {
@@ -104,7 +104,6 @@ pub fn shake_account(
     params: Either<(ShakeAccountAccount,), (ShakeAccountAccount, CommonAdditional)>,
     storage: &Arc<Mutex<StorageController>>,
 ) -> Result<bool, Error> {
-    use keystore::os_random;
 
     let storage_ctrl = storage.lock().unwrap();
     let (account, additional) = params.into_full();

@@ -10,6 +10,8 @@ keywords = ["ethereum", "ethereum-classic", "blockchain", "ffi", "crypto-wallet"
 categories = ["embedded", "external-ffi-bindings"]
 readme = "README.md"
 license = "Apache-2.0"
+edition = "2018"
+autobenches = false
 
 [badges]
 travis-ci = { repository = "ETCDEVTeam/emerald-rs" }

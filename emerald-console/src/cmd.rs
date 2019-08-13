@@ -16,7 +16,7 @@ use super::emerald::storage::{default_path, KeyfileStorage, StorageController};
 use super::emerald::PrivateKey;
 use super::emerald::{self, align_bytes, to_arr, to_even_str, trim_hex, Address, Transaction};
 use clap::ArgMatches;
-use rpc;
+use crate::rpc;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 

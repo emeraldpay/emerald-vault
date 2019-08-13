@@ -1,6 +1,6 @@
 //! # Send JSON encoded HTTP requests
 
-use cmd::Error;
+use crate::cmd::Error;
 use jsonrpc_core::Params;
 use reqwest::{Client, Url};
 use serde_json::Value;
