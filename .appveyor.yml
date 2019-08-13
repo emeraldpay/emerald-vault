@@ -37,7 +37,7 @@ cache:
 
 build_script:
   - cargo build --all --release
-  - 7z a emerald-bin-win-%VERSION_GIT_TAG%.zip ./target/release/*.exe
+  - 7z a emerald-bin-win-%APP_VERSION_GIT_TAG%.zip ./target/release/*.exe
 
 artifacts:
     - path: '*.zip'
