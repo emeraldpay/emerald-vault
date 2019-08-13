@@ -16,11 +16,11 @@ jobs:
             brew install gpg2
             brew install gitversion
 
-#      - run:
-#          name: Unit tests
-#          command: |
-#            export PATH=$PATH:$HOME/.cargo/bin
-#            cargo test --all --release
+      - run:
+          name: Unit tests
+          command: |
+            export PATH=$PATH:$HOME/.cargo/bin
+            cargo test --all --release
 
       - run:
           name: Build
@@ -35,6 +35,6 @@ jobs:
           command: |
             export PATH=$PATH:$PWD/janusbin
             export APP_VERSION_GIT_TAG="$(gitversion /showvariable FullSemVer)-$(gitversion /showvariable ShortSha)"
-            if [ "${CIRCLE_BRANCH}" == "ci" ]; then
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
               .circleci/deploy.sh
             fi

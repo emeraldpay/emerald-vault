@@ -32,6 +32,7 @@ before_install:
   - echo Installing GitVersion...
   - wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip
   - unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion
+  - rm GitVersion-bin-net40-v4.0.0.zip
   - echo "#!/bin/bash" > gitversion
   - echo 'mono GitVersion/GitVersion.exe "$@"' >> gitversion
   - chmod 755 gitversion
@@ -49,7 +50,7 @@ script:
   - export APP_VERSION_GIT_TAG="$(./gitversion /showvariable FullSemVer)-$(./gitversion /showvariable ShortSha)"
   - export VERSION_BASE="v$(./gitversion /showvariable Major).$(./gitversion /showvariable Minor).x"
   - echo "Building app version $APP_VERSION_GIT_TAG"
-  # - cargo test --all --release
+  - cargo test --all --release
   - cargo build --all --release
 
 after_success: |
@@ -73,5 +74,5 @@ deploy:
     provider: script
     script: ./deploy.sh
     on:
-        branch: ci
+        branch: master
     tags: true

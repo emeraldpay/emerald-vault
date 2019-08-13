@@ -37,19 +37,19 @@ cache:
 
 build_script:
   - cargo build --all --release
-  - 7z a emerald-bin-win-%APP_VERSION_GIT_TAG%.zip ./target/release/*.exe
+  - 7z a emerald-cli-win-v%APP_VERSION_GIT_TAG%.zip ./target/release/*.exe
 
 artifacts:
     - path: '*.zip'
       name: emerald-bin
 
-#test_script:
-#  - cargo test --all --release %cargoflags%
+test_script:
+  - cargo test --all --release %cargoflags%
 
 deploy_script:
     - openssl aes-256-cbc -d -in gcloud-appveyor.json.enc -k %GCP_PASSWD% -out gcloud-appveyor.json -md sha256
     - ps: >-
-          If ($env:APPVEYOR_REPO_BRANCH -eq 'ci') {
+          If ($env:APPVEYOR_REPO_BRANCH -eq 'master') {
             janus.exe deploy -to="builds.etcdevteam.com/emerald-cli/$env:VERSION_BASE/" -files="./*.zip" -key="./gcloud-appveyor.json"
           }
     - rm gcloud-appveyor.json
