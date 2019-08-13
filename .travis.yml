@@ -1,10 +1,14 @@
 language: rust
+env:
+  global:
+    - secure: "WafTW7FircnD3qm2yo9vY8pqCcq5WAUHi9q5xdnOt/wCufTnoCO6fPVSFJyJ56KmynbO6HQLwNrGdtHwnuOoBIjNLYw6PjoPfcfp1lpAYqbxW59Y7ubMQ1jnN5buPV058kirn0mHlCNkjBt3keRbemMj6LGlWtU6t4VCU0LTtUtNr5Wekz1QqEM1VoqFAkFZEIjIaWf6nz9D7p3gOYne5JOINNbhZdE7j+WVhgpnXGvbTW+vLAuax3JwcF6Je4IpTxptCSshm+BXH3Z/ZIfFpbA9w4gj1cJXT0koRAXfRoSccgcXqPy7lq1B1jp1XmXLTw9G6WvDMeBCR3GD86U5tQV+V5x16iQVhv68vg+j5TStjbrby9Ke4IVEmiMuh/u3FAQyBFanll4SqdT45UI+0/zbwX/dO7NH7iCZlcxPRI7x1imdxewlkZEh+p226Op7ahyUNFsBd9uUiyO1KRy4ZWXlebkIMUMD7PCNMUkPAZQEf5qsC9TeeR4wbh/Z7lnGO6nklsTbuW0UeJY178FSqYEBnmTAPkqcwnBOFqB12B+9Rwbsld1GHo31lYyUZsdgQ5lYEEyCDoMKK2PkKe3XSVnmx69HEXRnJ75ecWRtqQlGueKWJHIhVLD2XHqgaamGEUthGnQ22zsd2bbT3KB/Epn6qgxA+KTLz4pnFLr70Cw="
+
 rust:
   - stable
-allow_failures:
-  - nightly
+
 os:
   - linux
+
 addons:
   apt:
     packages:
@@ -17,17 +21,18 @@ addons:
 notifications:
   email:
     on_success: never
+
 before_install:
-- if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -qq update; else brew update; fi
-- if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install -y libusb-1.0-0-dev; else brew install libusb; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -qq update; else brew update; fi
+  - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install -y libusb-1.0-0-dev; else brew install libusb; fi
 
 before_script:
-- export PATH="$PATH":~/.cargo/bin
+  - export PATH="$PATH":~/.cargo/bin
 
 script:
-- export RUST_BACKTRACE=1
-- cargo test --all --verbose
-- cargo build --all --verbose --release
+  - export RUST_BACKTRACE=1
+  - cargo test --all --verbose
+  - cargo build --all --verbose --release
 
 after_success: |
     [ $TRAVIS_RUST_VERSION = stable ] &&
@@ -46,12 +51,9 @@ after_success: |
     kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/*
 
 deploy:
-  provider: releases
-  skip_cleanup: true
-  api_key:
-    secure: qXqFCva/yJfwdJzLUazv3AUqvnbUWWEvCOoZHMkByK7/OP1yGdB/q7R24IRAf5SvfEk9TR8a81i+tiy/3iLfgrrBPLc077cLB4q6q1O1yBIrRTg61ggUDyiKaZDZqHtuvI2ocTnFM5jXTuEXVVGt0HA1IO3ezogmcVi9UrQp5rDDCWqPcNviTVweTICLb9PAWKmhbGrGmR3BVuNjmBCDJr25qnW6wors93xfCrpePepnl92gvPrp30WmQ2E+bgV+Hoeu9gJjCIjRU8bTmDWEdkBa3Qe8xIMU+SAw7CBUWRALh5q1HX0M7RYpg3zOEdVdWZ+OwDTO0mc40UdaV5rkx029ird4mC96bkHHemYITJJrDrwjoni9wSbnhZaNefZeKf8pAGLUO/+NwtcYbj8ogYdnsweAMRiZUvA15/tzk6kMQqBILjL605YayPWt9XvdU06gLjWtEd8qlOqt+xBPat3dKw15Xkb8XPM8bc6+YBHDvJC9tF4vozOsj9Sh4b/RV9+tB0xrjniY/ZRMtGe6JJO+7+7naszekz+F9lZJocmAhbX7XUsgyvjhmVn/1+IKnJQ/iqIn7FNQa+7y9ONmQxke4aibKdM3vTicgwwPD4IY2i9MGLCBDUFIiu70k8pJ2Gy4xa8E0LupcHui4uysG2ukqJhPU/4rN9v7HZznE3Y=
-  file: target/release/emerald
-  on:
-    repo: ethereumproject/emerald-rs
-    branch: master
+    skip_cleanup: true
+    provider: script
+    script: ./deploy.sh
+    on:
+        branch: ci
     tags: true
