@@ -14,5 +14,6 @@ mkdir deploy
 mv *.zip *.tar.gz deploy/
 ls -l deploy/
 
-janus deploy -to="builds.etcdevteam.com/emerald-cli/$VERSION_BASE/" -files="./deploy/*" -key="./gcloud-travis.json.enc"
+openssl aes-256-cbc -d -in gcloud-travis.json.enc -k $GCP_PASSWD -out gcloud-travis.json
+janus deploy -to="builds.etcdevteam.com/emerald-cli/$VERSION_BASE/" -files="./deploy/*" -key="./gcloud-travis.json"
 echo "Deployed"
