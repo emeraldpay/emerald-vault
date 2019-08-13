@@ -11,6 +11,7 @@ jobs:
           name: Install required software
           command: |
             curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+            curl -sL https://raw.githubusercontent.com/ETCDEVTeam/janus/master/get.sh | bash
             brew install bats
             brew install gpg2
             brew install gitversion
