@@ -27,6 +27,10 @@ jobs:
           command: |
             export PATH=$PATH:$HOME/.cargo/bin
             cargo build --all --release
+
+      - run:
+          name: Integration tests
+          command: |
             cp ./target/release/emerald-vault "$HOME/.cargo/bin/"
             bats emerald-console/cli.bats
 
