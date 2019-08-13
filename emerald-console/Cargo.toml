@@ -1,6 +1,6 @@
 [package]
 name = "emerald-vault"
-version = "0.25.6"
+version = "0.26.0"
 authors = ["Constantine Kryvomaz <kostiyantynk@gmail.com>"]
 description = "Console utility for secure account management"
 homepage = "https://emeraldwallet.io"

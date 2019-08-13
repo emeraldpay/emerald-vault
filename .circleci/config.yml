@@ -10,16 +10,35 @@ jobs:
       - run:
           name: Install required software
           command: |
-              curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+            curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain stable
+            curl -sL https://raw.githubusercontent.com/ETCDEVTeam/janus/master/get.sh | bash
+            brew install bats
+            brew install gpg2
+            brew install gitversion
 
       - run:
           name: Unit tests
           command: |
-                export PATH=$PATH:$HOME/.cargo/bin
-                cargo test
+            export PATH=$PATH:$HOME/.cargo/bin
+            cargo test --all --release
 
       - run:
           name: Build
           command: |
-              export PATH=$PATH:$HOME/.cargo/bin
-              cargo build --all --verbose --release
+            export PATH=$PATH:$HOME/.cargo/bin
+            cargo build --all --release
+
+      - run:
+          name: Integration tests
+          command: |
+            cp ./target/release/emerald-vault "$HOME/.cargo/bin/"
+            bats emerald-console/cli.bats
+
+      - deploy:
+          name: Deploy to builds.etcdevteam.com
+          command: |
+            export PATH=$PATH:$PWD/janusbin
+            export APP_VERSION_GIT_TAG="$(gitversion /showvariable FullSemVer)-$(gitversion /showvariable ShortSha)"
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              .circleci/deploy.sh
+            fi
