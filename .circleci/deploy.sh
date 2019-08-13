@@ -2,8 +2,8 @@
 
 set -e
 
-VERSION_BASE=$(janus version -format='v%M.%m.x')
-CLI_ARCHIVE_NAME="emerald-cli-mac-$APP_VERSION"
+VERSION_BASE="v$(gitversion /showvariable Major).$(gitversion /showvariable Minor).x"
+CLI_ARCHIVE_NAME="emerald-cli-mac-$APP_VERSION_GIT_TAG"
 mv target/release/emerald-vault ./emerald
 zip -j "$CLI_ARCHIVE_NAME.zip" emerald
 tar -zcf "$CLI_ARCHIVE_NAME.tar.gz" emerald

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 
-VERSION_BASE=$(janus version -format='v%M.%m.x')
+APP_VERSION="$(./gitversion /showvariable FullSemVer)-$(./gitversion /showvariable ShortSha)"
+VERSION_BASE="v$(./gitversion /showvariable Major).$(./gitversion /showvariable Minor).x"
+
 CLI_ARCHIVE_NAME="emerald-cli-$TRAVIS_OS_NAME-$APP_VERSION"
-zip -j "$CLI_ARCHIVE_NAME.zip" target/release/emerald
-tar -zcf "$CLI_ARCHIVE_NAME.tar.gz" target/release/emerald
+zip -j "$CLI_ARCHIVE_NAME.zip" target/release/emerald-vault
+tar -zcf "$CLI_ARCHIVE_NAME.tar.gz" target/release/emerald-vault
 echo "Deploy to http://builds.etcdevteam.com/emerald-cli/$VERSION_BASE/"
 
 mkdir deploy

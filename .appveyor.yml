@@ -36,15 +36,15 @@ cache:
  - '%USERPROFILE%\.cargo'
 
 build_script:
-  - cargo build --all --verbose --release
+  - cargo build --all --release
   - 7z a emerald-bin-win-%VERSION%.zip ./target/release/*.exe
 
 artifacts:
     - path: '*.zip'
       name: emerald-bin
 
-test_script:
-  - cargo test --all --verbose %cargoflags%
+#test_script:
+#  - cargo test --all --release %cargoflags%
 
 deploy_script:
     - openssl aes-256-cbc -d -in gcloud-appveyor.json.enc -k %GCP_PASSWD% -out gcloud-appveyor.json -md sha256

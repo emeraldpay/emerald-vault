@@ -25,14 +25,25 @@ notifications:
 before_install:
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get -qq update; else brew update; fi
   - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install -y libusb-1.0-0-dev; else brew install libusb; fi
+  - echo Installing GitVersion...
+  - wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip
+  - unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion
+  - echo "#!/bin/bash" > gitversion
+  - echo 'mono GitVersion/GitVersion.exe "$@"' >> gitversion
+  - chmod 755 gitversion
+  - ./gitversion /version
 
 before_script:
+  - ./gitversion
   - export PATH="$PATH":~/.cargo/bin
 
 script:
   - export RUST_BACKTRACE=1
-  - cargo test --all --verbose
-  - cargo build --all --verbose --release
+  - export APP_VERSION_GIT_TAG="$(./gitversion /showvariable FullSemVer)-$(./gitversion /showvariable ShortSha)"
+  - export VERSION_BASE="v$(./gitversion /showvariable Major).$(./gitversion /showvariable Minor).x"
+  - echo "Building app version $APP_VERSION_GIT_TAG"
+  # - cargo test --all --release
+  - cargo build --all --release
 
 after_success: |
     [ $TRAVIS_RUST_VERSION = stable ] &&
