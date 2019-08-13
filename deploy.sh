@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 APP_VERSION="$(./gitversion /showvariable FullSemVer)-$(./gitversion /showvariable ShortSha)"
 VERSION_BASE="v$(./gitversion /showvariable Major).$(./gitversion /showvariable Minor).x"
 
