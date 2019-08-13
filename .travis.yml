@@ -28,7 +28,7 @@ notifications:
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y libusb-1.0-0-dev mono-runtime
+  - sudo apt-get install -y libusb-1.0-0-dev mono-complete libcurl3
   - echo Installing GitVersion...
   - wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip
   - unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion
