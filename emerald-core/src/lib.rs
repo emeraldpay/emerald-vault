@@ -16,7 +16,7 @@ limitations under the License.
 //! # Ethereum web3 like connector library
 #![cfg_attr(feature = "dev", feature(plugin))]
 #![cfg_attr(feature = "dev", plugin(clippy))]
-#![deny(missing_docs)]
+//#![deny(missing_docs)]
 
 #[macro_use]
 extern crate log;
@@ -53,13 +53,13 @@ extern crate sha3;
 extern crate time;
 extern crate uuid;
 mod contract;
-mod core;
+pub mod core;
 mod hdwallet;
 pub mod keystore;
 pub mod mnemonic;
 pub mod rpc;
 pub mod storage;
-mod util;
+pub mod util;
 
 pub use self::core::*;
 pub use self::rpc::start;

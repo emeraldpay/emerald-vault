@@ -24,19 +24,9 @@ use chrono::prelude::Utc;
 use hex::FromHex;
 use std::io::Cursor;
 use std::mem::transmute;
+use super::core::Chain;
 
 static HEX_CHARS: &'static [u8] = b"0123456789abcdef";
-
-const ETH: &'static str = "eth";
-const MORDEN: &'static str = "morden";
-const ROPSTEN: &'static str = "ropsten";
-const RINKEBY: &'static str = "rinkeby";
-const ROOTSTOCK_MAINNET: &'static str = "rootstock-main";
-const ROOTSTOCK_TESTNET: &'static str = "rootstock-test";
-const KOVAN: &'static str = "kovan";
-const ETC: &'static str = "etc";
-const MAINNET: &'static str = "mainnet";
-const ETC_MORDEN: &'static str = "etc-morden";
 
 /// Convert `self` into hex string
 pub trait ToHex {
@@ -68,18 +58,13 @@ impl ToHex for u64 {
 /// # Arguments:
 /// * `id` - target chain id
 ///
-pub fn to_chain_name(id: u8) -> Option<&'static str> {
-    match id {
-        1 => Some(ETH),
-        2 => Some(MORDEN),
-        3 => Some(ROPSTEN),
-        4 => Some(RINKEBY),
-        30 => Some(ROOTSTOCK_MAINNET),
-        31 => Some(ROOTSTOCK_TESTNET),
-        42 => Some(KOVAN),
-        61 => Some(ETC),
-        62 => Some(ETC_MORDEN),
-        _ => None,
+pub fn to_chain_name(id: u8) -> Option<String> {
+    match Chain::from_chain_id(id) {
+        Ok(chain) => {
+            let s = chain.get_code();
+            Some(s)
+        },
+        Err(_) => None
     }
 }
 
@@ -89,17 +74,9 @@ pub fn to_chain_name(id: u8) -> Option<&'static str> {
 /// * `name` - target chain name
 ///
 pub fn to_chain_id(name: &str) -> Option<u8> {
-    match name.to_lowercase().as_str() {
-        ETH => Some(1),
-        MORDEN => Some(2),
-        ROPSTEN => Some(3),
-        RINKEBY => Some(4),
-        ROOTSTOCK_MAINNET => Some(30),
-        ROOTSTOCK_TESTNET => Some(31),
-        KOVAN => Some(42),
-        ETC | MAINNET => Some(61),
-        ETC_MORDEN => Some(62),
-        _ => None,
+    match Chain::from_str(name) {
+        Ok(chain) => Some(chain.get_chain_id()),
+        Err(_) => None
     }
 }
 
@@ -257,6 +234,7 @@ pub fn to_32bytes(hex: &str) -> [u8; 32] {
 
 #[cfg(test)]
 pub use self::tests::*;
+use std::str::FromStr;
 
 #[cfg(test)]
 mod tests {
@@ -444,15 +422,15 @@ mod tests {
 
     #[test]
     fn should_convert_to_chain_name() {
-        assert_eq!(to_chain_name(1), Some(ETH));
-        assert_eq!(to_chain_name(2), Some(MORDEN));
-        assert_eq!(to_chain_name(3), Some(ROPSTEN));
-        assert_eq!(to_chain_name(4), Some(RINKEBY));
-        assert_eq!(to_chain_name(30), Some(ROOTSTOCK_MAINNET));
-        assert_eq!(to_chain_name(31), Some(ROOTSTOCK_TESTNET));
-        assert_eq!(to_chain_name(42), Some(KOVAN));
-        assert_eq!(to_chain_name(61), Some(ETC));
-        assert_eq!(to_chain_name(62), Some(ETC_MORDEN));
+        assert_eq!(to_chain_name(1), Some("eth".to_string()));
+        assert_eq!(to_chain_name(2), Some("morden".to_string()));
+        assert_eq!(to_chain_name(3), Some("ropsten".to_string()));
+        assert_eq!(to_chain_name(4), Some("rinkeby".to_string()));
+        assert_eq!(to_chain_name(30), Some("rootstock-main".to_string()));
+        assert_eq!(to_chain_name(31), Some("rootstock-test".to_string()));
+        assert_eq!(to_chain_name(42), Some("kovan".to_string()));
+        assert_eq!(to_chain_name(61), Some("etc".to_string()));
+        assert_eq!(to_chain_name(62), Some("morden".to_string()));
 
         assert_eq!(to_chain_name(100), None);
     }
