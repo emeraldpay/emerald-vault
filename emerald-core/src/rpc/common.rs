@@ -254,6 +254,7 @@ pub struct NewMnemonicAccount {
     pub description: String,
     pub password: String,
     pub mnemonic: String,
+    #[serde(alias = "hdPath")]
     pub hd_path: String,
 }
 

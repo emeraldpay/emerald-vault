@@ -15,7 +15,7 @@ limitations under the License.
 */
 //! # JSON RPC module
 
-mod common;
+pub mod common;
 mod error;
 mod serialize;
 mod serves;

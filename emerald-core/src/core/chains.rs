@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 /// Ethereum Chain Reference
+#[derive(Clone)]
 pub enum Chain {
     /// Ethereum
     Ethereum,

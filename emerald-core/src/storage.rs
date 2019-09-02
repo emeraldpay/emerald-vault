@@ -17,7 +17,7 @@ limitations under the License.
 
 pub mod addressbook;
 mod contracts;
-mod keyfile;
+pub mod keyfile;
 mod storage_ctrl;
 
 pub use self::addressbook::error::AddressbookError;
@@ -101,8 +101,8 @@ where
         p.push(".db");
         match DbStorage::new(p) {
             Ok(db) => Ok(Box::new(db)),
-            Err(_) => Err(KeystoreError::StorageError(
-                "Can't create database Keyfile storage".to_string(),
+            Err(er) => Err(KeystoreError::StorageError(
+                format!("Can't create database Keyfile storage. {}", er),
             )),
         }
     }
