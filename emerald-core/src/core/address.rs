@@ -64,6 +64,10 @@ impl From<[u8; ADDRESS_BYTES]> for Address {
     }
 }
 
+impl AsRef<[u8]> for Address {
+    fn as_ref(&self) -> &[u8] { &self.0 }
+}
+
 impl FromStr for Address {
     type Err = Error;
 
