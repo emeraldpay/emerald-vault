@@ -31,7 +31,7 @@ extern crate aes_ctr;
 extern crate bitcoin;
 extern crate byteorder;
 extern crate chrono;
-extern crate emerald_rocksdb as rocksdb;
+extern crate rocksdb;
 extern crate ethabi;
 extern crate glob;
 extern crate hex;
