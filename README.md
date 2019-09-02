@@ -1,10 +1,10 @@
-# Emerald-rs - Rust library to operate Ethereum blockchains
+# Emerald Vault - Rust library to operate Ethereum blockchains
 
-[![Travis CI](https://travis-ci.org/ETCDEVTeam/emerald-rs.svg?branch=master)](https://travis-ci.org/ETCDEVTeam/emerald-rs)
-[![Circle CI](https://circleci.com/gh/ETCDEVTeam/emerald-rs/tree/master.svg?style=shield)](https://circleci.com/gh/etcdevteam/emerald-rs)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/er3wb073udepk3bl/branch/master?svg=true)](https://ci.appveyor.com/project/etcdevteam/emerald-rs)
+[![Travis CI](https://travis-ci.org/emeraldpay/emerald-vault.svg?branch=master)](https://travis-ci.org/emeraldpay/emerald-vault)
+[![Circle CI](https://circleci.com/gh/emeraldpay/emerald-vault/tree/master.svg?style=shield)](https://circleci.com/gh/emeraldpay/emerald-vault)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/er3wb073udepk3bl/branch/master?svg=true)](https://ci.appveyor.com/project/emeraldpay/emerald-vault)
 ![Coveralls](https://coveralls.io/repos/github/ethereumproject/emerald-rs/badge.svg)
-[![Crates](https://img.shields.io/crates/v/emerald-rs.svg?style=flat-square)](https://crates.io/crates/emerald-rs)
+[![Crates](https://img.shields.io/crates/v/emerald-vault-core.svg?style=flat-square)](https://crates.io/crates/emerald-vault-core)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000)
 
 
@@ -18,7 +18,7 @@ When done properly, it can offer a very good protection against computer vulnera
 
 Distributed as a Rust crate or can be embedded via foreign function interface (FFI).
 
-For minimalistic CLI tool refer to [Emerald Console](emerald-cli/), or 
+For minimalistic CLI tool refer to [Emerald Console](emerald-console/), or 
 if you looking for a fully-featured UI wallet, take a look at our [Emerald Wallet](https://emeraldwallet.io)
 
 
@@ -71,7 +71,10 @@ fn main() {
  [JSON-RPC API](docs/api.md)
  
 ## Contact
- Chat with us via [Gitter](https://gitter.im/etcdev-public/Lobby)
+
+[![Gitter](https://badges.gitter.im/emeraldpay/community.svg?style=flat-square)](https://gitter.im/emeraldpay/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
+Chat with us via [Gitter](https://gitter.im/emeraldpay/community)
 
 ## License
 

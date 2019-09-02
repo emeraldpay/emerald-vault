@@ -9,9 +9,9 @@
                                                                              
                                                                              
 ```
-[![Travis CI](https://travis-ci.org/ETCDEVTeam/emerald-rs.svg?branch=master)](https://travis-ci.org/ETCDEVTeam/emerald-rs)
-[![Circle CI](https://circleci.com/gh/ETCDEVTeam/emerald-rs/tree/master.svg?style=shield)](https://circleci.com/gh/etcdevteam/emerald-rs)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/e5nqu33xo8y4nk0v?svg=true)](https://ci.appveyor.com/project/etcdevteam/emerald-rs)
+[![Travis CI](https://travis-ci.org/emeraldpay/emerald-vault.svg?branch=master)](https://travis-ci.org/emeraldpay/emerald-vault)
+[![Circle CI](https://circleci.com/gh/emeraldpay/emerald-vault/tree/master.svg?style=shield)](https://circleci.com/gh/emeraldpay/emerald-vault)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/e5nqu33xo8y4nk0v?svg=true)](https://ci.appveyor.com/project/emeraldpay/emerald-vault)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000)
 
 ## About
@@ -19,7 +19,7 @@
 Emerald Console is a tool to access Ethereum blockchain(s) from the command line. It connects to an 
 external node (_"upstream"_) and allows a user or application to read information from the blockchain and to send new 
 transactions. In the latter case it provides functionality to sign transactions by a provided Private Key. The tool 
-integrates [emerald-rs](https://github.com/ETCDEVTeam/emerald-rs) with the intention of generation, import, and/or 
+integrates [emerald-vault](https://github.com/emeraldpay/emerald-vault) with the intention of generation, import, and/or 
 storing of Ethereum Private Keys.
 
 Emerald Console is compatible with:
@@ -67,7 +67,7 @@ SUBCOMMANDS:
 
 ### Download stable binary
 
-Binaries for all platforms are currently published at https://github.com/ETCDEVTeam/emerald-rs/releases
+Binaries for all platforms are currently published at https://github.com/emeraldpay/emerald-vault/releases
 
 ### Download development build
 
@@ -97,7 +97,7 @@ the build tools is by installing Microsoft Visual C++ Build Tools 2017 which pro
 #### Compile
 
 ```
-git clone https://github.com/etcdevteam/emerald-rs.git
+git clone https://github.com/emeraldpay/emerald-vault.git
 cd emerald-rs
 cargo build --release
 cd target\debug
@@ -105,7 +105,7 @@ cd target\debug
 
 ## Links
 
-- Issues: https://github.com/ETCDEVTeam/emerald-rs/issues
+- Issues: https://github.com/emeraldpay/emerald-vault/issues
 - Development binaries: http://builds.etcdevteam.com/
 
 
