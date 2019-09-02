@@ -1,27 +1,27 @@
 [package]
-name = "emerald-vault"
+name = "emerald-vault-console"
 version = "0.26.0"
-authors = ["Constantine Kryvomaz <kostiyantynk@gmail.com>"]
+authors = ["Igor Artamonov <splix@emeraldpay.io>", "Constantine Kryvomaz <kostiyantynk@gmail.com>"]
 description = "Console utility for secure account management"
-homepage = "https://emeraldwallet.io"
-repository = "https://github.com/ETCDEVTeam/emerald-rs"
-documentation = "https://docs.rs/emerald-vault"
-keywords = ["ethereum-classic", "blockchain", "crypto-wallet", "cold-storage", "cli"]
+homepage = "https://emeraldpay.io"
+repository = "https://github.com/emeraldpay/emerald-vault"
+documentation = "https://docs.rs/emerald-vault-console"
+keywords = ["ethereum", "blockchain", "cryptocurrency", "wallet", "cli"]
 categories = ["console", "bash"]
 readme = "README.md"
 license = "Apache-2.0"
 edition = "2018"
 
 [badges]
-travis-ci = { repository = "ETCDEVTeam/emerald-rs" }
-appveyor = { repository = "ETCDEVTeam/emerald-rs" }
+travis-ci = { repository = "emeraldpay/emerald-vault" }
+appveyor = { repository = "emeraldpay/emerald-vault" }
 
 [[bin]]
 name = "emerald-vault"
 path = "src/main.rs"
 
 [dependencies]
-emerald-rs = { path = "../emerald-core" }
+emerald-vault-core = { path = "../emerald-core" }
 log = "0.3"
 jsonrpc-core = "8.0"
 serde = "1.0"
