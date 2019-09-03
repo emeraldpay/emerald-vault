@@ -47,7 +47,7 @@ test_script:
   - cargo test --all --release %cargoflags%
 
 deploy_script:
-    - openssl aes-256-cbc -d -in gcloud-appveyor.json.enc -k %GCP_PASSWD% -out gcloud-appveyor.json
+    - openssl aes-256-cbc -d -in gcloud-appveyor.json.enc -k %GCP_PASSWD% -out gcloud-appveyor.json -md sha256
     - ps: >-
           If ($env:APPVEYOR_REPO_BRANCH -eq 'master') {
             janus.exe deploy -to="builds.etcdevteam.com/emerald-cli/$env:VERSION_BASE/" -files="./*.zip" -key="./gcloud-appveyor.json"
