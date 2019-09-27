@@ -26,7 +26,7 @@ use crate::hdwallet::bip32::to_prefixed_path;
 use crate::hdwallet::WManager;
 use jsonrpc_core::{Params, Value};
 use crate::keystore::{os_random, CryptoType, Kdf, KdfDepthLevel, KeyFile, PBKDF2_KDF_NAME};
-use crate::mnemonic::{self, gen_entropy, HDPath, Language, Mnemonic, ENTROPY_BYTE_LENGTH};
+use crate::mnemonic::{self, gen_entropy, HDPath, Language, Mnemonic, StandardMnemonic};
 use serde_json;
 use std::cell::RefCell;
 use std::str::FromStr;
@@ -519,8 +519,7 @@ pub fn delete_address(
 //}
 
 pub fn generate_mnemonic() -> Result<String, Error> {
-    let entropy = gen_entropy(ENTROPY_BYTE_LENGTH)?;
-    let mnemonic = Mnemonic::new(Language::English, &entropy)?;
+    let mnemonic = Mnemonic::new(Language::English, StandardMnemonic::simple())?;
 
     Ok(mnemonic.sentence())
 }
@@ -539,7 +538,7 @@ pub fn import_mnemonic(
 
     let mnemonic = Mnemonic::try_from(Language::English, &account.mnemonic)?;
     let hd_path = HDPath::try_from(&account.hd_path)?;
-    let pk = mnemonic::generate_key(&hd_path, &mnemonic.seed(""))?;
+    let pk = mnemonic::generate_key(&hd_path, &mnemonic.seed(None))?;
 
     let kdf = if cfg!(target_os = "windows") {
         Kdf::from_str(PBKDF2_KDF_NAME)?
