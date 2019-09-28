@@ -11,7 +11,7 @@ pub use self::arg_handlers::*;
 pub use self::error::Error;
 use self::transaction::transaction_cmd;
 use super::emerald::keystore::{KdfDepthLevel, KeyFile};
-use super::emerald::mnemonic::{gen_entropy, Language, Mnemonic, ENTROPY_BYTE_LENGTH};
+use super::emerald::mnemonic::{Language, Mnemonic, StandardMnemonic};
 use super::emerald::storage::{default_path, KeyfileStorage, StorageController};
 use super::emerald::PrivateKey;
 use super::emerald::{self, align_bytes, to_arr, to_even_str, trim_hex, Address, Transaction};
@@ -109,8 +109,7 @@ fn balance_cmd(matches: &ArgMatches) -> ExecResult {
 /// for more info
 ///
 fn mnemonic_cmd() -> ExecResult {
-    let entropy = gen_entropy(ENTROPY_BYTE_LENGTH)?;
-    let mn = Mnemonic::new(Language::English, &entropy)?;
+    let mn = Mnemonic::new(Language::English, StandardMnemonic::size15())?;
     println!("{}", mn.sentence());
     Ok(())
 }
