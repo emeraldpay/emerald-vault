@@ -23,6 +23,7 @@ use serde_json;
 use std::fs::remove_file;
 use std::fs::File;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 /// Addressbook Service
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,8 +97,9 @@ impl AddressbookStorage {
             .expect("Expect address for addressbook entry")
             .as_str()
             .expect("Expect address be convertible to a string");
+        let addr = Address::from_str(addr).expect("Invalid address");
         let mut filename: PathBuf = self.dir.clone();
-        filename.push(format!("{}.json", addr));
+        filename.push(format!("{}.json", addr.to_string().to_lowercase()));
         let mut f = File::create(filename.as_path()).unwrap();
         match serde_json::to_writer_pretty(&mut f, entry) {
             Ok(_) => Ok(()),
@@ -116,8 +118,9 @@ impl AddressbookStorage {
             .expect("Expect id for addressbook entry")
             .as_str()
             .expect("Expect id be convertible to a string");
+        let addr = Address::from_str(addr).expect("Invalid address");
         let mut filename: PathBuf = self.dir.clone();
-        filename.push(format!("{}.json", addr));
+        filename.push(format!("{}.json", addr.to_string().to_lowercase()));
         let mut f = File::create(filename.as_path()).unwrap();
         match serde_json::to_writer_pretty(&mut f, entry) {
             Ok(_) => Ok(()),
@@ -133,8 +136,9 @@ impl AddressbookStorage {
         let addr = entry
             .as_str()
             .expect("Expect address be convertible to a string");
+        let addr = Address::from_str(addr).expect("Invalid address");
         let mut filename: PathBuf = self.dir.clone();
-        filename.push(format!("{}.json", addr));
+        filename.push(format!("{}.json", addr.to_string().to_lowercase()));
         match remove_file(filename) {
             Ok(_) => Ok(()),
             Err(_) => Err(AddressbookError::IO(format!(
