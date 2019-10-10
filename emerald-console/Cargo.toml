@@ -1,6 +1,6 @@
 [package]
 name = "emerald-vault-console"
-version = "0.26.1"
+version = "0.26.2"
 authors = ["Igor Artamonov <splix@emeraldpay.io>", "Constantine Kryvomaz <kostiyantynk@gmail.com>"]
 description = "Console utility for secure account management"
 homepage = "https://emeraldpay.io"
