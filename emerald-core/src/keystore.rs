@@ -35,7 +35,7 @@ pub use self::serialize::{
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, keccak256, to_arr, KECCAK256_BYTES};
 pub use crate::hdwallet::HdwalletCrypto;
-use rand::{OsRng, Rng};
+use rand::{rngs::OsRng, Rng};
 use std::convert::From;
 use std::str::FromStr;
 use std::{cmp, fmt};
@@ -133,7 +133,12 @@ impl KeyFile {
         description: Option<String>,
     ) -> Result<KeyFile, Error> {
         let mut kf = KeyFile {
-            uuid: rng.gen::<Uuid>(),
+            uuid: {
+                let mut bytes = [0u8; 16];
+                rng.fill_bytes(&mut bytes);
+
+                Uuid::from_random_bytes(bytes)
+            },
             name,
             description,
             ..Default::default()
