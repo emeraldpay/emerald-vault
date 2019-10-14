@@ -19,7 +19,7 @@ use super::util::{keccak256, to_arr, KECCAK256_BYTES};
 use super::Address;
 use super::Error;
 use hex;
-use rand::{OsRng, Rng};
+use rand::{rngs::OsRng, Rng};
 use secp256k1::key::{PublicKey, SecretKey};
 use secp256k1::{Message, Secp256k1, SignOnly};
 use std::{fmt, ops, str};
@@ -114,10 +114,10 @@ impl PrivateKey {
     }
 
     /// Extract `Address` from current private key.
-    pub fn to_address(self) -> Result<Address, Error> {
+    pub fn to_address(self) -> Address {
         let key = PublicKey::from_secret_key(&ECDSA, &self.into());
         let hash = keccak256(&key.serialize_uncompressed()[1..] /* cut '04' */);
-        Ok(Address(to_arr(&hash[12..])))
+        Address(to_arr(&hash[12..]))
     }
 
     /// Sign message
@@ -227,7 +227,7 @@ mod tests {
         ));
 
         assert_eq!(
-            key.to_address().unwrap().to_string(),
+            key.to_address().to_string(),
             "0x3f4e0668c20e100d7c2a27d4b177ac65b2875d26"
         );
     }

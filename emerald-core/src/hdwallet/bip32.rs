@@ -202,7 +202,7 @@ mod test {
         let priv_key = generate_key(&HDPath(path), &seed).unwrap();
         assert_eq!(
             Address::from_str("0x79B9E1af57Ebb2600a134e28eA05e52A312957A6").unwrap(),
-            priv_key.to_address().unwrap()
+            priv_key.to_address()
         );
     }
 
@@ -221,7 +221,7 @@ mod test {
         let priv_key = generate_key(&HDPath(path), &seed).unwrap();
         assert_eq!(
             Address::from_str("0x7545D615643F933c34C3E083E68CC831167F31af").unwrap(),
-            priv_key.to_address().unwrap()
+            priv_key.to_address()
         );
     }
 }

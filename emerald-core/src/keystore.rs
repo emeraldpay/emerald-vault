@@ -157,7 +157,7 @@ impl KeyFile {
     /// Decrypt public address from keystore file by a password
     pub fn decrypt_address(&self, password: &str) -> Result<Address, Error> {
         let pk = self.decrypt_key(password)?;
-        pk.to_address().map_err(Error::from)
+        Ok(pk.to_address())
     }
 
     /// Decrypt private key from keystore file by a password
