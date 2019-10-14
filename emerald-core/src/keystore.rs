@@ -35,7 +35,7 @@ pub use self::serialize::{
 use super::core::{self, Address, PrivateKey};
 use super::util::{self, keccak256, to_arr, KECCAK256_BYTES};
 pub use crate::hdwallet::HdwalletCrypto;
-use rand::{OsRng, Rng};
+use rand::{rngs::OsRng, Rng};
 use std::convert::From;
 use std::str::FromStr;
 use std::{cmp, fmt};
@@ -133,7 +133,12 @@ impl KeyFile {
         description: Option<String>,
     ) -> Result<KeyFile, Error> {
         let mut kf = KeyFile {
-            uuid: rng.gen::<Uuid>(),
+            uuid: {
+                let mut bytes = [0u8; 16];
+                rng.fill_bytes(&mut bytes);
+
+                Uuid::from_random_bytes(bytes)
+            },
             name,
             description,
             ..Default::default()
@@ -152,7 +157,7 @@ impl KeyFile {
     /// Decrypt public address from keystore file by a password
     pub fn decrypt_address(&self, password: &str) -> Result<Address, Error> {
         let pk = self.decrypt_key(password)?;
-        pk.to_address().map_err(Error::from)
+        Ok(pk.to_address())
     }
 
     /// Decrypt private key from keystore file by a password
