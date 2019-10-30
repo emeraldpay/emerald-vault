@@ -136,6 +136,7 @@ impl Kdf {
 
         match *self {
             Kdf::Pbkdf2 { prf, c } => {
+                println!("pbkdf2 {}", c);
                 match prf {
                     Prf::HmacSha256 => {
                         let _hmac = prf.hmac(passphrase);
@@ -250,6 +251,18 @@ pub mod tests {
         assert_eq!(
             hex::encode(Kdf::from((2, 8, 1)).derive(32, &kdf_salt, "1234567890")),
             "52a5dacfcf80e5111d2c7fbed177113a1b48a882b066a017f2c856086680fac7"
+        );
+    }
+
+    #[test]
+    fn should_derive_test_vector_pbkdf() {
+        // https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
+        let kdf_salt =
+            to_32bytes("ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd");
+
+        assert_eq!(
+            hex::encode(Kdf::from(262144).derive(32, &kdf_salt, "testpassword")),
+            "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551"
         );
     }
 }
