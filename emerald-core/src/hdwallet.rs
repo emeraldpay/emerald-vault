@@ -29,6 +29,7 @@ use self::apdu::ApduBuilder;
 use self::comm::sendrecv;
 pub use self::error::Error;
 pub use self::keystore::HdwalletCrypto;
+use bip32::HDPath;
 use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
 use std::str::{from_utf8, FromStr};
@@ -119,7 +120,7 @@ impl WManager {
             .build();
 
         debug!("DEBUG get address: {:?}", &fd);
-        let handle = self.open(fd)?;
+        let handle = self.open()?;
         let addr = sendrecv(&handle, &apdu)
             .and_then(|res| match res.len() {
                 107 => Ok(res),
@@ -186,7 +187,7 @@ impl WManager {
             .with_data(init)
             .build();
 
-        let handle = self.open(fd)?;
+        let handle = self.open()?;
         let mut res = sendrecv(&handle, &init_apdu)?;
 
         for chunk in cont.chunks(CHUNK_SIZE) {
@@ -241,15 +242,17 @@ impl WManager {
         Ok(())
     }
 
-    fn open(&self, path: &str) -> Result<HidDevice, Error> {
+    pub fn open(&self) -> Result<HidDevice, Error> {
         for _ in 0..5 {
             if let Ok(h) = self.hid.open(LEDGER_VID, LEDGER_PID) {
                 return Ok(h);
             }
-            thread::sleep(time::Duration::from_millis(1000));
+            thread::sleep(time::Duration::from_millis(100));
         }
 
-        Err(Error::HDWalletError(format!("Can't open path: {}", path)))
+        Err(Error::HDWalletError(
+            format!("Can't open path: {:?}", self.hd_path.as_ref().map(|hd| HDPath::from_bytes(&hd)))
+        ))
     }
 }
 

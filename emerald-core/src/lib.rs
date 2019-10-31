@@ -54,7 +54,7 @@ extern crate time;
 extern crate uuid;
 mod contract;
 pub mod core;
-mod hdwallet;
+pub mod hdwallet;
 pub mod keystore;
 pub mod mnemonic;
 pub mod rpc;

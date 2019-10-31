@@ -27,9 +27,11 @@ use regex::Regex;
 use secp256k1::Secp256k1;
 use std::ops;
 use crate::util::to_bytes;
+use std::convert::TryInto;
+use std::string::ToString;
 
 lazy_static! {
-    static ref HD_PATH_RE: Regex = Regex::new(r#"^m/{1}[^0-9'/]*"#).unwrap();
+    static ref HD_PATH_RE: Regex = Regex::new(r#"^m(/[0-9]'?)+"#).unwrap();
 }
 
 /// HD path according to BIP32
@@ -80,6 +82,32 @@ impl HDPath {
 
         Ok(HDPath(res))
     }
+
+    pub fn from_bytes(path: &[u8]) -> Result<Self, Error> {
+        if path.len() <= 1 || path.len() % 4 != 1 {
+            return Err(Error::HDWalletError("HD Path is too short".to_string()));
+        }
+        let mut left = path.to_vec();
+        let len = left.remove(0) as usize;
+        if left.len() != len * 4 {
+            return Err(Error::HDWalletError("Invalid HD path length".to_string()));
+        }
+        let mut res: Vec<ChildNumber> = vec![];
+        let mut pos = 0;
+        while left.len() > pos {
+            let mut item_bytes: [u8; 4] = Default::default();
+            item_bytes.copy_from_slice(&left[pos..pos+4]);
+            pos += 4;
+            let item = u32::from_be_bytes(item_bytes);
+            if item >= 0x8000_0000 {
+                res.push(Hardened(item - 0x8000_0000));
+            } else {
+                res.push(Normal(item));
+            }
+        }
+
+        Ok(HDPath(res))
+    }
 }
 
 impl ops::Deref for HDPath {
@@ -88,6 +116,27 @@ impl ops::Deref for HDPath {
     fn deref(&self) -> &Self::Target {
         &self.0
     }
+}
+
+impl std::string::ToString for HDPath {
+    fn to_string(&self) -> String {
+        let mut buf = String::with_capacity(20);
+        buf.push('m');
+        for item in &self.0 {
+            buf.push('/');
+            match item {
+                Hardened(i) => {
+                    buf.push_str(&i.to_string());
+                    buf.push('\'');
+                },
+                Normal(i) => {
+                    buf.push_str(&i.to_string());
+                }
+            }
+        }
+        buf
+    }
+
 }
 
 /// Generate `PrivateKey` using BIP32
@@ -112,6 +161,7 @@ pub fn generate_key(path: &HDPath, seed: &[u8]) -> Result<PrivateKey, Error> {
 ///
 /// * hd_str - path string
 ///
+#[deprecated]
 pub fn path_to_arr(hd_str: &str) -> Result<Vec<u8>, Error> {
     if !HD_PATH_RE.is_match(hd_str) {
         return Err(Error::HDWalletError(format!(
@@ -178,6 +228,44 @@ mod test {
         ]);
 
         assert_eq!(parsed, exp)
+    }
+
+    #[test]
+    fn create_from_bytes() {
+        let path: [u8; 21] = [
+            5,
+            0x80, 0, 0, 44,
+            0x80, 0, 0, 60,
+            0x80, 0x02, 0x73, 0xd0,
+            0x80, 0, 0, 0,
+            0, 0, 0, 0,
+        ];
+
+        let parsed = HDPath::from_bytes(&path).unwrap();
+        let exp = HDPath(vec![
+            Hardened(44),
+            Hardened(60),
+            Hardened(160720),
+            Hardened(0),
+            Normal(0)
+        ]);
+
+        assert_eq!(parsed, exp)
+    }
+
+    #[test]
+    fn to_string_hdpath() {
+        let parsed = HDPath::try_from("m/44'/60'/160720'/0'").unwrap();
+        assert_eq!(parsed.to_string(), "m/44'/60'/160720'/0'");
+
+        let parsed = HDPath::try_from("m/44'/60'/0'/0'").unwrap();
+        assert_eq!(parsed.to_string(), "m/44'/60'/0'/0'");
+
+        let parsed = HDPath::try_from("m/44'/60'/0'/0'/0").unwrap();
+        assert_eq!(parsed.to_string(), "m/44'/60'/0'/0'/0");
+
+        let parsed = HDPath::try_from("m/44'/60'/0'/0'/1").unwrap();
+        assert_eq!(parsed.to_string(), "m/44'/60'/0'/0'/1");
     }
 
     #[test]
