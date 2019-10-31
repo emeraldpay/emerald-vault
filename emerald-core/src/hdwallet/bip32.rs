@@ -108,6 +108,19 @@ impl HDPath {
 
         Ok(HDPath(res))
     }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+        buf.push(self.0.len() as u8);
+        for item in &self.0 {
+            let x = match item {
+                Hardened(i) => 0x8000_0000 + i,
+                Normal(i) => *i
+            };
+            buf.extend(to_bytes(x as u64, 4));
+        }
+        buf
+    }
 }
 
 impl ops::Deref for HDPath {
@@ -251,6 +264,81 @@ mod test {
         ]);
 
         assert_eq!(parsed, exp)
+    }
+
+    #[test]
+    fn convert_to_bytes_zero() {
+        let exp: [u8; 21] = [
+            5,
+            0x80, 0, 0, 44,
+            0x80, 0, 0, 60,
+            0x80, 0x02, 0x73, 0xd0,
+            0x80, 0, 0, 0,
+            0, 0, 0, 0,
+        ];
+
+        let parsed = HDPath::try_from("m/44'/60'/160720'/0'/0").unwrap();
+        assert_eq!(parsed.to_bytes(), exp)
+    }
+
+    #[test]
+    fn convert_to_bytes_zero_normal() {
+        let exp: [u8; 21] = [
+            5,
+            0x80, 0, 0, 44,
+            0x80, 0, 0, 60,
+            0x80, 0x02, 0x73, 0xd0,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        ];
+
+        let parsed = HDPath::try_from("m/44'/60'/160720'/0/0").unwrap();
+        assert_eq!(parsed.to_bytes(), exp)
+    }
+
+    #[test]
+    fn convert_to_bytes_some() {
+        let exp: [u8; 21] = [
+            5,
+            0x80, 0, 0, 44,
+            0x80, 0, 0, 60,
+            0x80, 0x02, 0x73, 0xd0,
+            0x80, 0, 0, 0,
+            0, 0, 0x02, 0x45,
+        ];
+
+        let parsed = HDPath::try_from("m/44'/60'/160720'/0'/581").unwrap();
+        assert_eq!(parsed.to_bytes(), exp)
+    }
+
+    #[test]
+    fn convert_to_bytes_eth() {
+        let exp: [u8; 21] = [
+            5,
+            0x80, 0, 0, 44,
+            0x80, 0, 0, 60,
+            0x80, 0, 0, 0,
+            0x80, 0, 0, 0,
+            0, 0, 0, 1,
+        ];
+
+        let parsed = HDPath::try_from("m/44'/60'/0'/0'/1").unwrap();
+        assert_eq!(parsed.to_bytes(), exp)
+    }
+
+    #[test]
+    fn convert_to_bytes_music() {
+        let exp: [u8; 21] = [
+            5,
+            0x80, 0, 0, 44,
+            0x80, 0, 0, 184,
+            0x80, 0, 0, 0,
+            0x80, 0, 0, 0,
+            0, 0, 0, 17,
+        ];
+
+        let parsed = HDPath::try_from("m/44'/184'/0'/0'/17").unwrap();
+        assert_eq!(parsed.to_bytes(), exp)
     }
 
     #[test]
