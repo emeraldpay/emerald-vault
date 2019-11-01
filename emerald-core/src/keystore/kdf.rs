@@ -136,7 +136,6 @@ impl Kdf {
 
         match *self {
             Kdf::Pbkdf2 { prf, c } => {
-                println!("pbkdf2 {}", c);
                 match prf {
                     Prf::HmacSha256 => {
                         let _hmac = prf.hmac(passphrase);
