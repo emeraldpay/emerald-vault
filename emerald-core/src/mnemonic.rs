@@ -27,10 +27,11 @@ pub use crate::hdwallet::bip32::{generate_key, HDPath};
 use crate::keystore::{Kdf, Prf};
 use num::bigint::BigUint;
 use num::{FromPrimitive, ToPrimitive};
-use rand::{OsRng, Rng};
+use rand::{rngs::OsRng, Rng, thread_rng, RngCore};
 use sha2::{self, Digest};
 use std::ops::{BitAnd, BitOr, Shr, Shl};
 use crate::mnemonic::error::Error::MnemonicError;
+use rand::distributions::Standard;
 
 /// Count of iterations for `pbkdf2`
 const PBKDF2_ROUNDS: usize = 2048;
@@ -254,9 +255,9 @@ impl Mnemonic {
 ///
 pub fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
     let mut rng = OsRng::new()?;
-    let entropy = rng.gen_iter::<u8>().take(byte_length).collect::<Vec<u8>>();
+    let bytes = rng.sample_iter(&Standard).take(byte_length).collect();
 
-    Ok(entropy)
+    Ok(bytes)
 }
 
 /// Calculate checksum for mnemonic

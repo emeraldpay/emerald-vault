@@ -40,6 +40,12 @@ impl From<io::Error> for Error {
     }
 }
 
+impl From<rand::Error> for Error {
+    fn from(err: rand::Error) -> Self {
+        Error::MnemonicError(err.to_string())
+    }
+}
+
 impl<'a> From<&'a str> for Error {
     fn from(err: &str) -> Self {
         Error::MnemonicError(err.to_string())

@@ -35,13 +35,13 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 glob = "0.2"
-uuid = { version = "0.5", features = ["serde", "v4"] }
-secp256k1 = { version = "0.9", features = ["rand"] }
-rand = "0.3"
+uuid = { version = "0.6", features = ["serde", "v4"] }
+secp256k1 = { version = "0.15", features = ["rand", "recovery"] }
+rand = "0.6"
 byteorder= "1.2"
 ethabi = "2.0.0"
 num = "0.2"
-bitcoin = "0.13.2"
+bitcoin = "0.21.0"
 aes-ctr = "0.1"
 sha2 = "0.8.0"
 sha3 = "0.8.2"
