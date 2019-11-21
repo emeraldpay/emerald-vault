@@ -7,25 +7,19 @@
 extern crate emerald_rs as emerald;
 extern crate env_logger;
 extern crate hex;
-extern crate hyper;
-extern crate jsonrpc_core;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate http;
-extern crate reqwest;
 extern crate rpassword;
 extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
-extern crate url;
 #[macro_use]
 extern crate clap;
 
 mod cmd;
 mod indicator;
-mod rpc;
 
 use clap::App;
 use env_logger::LogBuilder;

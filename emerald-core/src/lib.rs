@@ -37,13 +37,10 @@ extern crate glob;
 extern crate hex;
 extern crate hidapi;
 extern crate hmac;
-extern crate jsonrpc_core;
-extern crate jsonrpc_http_server;
 extern crate num;
 extern crate pbkdf2;
 extern crate rand;
 extern crate regex;
-extern crate reqwest;
 extern crate scrypt;
 extern crate secp256k1;
 extern crate serde;
@@ -57,12 +54,10 @@ pub mod core;
 pub mod hdwallet;
 pub mod keystore;
 pub mod mnemonic;
-pub mod rpc;
 pub mod storage;
 pub mod util;
 
 pub use self::core::*;
-pub use self::rpc::start;
 pub use self::util::*;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");

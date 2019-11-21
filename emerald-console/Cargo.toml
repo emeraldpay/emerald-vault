@@ -23,18 +23,13 @@ path = "src/main.rs"
 [dependencies]
 emerald-vault-core = { path = "../emerald-core" }
 log = "0.3"
-jsonrpc-core = "8.0"
 serde = "1.0"
 hex = "0.2"
 lazy_static = "0.2"
 serde_json = "1.0"
 serde_derive = "1.0"
 regex = "0.2"
-hyper = "0.12"
-reqwest = "0.9"
-http = "0.1"
 rpassword = "1.0"
-url = "1.7.0"
 text_io = "0.1"
 clap = {version = "2.31", features = ["yaml", "color"]}
 env_logger = { version = "0.4", optional = true }

@@ -1,11 +1,9 @@
 //! # Transaction related subcommands
 
 use super::arg_handlers::*;
-use super::{rpc, ArgMatches, EnvVars, Error, ExecResult, KeyfileStorage, PrivateKey, Transaction};
+use super::{ArgMatches, EnvVars, Error, ExecResult, KeyfileStorage, PrivateKey, Transaction};
 use crate::emerald::{to_chain_id, Address};
-use hex::{FromHex, ToHex};
-use std::io;
-use std::io::Read;
+use hex::{ToHex};
 use std::str::FromStr;
 
 /// Hide account from being listed
@@ -19,13 +17,12 @@ use std::str::FromStr;
 ///
 pub fn transaction_cmd(
     matches: &ArgMatches,
-    storage: &Box<KeyfileStorage>,
+    storage: &Box<dyn KeyfileStorage>,
     env: &EnvVars,
     chain: &str,
 ) -> ExecResult {
     match matches.subcommand() {
         ("new", Some(sub_m)) => new(sub_m, env, storage, chain),
-        ("send", Some(sub_m)) => send(sub_m),
         _ => Err(Error::ExecError(
             "Invalid transaction subcommand. Use `emerald transaction -h` for help".to_string(),
         )),
@@ -44,7 +41,7 @@ pub fn transaction_cmd(
 fn new(
     matches: &ArgMatches,
     env: &EnvVars,
-    storage: &Box<KeyfileStorage>,
+    storage: &Box<dyn KeyfileStorage>,
     chain: &str,
 ) -> ExecResult {
     let (_, kf) = get_address(matches, "address")
@@ -57,37 +54,6 @@ fn new(
     Ok(())
 }
 
-/// Send transaction into network through provided node
-///
-///  # Arguments:
-///
-///  * matches -
-///
-fn send(matches: &ArgMatches) -> ExecResult {
-    let s = match matches.value_of("signed-tx") {
-        Some(t) => t.to_string(),
-        None => {
-            let mut tx = String::new();
-            io::stdin().read_to_string(&mut tx)?;
-            tx
-        }
-    };
-    let tx = Vec::from_hex(s)?;
-
-    match get_upstream(matches) {
-        Ok(rpc) => {
-            let tx_hash = rpc::send_transaction(&rpc, &tx)?;
-            println!("Tx hash: ");
-            println!("{}", tx_hash);
-            Ok(())
-        }
-        Err(err) => Err(Error::ExecError(format!(
-            "Can't connect to node: {}",
-            err.to_string()
-        ))),
-    }
-}
-
 /// Build transaction for provided arguments
 /// If argument missing, try to use envirment vars
 /// or request value through RPC
@@ -98,8 +64,6 @@ fn send(matches: &ArgMatches) -> ExecResult {
 ///  * env -
 ///
 fn build_tx(matches: &ArgMatches, env: &EnvVars) -> Result<Transaction, Error> {
-    let from = get_address(matches, "from")?;
-
     let value = matches
         .value_of("value")
         .ok_or_else(|| Error::ExecError("Required value to send".to_string()))
@@ -116,7 +80,7 @@ fn build_tx(matches: &ArgMatches, env: &EnvVars) -> Result<Transaction, Error> {
     };
 
     Ok(Transaction {
-        nonce: get_nonce(matches, &from)?,
+        nonce: get_nonce(matches)?,
         gas_price: get_gas_price(matches, env)?,
         gas_limit: get_gas_limit(matches, env)?,
         to,

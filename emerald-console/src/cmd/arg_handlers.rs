@@ -2,29 +2,22 @@
 
 use super::Error;
 use super::{
-    align_bytes, to_arr, to_even_str, trim_hex, Address, ArgMatches, KdfDepthLevel, PrivateKey,
-    DEFAULT_UPSTREAM,
+    align_bytes, to_arr, to_even_str, trim_hex, Address, ArgMatches, KdfDepthLevel, PrivateKey
 };
 use hex::FromHex;
-use reqwest::Url;
 use rpassword;
-use crate::rpc::{self, RpcConnector};
 use std::env;
-use std::net::SocketAddr;
 use std::str::FromStr;
 
 /// Environment variables used to change default variables
 #[derive(Default, Debug)]
 pub struct EnvVars {
     pub emerald_base_path: Option<String>,
-    pub emerald_host: Option<String>,
-    pub emerald_port: Option<String>,
     pub emerald_chain: Option<String>,
     pub emerald_chain_id: Option<String>,
     pub emerald_gas: Option<String>,
     pub emerald_gas_price: Option<String>,
-    pub emerald_security_level: Option<String>,
-    pub emerald_node: Option<String>,
+    pub emerald_security_level: Option<String>
 }
 
 impl EnvVars {
@@ -34,14 +27,11 @@ impl EnvVars {
         for (key, value) in env::vars() {
             match key.as_ref() {
                 "EMERALD_BASE_PATH" => vars.emerald_base_path = Some(value),
-                "EMERALD_HOST" => vars.emerald_host = Some(value),
-                "EMERALD_PORT" => vars.emerald_port = Some(value),
                 "EMERALD_CHAIN" => vars.emerald_chain = Some(value),
                 "EMERALD_CHAIN_ID" => vars.emerald_chain_id = Some(value),
                 "EMERALD_GAS" => vars.emerald_gas = Some(value),
                 "EMERALD_GAS_PRICE" => vars.emerald_gas_price = Some(value),
                 "EMERALD_SECURITY_LEVEL" => vars.emerald_security_level = Some(value),
-                "EMERALD_NODE" => vars.emerald_node = Some(value),
                 _ => (),
             }
         }
@@ -85,14 +75,11 @@ pub fn hex_to_32bytes(hex: &str) -> Result<[u8; 32], Error> {
 /// * env - environment variables
 ///
 pub fn get_gas_price(matches: &ArgMatches, env: &EnvVars) -> Result<[u8; 32], Error> {
-    let gas_pr = match matches
-        .value_of("gas-price")
-        .or_else(|| env.emerald_gas_price.as_ref().map(String::as_str))
-    {
-        Some(g) => g.to_string(),
-        None => get_upstream(matches).and_then(|rpc| rpc::request_gas_price(&rpc))?,
-    };
-    hex_to_32bytes(trim_hex(&gas_pr))
+    match matches.value_of("gas-price")
+        .or_else(|| env.emerald_gas_price.as_ref().map(String::as_str)) {
+            Some(g) => hex_to_32bytes(trim_hex(&g)),
+            None => Err(Error::ExecError("gas-price is not provided".to_string()))
+        }
 }
 
 /// Parse address from command-line argument
@@ -103,14 +90,11 @@ pub fn get_gas_price(matches: &ArgMatches, env: &EnvVars) -> Result<[u8; 32], Er
 /// * env - environment variables
 ///
 pub fn get_gas_limit(matches: &ArgMatches, env: &EnvVars) -> Result<u64, Error> {
-    let gas = match matches
-        .value_of("gas")
-        .or_else(|| env.emerald_gas.as_ref().map(String::as_str))
-    {
-        Some(g) => g.to_string(),
-        None => get_upstream(matches).and_then(|rpc| rpc::request_gas(&rpc))?,
-    };
-    u64::from_str_radix(trim_hex(&gas), 16).map_err(Error::from)
+    match matches.value_of("gas")
+        .or_else(|| env.emerald_gas.as_ref().map(String::as_str)) {
+            Some(g) => Ok(u64::from_str_radix(trim_hex(&g), 16)?),
+            None => Err(Error::ExecError("gasis not provided".to_string()))
+        }
 }
 
 /// Get nonce value for provided address
@@ -118,14 +102,12 @@ pub fn get_gas_limit(matches: &ArgMatches, env: &EnvVars) -> Result<u64, Error> 
 /// # Arguments:
 ///
 /// * matches - arguments supplied from command-line
-/// * addr - account address
 ///
-pub fn get_nonce(matches: &ArgMatches, addr: &Address) -> Result<u64, Error> {
-    let nonce = match matches.value_of("nonce") {
-        Some(n) => n.to_string(),
-        None => get_upstream(matches).and_then(|rpc| rpc::request_nonce(&rpc, addr))?,
-    };
-    u64::from_str_radix(trim_hex(&nonce), 16).map_err(Error::from)
+pub fn get_nonce(matches: &ArgMatches) -> Result<u64, Error> {
+    match matches.value_of("nonce") {
+        Some(n) => Ok(u64::from_str_radix(trim_hex(n), 16)?),
+        None => Err(Error::ExecError("nonce is not provided".to_string()))
+    }
 }
 
 /// Parse address from command-line argument
@@ -143,18 +125,6 @@ pub fn get_address(matches: &ArgMatches, arg_name: &str) -> Result<Address, Erro
     Address::from_str(s).map_err(Error::from)
 }
 
-/// Parse address from command-line argument
-///
-/// # Arguments:
-///
-/// * matches - arguments supplied from command-line
-///
-pub fn get_upstream(matches: &ArgMatches) -> Result<RpcConnector, Error> {
-    let ups = matches.value_of("upstream").unwrap_or(DEFAULT_UPSTREAM);
-    parse_socket(ups)
-        .or_else(|_| parse_url(ups))
-        .and_then(|url| Ok(RpcConnector { url }))
-}
 
 /// Parse address from command-line argument
 ///
@@ -193,22 +163,6 @@ pub fn parse_data(s: &str) -> Result<Vec<u8>, Error> {
             Vec::from_hex(data).map_err(Error::from)
         }
     }
-}
-
-/// Parse URL for ethereum node
-pub fn parse_url(s: &str) -> Result<Url, Error> {
-    let addr: Url = s.parse()?;
-    Ok(addr)
-}
-
-/// Parse socket address for ethereum node
-pub fn parse_socket(s: &str) -> Result<Url, Error> {
-    let addr = s
-        .parse::<SocketAddr>()
-        .map_err(Error::from)
-        .and_then(|a| format!("https://{}", a).parse().map_err(Error::from))?;
-
-    Ok(addr)
 }
 
 /// Request passphrase
@@ -278,25 +232,4 @@ mod tests {
         assert!(parse_data("01000z").is_err());
     }
 
-    #[test]
-    fn should_parse_socket_addr() {
-        assert_eq!(
-            parse_socket("127.0.0.1:8545").unwrap(),
-            Url::parse("https://127.0.0.1:8545").unwrap()
-        );
-
-        assert!(parse_socket(";akjf.com").is_err());
-        assert!(parse_socket("https://127.0.0.1:8545").is_err());
-    }
-
-    #[test]
-    fn should_parse_url_name() {
-        assert_eq!(
-            parse_url("https://www.gastracker.io").unwrap(),
-            Url::parse("https://www.gastracker.io").unwrap()
-        );
-
-        assert!(parse_url("127.0.0.1:8545").is_err());
-        assert!(parse_url("12344.com").is_err());
-    }
 }

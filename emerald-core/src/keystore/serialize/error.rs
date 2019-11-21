@@ -16,7 +16,6 @@ limitations under the License.
 //! # Serialize keystore files (UTC / JSON) module errors
 
 use crate::hdwallet;
-use crate::rpc;
 use serde_json;
 
 use std::{error, fmt, io};
@@ -41,12 +40,6 @@ pub enum Error {
 
     /// `Keyfile` crypto section parsing
     InvalidCrypto(String),
-}
-
-impl From<Error> for rpc::Error {
-    fn from(_err: Error) -> Self {
-        rpc::Error::InvalidDataFormat("Invalid serialization for keystore".to_string())
-    }
 }
 
 impl From<io::Error> for Error {
