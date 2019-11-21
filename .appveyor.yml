@@ -1,7 +1,7 @@
 os: Visual Studio 2017
 environment:
   GCP_PASSWD:
-    secure: /kPjA5Ff2c6ZDhU7y6TiUWiR4Jr4uXyLKWan35EXXTI=
+    secure: aZilYUrbK5iWyuiZsgjy32f98zj/XeoROyXNFwhEWVcFWu+r2tTne7gnKHDxyFoc081xYjKSDtMfadDOtDuOwK5XIl5guOre7Px+/HHyi2w=
   matrix:
     - channel: stable
       target: x86_64-pc-windows-msvc
