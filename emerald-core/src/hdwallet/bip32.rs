@@ -104,9 +104,9 @@ impl HDPath {
             pos += 4;
             let item = u32::from_be_bytes(item_bytes);
             if item >= 0x8000_0000 {
-                res.push(Hardened(item - 0x8000_0000));
+                res.push(ChildNumber::Hardened { index: item - 0x8000_0000 });
             } else {
-                res.push(Normal(item));
+                res.push(ChildNumber::Normal { index: item });
             }
         }
 
@@ -118,8 +118,8 @@ impl HDPath {
         buf.push(self.0.len() as u8);
         for item in &self.0 {
             let x = match item {
-                Hardened(i) => 0x8000_0000 + i,
-                Normal(i) => *i
+                ChildNumber::Hardened { index} => 0x8000_0000 + *index,
+                ChildNumber::Normal { index } => *index
             };
             buf.extend(to_bytes(x as u64, 4));
         }
@@ -142,12 +142,12 @@ impl std::string::ToString for HDPath {
         for item in &self.0 {
             buf.push('/');
             match item {
-                Hardened(i) => {
-                    buf.push_str(&i.to_string());
+                ChildNumber::Hardened{ index} => {
+                    buf.push_str(&index.to_string());
                     buf.push('\'');
                 },
-                Normal(i) => {
-                    buf.push_str(&i.to_string());
+                ChildNumber::Normal { index} => {
+                    buf.push_str(&index.to_string());
                 }
             }
         }
@@ -260,11 +260,11 @@ mod test {
 
         let parsed = HDPath::from_bytes(&path).unwrap();
         let exp = HDPath(vec![
-            Hardened(44),
-            Hardened(60),
-            Hardened(160720),
-            Hardened(0),
-            Normal(0)
+            ChildNumber::Hardened { index: 44 },
+            ChildNumber::Hardened { index: 60 },
+            ChildNumber::Hardened { index: 160720 },
+            ChildNumber::Hardened { index: 0 },
+            ChildNumber::Normal { index: 0 }
         ]);
 
         assert_eq!(parsed, exp)
