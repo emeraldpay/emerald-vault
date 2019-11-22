@@ -52,6 +52,7 @@ script:
   - export APP_VERSION_GIT_TAG="$(gitversion /showvariable FullSemVer)-$(gitversion /showvariable ShortSha)"
   - export VERSION_BASE="v$(gitversion /showvariable Major).$(gitversion /showvariable Minor).x"
   - echo "Building app version $APP_VERSION_GIT_TAG"
+  - if [ "$TRAVIS_OS_NAME" = "osx" ];RUSTFLAGS="-C target-feature=+sse4.2 $RUSTFLAGS"; fi
   - cargo test --all --release
   - cargo build --all --release
 
