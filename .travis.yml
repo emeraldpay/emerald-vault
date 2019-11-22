@@ -12,6 +12,8 @@ os:
   - linux
   - osx
 
+osx_image: xcode11.2
+
 # Need for gitversion
 git:
     depth: false
@@ -35,6 +37,7 @@ notifications:
 before_install:
   - echo Installing GitVersion...
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update && brew install gitversion; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then rustup component add rustfmt --toolchain stable-x86_64-apple-darwin; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip && unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then mkdir bin && echo "#!/bin/bash" > ./bin/gitversion && echo 'mono GitVersion/GitVersion.exe "$@"' >> ./bin/gitversion && chmod 755 ./bin/gitversion; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=$PATH:$PWD/bin; fi
