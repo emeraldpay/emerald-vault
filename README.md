@@ -1,9 +1,8 @@
 # Emerald Vault - Rust library to operate Ethereum blockchains
 
 [![Travis CI](https://travis-ci.org/emeraldpay/emerald-vault.svg?branch=master)](https://travis-ci.org/emeraldpay/emerald-vault)
-[![Circle CI](https://circleci.com/gh/emeraldpay/emerald-vault/tree/master.svg?style=shield)](https://circleci.com/gh/emeraldpay/emerald-vault)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/er3wb073udepk3bl/branch/master?svg=true)](https://ci.appveyor.com/project/emeraldpay/emerald-vault)
-![Coveralls](https://coveralls.io/repos/github/ethereumproject/emerald-rs/badge.svg)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/hrwgqidx0qdvclbo?svg=true)](https://ci.appveyor.com/project/emeraldpay/emerald-vault)
+![Coveralls](https://coveralls.io/repos/github/emeraldpay/emerald-rs/badge.svg)
 [![Crates](https://img.shields.io/crates/v/emerald-vault-core.svg?style=flat-square)](https://crates.io/crates/emerald-vault-core)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square&maxAge=2592000)
 
