@@ -34,8 +34,8 @@ notifications:
 
 before_install:
   - echo Installing GitVersion...
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gitversion; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip && unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion && echo "#!/bin/bash" > gitversion && echo 'mono GitVersion/GitVersion.exe "$@"' >> ./gitversion && chmod 755 ./gitversion && export PATH=$PATH:$PWD/gitversion; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update && brew install gitversion; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip && unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion && echo "#!/bin/bash" > ./gitversion && echo 'mono GitVersion/GitVersion.exe "$@"' >> ./gitversion && chmod 755 ./gitversion && export PATH=$PATH:$PWD/gitversion; fi
   - echo $PATH
   - ls
   - gitversion /version
