@@ -92,7 +92,7 @@ impl KeyfileStorage for DbStorage {
         let dbvec = self.db.get(addr)?;
 
         let val = dbvec
-            .and_then(|d| Some(String::from_utf8(d).expect("Not a string")))
+            .and_then(|d| Some(String::from_utf8(d.to_vec()).expect("Not a string")))
             .ok_or_else(|| KeystoreError::NotFound(format!("{}", addr)))?;
         let (filename, json) = DbStorage::split(&val)?;
         let kf = KeyFile::decode(&json)?;

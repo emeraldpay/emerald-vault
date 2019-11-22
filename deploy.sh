@@ -2,10 +2,9 @@
 
 set -e
 
-APP_VERSION="$(./gitversion /showvariable FullSemVer)-$(./gitversion /showvariable ShortSha)"
-VERSION_BASE="v$(./gitversion /showvariable Major).$(./gitversion /showvariable Minor).x"
+APP_VERSION="$(gitversion /showvariable FullSemVer)-$(gitversion /showvariable ShortSha)"
 
-CLI_ARCHIVE_NAME="emerald-cli-v$TRAVIS_OS_NAME-$APP_VERSION"
+CLI_ARCHIVE_NAME="emerald-cli-$TRAVIS_OS_NAME-v$APP_VERSION"
 zip -j "$CLI_ARCHIVE_NAME.zip" target/release/emerald-vault
 tar -zcf "$CLI_ARCHIVE_NAME.tar.gz" target/release/emerald-vault
 echo "Deploy to http://builds.etcdevteam.com/emerald-cli/$VERSION_BASE/"

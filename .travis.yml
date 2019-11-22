@@ -2,12 +2,17 @@ language: rust
 env:
   global:
     - secure: "WafTW7FircnD3qm2yo9vY8pqCcq5WAUHi9q5xdnOt/wCufTnoCO6fPVSFJyJ56KmynbO6HQLwNrGdtHwnuOoBIjNLYw6PjoPfcfp1lpAYqbxW59Y7ubMQ1jnN5buPV058kirn0mHlCNkjBt3keRbemMj6LGlWtU6t4VCU0LTtUtNr5Wekz1QqEM1VoqFAkFZEIjIaWf6nz9D7p3gOYne5JOINNbhZdE7j+WVhgpnXGvbTW+vLAuax3JwcF6Je4IpTxptCSshm+BXH3Z/ZIfFpbA9w4gj1cJXT0koRAXfRoSccgcXqPy7lq1B1jp1XmXLTw9G6WvDMeBCR3GD86U5tQV+V5x16iQVhv68vg+j5TStjbrby9Ke4IVEmiMuh/u3FAQyBFanll4SqdT45UI+0/zbwX/dO7NH7iCZlcxPRI7x1imdxewlkZEh+p226Op7ahyUNFsBd9uUiyO1KRy4ZWXlebkIMUMD7PCNMUkPAZQEf5qsC9TeeR4wbh/Z7lnGO6nklsTbuW0UeJY178FSqYEBnmTAPkqcwnBOFqB12B+9Rwbsld1GHo31lYyUZsdgQ5lYEEyCDoMKK2PkKe3XSVnmx69HEXRnJ75ecWRtqQlGueKWJHIhVLD2XHqgaamGEUthGnQ22zsd2bbT3KB/Epn6qgxA+KTLz4pnFLr70Cw="
+    - RUSTFLAGS="-C target-feature=+crt-static"
+    - RUST_BACKTRACE=1
 
 rust:
   - stable
 
 os:
   - linux
+  - osx
+
+osx_image: xcode11.2
 
 # Need for gitversion
 git:
@@ -21,34 +26,29 @@ addons:
       - libdw-dev
       - binutils-dev
       - libiberty-dev
+      - libusb-1.0-0-dev
+      - libcurl3
+      - mono-complete # for gitversion
 
 notifications:
   email:
     on_success: never
 
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libusb-1.0-0-dev mono-complete libcurl3
   - echo Installing GitVersion...
-  - wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip
-  - unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion
-  - rm GitVersion-bin-net40-v4.0.0.zip
-  - echo "#!/bin/bash" > gitversion
-  - echo 'mono GitVersion/GitVersion.exe "$@"' >> gitversion
-  - chmod 755 gitversion
-  - ./gitversion /version
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update && brew install gitversion; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then rustup component add rustfmt --toolchain stable-x86_64-apple-darwin; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip && unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then mkdir bin && echo "#!/bin/bash" > ./bin/gitversion && echo 'mono GitVersion/GitVersion.exe "$@"' >> ./bin/gitversion && chmod 755 ./bin/gitversion; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=$PATH:$PWD/bin; fi
+  - gitversion /version
   - echo Janus...
   - curl -sL https://raw.githubusercontent.com/ETCDEVTeam/janus/master/get.sh | bash
   - export PATH=$PATH:$PWD/janusbin
 
-before_script:
-  - ./gitversion
-  - export PATH="$PATH":~/.cargo/bin
-
 script:
-  - export RUST_BACKTRACE=1
-  - export APP_VERSION_GIT_TAG="$(./gitversion /showvariable FullSemVer)-$(./gitversion /showvariable ShortSha)"
-  - export VERSION_BASE="v$(./gitversion /showvariable Major).$(./gitversion /showvariable Minor).x"
+  - export APP_VERSION_GIT_TAG="$(gitversion /showvariable FullSemVer)-$(gitversion /showvariable ShortSha)"
+  - export VERSION_BASE="v$(gitversion /showvariable Major).$(gitversion /showvariable Minor).x"
   - echo "Building app version $APP_VERSION_GIT_TAG"
   - cargo test --all --release
   - cargo build --all --release
