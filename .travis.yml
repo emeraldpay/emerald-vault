@@ -41,8 +41,6 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip && unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then mkdir bin && echo "#!/bin/bash" > ./bin/gitversion && echo 'mono GitVersion/GitVersion.exe "$@"' >> ./bin/gitversion && chmod 755 ./bin/gitversion; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=$PATH:$PWD/bin; fi
-  - echo $PATH #FIXME
-  - ls -ls #FIXME
   - gitversion /version
   - echo Janus...
   - curl -sL https://raw.githubusercontent.com/ETCDEVTeam/janus/master/get.sh | bash
@@ -76,5 +74,5 @@ deploy:
     provider: script
     script: ./deploy.sh
     on:
-        branch: travis-macos #FIXME
+        branch: master
     tags: true
