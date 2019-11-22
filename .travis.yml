@@ -2,7 +2,7 @@ language: rust
 env:
   global:
     - secure: "WafTW7FircnD3qm2yo9vY8pqCcq5WAUHi9q5xdnOt/wCufTnoCO6fPVSFJyJ56KmynbO6HQLwNrGdtHwnuOoBIjNLYw6PjoPfcfp1lpAYqbxW59Y7ubMQ1jnN5buPV058kirn0mHlCNkjBt3keRbemMj6LGlWtU6t4VCU0LTtUtNr5Wekz1QqEM1VoqFAkFZEIjIaWf6nz9D7p3gOYne5JOINNbhZdE7j+WVhgpnXGvbTW+vLAuax3JwcF6Je4IpTxptCSshm+BXH3Z/ZIfFpbA9w4gj1cJXT0koRAXfRoSccgcXqPy7lq1B1jp1XmXLTw9G6WvDMeBCR3GD86U5tQV+V5x16iQVhv68vg+j5TStjbrby9Ke4IVEmiMuh/u3FAQyBFanll4SqdT45UI+0/zbwX/dO7NH7iCZlcxPRI7x1imdxewlkZEh+p226Op7ahyUNFsBd9uUiyO1KRy4ZWXlebkIMUMD7PCNMUkPAZQEf5qsC9TeeR4wbh/Z7lnGO6nklsTbuW0UeJY178FSqYEBnmTAPkqcwnBOFqB12B+9Rwbsld1GHo31lYyUZsdgQ5lYEEyCDoMKK2PkKe3XSVnmx69HEXRnJ75ecWRtqQlGueKWJHIhVLD2XHqgaamGEUthGnQ22zsd2bbT3KB/Epn6qgxA+KTLz4pnFLr70Cw="
-    - RUSTFLAGS="-C target-feature=+crt-static,-sse4.2"
+    - RUSTFLAGS="-C target-feature=+crt-static"
     - RUST_BACKTRACE=1
 
 rust:
