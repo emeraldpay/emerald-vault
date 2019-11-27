@@ -16,13 +16,11 @@ limitations under the License.
 //! # Storage for `KeyFiles` and `Contracts`
 
 pub mod addressbook;
-mod contracts;
 pub mod keyfile;
 mod storage_ctrl;
 
 pub use self::addressbook::error::AddressbookError;
 pub use self::addressbook::AddressbookStorage;
-pub use self::contracts::ContractStorage;
 pub use self::keyfile::*;
 pub use self::storage_ctrl::StorageController;
 pub use self::KeystoreError;
@@ -113,24 +111,6 @@ where
             "Can't create filesystem Keyfile storage".to_string(),
         )),
     }
-}
-
-/// Creates specific type of `Contract` storage (database or filesystem)
-///
-/// # Arguments:
-///
-/// * `path` - path for `Contract` storage
-///
-pub fn build_contract_storage<P>(path: P) -> Result<Box<ContractStorage>, KeystoreError>
-where
-    P: AsRef<Path>,
-{
-    // TODO: implement DB storage. Add conditional compilation.
-    let mut p = PathBuf::new();
-    p.push(path);
-    fs::create_dir_all(&p)?;
-
-    Ok(Box::new(ContractStorage::new(p)))
 }
 
 /// Creates specific type of `Addressbook` storage (database or filesystem)

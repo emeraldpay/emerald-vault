@@ -49,7 +49,7 @@ extern crate sha2;
 extern crate sha3;
 extern crate time;
 extern crate uuid;
-mod contract;
+
 pub mod core;
 pub mod hdwallet;
 pub mod keystore;

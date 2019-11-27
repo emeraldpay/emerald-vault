@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 use super::addressbook::AddressbookStorage;
-use super::contracts::ContractStorage;
 use super::keyfile::KeystoreError;
 use super::super::core::Chain;
 use super::{
-    build_addressbook_storage, build_contract_storage, build_keyfile_storage, build_path,
+    build_addressbook_storage, build_keyfile_storage, build_path,
     KeyfileStorage,
 };
 use std::collections::HashMap;
@@ -28,7 +27,6 @@ use std::str::FromStr;
 /// Controller to switch storage according to specified chain
 pub struct StorageController {
     keyfile_storages: HashMap<String, Box<dyn KeyfileStorage>>,
-    contract_storages: HashMap<String, Box<ContractStorage>>,
     addressbook_storages: HashMap<String, Box<AddressbookStorage>>,
 }
 
@@ -42,10 +40,6 @@ impl StorageController {
                 id.to_string(),
                 build_keyfile_storage(build_path(base_path.as_ref(), id, "keystore"))?,
             );
-            st.contract_storages.insert(
-                id.to_string(),
-                build_contract_storage(build_path(base_path.as_ref(), id, "contracts"))?,
-            );
             st.addressbook_storages.insert(
                 id.to_string(),
                 build_addressbook_storage(build_path(base_path.as_ref(), id, "addressbook"))?,
@@ -58,17 +52,6 @@ impl StorageController {
     /// Get `KeyFile` storage for specified chain
     pub fn get_keystore(&self, chain: &str) -> Result<&Box<dyn KeyfileStorage>, KeystoreError> {
         match self.keyfile_storages.get(Chain::from_str(chain).unwrap().get_path_element().as_str()) {
-            Some(st) => Ok(st),
-            None => Err(KeystoreError::StorageError(format!(
-                "No storage for: {}",
-                chain
-            ))),
-        }
-    }
-
-    /// Get `Contract` storage for specified chain
-    pub fn get_contracts(&self, chain: &str) -> Result<&Box<ContractStorage>, KeystoreError> {
-        match self.contract_storages.get(Chain::from_str(chain).unwrap().get_path_element().as_str()) {
             Some(st) => Ok(st),
             None => Err(KeystoreError::StorageError(format!(
                 "No storage for: {}",
@@ -93,7 +76,6 @@ impl Default for StorageController {
     fn default() -> Self {
         StorageController {
             keyfile_storages: HashMap::new(),
-            contract_storages: HashMap::new(),
             addressbook_storages: HashMap::new(),
         }
     }
