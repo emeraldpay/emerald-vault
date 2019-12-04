@@ -29,6 +29,9 @@ pub use self::fs::FsStorage;
 use crate::core::Address;
 use crate::keystore::{CryptoType, KeyFile};
 use crate::util;
+use crate::convert::proto::wallet::{Wallet, AddressType};
+use crate::convert::proto::types::HasUuid;
+use hex::ToHex;
 
 /// Short account info
 ///
@@ -53,6 +56,31 @@ pub struct AccountInfo {
     /// show if account hidden from 'normal' listing
     /// `normal` - not forcing to show hidden accounts
     pub is_hidden: bool,
+}
+
+impl From<Wallet> for AccountInfo {
+    fn from(wallet: Wallet) -> Self {
+        AccountInfo {
+            filename: wallet.get_id().to_string(),
+            address: match wallet.accounts.first() {
+                Some(acc) => {
+                    match &acc.address {
+                        AddressType::Ethereum(e) => {
+                            e.address.map(|a| a.to_string()).unwrap_or("".to_string())
+                        }
+                    }
+                },
+                None => "".to_string()
+            },
+            name: match wallet.label {
+                Some(s) => s,
+                None => "".to_string()
+            },
+            description: "".to_string(),
+            is_hardware: false,
+            is_hidden: false
+        }
+    }
 }
 
 impl From<KeyFile> for AccountInfo {
@@ -81,6 +109,7 @@ impl From<KeyFile> for AccountInfo {
     }
 }
 
+#[deprecated]
 /// Storage for `KeyFiles`
 ///
 pub trait KeyfileStorage: Send + Sync {

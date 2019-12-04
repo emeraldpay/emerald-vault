@@ -26,6 +26,7 @@ use std::path::Path;
 use std::str;
 use crate::util;
 
+#[deprecated]
 /// Database backed storage for `KeyFile`
 ///
 pub struct DbStorage {
@@ -75,17 +76,11 @@ impl DbStorage {
 
 impl KeyfileStorage for DbStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), KeystoreError> {
-        let json = serde_json::to_string(&kf)?;
-        let val = generate_filename(&kf.uuid.to_string()) + SEPARATOR + &json;
-        self.db.put(&kf.address, val.as_bytes())?;
-
-        Ok(())
+        unimplemented!()
     }
 
     fn delete(&self, addr: &Address) -> Result<(), KeystoreError> {
-        self.db.delete(addr)?;
-
-        Ok(())
+        unimplemented!()
     }
 
     fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), KeystoreError> {
@@ -104,21 +99,11 @@ impl KeyfileStorage for DbStorage {
     }
 
     fn hide(&self, addr: &Address) -> Result<bool, KeystoreError> {
-        let (_, mut kf) = self.search_by_address(addr)?;
-
-        kf.visible = Some(false);
-        self.put(&kf)?;
-
-        Ok(true)
+        unimplemented!()
     }
 
     fn unhide(&self, addr: &Address) -> Result<bool, KeystoreError> {
-        let (_, mut kf) = self.search_by_address(addr)?;
-
-        kf.visible = Some(true);
-        self.put(&kf)?;
-
-        Ok(true)
+        unimplemented!()
     }
 
     fn list_accounts(&self, show_hidden: bool) -> Result<Vec<AccountInfo>, KeystoreError> {
@@ -154,17 +139,7 @@ impl KeyfileStorage for DbStorage {
         name: Option<String>,
         desc: Option<String>,
     ) -> Result<(), KeystoreError> {
-        let (_, mut kf) = self.search_by_address(addr)?;
-
-        if name.is_some() {
-            kf.name = name;
-        };
-
-        if desc.is_some() {
-            kf.description = desc;
-        };
-
-        self.put(&kf)
+        unimplemented!()
     }
 }
 

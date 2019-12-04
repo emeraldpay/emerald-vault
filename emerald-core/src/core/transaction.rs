@@ -17,6 +17,7 @@ limitations under the License.
 
 use super::util::{keccak256, trim_bytes, RLPList, WriteRLP, KECCAK256_BYTES};
 use super::{Address, Error, PrivateKey, Signature};
+use crate::core::chains::EthereumChainId;
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -42,9 +43,9 @@ pub struct Transaction {
 
 impl Transaction {
     /// Sign transaction data with provided private key
-    pub fn to_signed_raw(&self, pk: PrivateKey, chain: u8) -> Result<Vec<u8>, Error> {
-        let sig = pk.sign_hash(self.hash(chain))?;
-        Ok(self.raw_from_sig(Some(chain), &sig))
+    pub fn to_signed_raw(&self, pk: PrivateKey, chain: EthereumChainId) -> Result<Vec<u8>, Error> {
+        let sig = pk.sign_hash(self.hash(chain.as_chainid()))?;
+        Ok(self.raw_from_sig(Some(chain.as_chainid()), &sig))
     }
 
     /// RLP packed signed transaction from provided `Signature`
@@ -154,7 +155,7 @@ mod tests {
             "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf",
         ));
 
-        let hex = hex::encode(tx.to_signed_raw(pk, 61 /*MAINNET_ID*/).unwrap());
+        let hex = hex::encode(tx.to_signed_raw(pk, EthereumChainId::EthereumClassic).unwrap());
         assert_eq!(hex,
                     "f86d\
                     808504e3b29200825208\
@@ -207,7 +208,7 @@ mod tests {
             "28b469dc4b039ff63fcd4cb708c668545e644cb25f21df6920aac20e4bc743f7",
         ));
 
-        assert_eq!(hex::encode(tx.to_signed_raw(pk, 62 /*TESTNET_ID*/).unwrap()),
+        assert_eq!(hex::encode(tx.to_signed_raw(pk, EthereumChainId::MordenClassic).unwrap()),
                     "f871\
                     83\
                     100009\
@@ -243,7 +244,7 @@ mod tests {
             "4646464646464646464646464646464646464646464646464646464646464646",
         ));
 
-        assert_eq!(hex::encode(tx.to_signed_raw(pk, 1 /*ETH mainnet*/).unwrap()),
+        assert_eq!(hex::encode(tx.to_signed_raw(pk, EthereumChainId::Ethereum).unwrap()),
                     "f86c\
                     09\
                     85\
@@ -278,7 +279,7 @@ mod tests {
             "4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318",
         ));
 
-        let hex = hex::encode(tx.to_signed_raw(pk, 1).unwrap());
+        let hex = hex::encode(tx.to_signed_raw(pk, EthereumChainId::Ethereum).unwrap());
         assert_eq!(hex,
                    "f86a8086d55698372431831e848094f0109fc8df283027b6285cc889f5aa624eac1f55843b9aca008025a00\
                    9ebb6ca057a0535d6186462bc0b465b561c94a295bdb0621fc19208ab149a9c\
@@ -306,7 +307,7 @@ mod tests {
             "4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318",
         ));
 
-        let hex = hex::encode(tx.to_signed_raw(pk, 1).unwrap());
+        let hex = hex::encode(tx.to_signed_raw(pk, EthereumChainId::Ethereum).unwrap());
         assert_eq!(hex,
                    "f85d8080827c6d94f0109fc8df283027b6285cc889f5aa624eac1f558080269f\
                    22f17b38af35286ffbb0c6376c86ec91c20ecbad93f84913a0cc15e7580cd9\

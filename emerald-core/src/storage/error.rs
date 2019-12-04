@@ -1,0 +1,57 @@
+use crate::core;
+
+#[derive(Debug)]
+pub enum VaultError {
+    FilesystemError(String),
+    ProtobufError(protobuf::ProtobufError),
+    UnsupportedDataError(String),
+    InvalidDataError(String),
+    IncorrectIdError,
+    ConversionError,
+    UnrecognizedError
+}
+
+impl std::convert::From<std::io::Error> for VaultError {
+    fn from(err: std::io::Error) -> Self {
+        VaultError::FilesystemError(err.to_string())
+    }
+}
+
+impl std::convert::From<protobuf::ProtobufError> for VaultError {
+    fn from(err: protobuf::ProtobufError) -> Self {
+        VaultError::ProtobufError(err)
+    }
+}
+
+impl std::convert::From<uuid::ParseError> for VaultError {
+    fn from(err: uuid::ParseError) -> Self {
+        VaultError::IncorrectIdError
+    }
+}
+
+impl std::convert::From<String> for VaultError {
+    fn from(err: String) -> Self {
+        VaultError::InvalidDataError(err)
+    }
+}
+
+impl std::convert::From<core::error::Error> for VaultError {
+    fn from(err: core::error::Error) -> Self {
+        match err {
+            core::error::Error::InvalidHexLength(hex) => VaultError::InvalidDataError("Invalid input length".to_string()),
+            _ => VaultError::InvalidDataError("Invalid data".to_string())
+        }
+    }
+}
+
+impl std::convert::From<()> for VaultError {
+    fn from(err: ()) -> Self {
+        VaultError::UnrecognizedError
+    }
+}
+
+impl std::convert::From<std::convert::Infallible> for VaultError {
+    fn from(err: std::convert::Infallible) -> Self {
+        VaultError::UnrecognizedError
+    }
+}

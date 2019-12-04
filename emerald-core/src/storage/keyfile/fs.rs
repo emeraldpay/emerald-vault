@@ -27,6 +27,7 @@ use std::fs::{self, read_dir, File};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
+#[deprecated]
 /// Filesystem storage for `KeyFiles`
 ///
 pub struct FsStorage {
@@ -100,22 +101,11 @@ impl FsStorage {
 
 impl KeyfileStorage for FsStorage {
     fn put(&self, kf: &KeyFile) -> Result<(), KeystoreError> {
-        let name = generate_filename(&kf.uuid.to_string());
-
-        self.put_with_name(kf, &name)
+        unimplemented!()
     }
 
     fn delete(&self, addr: &Address) -> Result<(), KeystoreError> {
-        let (info, _) = self.search_by_address(addr)?;
-        let path = self.build_path(&info.filename);
-
-        match fs::remove_file(path) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(KeystoreError::StorageError(format!(
-                "Can't delete KeyFile for address: {}",
-                addr
-            ))),
-        }
+        unimplemented!()
     }
 
     fn search_by_address(&self, addr: &Address) -> Result<(AccountInfo, KeyFile), KeystoreError> {
@@ -193,15 +183,11 @@ impl KeyfileStorage for FsStorage {
     }
 
     fn hide(&self, addr: &Address) -> Result<bool, KeystoreError> {
-        self.toogle_visibility(addr, false)?;
-
-        Ok(true)
+        unimplemented!()
     }
 
     fn unhide(&self, addr: &Address) -> Result<bool, KeystoreError> {
-        self.toogle_visibility(addr, true)?;
-
-        Ok(true)
+        unimplemented!()
     }
 
     fn update(
@@ -210,17 +196,6 @@ impl KeyfileStorage for FsStorage {
         name: Option<String>,
         desc: Option<String>,
     ) -> Result<(), KeystoreError> {
-        let (info, mut kf) = self.search_by_address(addr)?;
-
-        if name.is_some() {
-            kf.name = name;
-        };
-
-        if desc.is_some() {
-            kf.description = desc;
-        };
-        self.delete(&kf.address)?;
-
-        self.put_with_name(&kf, &info.filename)
+        unimplemented!()
     }
 }

@@ -17,12 +17,11 @@ limitations under the License.
 //!
 //! [Web3 Secret Storage Definition](
 //! https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition)
-mod cipher;
-mod error;
-mod kdf;
-mod prf;
-#[macro_use]
-mod serialize;
+pub mod cipher;
+pub mod error;
+pub mod kdf;
+pub mod prf;
+pub mod serialize;
 
 pub use self::cipher::Cipher;
 pub use self::error::Error;
@@ -33,7 +32,7 @@ pub use self::serialize::{
     try_extract_address, CoreCrypto, Iv, Mac, SerializableKeyFileCore, SerializableKeyFileHD,
 };
 use super::core::{self, Address, PrivateKey};
-use super::util::{self, keccak256, to_arr, KECCAK256_BYTES};
+use super::util::{self, byte_array, keccak256, to_arr, KECCAK256_BYTES};
 pub use crate::hdwallet::HdwalletCrypto;
 use rand::{rngs::OsRng, Rng};
 use std::convert::From;
@@ -51,6 +50,7 @@ byte_array_struct!(Salt, KDF_SALT_BYTES);
 
 /// A keystore file (account private core encrypted with a passphrase)
 #[derive(Deserialize, Debug, Clone, Eq)]
+#[deprecated]
 pub struct KeyFile {
     /// Specifies if `Keyfile` is visible
     pub visible: Option<bool>,

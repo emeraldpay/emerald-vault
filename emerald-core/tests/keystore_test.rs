@@ -281,15 +281,6 @@ fn should_use_security_level() {
 }
 
 #[test]
-fn should_flush_to_file() {
-    let kf = KeyFile::new("1234567890", &KdfDepthLevel::Normal, None, None).unwrap();
-
-    let storage = FsStorage::new(&temp_dir().as_path());
-
-    assert!(storage.put(&kf).is_ok());
-}
-
-#[test]
 fn should_search_by_address_filesystem() {
     let addr = "0xc0de379b51d582e1600c76dd1efee8ed024b844a"
         .parse::<Address>()
@@ -302,41 +293,4 @@ fn should_search_by_address_filesystem() {
         kf.uuid,
         "a928d7c2-b37b-464c-a70b-b9979d59fac4".parse().unwrap()
     );
-}
-
-#[test]
-fn should_search_by_address_db() {
-    let addr = "0xc0de379b51d582e1600c76dd1efee8ed024b844a"
-        .parse::<Address>()
-        .unwrap();
-
-    let path = keyfile_path("UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4");
-    let key = KeyFile::decode(&file_content(path)).unwrap();
-
-    let storage = DbStorage::new(temp_dir().as_path()).unwrap();
-    storage.put(&key).unwrap();
-
-    let (_, kf) = storage.search_by_address(&addr).unwrap();
-
-    assert_eq!(
-        kf.uuid,
-        "a928d7c2-b37b-464c-a70b-b9979d59fac4".parse().unwrap()
-    );
-}
-
-#[test]
-fn should_update_existing_addresses() {
-    let path = keyfile_path("UTC--2017-05-30T06-16-46Z--a928d7c2-b37b-464c-a70b-b9979d59fac4");
-    let mut key = KeyFile::decode(&file_content(path)).unwrap();
-
-    let storage = DbStorage::new(temp_dir().as_path()).unwrap();
-    assert!(key.name.is_none());
-    storage.put(&key).unwrap();
-
-    let updated_name = Some("updated name".to_string());
-    key.name = updated_name.clone();
-    assert!(storage.put(&key).is_ok());
-
-    let (_, kf) = storage.search_by_address(&key.address).unwrap();
-    assert_eq!(kf.name, updated_name)
 }

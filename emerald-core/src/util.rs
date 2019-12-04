@@ -14,17 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 //! # Util functions module
-mod crypto;
 mod rlp;
+#[macro_use]
+pub mod byte_array;
+pub mod optional;
 
-pub use self::crypto::{keccak256, KECCAK256_BYTES};
+pub use crate::crypto::util::{keccak256, KECCAK256_BYTES};
 pub use self::rlp::{RLPList, WriteRLP};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use chrono::prelude::Utc;
 use hex::FromHex;
 use std::io::Cursor;
 use std::mem::transmute;
-use super::core::Chain;
+use crate::core::chains::EthereumChainId;
 
 static HEX_CHARS: &'static [u8] = b"0123456789abcdef";
 
@@ -59,7 +61,7 @@ impl ToHex for u64 {
 /// * `id` - target chain id
 ///
 pub fn to_chain_name(id: u8) -> Option<String> {
-    match Chain::from_chain_id(id) {
+    match EthereumChainId::from_chainid(id) {
         Ok(chain) => {
             let s = chain.get_code();
             Some(s)
@@ -74,8 +76,8 @@ pub fn to_chain_name(id: u8) -> Option<String> {
 /// * `name` - target chain name
 ///
 pub fn to_chain_id(name: &str) -> Option<u8> {
-    match Chain::from_str(name) {
-        Ok(chain) => Some(chain.get_chain_id()),
+    match EthereumChainId::from_str(name) {
+        Ok(chain) => Some(chain.as_chainid()),
         Err(_) => None
     }
 }

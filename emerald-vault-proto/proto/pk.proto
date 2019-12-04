@@ -1,0 +1,62 @@
+syntax = "proto3";
+package emerald.vault;
+import "crypto.proto";
+
+message PrivateKey {
+    string id = 1;
+    oneof pk {
+        EthereumPrivateKey ethereum = 2;
+        BitcoinPrivateKey bitcoin = 3;
+    }
+}
+
+message EthereumPrivateKey {
+    oneof pk_type {
+        EthereumPK3 pk = 1;
+        HDKey hd = 2;
+    }
+}
+
+message BitcoinPrivateKey {
+    oneof pk_type {
+        BitcoinRawPK pk = 1;
+        HDKey hd = 2;
+        OpenDime open_dime = 3;
+    }
+}
+
+message HDKey {
+    string seed_id = 1;
+    string path = 2;
+}
+
+message EthereumPK3 {
+    string address = 1;
+    Encrypted value = 2;
+}
+
+message BitcoinRawPK {
+    bytes value = 1;
+}
+
+message OpenDime {
+}
+
+// ----
+
+message HDRange {
+    string seed_id = 1;
+    string base_path = 2;
+}
+
+message Bip32Private {
+    uint32 level = 1;
+    uint32 parent_fingerprint = 2;
+    uint32 child_number = 3;
+    bytes chaincode = 4;
+
+    oneof key_type {
+        bytes open_key = 5;
+        Encrypted encrypted_key = 6;
+    }
+}

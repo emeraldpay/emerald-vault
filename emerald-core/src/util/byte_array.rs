@@ -35,9 +35,28 @@ macro_rules! byte_array_struct {
             }
         }
 
+        impl std::convert::TryFrom<Vec<u8>> for $name {
+            type Error = ();
+
+            fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+                if value.len() != $num {
+                    return Err(());
+                }
+                let mut result: [u8; $num] = [0; $num];
+                result.copy_from_slice(&value);
+                Ok(result.into())
+            }
+        }
+
         impl Into<[u8; $num]> for $name {
             fn into(self) -> [u8; $num] {
                 self.0
+            }
+        }
+
+        impl $name {
+            pub fn into_bytes(self) -> [u8; $num] {
+                self.into()
             }
         }
 

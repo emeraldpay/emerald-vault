@@ -15,7 +15,7 @@ limitations under the License.
 */
 use super::addressbook::AddressbookStorage;
 use super::keyfile::KeystoreError;
-use super::super::core::Chain;
+use super::super::core::chains::EthereumChainId;
 use super::{
     build_addressbook_storage, build_keyfile_storage, build_path,
     KeyfileStorage,
@@ -35,7 +35,7 @@ impl StorageController {
     /// with a subfolders for
     pub fn new<P: AsRef<Path>>(base_path: P) -> Result<StorageController, KeystoreError> {
         let mut st = StorageController::default();
-        for id in Chain::get_all_paths().iter() {
+        for id in EthereumChainId::get_all_paths().iter() {
             st.keyfile_storages.insert(
                 id.to_string(),
                 build_keyfile_storage(build_path(base_path.as_ref(), id, "keystore"))?,
@@ -51,7 +51,7 @@ impl StorageController {
 
     /// Get `KeyFile` storage for specified chain
     pub fn get_keystore(&self, chain: &str) -> Result<&Box<dyn KeyfileStorage>, KeystoreError> {
-        match self.keyfile_storages.get(Chain::from_str(chain).unwrap().get_path_element().as_str()) {
+        match self.keyfile_storages.get(EthereumChainId::from_str(chain).unwrap().get_path_element().as_str()) {
             Some(st) => Ok(st),
             None => Err(KeystoreError::StorageError(format!(
                 "No storage for: {}",
@@ -62,7 +62,7 @@ impl StorageController {
 
     /// Get `Addressbook` storage for specified chain
     pub fn get_addressbook(&self, chain: &str) -> Result<&Box<AddressbookStorage>, KeystoreError> {
-        match self.addressbook_storages.get(Chain::from_str(chain).unwrap().get_path_element().as_str()) {
+        match self.addressbook_storages.get(EthereumChainId::from_str(chain).unwrap().get_path_element().as_str()) {
             Some(st) => Ok(st),
             None => Err(KeystoreError::StorageError(format!(
                 "No storage for: {}",

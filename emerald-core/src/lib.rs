@@ -49,13 +49,18 @@ extern crate sha2;
 extern crate sha3;
 extern crate time;
 extern crate uuid;
+extern crate emerald_vault_proto;
+extern crate protobuf;
 
+#[macro_use]
+pub mod util;
 pub mod core;
 pub mod hdwallet;
 pub mod keystore;
 pub mod mnemonic;
 pub mod storage;
-pub mod util;
+pub mod convert;
+pub mod crypto;
 
 pub use self::core::*;
 pub use self::util::*;

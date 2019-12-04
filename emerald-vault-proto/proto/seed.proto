@@ -1,0 +1,32 @@
+syntax = "proto3";
+package emerald.vault;
+import "crypto.proto";
+
+message Seed {
+    string id = 1;
+    bool ephemeral = 2;
+
+    oneof seed_source {
+        BytesSeed bytes = 11;
+        LedgerSeed ledger = 12;
+    }
+}
+
+message BytesSeed {
+    Encrypted value = 1;
+    HDPathFingerprint id = 2;
+}
+
+message LedgerSeed {
+    repeated HDPathFingerprint fingerprints = 1;
+}
+
+message HDPathFingerprint {
+    string path = 1;
+    bytes fingerprint = 2;
+
+    enum Type {
+        UNKNOWN = 0;
+        ADDRESS_SHA256 = 1;
+    }
+}

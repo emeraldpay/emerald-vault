@@ -16,9 +16,7 @@ limitations under the License.
 //! # Serialize keystore files (UTC / JSON) encrypted with a passphrase module
 
 mod address;
-#[macro_use]
-pub mod byte_array;
-mod crypto;
+pub mod crypto;
 mod error;
 
 pub use self::address::try_extract_address;
@@ -32,6 +30,7 @@ use serde::ser;
 use serde::{Serialize, Serializer};
 use serde_json;
 use uuid::Uuid;
+use std::convert::TryFrom;
 
 /// Keystore file current version used for serializing
 pub const CURRENT_VERSION: u8 = 3;

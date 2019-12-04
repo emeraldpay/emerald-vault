@@ -15,15 +15,14 @@ limitations under the License.
 */
 //! # Core domain logic module
 
-mod address;
-mod error;
-mod signature;
-mod transaction;
-mod chains;
+pub mod address;
+pub mod error;
+pub mod signature;
+pub mod transaction;
+pub mod chains;
 
 pub use self::address::{Address, ADDRESS_BYTES};
 pub use self::error::Error;
 pub use self::signature::{PrivateKey, Signature, ECDSA_SIGNATURE_BYTES, PRIVATE_KEY_BYTES};
 pub use self::transaction::Transaction;
-pub use self::chains::{Chain};
 use super::util;

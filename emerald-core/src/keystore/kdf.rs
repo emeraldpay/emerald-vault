@@ -36,6 +36,7 @@ pub const DEFAULT_DK_LENGTH: usize = 32;
 
 /// Key derivation function parameters
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[deprecated]
 pub struct KdfParams {
     /// Key derivation function
     #[serde(flatten)]
@@ -129,6 +130,7 @@ pub enum Kdf {
     },
 }
 
+#[deprecated]
 impl Kdf {
     /// Derive fixed size key for given salt and passphrase
     pub fn derive(&self, len: usize, kdf_salt: &[u8], passphrase: &str) -> Vec<u8> {

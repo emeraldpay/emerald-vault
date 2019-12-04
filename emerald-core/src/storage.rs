@@ -18,6 +18,8 @@ limitations under the License.
 pub mod addressbook;
 pub mod keyfile;
 mod storage_ctrl;
+pub mod vault;
+pub mod error;
 
 pub use self::addressbook::error::AddressbookError;
 pub use self::addressbook::AddressbookStorage;

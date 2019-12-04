@@ -20,12 +20,15 @@ use super::{Cipher, CryptoType, Error, KdfParams, KeyFile, Salt, CIPHER_IV_BYTES
 use hex;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::default::Default;
+use crate::convert::proto::crypto::Encrypted;
+use std::convert::TryFrom;
 
 byte_array_struct!(Mac, KECCAK256_BYTES);
 byte_array_struct!(Iv, CIPHER_IV_BYTES);
 
 /// `Keyfile` related crypto attributes
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[deprecated]
 pub struct CoreCrypto {
     /// Cipher
     pub cipher: Cipher,
@@ -75,10 +78,12 @@ impl Default for CipherParams {
     }
 }
 
-impl CoreCrypto {
+impl TryFrom<&KeyFile> for CoreCrypto {
+    type Error = Error;
+
     /// Try to create crypto attributes from
     /// corresponding Keyfile (simple or HDWallet keyfile)
-    pub fn try_from(kf: &KeyFile) -> Result<Self, Error> {
+    fn try_from(kf: &KeyFile) -> Result<Self, Self::Error> {
         match kf.crypto {
             CryptoType::Core(ref core) => Ok(CoreCrypto {
                 cipher: core.cipher,

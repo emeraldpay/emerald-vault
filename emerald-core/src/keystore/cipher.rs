@@ -27,6 +27,7 @@ pub const AES128_CTR_CIPHER_NAME: &str = "aes-128-ctr";
 
 /// Cipher type
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[deprecated]
 pub enum Cipher {
     /// AES-CTR (specified in (RFC 3686)[https://tools.ietf.org/html/rfc3686])
     #[serde(rename = "aes-128-ctr")]
@@ -34,6 +35,7 @@ pub enum Cipher {
 }
 
 impl Cipher {
+    #[deprecated]
     /// Encrypt given text with provided key and initial vector
     pub fn encrypt(&self, data: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
         let key = GenericArray::from_slice(key);
