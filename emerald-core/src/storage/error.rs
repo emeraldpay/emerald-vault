@@ -1,9 +1,10 @@
 use crate::core;
+use std::fmt::Display;
 
-#[derive(Debug)]
+#[derive(Debug, Display, Clone)]
 pub enum VaultError {
     FilesystemError(String),
-    ProtobufError(protobuf::ProtobufError),
+    ProtobufError(String),
     UnsupportedDataError(String),
     InvalidDataError(String),
     IncorrectIdError,
@@ -19,7 +20,7 @@ impl std::convert::From<std::io::Error> for VaultError {
 
 impl std::convert::From<protobuf::ProtobufError> for VaultError {
     fn from(err: protobuf::ProtobufError) -> Self {
-        VaultError::ProtobufError(err)
+        VaultError::ProtobufError(err.to_string())
     }
 }
 

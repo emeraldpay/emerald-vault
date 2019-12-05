@@ -27,6 +27,9 @@ extern crate lazy_static;
 #[macro_use]
 extern crate serde_derive;
 
+#[macro_use]
+extern crate enum_display_derive;
+
 extern crate aes_ctr;
 extern crate bitcoin;
 extern crate byteorder;

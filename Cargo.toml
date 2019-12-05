@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "emerald-core",
-  "emerald-console",
-  "emerald-vault-proto"
+#  "emerald-console",
+  "emerald-vault-proto",
+  "emerald-vault-migrate"
 ]

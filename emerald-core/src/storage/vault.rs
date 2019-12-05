@@ -24,10 +24,12 @@ use crate::convert::ethereum::EthereumJsonV3File;
 use crate::convert::proto::wallet::{WalletAccount, AddressType, EthereumAddress};
 use crate::convert::proto::pk::PrivateKeyType;
 use crate::chains::Blockchain;
+use crate::storage::archive::Archive;
 
 
 pub struct VaultStorage {
     dir: PathBuf,
+    pub archive: Archive,
 
     keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccess<Wallet>>,
@@ -153,6 +155,7 @@ impl VaultStorage {
         }
         Ok(VaultStorage {
             dir: path.clone(),
+            archive: Archive::create(path.clone()),
             keys: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "key".to_string() }),
             wallets: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "wallet".to_string() }),
         })

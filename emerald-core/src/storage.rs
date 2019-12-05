@@ -20,6 +20,7 @@ pub mod keyfile;
 mod storage_ctrl;
 pub mod vault;
 pub mod error;
+pub mod archive;
 
 pub use self::addressbook::error::AddressbookError;
 pub use self::addressbook::AddressbookStorage;

@@ -86,6 +86,7 @@ impl TryFrom<&EthereumJsonV3File> for PrivateKeyHolder {
     }
 }
 
+// DELETE
 impl From<&CoreCrypto> for Kdf {
     fn from(crypto: &CoreCrypto) -> Self {
         match crypto.kdf_params.kdf {
