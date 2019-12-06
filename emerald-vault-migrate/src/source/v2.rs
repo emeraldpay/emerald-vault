@@ -1,5 +1,5 @@
 use rocksdb::{DB, IteratorMode, Options};
-use crate::source::json_data::{KeyFileV2, CryptoTypeV2};
+use crate::source::json_data::{KeyFileV2, CryptoTypeV2, AddressBookItem};
 use crate::migration::types::{Migrate, MigrationResult, MigrationError};
 use std::path::{PathBuf, Path};
 use uuid::Uuid;
@@ -8,16 +8,22 @@ use std::str::{from_utf8};
 use emerald_vault_core::{
     util,
     address::Address,
-    storage::vault::VaultStorage,
+    storage::{
+        vault::VaultStorage,
+        archive::Archive,
+        addressbook::AddressBookmark,
+        vault::VaultAccess
+    },
     core::chains::{Blockchain, EthereumChainId},
     convert::proto::{
         types::HasUuid,
         pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3},
         crypto::Encrypted,
         wallet::{Wallet, WalletAccount, AddressType, EthereumAddress}
-    }
+    },
+    convert::proto::book::{BookmarkDetails, AddressRef}
 };
-use emerald_vault_core::storage::archive::Archive;
+use std::fs;
 
 /// Separator for data in RocksDB
 /// `value = <filename> + SEPARATOR + <keyfile_json>`
@@ -47,7 +53,7 @@ impl V2Storage {
         Ok((arr[0].to_string(), json))
     }
 
-    fn db_path(&self, blockchain: Blockchain) -> Option<PathBuf> {
+    fn blockchain_path(&self, blockchain: Blockchain) -> Option<PathBuf> {
         let chain_id = EthereumChainId::from(blockchain.clone());
         let base = self.dir
             .join(chain_id.get_path_element());
@@ -61,7 +67,7 @@ impl V2Storage {
 
     /// Get DB for the specified blockchain, if it exists
     fn get_db(&mut self, blockchain: Blockchain) -> Option<DB> {
-        match &self.db_path(blockchain) {
+        match &self.blockchain_path(blockchain) {
             Some(path) => {
                 let mut opts = Options::default();
                 opts.create_if_missing(false);
@@ -102,6 +108,92 @@ impl V2Storage {
         }
 
         Ok(accounts)
+    }
+
+    fn list_book(&mut self, blockchain: &Blockchain) -> Result<Vec<AddressBookItem>, String> {
+        match self.blockchain_path(blockchain.clone()) {
+            Some(path) => {
+                let path = path.join("addressbook");
+                let pattern = format!("{}/*.json", path.to_str().unwrap());
+                let files = glob::glob(pattern.as_str()).unwrap();
+                let mut result = Vec::new();
+                for path in files {
+                    let path = path.unwrap();
+                    self.migration.info(format!("Process address book item {:?}", path));
+                    match fs::read(path.clone()) {
+                        Ok(body) => {
+                            match serde_json::from_slice::<AddressBookItem>(body.as_slice()) {
+                                Ok(parsed) => result.push(parsed),
+                                Err(_) => self.migration.warn(format!("Invalid address book data in {:?}", path.file_name().unwrap()))
+                            }
+                        },
+                        Err(_) => self.migration.warn(format!("Failed to read address book item from {:?}", path.file_name().unwrap()))
+                    }
+                }
+                Ok(result)
+            },
+            None => {
+                Ok(vec![])
+            }
+        }
+    }
+
+    fn migrate_wallets(&mut self, vault: &VaultStorage, created_wallets: &mut Vec<Uuid>, blockchain: &Blockchain) -> bool {
+        let mut migrated = false;
+        match self.get_db(blockchain.clone()) {
+            Some(db) => {
+                let accounts = self.list_accounts(db, &vault.archive)
+                    .map_err(|e| {
+                        &self.migration.error(format!("Failed to read accounts {}", e));
+                    });
+                if accounts.is_ok() {
+                    let accounts = accounts.unwrap();
+                    &self.migration.info(format!("Accounts to migrate: {}", accounts.len()));
+                    accounts.iter().for_each(|kf| {
+                        &self.migration.info(format!("Migrate key {}", kf.address.to_string()));
+                        match add_to_vault(blockchain.clone(), &vault, kf) {
+                            Ok(id) => {
+                                created_wallets.push(id);
+                            },
+                            Err(msg) => {
+                                &self.migration.error(format!("Not added to vault {}", msg));
+                            }
+                        }
+                    });
+                    migrated = true
+                };
+            },
+            None => {
+                // It happens only if the directory was manually deleted
+                &self.migration.warn(format!("No DB for {:?}", blockchain));
+            }
+        }
+
+        migrated
+    }
+
+    fn migrate_addressbook(&mut self, vault: &VaultStorage, blockchain: &Blockchain) -> bool {
+        let mut migrated = false;
+        let items = self.list_book(&blockchain);
+        if items.is_err() {
+            &self.migration.warn(format!("Failed to read Address Book for {:?}", blockchain));
+            return false
+        }
+        let items = items.unwrap();
+        let book = vault.addressbook();
+        for item in items {
+            migrated = true;
+            book.add(AddressBookmark {
+                id: Uuid::new_v4(),
+                details: BookmarkDetails {
+                    blockchains: vec![blockchain.clone()],
+                    label: item.name,
+                    description: item.description,
+                    address: AddressRef::EthereumAddress(item.address)
+                }
+            });
+        }
+        migrated
     }
 }
 
@@ -180,45 +272,19 @@ impl Migrate for V2Storage {
         supported_blockchains.iter().for_each(|blockchain| {
             // Migrate all data for a single blockchain
             &self.migration.info(format!("Migrate {:?}", blockchain));
-            let mut migrated = false;
-            match self.get_db(blockchain.clone()) {
-                Some(db) => {
-                    let accounts = self.list_accounts(db, &vault.archive)
-                        .map_err(|e| {
-                            &self.migration.error(format!("Failed to read accounts {}", e));
-                        });
-                    if accounts.is_ok() {
-                        let accounts = accounts.unwrap();
-                        &self.migration.info(format!("Accounts to migrate: {}", accounts.len()));
-                        accounts.iter().for_each(|kf| {
-                            &self.migration.info(format!("Migrate key {}", kf.address.to_string()));
-                            match add_to_vault(blockchain.clone(), &vault, kf) {
-                                Ok(id) => {
-                                    created_wallets.push(id);
-                                },
-                                Err(msg) => {
-                                    &self.migration.error(format!("Not added to vault {}", msg));
-                                }
-                            }
-                        });
-                        migrated = true
-                    };
-                },
-                None => {
-                    // It happens only if the directory was manually deleted
-                    &self.migration.warn(format!("No DB for {:?}", blockchain));
-                }
-            }
-            // RocksDB locks database, so move it to archvie after DB object is destroyed
-            if migrated {
+            let migrated_keys = self.migrate_wallets(&vault, &mut created_wallets, blockchain);
+            let migrated_book = self.migrate_addressbook(&vault, blockchain);
+            &self.migration.info(format!("Done migrating {:?}", blockchain));
+
+            // RocksDB locks database, so move it to archive after DB object is destroyed
+            if migrated_keys || migrated_book {
                 &self.migration.info(format!("Moving to archive keys for {:?}", blockchain));
-                match self.db_path(blockchain.clone()) {
+                match self.blockchain_path(blockchain.clone()) {
                     Some(path) => { vault.archive.submit(path); },
                     None => {}
                 }
                 moved += 1;
             }
-            &self.migration.info(format!("Done migrating {:?}", blockchain));
         });
 
         &self.migration.info("Migration finished".to_string());

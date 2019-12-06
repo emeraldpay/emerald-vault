@@ -20,6 +20,7 @@ use super::Error;
 use hex;
 use std::str::FromStr;
 use std::{fmt, ops};
+use serde::{Deserialize, Deserializer};
 
 /// Fixed bytes number to represent `Address`
 pub const ADDRESS_BYTES: usize = 20;
@@ -38,7 +39,7 @@ impl Address {
     /// # Example
     ///
     /// ```
-    /// let addr = emerald_rs::Address::try_from(&[0u8; emerald_rs::ADDRESS_BYTES]).unwrap();
+    /// let addr = emerald_vault_core::Address::try_from(&[0u8; emerald_vault_core::ADDRESS_BYTES]).unwrap();
     /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
     /// ```
     pub fn try_from(data: &[u8]) -> Result<Self, Error> {

@@ -1,0 +1,10 @@
+syntax = "proto3";
+package emerald.vault;
+import "address.proto";
+
+message BookItem {
+    string label = 1;
+    string description = 2;
+    repeated uint32 blockchains = 3;
+    Address address = 4;
+}

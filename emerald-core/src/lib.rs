@@ -54,6 +54,7 @@ extern crate time;
 extern crate uuid;
 extern crate emerald_vault_proto;
 extern crate protobuf;
+extern crate csv;
 
 #[macro_use]
 pub mod util;

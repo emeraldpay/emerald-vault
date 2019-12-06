@@ -27,7 +27,7 @@ impl<'de> Deserialize<'de> for Address {
         D: Deserializer<'de>,
     {
         String::deserialize(deserializer)
-            .map(|s| format!("0x{}", s))
+            .map(|s| if s.starts_with("0x") { s } else { format!("0x{}", s) })
             .and_then(|s| Address::from_str(&s).map_err(de::Error::custom))
     }
 }

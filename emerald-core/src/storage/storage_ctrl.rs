@@ -17,7 +17,7 @@ use super::addressbook::AddressbookStorage;
 use super::keyfile::KeystoreError;
 use super::super::core::chains::EthereumChainId;
 use super::{
-    build_addressbook_storage, build_keyfile_storage, build_path,
+    build_keyfile_storage, build_path,
     KeyfileStorage,
 };
 use std::collections::HashMap;
@@ -26,8 +26,7 @@ use std::str::FromStr;
 
 /// Controller to switch storage according to specified chain
 pub struct StorageController {
-    keyfile_storages: HashMap<String, Box<dyn KeyfileStorage>>,
-    addressbook_storages: HashMap<String, Box<AddressbookStorage>>,
+    keyfile_storages: HashMap<String, Box<dyn KeyfileStorage>>
 }
 
 impl StorageController {
@@ -39,10 +38,6 @@ impl StorageController {
             st.keyfile_storages.insert(
                 id.to_string(),
                 build_keyfile_storage(build_path(base_path.as_ref(), id, "keystore"))?,
-            );
-            st.addressbook_storages.insert(
-                id.to_string(),
-                build_addressbook_storage(build_path(base_path.as_ref(), id, "addressbook"))?,
             );
         }
 
@@ -60,23 +55,12 @@ impl StorageController {
         }
     }
 
-    /// Get `Addressbook` storage for specified chain
-    pub fn get_addressbook(&self, chain: &str) -> Result<&Box<AddressbookStorage>, KeystoreError> {
-        match self.addressbook_storages.get(EthereumChainId::from_str(chain).unwrap().get_path_element().as_str()) {
-            Some(st) => Ok(st),
-            None => Err(KeystoreError::StorageError(format!(
-                "No storage for: {}",
-                chain
-            ))),
-        }
-    }
 }
 
 impl Default for StorageController {
     fn default() -> Self {
         StorageController {
-            keyfile_storages: HashMap::new(),
-            addressbook_storages: HashMap::new(),
+            keyfile_storages: HashMap::new()
         }
     }
 }

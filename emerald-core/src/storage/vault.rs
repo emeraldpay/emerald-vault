@@ -25,6 +25,7 @@ use crate::convert::proto::wallet::{WalletAccount, AddressType, EthereumAddress}
 use crate::convert::proto::pk::PrivateKeyType;
 use crate::chains::Blockchain;
 use crate::storage::archive::Archive;
+use crate::storage::AddressbookStorage;
 
 
 pub struct VaultStorage {
@@ -52,6 +53,9 @@ impl VaultStorage {
             keys: self.keys(),
             wallets: self.wallets()
         }
+    }
+    pub fn addressbook(&self) -> AddressbookStorage {
+        AddressbookStorage::from_path(self.dir.clone().join("addressbook.csv"))
     }
 }
 
@@ -162,7 +166,7 @@ impl VaultStorage {
     }
 }
 
-pub trait VaultAccess<P> where P: TryFrom<Vec<u8>> + HasUuid {
+pub trait VaultAccess<P> where P: HasUuid {
     fn list(&self) -> Result<Vec<Uuid>, VaultError>;
     fn get(&self, id: &Uuid) -> Result<P, VaultError>;
     fn add(&self, pk: P) -> Result<(), VaultError>;

@@ -116,20 +116,20 @@ where
     }
 }
 
-/// Creates specific type of `Addressbook` storage (database or filesystem)
-///
-/// # Arguments:
-///
-/// * `path` - path for `Addressbook` storage
-///
-pub fn build_addressbook_storage<P>(path: P) -> Result<Box<AddressbookStorage>, KeystoreError>
-where
-    P: AsRef<Path>,
-{
-    // TODO: implement DB storage. Add conditional compilation.
-    let mut p = PathBuf::new();
-    p.push(path);
-    fs::create_dir_all(&p)?;
-
-    Ok(Box::new(AddressbookStorage::new(p)))
-}
+///// Creates specific type of `Addressbook` storage (database or filesystem)
+/////
+///// # Arguments:
+/////
+///// * `path` - path for `Addressbook` storage
+/////
+//pub fn build_addressbook_storage<P>(path: P) -> Result<Box<AddressbookStorage>, KeystoreError>
+//where
+//    P: AsRef<Path>,
+//{
+//    // TODO: implement DB storage. Add conditional compilation.
+//    let mut p = PathBuf::new();
+//    p.push(path);
+//    fs::create_dir_all(&p)?;
+//
+//    Ok(Box::new(AddressbookStorage::new(p)))
+//}

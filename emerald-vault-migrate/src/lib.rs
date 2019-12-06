@@ -10,6 +10,7 @@ extern crate rocksdb;
 extern crate hex;
 #[macro_use]
 extern crate log;
+extern crate glob;
 
 use std::path::Path;
 use crate::source::v2::V2Storage;

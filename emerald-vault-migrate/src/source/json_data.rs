@@ -216,6 +216,12 @@ pub struct HdwalletCryptoV2 {
     pub hd_path: String,
 }
 
+#[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
+pub struct AddressBookItem {
+    pub address: Address,
+    pub name: Option<String>,
+    pub description: Option<String>
+}
 
 // ---
 
@@ -322,5 +328,37 @@ impl KeyFileV2 {
             .map_err(|e| format!("Failed to deserialize JSON {:?} for {}", e, buf))?;
 
         Ok(kf)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::source::json_data::AddressBookItem;
+    use emerald_vault_core::Address;
+    use std::str::FromStr;
+
+    #[test]
+    fn parse_json() {
+        let json = r#"
+        {
+          "address": "0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2",
+          "description": "тест",
+          "name": "name 1"
+        }
+        "#;
+
+        let act = serde_json::from_slice::<AddressBookItem>(json.as_bytes());
+        println!("{:?}", act);
+        assert!(act.is_ok());
+        let act = act.unwrap();
+        assert_eq!(
+            AddressBookItem {
+                address: Address::from_str("0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2").unwrap(),
+                description: Some("тест".to_string()),
+                name: Some("name 1".to_string())
+            },
+            act
+            );
     }
 }

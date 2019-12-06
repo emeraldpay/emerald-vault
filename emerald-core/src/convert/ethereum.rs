@@ -1,25 +1,35 @@
 use uuid::Uuid;
 use std::convert::{TryInto, TryFrom};
-use crate::keystore::{CoreCrypto, Kdf as ks_Kdf, Prf as ks_Prf, CIPHER_IV_BYTES};
-use crate::convert::proto::{
-    crypto::{Encrypted, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, PrfType, ScryptKdf, MacType},
-    pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType},
-    wallet::{Wallet},
-    types::{HasUuid}
+use crate::{
+    core::Address,
+    convert::proto::{
+        crypto::{Encrypted, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, PrfType, ScryptKdf, MacType},
+        pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType},
+        wallet::{Wallet},
+        types::{HasUuid}
+    },
+    keystore::{CoreCrypto, Kdf as ks_Kdf, Prf as ks_Prf, CIPHER_IV_BYTES},
+    storage::error::VaultError,
+    util::KECCAK256_BYTES
 };
-use crate::core::Address;
-use crate::util::KECCAK256_BYTES;
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum ConversionError {
     InvalidArgument,
     InvalidJson,
+    InvalidData(String),
     UnsuportedVersion
 }
 
 impl From<serde_json::Error> for ConversionError {
     fn from(_: serde_json::Error) -> Self {
         ConversionError::InvalidJson
+    }
+}
+
+impl From<VaultError> for ConversionError {
+    fn from(e: VaultError) -> Self {
+        ConversionError::InvalidData("Vault Error".to_string())
     }
 }
 
