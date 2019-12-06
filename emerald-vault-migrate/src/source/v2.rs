@@ -53,8 +53,12 @@ impl V2Storage {
         Ok((arr[0].to_string(), json))
     }
 
-    fn blockchain_path(&self, blockchain: Blockchain) -> Option<PathBuf> {
+    fn blockchain_path(&self, blockchain: &Blockchain) -> Option<PathBuf> {
         let chain_id = EthereumChainId::from(blockchain.clone());
+        self.ethereum_path(&chain_id)
+    }
+
+    fn ethereum_path(&self, chain_id: &EthereumChainId) -> Option<PathBuf> {
         let base = self.dir
             .join(chain_id.get_path_element());
         let path = base.join("keystore/.db");
@@ -66,20 +70,15 @@ impl V2Storage {
     }
 
     /// Get DB for the specified blockchain, if it exists
-    fn get_db(&mut self, blockchain: Blockchain) -> Option<DB> {
-        match &self.blockchain_path(blockchain) {
-            Some(path) => {
-                let mut opts = Options::default();
-                opts.create_if_missing(false);
-                let db = DB::open(&opts, path.join("keystore/.db").as_path())
-                    .map_err(|e| {
-                        &self.migration.error(format!("DB not opened {}", e.clone().into_string()));
-                        ()
-                    }).ok();
-                db
-            },
-            None => None
-        }
+    fn get_db(&mut self, path: PathBuf) -> Option<DB> {
+        let mut opts = Options::default();
+        opts.create_if_missing(false);
+        let db = DB::open(&opts, path.join("keystore/.db").as_path())
+            .map_err(|e| {
+                &self.migration.error(format!("DB not opened {}", e.clone().into_string()));
+                ()
+            }).ok();
+        db
     }
 
     fn list_accounts(&mut self, db: DB, archive: &Archive) -> Result<Vec<KeyFileV2>, String> {
@@ -111,7 +110,7 @@ impl V2Storage {
     }
 
     fn list_book(&mut self, blockchain: &Blockchain) -> Result<Vec<AddressBookItem>, String> {
-        match self.blockchain_path(blockchain.clone()) {
+        match self.blockchain_path(blockchain) {
             Some(path) => {
                 let path = path.join("addressbook");
                 let pattern = format!("{}/*.json", path.to_str().unwrap());
@@ -140,7 +139,12 @@ impl V2Storage {
 
     fn migrate_wallets(&mut self, vault: &VaultStorage, created_wallets: &mut Vec<Uuid>, blockchain: &Blockchain) -> bool {
         let mut migrated = false;
-        match self.get_db(blockchain.clone()) {
+        let path = self.blockchain_path(blockchain);
+        if path.is_none() {
+            return false;
+        }
+        let path = path.unwrap();
+        match self.get_db(path) {
             Some(db) => {
                 let accounts = self.list_accounts(db, &vault.archive)
                     .map_err(|e| {
@@ -279,7 +283,7 @@ impl Migrate for V2Storage {
             // RocksDB locks database, so move it to archive after DB object is destroyed
             if migrated_keys || migrated_book {
                 &self.migration.info(format!("Moving to archive keys for {:?}", blockchain));
-                match self.blockchain_path(blockchain.clone()) {
+                match self.blockchain_path(blockchain) {
                     Some(path) => { vault.archive.submit(path); },
                     None => {}
                 }
@@ -287,7 +291,38 @@ impl Migrate for V2Storage {
             }
         });
 
-        &self.migration.info("Migration finished".to_string());
+        let unsupported_blockchains = vec![
+            EthereumChainId::Rinkeby, EthereumChainId::Rootstock, EthereumChainId::RootstockTestnet, EthereumChainId::Ropsten
+        ];
+
+        unsupported_blockchains.iter().for_each(|blockchain| {
+            match self.ethereum_path(blockchain) {
+                Some(path) => {
+                    self.migration.warn(format!("Archive unsupported {:?}", blockchain));
+                    match self.get_db(path.clone()) {
+                        Some(db) => {
+                            match self.list_accounts(db, &vault.archive) {
+                                Ok(items) => {
+                                    for item in items {
+                                        self.migration.warn(
+                                            format!("Extracted a key file and moved to archive as JSON files. Please import {}.json manually if you want to use it with another blockchain",
+                                                    item.uuid.to_string()
+                                            )
+                                        )
+                                    }
+                                },
+                                Err(_) => self.migration.warn("Has broken database. Ignoring".to_string())
+                            }
+                        },
+                        None => {}
+                    }
+                    vault.archive.submit(path);
+                },
+                None => {}
+            }
+        });
+
+        self.migration.info("Migration finished".to_string());
         &self.migration.set_wallets(created_wallets);
         if moved > 0 {
             let mut readme = String::new();
