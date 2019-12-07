@@ -24,6 +24,7 @@ use crate::{
     convert::proto::book::{BookmarkDetails, AddressRef}
 };
 use std::fs;
+use crate::migration::source::common::add_to_vault;
 
 /// Separator for data in RocksDB
 /// `value = <filename> + SEPARATOR + <keyfile_json>`
@@ -201,70 +202,11 @@ impl V2Storage {
     }
 }
 
-fn extract_label(kf: &KeyFileV2) -> Option<String> {
-    let mut result = String::new();
-    match &kf.name {
-        Some(name) => result.push_str(name.as_str()),
-        None => {}
-    }
-    match &kf.visible {
-        Some(visible) if !visible => {
-            if !result.is_empty() {
-                result.push(' ');
-            }
-            result.push_str("(legacy hidden)")
-        },
-        _ => {}
-    }
-    if result.is_empty() {
-        None
-    } else {
-        Some(result)
-    }
-}
-
-// Creates Private Key and Wallet with that single key
-fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2) -> Result<Uuid, String> {
-    let account = match &kf.crypto {
-        CryptoTypeV2::Core(data) => {
-            let pk = PrivateKeyHolder {
-                id: Uuid::new_v4(),
-                pk: PrivateKeyType::Ethereum(
-                    EthereumPk3 {
-                        address: Some(kf.address),
-                        key: Encrypted::try_from(data).map_err(|e| "Failed to convert encrypted Private Key")?
-                    }
-                )
-            };
-            let pk_id = pk.get_id();
-            vault.keys().add(pk).map_err(|e| "Failed to add converted Private Key to the Vault")?;
-            WalletAccount {
-                blockchain,
-                address: AddressType::Ethereum(
-                    EthereumAddress {
-                        address: Some(kf.address),
-                        key_id: pk_id
-                    }
-                )
-            }
-        },
-        CryptoTypeV2::HdWallet(_) => unimplemented!()
-    };
-    let wallet = Wallet {
-        id: Uuid::new_v4(),
-        label: extract_label(kf),
-        accounts: vec![account]
-    };
-    let wallet_id = wallet.get_id();
-    vault.wallets().add(wallet);
-    Ok(wallet_id)
-}
-
 impl Migrate for V2Storage {
 
     fn migrate<P>(&mut self, target: P) -> Result<&MigrationResult, MigrationError>
         where P: AsRef<Path> {
-        &self.migration.info("Start migration".to_string());
+        self.migration.info("Start migration from Vault V2".to_string());
         let supported_blockchains = vec![
             Blockchain::EthereumClassic, Blockchain::Ethereum,
             Blockchain::MordenTestnet, Blockchain::KovanTestnet
@@ -275,14 +217,14 @@ impl Migrate for V2Storage {
 
         supported_blockchains.iter().for_each(|blockchain| {
             // Migrate all data for a single blockchain
-            &self.migration.info(format!("Migrate {:?}", blockchain));
+            self.migration.info(format!("Migrate {:?}", blockchain));
             let migrated_keys = self.migrate_wallets(&vault, &mut created_wallets, blockchain);
             let migrated_book = self.migrate_addressbook(&vault, blockchain);
-            &self.migration.info(format!("Done migrating {:?}", blockchain));
+            self.migration.info(format!("Done migrating {:?}", blockchain));
 
             // RocksDB locks database, so move it to archive after DB object is destroyed
             if migrated_keys || migrated_book {
-                &self.migration.info(format!("Moving to archive keys for {:?}", blockchain));
+                self.migration.info(format!("Moving to archive keys for {:?}", blockchain));
                 match self.blockchain_path(blockchain) {
                     Some(path) => { vault.archive.submit(path); },
                     None => {}
@@ -323,8 +265,8 @@ impl Migrate for V2Storage {
         });
 
         self.migration.info("Migration finished".to_string());
-        &self.migration.set_wallets(created_wallets);
-        if moved > 0 {
+        self.migration.set_wallets(created_wallets);
+        if moved > 0 || self.migration.has_log() {
             let mut readme = String::new();
             readme.push_str("= Migration From Vault V2 Storage\n\n");
             readme.push_str("\n== DESCRIPTION\n\n");

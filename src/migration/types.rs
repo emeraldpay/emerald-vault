@@ -94,4 +94,11 @@ impl MigrationResult {
 
         buf
     }
+
+    pub fn has_log(&self) -> bool {
+        self.logs.iter().any(|l| match l {
+            LogMessage::Warning(_) | LogMessage::Error(_) => true,
+            LogMessage::Info(_) => false
+        })
+    }
 }
