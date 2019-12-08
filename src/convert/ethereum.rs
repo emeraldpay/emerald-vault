@@ -146,9 +146,6 @@ impl EthereumJsonV3File {
                     description: None
                 }
             }
-            PrivateKeyType::EthereumSeed(_) => {
-                return Err(())
-            }
         };
         Ok(result)
     }

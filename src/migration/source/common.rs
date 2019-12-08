@@ -6,15 +6,15 @@ use crate::{
         proto::{
             pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3},
             crypto::Encrypted,
-            wallet::{WalletAccount, AddressType, EthereumAddress, Wallet},
-            types::HasUuid
+            wallet::{WalletAccount, PKType, Wallet},
+            types::HasUuid,
+            seed::{SeedSource, Seed, LedgerSource, HDPathFingerprint}
         }
     }
 };
 use uuid::Uuid;
 use std::convert::TryFrom;
-use crate::convert::proto::pk::SeedReference;
-use crate::convert::proto::seed::{SeedSource, Seed, LedgerSource, HDPathFingerprint};
+use crate::convert::proto::seed::SeedRef;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();
@@ -40,7 +40,7 @@ fn extract_label(kf: &KeyFileV2) -> Option<String> {
 
 // Creates Private Key and Wallet with that single key
 pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2) -> Result<Uuid, String> {
-    let pk_id = match &kf.crypto {
+    let account = match &kf.crypto {
         CryptoTypeV2::Core(data) => {
             let pk = PrivateKeyHolder {
                 id: Uuid::new_v4(),
@@ -53,7 +53,11 @@ pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2
             };
             let pk_id = pk.get_id();
             vault.keys().add(pk).map_err(|e| "Failed to add converted Private Key to the Vault")?;
-            pk_id
+            WalletAccount {
+                blockchain,
+                address: kf.address,
+                key: PKType::PrivateKeyRef(pk_id)
+            }
         },
         CryptoTypeV2::HdWallet(data) => {
             let seeds = vault.seeds();
@@ -89,29 +93,15 @@ pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2
                 }
             };
 
-            let pk = PrivateKeyHolder {
-                id: Uuid::new_v4(),
-                pk: PrivateKeyType::EthereumSeed(
-                    SeedReference {
-                        id: seed_id,
-                        hdpath: data.hd_path.clone()
-                    }
-                )
-            };
-            let pk_id = pk.get_id();
-            vault.keys().add(pk).map_err(|e| "Failed to add converted Private Key to the Vault")?;
-            pk_id
-        }
-    };
-
-    let account = WalletAccount {
-        blockchain,
-        address: AddressType::Ethereum(
-            EthereumAddress {
+            WalletAccount {
+                blockchain,
                 address: kf.address,
-                key_id: pk_id
+                key: PKType::SeedHd(SeedRef {
+                    seed_id,
+                    hd_path: data.hd_path.clone()
+                })
             }
-        )
+        }
     };
 
     let wallet = Wallet {

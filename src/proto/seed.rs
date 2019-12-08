@@ -834,6 +834,217 @@ impl ::protobuf::reflect::ProtobufValue for HDPathFingerprint_Type {
     }
 }
 
+#[derive(PartialEq,Clone,Default)]
+pub struct SeedHD {
+    // message fields
+    pub seed_id: ::std::string::String,
+    pub path: ::std::string::String,
+    // special fields
+    pub unknown_fields: ::protobuf::UnknownFields,
+    pub cached_size: ::protobuf::CachedSize,
+}
+
+impl<'a> ::std::default::Default for &'a SeedHD {
+    fn default() -> &'a SeedHD {
+        <SeedHD as ::protobuf::Message>::default_instance()
+    }
+}
+
+impl SeedHD {
+    pub fn new() -> SeedHD {
+        ::std::default::Default::default()
+    }
+
+    // string seed_id = 1;
+
+
+    pub fn get_seed_id(&self) -> &str {
+        &self.seed_id
+    }
+    pub fn clear_seed_id(&mut self) {
+        self.seed_id.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_seed_id(&mut self, v: ::std::string::String) {
+        self.seed_id = v;
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_seed_id(&mut self) -> &mut ::std::string::String {
+        &mut self.seed_id
+    }
+
+    // Take field
+    pub fn take_seed_id(&mut self) -> ::std::string::String {
+        ::std::mem::replace(&mut self.seed_id, ::std::string::String::new())
+    }
+
+    // string path = 2;
+
+
+    pub fn get_path(&self) -> &str {
+        &self.path
+    }
+    pub fn clear_path(&mut self) {
+        self.path.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_path(&mut self, v: ::std::string::String) {
+        self.path = v;
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_path(&mut self) -> &mut ::std::string::String {
+        &mut self.path
+    }
+
+    // Take field
+    pub fn take_path(&mut self) -> ::std::string::String {
+        ::std::mem::replace(&mut self.path, ::std::string::String::new())
+    }
+}
+
+impl ::protobuf::Message for SeedHD {
+    fn is_initialized(&self) -> bool {
+        true
+    }
+
+    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        while !is.eof()? {
+            let (field_number, wire_type) = is.read_tag_unpack()?;
+            match field_number {
+                1 => {
+                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.seed_id)?;
+                },
+                2 => {
+                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.path)?;
+                },
+                _ => {
+                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
+                },
+            };
+        }
+        ::std::result::Result::Ok(())
+    }
+
+    // Compute sizes of nested messages
+    #[allow(unused_variables)]
+    fn compute_size(&self) -> u32 {
+        let mut my_size = 0;
+        if !self.seed_id.is_empty() {
+            my_size += ::protobuf::rt::string_size(1, &self.seed_id);
+        }
+        if !self.path.is_empty() {
+            my_size += ::protobuf::rt::string_size(2, &self.path);
+        }
+        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
+        self.cached_size.set(my_size);
+        my_size
+    }
+
+    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        if !self.seed_id.is_empty() {
+            os.write_string(1, &self.seed_id)?;
+        }
+        if !self.path.is_empty() {
+            os.write_string(2, &self.path)?;
+        }
+        os.write_unknown_fields(self.get_unknown_fields())?;
+        ::std::result::Result::Ok(())
+    }
+
+    fn get_cached_size(&self) -> u32 {
+        self.cached_size.get()
+    }
+
+    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
+        &self.unknown_fields
+    }
+
+    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
+        &mut self.unknown_fields
+    }
+
+    fn as_any(&self) -> &dyn (::std::any::Any) {
+        self as &dyn (::std::any::Any)
+    }
+    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
+        self as &mut dyn (::std::any::Any)
+    }
+    fn into_any(self: Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
+        self
+    }
+
+    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
+        Self::descriptor_static()
+    }
+
+    fn new() -> SeedHD {
+        SeedHD::new()
+    }
+
+    fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
+        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::MessageDescriptor> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const ::protobuf::reflect::MessageDescriptor,
+        };
+        unsafe {
+            descriptor.get(|| {
+                let mut fields = ::std::vec::Vec::new();
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                    "seed_id",
+                    |m: &SeedHD| { &m.seed_id },
+                    |m: &mut SeedHD| { &mut m.seed_id },
+                ));
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                    "path",
+                    |m: &SeedHD| { &m.path },
+                    |m: &mut SeedHD| { &mut m.path },
+                ));
+                ::protobuf::reflect::MessageDescriptor::new::<SeedHD>(
+                    "SeedHD",
+                    fields,
+                    file_descriptor_proto()
+                )
+            })
+        }
+    }
+
+    fn default_instance() -> &'static SeedHD {
+        static mut instance: ::protobuf::lazy::Lazy<SeedHD> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const SeedHD,
+        };
+        unsafe {
+            instance.get(SeedHD::new)
+        }
+    }
+}
+
+impl ::protobuf::Clear for SeedHD {
+    fn clear(&mut self) {
+        self.seed_id.clear();
+        self.path.clear();
+        self.unknown_fields.clear();
+    }
+}
+
+impl ::std::fmt::Debug for SeedHD {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        ::protobuf::text_format::fmt(self, f)
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for SeedHD {
+    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
+        ::protobuf::reflect::ProtobufValueRef::Message(self)
+    }
+}
+
 static file_descriptor_proto_data: &'static [u8] = b"\
     \n\nseed.proto\x12\remerald.vault\x1a\x0ccrypto.proto\"\x8c\x01\n\x04See\
     d\x12\x0e\n\x02id\x18\x01\x20\x01(\tR\x02id\x120\n\x05bytes\x18\x02\x20\
@@ -844,43 +1055,52 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     athFingerprint\x12\x12\n\x04path\x18\x01\x20\x01(\tR\x04path\x129\n\x04t\
     ype\x18\x02\x20\x01(\x0e2%.emerald.vault.HDPathFingerprint.TypeR\x04type\
     \x12\x20\n\x0bfingerprint\x18\x03\x20\x01(\x0cR\x0bfingerprint\"'\n\x04T\
-    ype\x12\x0b\n\x07UNKNOWN\x10\0\x12\x12\n\x0eADDRESS_SHA256\x10\x01J\xd0\
-    \x05\n\x06\x12\x04\0\0\x1a\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\
-    \x01\x02\x12\x03\x01\0\x16\n\t\n\x02\x03\0\x12\x03\x02\0\x16\n\n\n\x02\
-    \x04\0\x12\x04\x04\0\x0b\x01\n\n\n\x03\x04\0\x01\x12\x03\x04\x08\x0c\n\
-    \x0b\n\x04\x04\0\x02\0\x12\x03\x05\x04\x12\n\r\n\x05\x04\0\x02\0\x04\x12\
-    \x04\x05\x04\x04\x0e\n\x0c\n\x05\x04\0\x02\0\x05\x12\x03\x05\x04\n\n\x0c\
-    \n\x05\x04\0\x02\0\x01\x12\x03\x05\x0b\r\n\x0c\n\x05\x04\0\x02\0\x03\x12\
-    \x03\x05\x10\x11\n\x0c\n\x04\x04\0\x08\0\x12\x04\x07\x04\n\x05\n\x0c\n\
-    \x05\x04\0\x08\0\x01\x12\x03\x07\n\x15\n\x0b\n\x04\x04\0\x02\x01\x12\x03\
-    \x08\x08\x1c\n\x0c\n\x05\x04\0\x02\x01\x06\x12\x03\x08\x08\x11\n\x0c\n\
-    \x05\x04\0\x02\x01\x01\x12\x03\x08\x12\x17\n\x0c\n\x05\x04\0\x02\x01\x03\
-    \x12\x03\x08\x1a\x1b\n\x0b\n\x04\x04\0\x02\x02\x12\x03\t\x08\x1e\n\x0c\n\
-    \x05\x04\0\x02\x02\x06\x12\x03\t\x08\x12\n\x0c\n\x05\x04\0\x02\x02\x01\
-    \x12\x03\t\x13\x19\n\x0c\n\x05\x04\0\x02\x02\x03\x12\x03\t\x1c\x1d\n\n\n\
-    \x02\x04\x01\x12\x04\r\0\x0f\x01\n\n\n\x03\x04\x01\x01\x12\x03\r\x08\x12\
-    \n\x0b\n\x04\x04\x01\x02\0\x12\x03\x0e\x040\n\x0c\n\x05\x04\x01\x02\0\
-    \x04\x12\x03\x0e\x04\x0c\n\x0c\n\x05\x04\x01\x02\0\x06\x12\x03\x0e\r\x1e\
-    \n\x0c\n\x05\x04\x01\x02\0\x01\x12\x03\x0e\x1f+\n\x0c\n\x05\x04\x01\x02\
-    \0\x03\x12\x03\x0e./\n\n\n\x02\x04\x02\x12\x04\x11\0\x1a\x01\n\n\n\x03\
-    \x04\x02\x01\x12\x03\x11\x08\x19\n\x0b\n\x04\x04\x02\x02\0\x12\x03\x12\
-    \x04\x14\n\r\n\x05\x04\x02\x02\0\x04\x12\x04\x12\x04\x11\x1b\n\x0c\n\x05\
-    \x04\x02\x02\0\x05\x12\x03\x12\x04\n\n\x0c\n\x05\x04\x02\x02\0\x01\x12\
-    \x03\x12\x0b\x0f\n\x0c\n\x05\x04\x02\x02\0\x03\x12\x03\x12\x12\x13\n\x0b\
-    \n\x04\x04\x02\x02\x01\x12\x03\x13\x04\x12\n\r\n\x05\x04\x02\x02\x01\x04\
-    \x12\x04\x13\x04\x12\x14\n\x0c\n\x05\x04\x02\x02\x01\x06\x12\x03\x13\x04\
-    \x08\n\x0c\n\x05\x04\x02\x02\x01\x01\x12\x03\x13\t\r\n\x0c\n\x05\x04\x02\
-    \x02\x01\x03\x12\x03\x13\x10\x11\n\x0b\n\x04\x04\x02\x02\x02\x12\x03\x14\
-    \x04\x1a\n\r\n\x05\x04\x02\x02\x02\x04\x12\x04\x14\x04\x13\x12\n\x0c\n\
-    \x05\x04\x02\x02\x02\x05\x12\x03\x14\x04\t\n\x0c\n\x05\x04\x02\x02\x02\
-    \x01\x12\x03\x14\n\x15\n\x0c\n\x05\x04\x02\x02\x02\x03\x12\x03\x14\x18\
-    \x19\n\x0c\n\x04\x04\x02\x04\0\x12\x04\x16\x04\x19\x05\n\x0c\n\x05\x04\
-    \x02\x04\0\x01\x12\x03\x16\t\r\n\r\n\x06\x04\x02\x04\0\x02\0\x12\x03\x17\
-    \x08\x14\n\x0e\n\x07\x04\x02\x04\0\x02\0\x01\x12\x03\x17\x08\x0f\n\x0e\n\
-    \x07\x04\x02\x04\0\x02\0\x02\x12\x03\x17\x12\x13\n\r\n\x06\x04\x02\x04\0\
-    \x02\x01\x12\x03\x18\x08\x1b\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x01\x12\
-    \x03\x18\x08\x16\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x02\x12\x03\x18\x19\
-    \x1ab\x06proto3\
+    ype\x12\x0b\n\x07UNKNOWN\x10\0\x12\x12\n\x0eADDRESS_SHA256\x10\x01\"5\n\
+    \x06SeedHD\x12\x17\n\x07seed_id\x18\x01\x20\x01(\tR\x06seedId\x12\x12\n\
+    \x04path\x18\x02\x20\x01(\tR\x04pathJ\xf4\x06\n\x06\x12\x04\0\0\x1f\x01\
+    \n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\t\n\
+    \x02\x03\0\x12\x03\x02\0\x16\n\n\n\x02\x04\0\x12\x04\x04\0\x0b\x01\n\n\n\
+    \x03\x04\0\x01\x12\x03\x04\x08\x0c\n\x0b\n\x04\x04\0\x02\0\x12\x03\x05\
+    \x04\x12\n\r\n\x05\x04\0\x02\0\x04\x12\x04\x05\x04\x04\x0e\n\x0c\n\x05\
+    \x04\0\x02\0\x05\x12\x03\x05\x04\n\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\
+    \x05\x0b\r\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x05\x10\x11\n\x0c\n\x04\
+    \x04\0\x08\0\x12\x04\x07\x04\n\x05\n\x0c\n\x05\x04\0\x08\0\x01\x12\x03\
+    \x07\n\x15\n\x0b\n\x04\x04\0\x02\x01\x12\x03\x08\x08\x1c\n\x0c\n\x05\x04\
+    \0\x02\x01\x06\x12\x03\x08\x08\x11\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\
+    \x08\x12\x17\n\x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x08\x1a\x1b\n\x0b\n\
+    \x04\x04\0\x02\x02\x12\x03\t\x08\x1e\n\x0c\n\x05\x04\0\x02\x02\x06\x12\
+    \x03\t\x08\x12\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\t\x13\x19\n\x0c\n\
+    \x05\x04\0\x02\x02\x03\x12\x03\t\x1c\x1d\n\n\n\x02\x04\x01\x12\x04\r\0\
+    \x0f\x01\n\n\n\x03\x04\x01\x01\x12\x03\r\x08\x12\n\x0b\n\x04\x04\x01\x02\
+    \0\x12\x03\x0e\x040\n\x0c\n\x05\x04\x01\x02\0\x04\x12\x03\x0e\x04\x0c\n\
+    \x0c\n\x05\x04\x01\x02\0\x06\x12\x03\x0e\r\x1e\n\x0c\n\x05\x04\x01\x02\0\
+    \x01\x12\x03\x0e\x1f+\n\x0c\n\x05\x04\x01\x02\0\x03\x12\x03\x0e./\n\n\n\
+    \x02\x04\x02\x12\x04\x11\0\x1a\x01\n\n\n\x03\x04\x02\x01\x12\x03\x11\x08\
+    \x19\n\x0b\n\x04\x04\x02\x02\0\x12\x03\x12\x04\x14\n\r\n\x05\x04\x02\x02\
+    \0\x04\x12\x04\x12\x04\x11\x1b\n\x0c\n\x05\x04\x02\x02\0\x05\x12\x03\x12\
+    \x04\n\n\x0c\n\x05\x04\x02\x02\0\x01\x12\x03\x12\x0b\x0f\n\x0c\n\x05\x04\
+    \x02\x02\0\x03\x12\x03\x12\x12\x13\n\x0b\n\x04\x04\x02\x02\x01\x12\x03\
+    \x13\x04\x12\n\r\n\x05\x04\x02\x02\x01\x04\x12\x04\x13\x04\x12\x14\n\x0c\
+    \n\x05\x04\x02\x02\x01\x06\x12\x03\x13\x04\x08\n\x0c\n\x05\x04\x02\x02\
+    \x01\x01\x12\x03\x13\t\r\n\x0c\n\x05\x04\x02\x02\x01\x03\x12\x03\x13\x10\
+    \x11\n\x0b\n\x04\x04\x02\x02\x02\x12\x03\x14\x04\x1a\n\r\n\x05\x04\x02\
+    \x02\x02\x04\x12\x04\x14\x04\x13\x12\n\x0c\n\x05\x04\x02\x02\x02\x05\x12\
+    \x03\x14\x04\t\n\x0c\n\x05\x04\x02\x02\x02\x01\x12\x03\x14\n\x15\n\x0c\n\
+    \x05\x04\x02\x02\x02\x03\x12\x03\x14\x18\x19\n\x0c\n\x04\x04\x02\x04\0\
+    \x12\x04\x16\x04\x19\x05\n\x0c\n\x05\x04\x02\x04\0\x01\x12\x03\x16\t\r\n\
+    \r\n\x06\x04\x02\x04\0\x02\0\x12\x03\x17\x08\x14\n\x0e\n\x07\x04\x02\x04\
+    \0\x02\0\x01\x12\x03\x17\x08\x0f\n\x0e\n\x07\x04\x02\x04\0\x02\0\x02\x12\
+    \x03\x17\x12\x13\n\r\n\x06\x04\x02\x04\0\x02\x01\x12\x03\x18\x08\x1b\n\
+    \x0e\n\x07\x04\x02\x04\0\x02\x01\x01\x12\x03\x18\x08\x16\n\x0e\n\x07\x04\
+    \x02\x04\0\x02\x01\x02\x12\x03\x18\x19\x1a\n\n\n\x02\x04\x03\x12\x04\x1c\
+    \0\x1f\x01\n\n\n\x03\x04\x03\x01\x12\x03\x1c\x08\x0e\n\x0b\n\x04\x04\x03\
+    \x02\0\x12\x03\x1d\x04\x17\n\r\n\x05\x04\x03\x02\0\x04\x12\x04\x1d\x04\
+    \x1c\x10\n\x0c\n\x05\x04\x03\x02\0\x05\x12\x03\x1d\x04\n\n\x0c\n\x05\x04\
+    \x03\x02\0\x01\x12\x03\x1d\x0b\x12\n\x0c\n\x05\x04\x03\x02\0\x03\x12\x03\
+    \x1d\x15\x16\n\x0b\n\x04\x04\x03\x02\x01\x12\x03\x1e\x04\x14\n\r\n\x05\
+    \x04\x03\x02\x01\x04\x12\x04\x1e\x04\x1d\x17\n\x0c\n\x05\x04\x03\x02\x01\
+    \x05\x12\x03\x1e\x04\n\n\x0c\n\x05\x04\x03\x02\x01\x01\x12\x03\x1e\x0b\
+    \x0f\n\x0c\n\x05\x04\x03\x02\x01\x03\x12\x03\x1e\x12\x13b\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

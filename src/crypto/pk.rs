@@ -24,15 +24,13 @@ impl PrivateKeyHolder {
 
     pub fn get_ethereum_address(&self) -> Option<Address> {
         match &self.pk {
-            PrivateKeyType::EthereumPk(e) => e.address,
-            PrivateKeyType::EthereumSeed(s) => None
+            PrivateKeyType::EthereumPk(e) => e.address
         }
     }
 
     pub fn decrypt(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
         match &self.pk {
-            PrivateKeyType::EthereumPk(ethereum) => ethereum.key.decrypt(password),
-            PrivateKeyType::EthereumSeed(_) => Err(CryptoError::UnsupportedSource("seed".to_string()))
+            PrivateKeyType::EthereumPk(ethereum) => ethereum.key.decrypt(password)
         }
     }
 }

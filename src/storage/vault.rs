@@ -20,8 +20,7 @@ use crate::{
             },
             wallet::{
                 WalletAccount,
-                AddressType,
-                EthereumAddress,
+                PKType,
                 Wallet
             },
             crypto::{
@@ -123,12 +122,8 @@ impl CreateNew {
             accounts: vec![
                 WalletAccount {
                     blockchain,
-                    address: AddressType::Ethereum(
-                        EthereumAddress {
-                            address: json.address,
-                            key_id: pk.get_id()
-                        }
-                    )
+                    address: json.address,
+                    key: PKType::PrivateKeyRef(pk.get_id())
                 }
             ]
         };
@@ -147,12 +142,8 @@ impl CreateNew {
             accounts: vec![
                 WalletAccount {
                     blockchain,
-                    address: AddressType::Ethereum(
-                        EthereumAddress {
-                            address: pk.get_ethereum_address(),
-                            key_id: pk.get_id()
-                        }
-                    )
+                    address: pk.get_ethereum_address(),
+                    key: PKType::PrivateKeyRef(pk.get_id())
                 }
             ]
         };

@@ -2,18 +2,33 @@ use uuid::Uuid;
 use std::convert::TryFrom;
 use protobuf::{parse_from_bytes, Message};
 use std::str::FromStr;
-use crate::proto::{
-    wallet::{
-        Wallet as proto_Wallet,
-        WalletAccount as proto_WalletAccount,
-        EthereumAddress as proto_EthereumAddress
-    }
+use crate::{
+    convert::{
+        proto::types::HasUuid,
+        proto::seed::SeedRef
+    },
+    util::optional::none_if_empty,
+    storage::error::VaultError,
+    core::{
+        chains::{Blockchain, EthereumChainId},
+        Address
+    },
+    proto::{
+        wallet::{
+            Wallet as proto_Wallet,
+            WalletAccount as proto_WalletAccount,
+            WalletAccount_oneof_pk_type as proto_WalletAccountPkType,
+            EthereumAddress as proto_EthereumAddress
+        },
+        seed::{
+            SeedHD as proto_SeedHD
+        },
+        address::{
+            Address as proto_Address,
+            Address_oneof_address_type as proto_AddressType
+        }
+    },
 };
-use crate::core::Address;
-use crate::core::chains::{Blockchain, EthereumChainId};
-use crate::storage::error::VaultError;
-use crate::util::optional::none_if_empty;
-use crate::convert::proto::types::HasUuid;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
@@ -25,31 +40,19 @@ pub struct Wallet {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct WalletAccount {
     pub blockchain: Blockchain,
-    pub address: AddressType
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum AddressType {
-    Ethereum(EthereumAddress)
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct EthereumAddress {
     pub address: Option<Address>,
-    pub key_id: Uuid
+    pub key: PKType
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum PKType {
+    PrivateKeyRef(Uuid),
+    SeedHd(SeedRef)
 }
 
 impl HasUuid for Wallet {
     fn get_id(&self) -> Uuid {
         self.id
-    }
-}
-
-impl HasUuid for WalletAccount {
-    fn get_id(&self) -> Uuid {
-        match &self.address {
-            AddressType::Ethereum(e) => e.key_id
-        }
     }
 }
 
@@ -59,24 +62,37 @@ impl TryFrom<&proto_WalletAccount> for WalletAccount {
     fn try_from(value: &proto_WalletAccount) -> Result<Self, Self::Error> {
         let blockchain = Blockchain::try_from(value.get_blockchain_id())
             .map_err(|_| VaultError::UnsupportedDataError(format!("Unsupported asset: {}", value.get_blockchain_id())))?;
-        let address = if value.has_ethereum() {
-            let address = match none_if_empty(value.get_ethereum().address.as_str()) {
-                Some(s) => {
-                    let x = Address::from_str(s.as_str())?;
-                    Some(x)
+        let address = value.address.clone().into_option();
+        let address = match &address {
+            Some(a) => match &a.address_type {
+                Some(address_type) => match address_type {
+                    proto_AddressType::plain_address(a) => Some(Address::from_str(a.as_str())?),
+                    _ => return Err(VaultError::UnsupportedDataError("Only single type of address is supported".to_string()))
                 },
                 None => None
-            };
-            AddressType::Ethereum(EthereumAddress {
-                address,
-                key_id: Uuid::parse_str(value.get_ethereum().get_pk_id())?
-            })
-        } else {
-            return Err(VaultError::UnsupportedDataError("Only ethereum type of address is supported".to_string()))
+            },
+            None => None
+        };
+        let key = match &value.pk_type {
+            Some(pk_type) => match pk_type {
+                proto_WalletAccountPkType::hd_path(seed) => {
+                    let seed = SeedRef {
+                        seed_id: Uuid::from_str(seed.get_seed_id())?,
+                        hd_path: seed.path.clone()
+                    };
+                    PKType::SeedHd(seed)
+                },
+                proto_WalletAccountPkType::ethereum(pk) => {
+                    PKType::PrivateKeyRef(Uuid::parse_str(pk.get_pk_id())?)
+                },
+                _ => return Err(VaultError::UnsupportedDataError("Unsupported type of PrivateKey".to_string()))
+            },
+            None => return Err(VaultError::UnsupportedDataError("PrivateKey is not set".to_string()))
         };
         let result = WalletAccount {
             blockchain,
-            address
+            address,
+            key
         };
         Ok(result)
     }
@@ -90,15 +106,25 @@ impl From<&WalletAccount> for proto_WalletAccount {
         result.set_blockchain_id(value.blockchain.to_owned() as u32);
 
         let mut ethereum = proto_EthereumAddress::default();
-        match &value.address {
-            AddressType::Ethereum(addr) => {
-                if addr.address.is_some() {
-                    ethereum.set_address(addr.address.unwrap().to_string());
-                }
-                ethereum.set_pk_id(addr.key_id.to_string());
+        if value.address.is_some() {
+            let address_str = value.address.unwrap().to_string();
+            let mut address = proto_Address::new();
+            address.set_plain_address(address_str.clone());
+            result.set_address(address);
+            ethereum.set_address(address_str);
+        }
+        match &value.key {
+            PKType::SeedHd(seed_ref) => {
+                let mut seed_hd = proto_SeedHD::new();
+                seed_hd.set_seed_id(seed_ref.seed_id.to_string());
+                seed_hd.set_path(seed_ref.hd_path.clone());
+                result.set_hd_path(seed_hd);
+            }
+            PKType::PrivateKeyRef(addr) => {
+                ethereum.set_pk_id(addr.to_string());
+                result.set_ethereum(ethereum);
             }
         }
-        result.set_ethereum(ethereum);
         result
     }
 }
@@ -155,13 +181,14 @@ impl TryFrom<Wallet> for Vec<u8> {
 #[cfg(test)]
 mod tests {
     use crate::convert::proto::wallet::{
-        Wallet, WalletAccount, AddressType, EthereumAddress
+        Wallet, WalletAccount, PKType
     };
     use uuid::Uuid;
     use crate::core::Address;
     use std::str::FromStr;
     use std::convert::{TryInto, TryFrom};
     use crate::chains::Blockchain;
+    use crate::convert::proto::seed::SeedRef;
 
     #[test]
     fn write_and_read_wallet() {
@@ -171,10 +198,8 @@ mod tests {
             accounts: vec![
                 WalletAccount {
                     blockchain: Blockchain::Ethereum,
-                    address: AddressType::Ethereum(EthereumAddress {
-                        address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
-                        key_id: Uuid::new_v4()
-                    })
+                    address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
+                    key: PKType::PrivateKeyRef(Uuid::new_v4())
                 }
             ]
         };
@@ -193,9 +218,30 @@ mod tests {
             accounts: vec![
                 WalletAccount {
                     blockchain: Blockchain::Ethereum,
-                    address: AddressType::Ethereum(EthereumAddress {
-                        address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
-                        key_id: Uuid::new_v4()
+                    address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
+                    key: PKType::PrivateKeyRef(Uuid::new_v4())
+                }
+            ]
+        };
+
+        let b: Vec<u8> = wallet.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = Wallet::try_from(b).unwrap();
+        assert_eq!(act, wallet);
+    }
+
+    #[test]
+    fn write_and_read_wallet_w_seedref() {
+        let wallet = Wallet {
+            id: Uuid::new_v4(),
+            label: None,
+            accounts: vec![
+                WalletAccount {
+                    blockchain: Blockchain::Ethereum,
+                    address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
+                    key: PKType::SeedHd(SeedRef {
+                        seed_id: Uuid::new_v4(),
+                        hd_path: "m/44'/60'/0'/0".to_string()
                     })
                 }
             ]

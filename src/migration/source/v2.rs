@@ -19,7 +19,7 @@ use crate::{
         types::HasUuid,
         pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3},
         crypto::Encrypted,
-        wallet::{Wallet, WalletAccount, AddressType, EthereumAddress}
+        wallet::{Wallet, WalletAccount, PKType}
     },
     convert::proto::book::{BookmarkDetails, AddressRef}
 };

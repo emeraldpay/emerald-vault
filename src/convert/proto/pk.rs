@@ -9,8 +9,10 @@ use crate::proto::{
     pk::{
         PrivateKey as proto_PrivateKey,
         EthereumPrivateKey as proto_EthereumPrivateKey,
-        EthereumPK3 as proto_EthereumPK3,
-        HDKey as proto_HDKey
+        EthereumPK3 as proto_EthereumPK3
+    },
+    seed::{
+        SeedHD as proto_SeedHD
     }
 };
 use crate::convert::{
@@ -33,18 +35,12 @@ pub struct PrivateKeyHolder {
 }
 
 pub enum PrivateKeyType {
-    EthereumPk(EthereumPk3),
-    EthereumSeed(SeedReference)
+    EthereumPk(EthereumPk3)
 }
 
 pub struct EthereumPk3 {
     pub address: Option<Address>,
     pub key: Encrypted
-}
-
-pub struct SeedReference {
-    pub id: Uuid,
-    pub hdpath: String
 }
 
 impl From<&EthereumJsonV3File> for EthereumPk3 {
@@ -116,12 +112,6 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
                 };
                 ethereum_pk3.set_value(proto_Encrypted::try_from(&it.key)?);
                 ethereum.set_pk(ethereum_pk3);
-            },
-            PrivateKeyType::EthereumSeed(it) => {
-                let mut hdkey = proto_HDKey::new();
-                hdkey.set_path(it.hdpath.clone());
-                hdkey.set_seed_id(it.id.to_string());
-                ethereum.set_hd(hdkey);
             }
         }
         result.set_ethereum(ethereum);

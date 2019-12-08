@@ -41,7 +41,7 @@ pub struct LedgerSource {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct HDPathFingerprint {
-    pub path: String,
+    pub hd_path: String,
     pub value: FingerprintType
 }
 
@@ -50,14 +50,20 @@ pub enum FingerprintType {
     AddressSha256(Bytes256)
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct SeedRef {
+    pub seed_id: Uuid,
+    pub hd_path: String
+}
+
 // ----
 
 impl HDPathFingerprint {
-    pub fn from_address(hdpath: String, address: &Address) -> HDPathFingerprint {
+    pub fn from_address(hd_path: String, address: &Address) -> HDPathFingerprint {
         let hash = sha2::Sha256::digest(address);
         let f = Bytes256::try_from(hash.as_slice()).unwrap();
         HDPathFingerprint {
-            path: hdpath,
+            hd_path: hd_path,
             value: FingerprintType::AddressSha256(f)
         }
     }
@@ -78,7 +84,7 @@ impl TryFrom<&proto_LedgerSeed> for LedgerSource {
         for f in value.get_fingerprints() {
             let data = Bytes256::try_from(f.get_fingerprint())?;
             let value = HDPathFingerprint {
-                path: f.get_path().to_string(),
+                hd_path: f.get_path().to_string(),
                 value: FingerprintType::AddressSha256(data)
             };
             fingerprints.push(value)
@@ -97,7 +103,7 @@ impl TryFrom<LedgerSource> for proto_LedgerSeed {
         let fingerprings: Vec<proto_HDFingerprint> = value.fingerprints.iter()
             .map(|f| {
                 let mut pf = proto_HDFingerprint::new();
-                pf.set_path(f.path.clone());
+                pf.set_path(f.hd_path.clone());
                 match f.value {
                     FingerprintType::AddressSha256(b) => pf.set_fingerprint(b.into())
                 }

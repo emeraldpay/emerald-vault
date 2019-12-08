@@ -25,3 +25,8 @@ message HDPathFingerprint {
         ADDRESS_SHA256 = 1;
     }
 }
+
+message SeedHD {
+    string seed_id = 1;
+    string path = 2;
+}

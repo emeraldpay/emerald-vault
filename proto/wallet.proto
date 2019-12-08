@@ -1,6 +1,7 @@
 syntax = "proto3";
 package emerald.vault;
 import "address.proto";
+import "seed.proto";
 
 // Wallet is a user defined group of addresses used together
 message Wallet {
@@ -34,10 +35,13 @@ message WalletAccount {
     bool accept_disabled = 3;
     Role role = 4;
 
-    oneof type {
-        BitcoinAddress bitcoin = 10;
-        EthereumAddress ethereum = 11;
-        Address public_address = 12;
+    Address address = 5;
+
+    oneof pk_type {
+        SeedHD hd_path = 7;
+        BitcoinAddress bitcoin = 8;
+        EthereumAddress ethereum = 9;
+        Address public_address = 10;
     }
 
     enum Role {
@@ -68,24 +72,19 @@ message BitcoinAddress {
 
 message BitcoinSingleKey {
     string address = 1;
-    string key_id = 2;
+    string pk_id = 2;
 }
 
 message BitcoinMultiKey {
-    oneof type {
-        string hd_key_id = 1;
-        string xpriv_id = 2;
-    }
+    Bip32Public addresses = 1;
+    string xpriv_id = 2;
     uint32 last_index = 3;
-    Bip32Public addresses = 4;
 }
 
 
 message EthereumAddress {
     string address = 1;
-    oneof type {
-        string pk_id = 2;
-    }
+    string pk_id = 2;
 }
 
 enum BlockchainId {

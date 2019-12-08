@@ -29,13 +29,14 @@ pub use self::fs::FsStorage;
 use crate::core::Address;
 use crate::keystore::{CryptoType, KeyFile};
 use crate::util;
-use crate::convert::proto::wallet::{Wallet, AddressType};
+use crate::convert::proto::wallet::{Wallet, PKType};
 use crate::convert::proto::types::HasUuid;
 use hex::ToHex;
 
 /// Short account info
 ///
 #[derive(Debug, Clone, Default)]
+#[deprecated]
 pub struct AccountInfo {
     /// File name for `KeyFile`
     pub filename: String,
@@ -51,10 +52,12 @@ pub struct AccountInfo {
 
     /// shows whether it is normal account or
     /// held by HD wallet
+    #[deprecated]
     pub is_hardware: bool,
 
     /// show if account hidden from 'normal' listing
     /// `normal` - not forcing to show hidden accounts
+    #[deprecated]
     pub is_hidden: bool,
 }
 
@@ -64,11 +67,7 @@ impl From<Wallet> for AccountInfo {
             filename: wallet.get_id().to_string(),
             address: match wallet.accounts.first() {
                 Some(acc) => {
-                    match &acc.address {
-                        AddressType::Ethereum(e) => {
-                            e.address.map(|a| a.to_string()).unwrap_or("".to_string())
-                        }
-                    }
+                    acc.address.map(|a| a.to_string()).unwrap_or("".to_string())
                 },
                 None => "".to_string()
             },

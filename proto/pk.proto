@@ -13,21 +13,14 @@ message PrivateKey {
 message EthereumPrivateKey {
     oneof pk_type {
         EthereumPK3 pk = 1;
-        HDKey hd = 2;
     }
 }
 
 message BitcoinPrivateKey {
     oneof pk_type {
         BitcoinRawPK pk = 1;
-        HDKey hd = 2;
-        OpenDime open_dime = 3;
+        OpenDime open_dime = 2;
     }
-}
-
-message HDKey {
-    string seed_id = 1;
-    string path = 2;
 }
 
 message EthereumPK3 {
@@ -43,11 +36,6 @@ message OpenDime {
 }
 
 // ----
-
-message HDRange {
-    string seed_id = 1;
-    string base_path = 2;
-}
 
 message Bip32Private {
     uint32 level = 1;
