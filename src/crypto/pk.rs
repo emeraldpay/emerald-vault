@@ -9,7 +9,7 @@ impl PrivateKeyHolder {
     pub fn create_ethereum_v3(pk3: EthereumPk3) -> PrivateKeyHolder {
         PrivateKeyHolder {
             id: Uuid::new_v4(),
-            pk: PrivateKeyType::Ethereum(pk3)
+            pk: PrivateKeyType::EthereumPk(pk3)
         }
     }
 
@@ -24,13 +24,15 @@ impl PrivateKeyHolder {
 
     pub fn get_ethereum_address(&self) -> Option<Address> {
         match &self.pk {
-            PrivateKeyType::Ethereum(e) => e.address
+            PrivateKeyType::EthereumPk(e) => e.address,
+            PrivateKeyType::EthereumSeed(s) => None
         }
     }
 
     pub fn decrypt(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
         match &self.pk {
-            PrivateKeyType::Ethereum(ethereum) => ethereum.key.decrypt(password)
+            PrivateKeyType::EthereumPk(ethereum) => ethereum.key.decrypt(password),
+            PrivateKeyType::EthereumSeed(_) => Err(CryptoError::UnsupportedSource("seed".to_string()))
         }
     }
 }

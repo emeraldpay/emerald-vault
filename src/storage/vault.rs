@@ -1,31 +1,40 @@
 use uuid::Uuid;
-use crate::convert::proto::{
-    crypto::{
-        Encrypted
-    },
-    pk::{
-        PrivateKeyHolder
-    },
-    wallet::{
-        Wallet
-    },
-    types::{
-        HasUuid
-    }
-};
 use std::path::{Path, PathBuf};
 use std::fs;
 use regex::Regex;
 use std::str::FromStr;
-use crate::storage::error::VaultError;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
-use crate::convert::ethereum::EthereumJsonV3File;
-use crate::convert::proto::wallet::{WalletAccount, AddressType, EthereumAddress};
-use crate::convert::proto::pk::PrivateKeyType;
-use crate::chains::Blockchain;
-use crate::storage::archive::Archive;
-use crate::storage::AddressbookStorage;
+use crate::{
+    storage::{
+        AddressbookStorage,
+        archive::Archive,
+        error::VaultError
+    },
+    chains::Blockchain,
+    convert::{
+        proto::{
+            pk::{
+                PrivateKeyType,
+                PrivateKeyHolder
+            },
+            wallet::{
+                WalletAccount,
+                AddressType,
+                EthereumAddress,
+                Wallet
+            },
+            crypto::{
+                Encrypted
+            },
+            types::{
+                HasUuid
+            },
+            seed::Seed
+        },
+        ethereum::EthereumJsonV3File,
+    }
+};
 
 
 pub struct VaultStorage {
@@ -34,6 +43,7 @@ pub struct VaultStorage {
 
     keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccess<Wallet>>,
+    seeds: Arc<dyn VaultAccess<Seed>>,
 }
 
 struct StandardVaultFiles {
@@ -48,10 +58,14 @@ impl VaultStorage {
     pub fn wallets(&self) -> Arc<dyn VaultAccess<Wallet>> {
         self.wallets.clone()
     }
+    pub fn seeds(&self) -> Arc<dyn VaultAccess<Seed>> {
+        self.seeds.clone()
+    }
     pub fn create_new(&self) -> CreateNew {
         CreateNew {
             keys: self.keys(),
-            wallets: self.wallets()
+            wallets: self.wallets(),
+            seeds: self.seeds()
         }
     }
     pub fn addressbook(&self) -> AddressbookStorage {
@@ -96,6 +110,7 @@ fn try_vault_file(file: &Path, suffix: &str) -> Result<Uuid, ()> {
 pub struct CreateNew {
     keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccess<Wallet>>,
+    seeds: Arc<dyn VaultAccess<Seed>>,
 }
 
 impl CreateNew {
@@ -162,20 +177,31 @@ impl VaultStorage {
             archive: Archive::create(path.clone()),
             keys: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "key".to_string() }),
             wallets: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "wallet".to_string() }),
+            seeds: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "seed".to_string() }),
         })
     }
 }
 
 pub trait VaultAccess<P> where P: HasUuid {
+    fn list_entries(&self) -> Result<Vec<P>, VaultError>;
     fn list(&self) -> Result<Vec<Uuid>, VaultError>;
     fn get(&self, id: &Uuid) -> Result<P, VaultError>;
-    fn add(&self, pk: P) -> Result<(), VaultError>;
+    fn add(&self, entry: P) -> Result<(), VaultError>;
     fn remove(&self, id: &Uuid) -> Result<bool, VaultError>;
 }
 
 impl <P> VaultAccess<P> for StandardVaultFiles
     where P: TryFrom<Vec<u8>> + HasUuid,
           Vec<u8>: std::convert::TryFrom<P> {
+
+    fn list_entries(&self) -> Result<Vec<P>, VaultError> {
+        let all = self.list()?.iter()
+            .map(|id| self.get(id))
+            .filter(|it| it.is_ok())
+            .map(|it| it.unwrap())
+            .collect();
+        Ok(all)
+    }
 
     fn list(&self) -> Result<Vec<Uuid>, VaultError> {
         let mut result = Vec::new();
@@ -300,7 +326,7 @@ mod tests {
             }
         "#;
         let json = EthereumJsonV3File::try_from(json.to_string()).expect("JSON not parsed");
-        let tmp_dir = TempDir::new("emerald-vault-1").expect("Dir not created");
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
 
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
         let vault_pk = vault.keys();
@@ -343,7 +369,7 @@ mod tests {
             }
         "#;
         let json = EthereumJsonV3File::try_from(json.to_string()).expect("JSON not parsed");
-        let tmp_dir = TempDir::new("emerald-vault-1").expect("Dir not created");
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
         let vault_pk = vault.keys();
@@ -361,5 +387,47 @@ mod tests {
 
         let list = vault_pk.list().unwrap();
         assert_eq!(0, list.len());
+    }
+
+    #[test]
+    fn creates_seed() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let all = vault.seeds.list().unwrap();
+        assert_eq!(0, all.len());
+
+        let seed = Seed::generate(None, "testtest").unwrap();
+        let id = seed.get_id();
+        let added = vault.seeds.add(seed.clone());
+        assert!(added.is_ok());
+
+        let all = vault.seeds.list();
+        assert_eq!(vec![id], all.unwrap());
+        let seed_act = vault.seeds.get(&id).expect("Seed not available");
+        assert_eq!(seed, seed_act);
+    }
+
+    #[test]
+    fn deletes_seed() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let seed = Seed::generate(None, "testtest").unwrap();
+        let id = seed.get_id();
+        let added = vault.seeds.add(seed.clone());
+        assert!(added.is_ok());
+
+        let all = vault.seeds.list();
+        assert_eq!(vec![id], all.unwrap());
+        let seed_act = vault.seeds.get(&id).expect("Seed not available");
+        assert_eq!(seed, seed_act);
+
+        let deleted = vault.seeds.remove(&id);
+        assert!(deleted.is_ok());
+        assert!(deleted.unwrap());
+
+        let all = vault.seeds.list().unwrap();
+        assert_eq!(0, all.len());
     }
 }

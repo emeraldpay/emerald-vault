@@ -4,3 +4,4 @@ pub mod encrypted;
 pub mod kdf;
 pub mod sign;
 pub mod pk;
+pub mod seed;

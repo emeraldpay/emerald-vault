@@ -30,6 +30,7 @@ use crate::keystore::{
     },
 };
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct ScryptKdf {
     pub dklen: u32,
     pub salt: Vec<u8>,
@@ -38,6 +39,7 @@ pub struct ScryptKdf {
     pub p: u32
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Pbkdf2 {
     pub dklen: u32,
     pub c: u32,
@@ -45,35 +47,42 @@ pub struct Pbkdf2 {
     pub prf: PrfType
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum PrfType {
     HmacSha256,
     HmacSha512
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Kdf {
     Scrypt(ScryptKdf),
     Pbkdf2(Pbkdf2)
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Encrypted {
     pub cipher: Cipher,
     pub kdf: Kdf
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum Cipher {
     Aes128Ctr(Aes128CtrCipher)
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Aes128CtrCipher {
     pub encrypted: Vec<u8>,
     pub iv: Vec<u8>,
     pub mac: MacType,
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum MacType {
     Web3(Vec<u8>)
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
 enum CryptoError {
     InvalidData
 }

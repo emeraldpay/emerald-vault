@@ -9,7 +9,8 @@ use crate::proto::{
     pk::{
         PrivateKey as proto_PrivateKey,
         EthereumPrivateKey as proto_EthereumPrivateKey,
-        EthereumPK3 as proto_EthereumPK3
+        EthereumPK3 as proto_EthereumPK3,
+        HDKey as proto_HDKey
     }
 };
 use crate::convert::{
@@ -32,12 +33,18 @@ pub struct PrivateKeyHolder {
 }
 
 pub enum PrivateKeyType {
-    Ethereum(EthereumPk3)
+    EthereumPk(EthereumPk3),
+    EthereumSeed(SeedReference)
 }
 
 pub struct EthereumPk3 {
     pub address: Option<Address>,
     pub key: Encrypted
+}
+
+pub struct SeedReference {
+    pub id: Uuid,
+    pub hdpath: String
 }
 
 impl From<&EthereumJsonV3File> for EthereumPk3 {
@@ -70,7 +77,7 @@ impl TryFrom<&[u8]> for PrivateKeyHolder {
                     address,
                     key
                 };
-                let pk = PrivateKeyType::Ethereum(result);
+                let pk = PrivateKeyType::EthereumPk(result);
                 let result = PrivateKeyHolder { id: Uuid::from_str(m.get_id())?, pk };
                 Ok(result)
             } else {
@@ -98,9 +105,9 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
 
     fn try_from(value: PrivateKeyHolder) -> Result<Self, Self::Error> {
         let mut result = proto_PrivateKey::default();
+        let mut ethereum = proto_EthereumPrivateKey::default();
         match &value.pk {
-            PrivateKeyType::Ethereum(it) => {
-                let mut ethereum = proto_EthereumPrivateKey::default();
+            PrivateKeyType::EthereumPk(it) => {
                 let mut ethereum_pk3 = proto_EthereumPK3::default();
                 result.set_id(value.id.to_string());
                 match it.address {
@@ -109,9 +116,15 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
                 };
                 ethereum_pk3.set_value(proto_Encrypted::try_from(&it.key)?);
                 ethereum.set_pk(ethereum_pk3);
-                result.set_ethereum(ethereum)
+            },
+            PrivateKeyType::EthereumSeed(it) => {
+                let mut hdkey = proto_HDKey::new();
+                hdkey.set_path(it.hdpath.clone());
+                hdkey.set_seed_id(it.id.to_string());
+                ethereum.set_hd(hdkey);
             }
         }
+        result.set_ethereum(ethereum);
         result.write_to_bytes()
             .map_err(|e| VaultError::from(e))
     }

@@ -34,7 +34,7 @@ pub struct KeyFileV2 {
     pub description: Option<String>,
 
     /// Address
-    pub address: Address,
+    pub address: Option<Address>,
 
     /// UUID v4
     pub uuid: Uuid,
@@ -63,7 +63,7 @@ pub struct KeyFileV2 {
 pub struct SerializableKeyFileCoreV2 {
     version: u8,
     id: Uuid,
-    address: Address,
+    address: Option<Address>,
     name: Option<String>,
     description: Option<String>,
     visible: Option<bool>,
@@ -75,7 +75,7 @@ pub struct SerializableKeyFileCoreV2 {
 pub struct SerializableKeyFileHDV2 {
     version: u8,
     id: Uuid,
-    address: Address,
+    address: Option<Address>,
     name: Option<String>,
     description: Option<String>,
     visible: Option<bool>,
@@ -334,12 +334,12 @@ impl KeyFileV2 {
 
 #[cfg(test)]
 mod tests {
-    use crate::migration::source::json_data::AddressBookItem;
+    use crate::migration::source::json_data::{AddressBookItem, KeyFileV2, CryptoTypeV2};
     use crate::Address;
     use std::str::FromStr;
 
     #[test]
-    fn parse_json() {
+    fn parse_addressbook_json() {
         let json = r#"
         {
           "address": "0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2",
@@ -360,5 +360,69 @@ mod tests {
             },
             act
             );
+    }
+
+    #[test]
+    fn parse_keyfile() {
+        let json = r#"
+            {
+                "crypto" : {
+                    "cipher" : "aes-128-ctr",
+                    "cipherparams" : {
+                        "iv" : "6087dab2f9fdbbfaddc31a909735c1e6"
+                    },
+                    "ciphertext" : "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46",
+                    "kdf" : "pbkdf2",
+                    "kdfparams" : {
+                        "c" : 262144,
+                        "dklen" : 32,
+                        "prf" : "hmac-sha256",
+                        "salt" : "ae3cd4e7013836a3df6bd7241b12db061dbe2c6785853cce422d148a624ce0bd"
+                    },
+                    "mac" : "517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2"
+                },
+                "id" : "3198bc9c-6672-5ab3-d995-4942343ae5b6",
+                "version" : 3
+            }
+        "#;
+
+        let kf = KeyFileV2::decode(json);
+        assert!(kf.is_ok());
+        let kf = kf.unwrap();
+        let cyphertext = match kf.crypto {
+            CryptoTypeV2::Core(x) => x.cipher_text,
+            _ => "not_core".to_string()
+        };
+        assert_eq!("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46".to_string(), cyphertext);
+    }
+
+    // {"version":3,"id":"f37f1640-d34f-4202-bbca-c11139b7ab7e","address":"bd5222391bbb9f17484f2565455fb6610d9e145f","name": "ledger m/44\'/60\'/0\'/0","description":null,"visible":null,"crypto":{"cipher":"hardware","hardware":"ledger-nano-s:v1","hd_path":"m/44\'/60\'/0\'/0"}}
+
+    #[test]
+    fn parse_keyfile_ledger() {
+        let json = r#"
+            {
+                "version":3,
+                "id": "f37f1640-d34f-4202-bbca-c11139b7ab7e",
+                "address": "bd5222391bbb9f17484f2565455fb6610d9e145f",
+                "name": "ledger m/44'/60'/0'/0",
+                "description": null,
+                "visible": null,
+                "crypto": {
+                    "cipher": "hardware",
+                    "hardware": "ledger-nano-s:v1",
+                    "hd_path":"m/44'/60'/0'/0"
+                }
+            }
+        "#;
+
+        let kf = KeyFileV2::decode(json);
+        assert!(kf.is_ok());
+        let kf = kf.unwrap();
+        let hd_path = match kf.crypto {
+            CryptoTypeV2::HdWallet(hw) => hw.hd_path,
+            _ => "not_hd".to_string()
+        };
+        assert_eq!("m/44'/60'/0'/0".to_string(), hd_path);
     }
 }

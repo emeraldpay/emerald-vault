@@ -87,7 +87,7 @@ impl TryFrom<&EthereumJsonV3File> for PrivateKeyHolder {
             address: value.address,
             key: Encrypted::try_from(&value.crypto)?
         };
-        let pk = PrivateKeyType::Ethereum(pk3);
+        let pk = PrivateKeyType::EthereumPk(pk3);
         let result = PrivateKeyHolder {
             id: value.id,
             pk
@@ -132,7 +132,7 @@ impl From<&CoreCrypto> for Kdf {
 impl EthereumJsonV3File {
     pub fn from_wallet(wallet: &Wallet, pk: &PrivateKeyHolder) -> Result<EthereumJsonV3File, ()> {
         let result = match &pk.pk {
-            PrivateKeyType::Ethereum(pk3) => {
+            PrivateKeyType::EthereumPk(pk3) => {
                 let crypto = CoreCrypto::try_from(&pk3.key);
                 if crypto.is_err() {
                     return Err(())
@@ -145,6 +145,9 @@ impl EthereumJsonV3File {
                     name: wallet.label.clone(),
                     description: None
                 }
+            }
+            PrivateKeyType::EthereumSeed(_) => {
+                return Err(())
             }
         };
         Ok(result)

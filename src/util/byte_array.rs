@@ -36,6 +36,19 @@ macro_rules! byte_array_struct {
             }
         }
 
+        impl std::convert::TryFrom<&[u8]> for $name {
+            type Error = ();
+
+            fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+                if value.len() != $num {
+                    return Err(());
+                }
+                let mut result: [u8; $num] = [0; $num];
+                result.copy_from_slice(value);
+                Ok(result.into())
+            }
+        }
+
         impl std::convert::TryFrom<Vec<u8>> for $name {
             type Error = ();
 
@@ -46,6 +59,12 @@ macro_rules! byte_array_struct {
                 let mut result: [u8; $num] = [0; $num];
                 result.copy_from_slice(&value);
                 Ok(result.into())
+            }
+        }
+
+        impl Into<Vec<u8>> for $name {
+            fn into(self) -> Vec<u8> {
+                self.0.to_vec()
             }
         }
 

@@ -155,7 +155,11 @@ impl V2Storage {
                     let accounts = accounts.unwrap();
                     &self.migration.info(format!("Accounts to migrate: {}", accounts.len()));
                     accounts.iter().for_each(|kf| {
-                        &self.migration.info(format!("Migrate key {}", kf.address.to_string()));
+                        let address = match kf.address {
+                            Some(a) => a.to_string(),
+                            None => "UNKNOWN".to_string()
+                        };
+                        &self.migration.info(format!("Migrate key {}", address));
                         match add_to_vault(blockchain.clone(), &vault, kf) {
                             Ok(id) => {
                                 created_wallets.push(id);

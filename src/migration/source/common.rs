@@ -13,6 +13,8 @@ use crate::{
 };
 use uuid::Uuid;
 use std::convert::TryFrom;
+use crate::convert::proto::pk::SeedReference;
+use crate::convert::proto::seed::{SeedSource, Seed, LedgerSource, HDPathFingerprint};
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();
@@ -38,31 +40,80 @@ fn extract_label(kf: &KeyFileV2) -> Option<String> {
 
 // Creates Private Key and Wallet with that single key
 pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2) -> Result<Uuid, String> {
-    let account = match &kf.crypto {
+    let pk_id = match &kf.crypto {
         CryptoTypeV2::Core(data) => {
             let pk = PrivateKeyHolder {
                 id: Uuid::new_v4(),
-                pk: PrivateKeyType::Ethereum(
+                pk: PrivateKeyType::EthereumPk(
                     EthereumPk3 {
-                        address: Some(kf.address),
+                        address: kf.address,
                         key: Encrypted::try_from(data).map_err(|e| "Failed to convert encrypted Private Key")?
                     }
                 )
             };
             let pk_id = pk.get_id();
             vault.keys().add(pk).map_err(|e| "Failed to add converted Private Key to the Vault")?;
-            WalletAccount {
-                blockchain,
-                address: AddressType::Ethereum(
-                    EthereumAddress {
-                        address: Some(kf.address),
-                        key_id: pk_id
+            pk_id
+        },
+        CryptoTypeV2::HdWallet(data) => {
+            let seeds = vault.seeds();
+            //during migration consider that user has only one ledger
+            let existing = seeds.list_entries()
+                .map_err(|_| "Failed to read list of current Seeds".to_string())?
+                .iter()
+                .find(|s| match s.source {
+                    SeedSource::Ledger(_) => true,
+                    _ => false
+                })
+                .cloned();
+
+            let seed_id = match &existing {
+                Some(seed) => seed.id.clone(),
+                None => {
+                    let fingerprints = match kf.address {
+                        Some(address) => {
+                            let f = HDPathFingerprint::from_address(data.hd_path.clone(), &address);
+                            vec![f]
+                        },
+                        None => Vec::new()
+                    };
+                    let seed = Seed {
+                        id: Uuid::new_v4(),
+                        source: SeedSource::Ledger(
+                            LedgerSource { fingerprints }
+                        )
+                    };
+                    let id = seed.id.clone();
+                    seeds.add(seed).map_err(|e| "Failed to add converted Ledger Seed to the Vault")?;;
+                    id
+                }
+            };
+
+            let pk = PrivateKeyHolder {
+                id: Uuid::new_v4(),
+                pk: PrivateKeyType::EthereumSeed(
+                    SeedReference {
+                        id: seed_id,
+                        hdpath: data.hd_path.clone()
                     }
                 )
-            }
-        },
-        CryptoTypeV2::HdWallet(_) => unimplemented!()
+            };
+            let pk_id = pk.get_id();
+            vault.keys().add(pk).map_err(|e| "Failed to add converted Private Key to the Vault")?;
+            pk_id
+        }
     };
+
+    let account = WalletAccount {
+        blockchain,
+        address: AddressType::Ethereum(
+            EthereumAddress {
+                address: kf.address,
+                key_id: pk_id
+            }
+        )
+    };
+
     let wallet = Wallet {
         id: Uuid::new_v4(),
         label: extract_label(kf),

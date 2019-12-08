@@ -157,6 +157,12 @@ impl MnemonicSize {
     }
 }
 
+impl Default for Mnemonic {
+    fn default() -> Self {
+        Mnemonic::new(Language::English, StandardMnemonic::secure()).unwrap()
+    }
+}
+
 impl Mnemonic {
 
     // Create new mnemonic phrase for selected lanaguage with provided size
