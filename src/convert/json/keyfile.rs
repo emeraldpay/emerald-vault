@@ -1,16 +1,16 @@
 use uuid::Uuid;
-use std::convert::{TryInto, TryFrom};
+use std::convert::{TryFrom};
 use std::fmt;
 use std::str::FromStr;
 use crate::{
     convert::{
         error::ConversionError,
-        proto::{
-            crypto::{Encrypted, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, PrfType, ScryptKdf, MacType},
-            pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType},
-            wallet::{Wallet},
-            types::{HasUuid},
-        },
+    },
+    structs::{
+        crypto::{Encrypted, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, PrfType, ScryptKdf, MacType},
+        pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType},
+        wallet::{Wallet},
+        types::{HasUuid},
     },
     core::Address,
     storage::error::VaultError,
@@ -365,6 +365,102 @@ impl EthereumJsonV3File {
                     description: None
                 }
             }
+        };
+        Ok(result)
+    }
+}
+
+impl TryFrom<&EthereumJsonV3File> for Encrypted {
+    type Error = VaultError;
+
+    fn try_from(json: &EthereumJsonV3File) -> Result<Self, Self::Error> {
+        let cipher = Cipher::Aes128Ctr(
+            Aes128CtrCipher {
+                encrypted: hex::decode(json.crypto.cipher_text.clone())?,
+                iv: hex::decode(json.crypto.cipher_params.iv.clone())?,
+                mac: MacType::Web3(hex::decode(json.crypto.mac.clone())?)
+            }
+        );
+        let kdf = match json.crypto.kdf_params.kdf {
+            KdfJson::Pbkdf2 { prf, c } => {
+                let prf = match prf {
+                    PrfJson::HmacSha256 => PrfType::HmacSha256,
+                    PrfJson::HmacSha512 => PrfType::HmacSha512
+                };
+                Kdf::Pbkdf2(Pbkdf2 {
+                    dklen: json.crypto.kdf_params.dklen as u32,
+                    c,
+                    salt: hex::decode(json.crypto.kdf_params.salt.clone())?,
+                    prf
+                })
+            },
+            KdfJson::Scrypt { n, r, p } => {
+                Kdf::Scrypt(ScryptKdf {
+                    dklen: json.crypto.kdf_params.dklen as u32,
+                    salt: hex::decode(json.crypto.kdf_params.salt.clone())?,
+                    n,
+                    r,
+                    p
+                })
+            },
+        };
+        Ok(Encrypted { cipher, kdf })
+    }
+}
+
+
+impl TryFrom<&Encrypted> for CoreCryptoJson {
+    type Error = VaultError;
+
+    fn try_from(value: &Encrypted) -> Result<Self, Self::Error> {
+        match &value.cipher {
+            Cipher::Aes128Ctr(cipher) => {
+                let kdf = match &value.kdf {
+                    Kdf::Pbkdf2(value) => KdfJson::Pbkdf2 {
+                        prf: match value.prf {
+                            PrfType::HmacSha256 => PrfJson::HmacSha256,
+                            PrfType::HmacSha512 => PrfJson::HmacSha512,
+                        },
+                        c: value.c
+                    },
+                    Kdf::Scrypt(value) => KdfJson::Scrypt {
+                        n: value.n,
+                        r: value.r,
+                        p: value.p
+                    }
+                };
+                let mac = match &cipher.mac {
+                    MacType::Web3(v) => v.clone()
+                };
+                let result = CoreCryptoJson {
+                    cipher: CipherId::Aes128Ctr,
+                    cipher_text: hex::encode(cipher.encrypted.clone()),
+                    cipher_params: CipherParamsJson {
+                        iv: hex::encode(cipher.iv.clone())
+                    },
+                    kdf_params: KdfParamsJson {
+                        kdf,
+                        dklen: 32,
+                        salt: hex::encode(match &value.kdf {
+                            Kdf::Pbkdf2(v) => v.salt.clone(),
+                            Kdf::Scrypt(v) => v.salt.clone()
+                        })
+                    },
+                    mac: hex::encode(mac)
+                };
+                Ok(result)
+            }
+        }
+    }
+}
+
+impl TryFrom<&EthereumJsonV3File> for EthereumPk3 {
+    type Error = VaultError;
+
+    fn try_from(json: &EthereumJsonV3File) -> Result<Self, Self::Error> {
+        let result = EthereumPk3 {
+            address: json.address,
+            key: Encrypted::try_from(json)?
         };
         Ok(result)
     }

@@ -6,7 +6,6 @@ use crate::{
     storage::vault::VaultStorage,
     core::chains::{Blockchain, EthereumChainId},
     migration::types::{Migrate, MigrationError},
-    migration::source::json_data::KeyFileV2,
     migration::types::MigrationResult,
     migration::source::common::add_to_vault
 };

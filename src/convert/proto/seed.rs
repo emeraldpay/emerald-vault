@@ -1,75 +1,25 @@
 use uuid::Uuid;
-use crate::convert::proto::crypto::Encrypted;
-use crate::proto::{
-    crypto::{
-        Encrypted as proto_Encrypted
-    },
-    seed::{
-        Seed as proto_Seed,
-        Seed_oneof_seed_source as proto_SeedType,
-        LedgerSeed as proto_LedgerSeed,
-        HDPathFingerprint as proto_HDFingerprint,
-        HDPathFingerprint_Type as proto_HDFingerprintType
-    }
-};
 use std::convert::{TryFrom, TryInto};
-use crate::storage::error::VaultError;
 use std::str::FromStr;
 use protobuf::{parse_from_bytes, Message};
-use crate::convert::proto::types::HasUuid;
-use crate::Address;
-use sha2::Digest;
-
-byte_array_struct!(Bytes256, 32);
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Seed {
-    pub id: Uuid,
-    pub source: SeedSource
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum SeedSource {
-    Bytes(Encrypted),
-    Ledger(LedgerSource)
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct LedgerSource {
-    pub fingerprints: Vec<HDPathFingerprint>
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct HDPathFingerprint {
-    pub hd_path: String,
-    pub value: FingerprintType
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum FingerprintType {
-    AddressSha256(Bytes256)
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct SeedRef {
-    pub seed_id: Uuid,
-    pub hd_path: String
-}
-
-// ----
-
-impl HDPathFingerprint {
-    pub fn from_address(hd_path: String, address: &Address) -> HDPathFingerprint {
-        let hash = sha2::Sha256::digest(address);
-        let f = Bytes256::try_from(hash.as_slice()).unwrap();
-        HDPathFingerprint {
-            hd_path: hd_path,
-            value: FingerprintType::AddressSha256(f)
+use crate::{
+    storage::error::VaultError,
+    proto::{
+        crypto::{
+            Encrypted as proto_Encrypted
+        },
+        seed::{
+            Seed as proto_Seed,
+            Seed_oneof_seed_source as proto_SeedType,
+            LedgerSeed as proto_LedgerSeed,
+            HDPathFingerprint as proto_HDFingerprint
         }
+    },
+    structs::{
+        crypto::Encrypted,
+        seed::{LedgerSource, HDPathFingerprint, FingerprintType, Seed, SeedSource, Bytes256}
     }
-}
-
-// ----
+};
 
 /// Read from Protobuf message
 impl TryFrom<&proto_LedgerSeed> for LedgerSource {
@@ -166,11 +116,5 @@ impl TryFrom<Seed> for Vec<u8> {
         }
         m.write_to_bytes()
             .map_err(|e| VaultError::from(e))
-    }
-}
-
-impl HasUuid for Seed {
-    fn get_id(&self) -> Uuid {
-        self.id
     }
 }

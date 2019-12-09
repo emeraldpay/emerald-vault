@@ -1,8 +1,12 @@
 use uuid::Uuid;
-use crate::crypto::error::CryptoError;
-use crate::convert::proto::pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType};
-use crate::convert::proto::crypto::Encrypted;
-use crate::core::{Address, PrivateKey as core_PK};
+use crate::{
+    structs::{
+        pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType},
+        crypto::Encrypted
+    },
+    crypto::error::CryptoError,
+    core::{Address, PrivateKey as core_PK}
+};
 
 impl PrivateKeyHolder {
 

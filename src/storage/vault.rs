@@ -12,25 +12,21 @@ use crate::{
     },
     chains::Blockchain,
     convert::{
-        proto::{
-            pk::{
-                PrivateKeyType,
-                PrivateKeyHolder
-            },
-            wallet::{
-                WalletAccount,
-                PKType,
-                Wallet
-            },
-            crypto::{
-                Encrypted
-            },
-            types::{
-                HasUuid
-            },
-            seed::Seed
-        },
         json::keyfile::EthereumJsonV3File,
+    },
+    structs::{
+        pk::{
+            PrivateKeyHolder
+        },
+        wallet::{
+            WalletAccount,
+            PKType,
+            Wallet
+        },
+        types::{
+            HasUuid
+        },
+        seed::Seed
     }
 };
 use crate::storage::addressbook::AddressbookStorage;
@@ -253,14 +249,18 @@ impl <P> VaultAccess<P> for StandardVaultFiles
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
     use tempdir::TempDir;
-    use crate::convert::proto::pk::{
-        PrivateKeyHolder,
-        EthereumPk3
+    use crate::{
+        structs::{
+            pk::{
+                PrivateKeyHolder,
+                EthereumPk3
+            },
+            crypto::Encrypted
+        },
+        tests::*,
+        convert::json::keyfile::EthereumJsonV3File
     };
-    use crate::convert::proto::crypto::Encrypted;
-    use crate::convert::json::keyfile::EthereumJsonV3File;
 
 
     #[test]

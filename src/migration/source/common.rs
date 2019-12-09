@@ -2,19 +2,16 @@ use crate::{
     migration::source::json_data::{KeyFileV2, CryptoTypeV2},
     storage::vault::VaultStorage,
     core::chains::Blockchain,
-    convert::{
-        proto::{
-            pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3},
-            crypto::Encrypted,
-            wallet::{WalletAccount, PKType, Wallet},
-            types::HasUuid,
-            seed::{SeedSource, Seed, LedgerSource, HDPathFingerprint}
-        }
+    structs::{
+        pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3},
+        crypto::Encrypted,
+        wallet::{WalletAccount, PKType, Wallet},
+        types::HasUuid,
+        seed::{SeedSource, Seed, LedgerSource, HDPathFingerprint, SeedRef}
     }
 };
 use uuid::Uuid;
 use std::convert::TryFrom;
-use crate::convert::proto::seed::SeedRef;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();

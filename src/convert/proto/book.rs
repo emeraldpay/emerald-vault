@@ -1,33 +1,22 @@
-use crate::core::chains::Blockchain;
-use crate::Address;
-use uuid::Uuid;
 use std::convert::TryFrom;
-use crate::storage::error::VaultError;
-use crate::proto::{
-    book::{
-        BookItem as proto_BookItem
-    },
-    address::{
-        Address as proto_Address,
-        Address_oneof_address_type as proto_AddressType
-    }
-};
 use protobuf::{parse_from_bytes, Message};
-use crate::util::optional::none_if_empty;
+use crate::{
+    util::optional::none_if_empty,
+    proto::{
+        book::{
+            BookItem as proto_BookItem
+        },
+        address::{
+            Address as proto_Address,
+            Address_oneof_address_type as proto_AddressType
+        }
+    },
+    storage::error::VaultError,
+    Address,
+    core::chains::Blockchain,
+    structs::book::{BookmarkDetails, AddressRef}
+};
 use std::str::FromStr;
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct BookmarkDetails {
-    pub blockchains: Vec<Blockchain>,
-    pub label: Option<String>,
-    pub description: Option<String>,
-    pub address: AddressRef
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum AddressRef {
-    EthereumAddress(Address)
-}
 
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for BookmarkDetails {

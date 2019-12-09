@@ -14,15 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 //! # Storage for `KeyFiles`
-///
-/// Provides 2 variants of storage:
-/// * backed with `db`
-/// * plain filesystem
-///
-use crate::core::Address;
-use crate::util;
-use crate::convert::proto::wallet::{Wallet, PKType};
-use crate::convert::proto::types::HasUuid;
+use crate::{
+    structs::{
+        types::HasUuid,
+        wallet::{Wallet}
+    }
+};
 use hex::ToHex;
 
 /// Short account info

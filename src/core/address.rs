@@ -20,7 +20,6 @@ use super::Error;
 use hex;
 use std::str::FromStr;
 use std::{fmt, ops};
-use serde::{Deserialize, Deserializer};
 
 /// Fixed bytes number to represent `Address`
 pub const ADDRESS_BYTES: usize = 20;

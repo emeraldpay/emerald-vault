@@ -1,9 +1,9 @@
-use hmac::Hmac;
-use pbkdf2::pbkdf2;
-use scrypt::{scrypt, ScryptParams};
-use sha2::{Sha256, Sha512};
 use std::convert::{TryFrom, TryInto};
 use crate::{
+    structs::{
+        crypto::{PrfType, MacType, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, ScryptKdf, Encrypted},
+        types::IsVerified
+    },
     storage::error::VaultError,
     proto::crypto::{
         Encrypted as proto_Encrypted,
@@ -15,113 +15,7 @@ use crate::{
         Mac as proto_Mac,
         Mac_MacType as proto_MacType
     },
-    convert::{
-        json::keyfile::{EthereumJsonV3File, KdfJson, CoreCryptoJson, CipherParamsJson, KdfParamsJson, PrfJson, CipherId},
-        proto::types::IsVerified
-    }
 };
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct ScryptKdf {
-    pub dklen: u32,
-    pub salt: Vec<u8>,
-    pub n: u32,
-    pub r: u32,
-    pub p: u32
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Pbkdf2 {
-    pub dklen: u32,
-    pub c: u32,
-    pub salt: Vec<u8>,
-    pub prf: PrfType
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum PrfType {
-    HmacSha256,
-    HmacSha512
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum Kdf {
-    Scrypt(ScryptKdf),
-    Pbkdf2(Pbkdf2)
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Encrypted {
-    pub cipher: Cipher,
-    pub kdf: Kdf
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum Cipher {
-    Aes128Ctr(Aes128CtrCipher)
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Aes128CtrCipher {
-    pub encrypted: Vec<u8>,
-    pub iv: Vec<u8>,
-    pub mac: MacType,
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum MacType {
-    Web3(Vec<u8>)
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-enum CryptoError {
-    InvalidData
-}
-
-impl Encrypted {
-
-    pub fn get_mac(&self) -> &Vec<u8> {
-        match &self.cipher {
-            Cipher::Aes128Ctr(v) => match &v.mac {
-                MacType::Web3(x) => x
-            }
-        }
-    }
-
-    pub fn get_iv(&self) -> &Vec<u8> {
-        match &self.cipher {
-            Cipher::Aes128Ctr(v) => &v.iv
-        }
-    }
-
-    pub fn get_message(&self) -> &Vec<u8> {
-        match &self.cipher {
-            Cipher::Aes128Ctr(v) => &v.encrypted
-        }
-    }
-
-}
-
-impl IsVerified for ScryptKdf {
-    fn verify(self) -> Result<Self, String> {
-        if self.salt.len() != 32 {
-            return Err("salt has invalid size".to_string())
-        }
-        if self.dklen != 32 {
-            return Err("dklen has invalid value".to_string())
-        }
-        if self.p <= 0 {
-            return Err("p is too small".to_string())
-        }
-        if self.n <= 0 {
-            return Err("n is too small".to_string())
-        }
-        if self.r <= 0 {
-            return Err("r is too small".to_string())
-        }
-        Ok(self)
-    }
-}
 
 /// From Protobuf Message
 impl TryFrom<proto_PrfType> for PrfType {
@@ -273,89 +167,5 @@ impl TryFrom<&Encrypted> for proto_Encrypted {
         }
 
         Ok(encrypted)
-    }
-}
-
-impl TryFrom<&EthereumJsonV3File> for Encrypted {
-    type Error = VaultError;
-
-    fn try_from(json: &EthereumJsonV3File) -> Result<Self, Self::Error> {
-        let cipher = Cipher::Aes128Ctr(
-            Aes128CtrCipher {
-                encrypted: hex::decode(json.crypto.cipher_text.clone())?,
-                iv: hex::decode(json.crypto.cipher_params.iv.clone())?,
-                mac: MacType::Web3(hex::decode(json.crypto.mac.clone())?)
-            }
-        );
-        let kdf = match json.crypto.kdf_params.kdf {
-            KdfJson::Pbkdf2 { prf, c } => {
-                let prf = match prf {
-                    PrfJson::HmacSha256 => PrfType::HmacSha256,
-                    PrfJson::HmacSha512 => PrfType::HmacSha512
-                };
-                Kdf::Pbkdf2(Pbkdf2 {
-                    dklen: json.crypto.kdf_params.dklen as u32,
-                    c,
-                    salt: hex::decode(json.crypto.kdf_params.salt.clone())?,
-                    prf
-                })
-            },
-            KdfJson::Scrypt { n, r, p } => {
-                Kdf::Scrypt(ScryptKdf {
-                    dklen: json.crypto.kdf_params.dklen as u32,
-                    salt: hex::decode(json.crypto.kdf_params.salt.clone())?,
-                    n,
-                    r,
-                    p
-                })
-            },
-        };
-        Ok(Encrypted { cipher, kdf })
-    }
-}
-
-
-impl TryFrom<&Encrypted> for CoreCryptoJson {
-    type Error = VaultError;
-
-    fn try_from(value: &Encrypted) -> Result<Self, Self::Error> {
-        match &value.cipher {
-            Cipher::Aes128Ctr(cipher) => {
-                let kdf = match &value.kdf {
-                    Kdf::Pbkdf2(value) => KdfJson::Pbkdf2 {
-                        prf: match value.prf {
-                            PrfType::HmacSha256 => PrfJson::HmacSha256,
-                            PrfType::HmacSha512 => PrfJson::HmacSha512,
-                        },
-                        c: value.c
-                    },
-                    Kdf::Scrypt(value) => KdfJson::Scrypt {
-                        n: value.n,
-                        r: value.r,
-                        p: value.p
-                    }
-                };
-                let mac = match &cipher.mac {
-                    MacType::Web3(v) => v.clone()
-                };
-                let result = CoreCryptoJson {
-                    cipher: CipherId::Aes128Ctr,
-                    cipher_text: hex::encode(cipher.encrypted.clone()),
-                    cipher_params: CipherParamsJson {
-                        iv: hex::encode(cipher.iv.clone())
-                    },
-                    kdf_params: KdfParamsJson {
-                        kdf,
-                        dklen: 32,
-                        salt: hex::encode(match &value.kdf {
-                            Kdf::Pbkdf2(v) => v.salt.clone(),
-                            Kdf::Scrypt(v) => v.salt.clone()
-                        })
-                    },
-                    mac: hex::encode(mac)
-                };
-                Ok(result)
-            }
-        }
     }
 }

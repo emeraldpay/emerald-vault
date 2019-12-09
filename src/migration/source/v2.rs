@@ -15,13 +15,13 @@ use crate::{
         vault::VaultAccess
     },
     core::chains::{Blockchain, EthereumChainId},
-    convert::proto::{
+    structs::{
         types::HasUuid,
         pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3},
         crypto::Encrypted,
-        wallet::{Wallet, WalletAccount, PKType}
-    },
-    convert::proto::book::{BookmarkDetails, AddressRef}
+        wallet::{Wallet, WalletAccount, PKType},
+        book::{BookmarkDetails, AddressRef}
+    }
 };
 use std::fs;
 use crate::migration::source::common::add_to_vault;

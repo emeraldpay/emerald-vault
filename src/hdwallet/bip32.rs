@@ -27,7 +27,6 @@ use regex::Regex;
 use secp256k1::Secp256k1;
 use std::ops;
 use crate::util::to_bytes;
-use std::convert::TryInto;
 use std::string::ToString;
 
 lazy_static! {

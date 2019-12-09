@@ -4,7 +4,7 @@ use aes_ctr::Aes128Ctr;
 use rand::prelude::{Rng};
 use rand::thread_rng;
 use std::convert::TryFrom;
-use crate::convert::proto::crypto::{Encrypted, Cipher, MacType, Aes128CtrCipher, ScryptKdf, Kdf};
+use crate::structs::crypto::{Encrypted, Cipher, MacType, Aes128CtrCipher, ScryptKdf, Kdf};
 use crate::keccak256;
 use crate::crypto::error::CryptoError;
 use crate::crypto::kdf::KeyDerive;
@@ -136,7 +136,7 @@ impl MacType {
 
 #[cfg(test)]
 mod tests {
-    use crate::convert::proto::crypto::{MacType, Encrypted, Cipher, Aes128CtrCipher};
+    use crate::structs::crypto::{MacType, Encrypted, Cipher, Aes128CtrCipher};
     use crate::crypto::error::CryptoError;
     use crate::crypto::encrypted::{Web3Key, encrypt_aes128, decrypt_aes128};
     use std::convert::TryFrom;

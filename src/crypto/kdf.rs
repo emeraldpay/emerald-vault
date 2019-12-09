@@ -4,7 +4,7 @@ use scrypt::{
     ScryptParams, scrypt
 };
 use pbkdf2::pbkdf2;
-use crate::convert::proto::crypto::{ScryptKdf, Pbkdf2, PrfType, Kdf};
+use crate::structs::crypto::{ScryptKdf, Pbkdf2, PrfType, Kdf};
 use crate::crypto::error::CryptoError;
 
 /// Key Derivation source

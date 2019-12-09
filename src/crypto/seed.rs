@@ -1,10 +1,8 @@
 use crate::{
-    mnemonic::{StandardMnemonic, Mnemonic},
-    convert::{
-        proto::{
-            seed::{Seed, SeedSource},
-            crypto::Encrypted
-        }
+    mnemonic::{Mnemonic},
+    structs::{
+        seed::{Seed, SeedSource},
+        crypto::Encrypted
     }
 };
 use uuid::Uuid;

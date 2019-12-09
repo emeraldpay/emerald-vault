@@ -15,24 +15,22 @@ limitations under the License.
 */
 //! # Addressbook utils
 
-use glob::glob;
-use serde_json;
-use std::fs::{remove_file, OpenOptions};
+use std::fs::{OpenOptions};
 use std::fs::File;
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 use uuid::Uuid;
 use crate::{
     convert::{
-        proto::book::{BookmarkDetails},
         error::ConversionError,
-        proto::types::HasUuid
+    },
+    structs::{
+        types::HasUuid,
+        book::{BookmarkDetails},
     },
     storage::{
         vault::VaultAccess,
         error::VaultError
-    },
-    core::Address,
+    }
 };
 use std::convert::{TryFrom, TryInto};
 use std::fs;
@@ -237,7 +235,7 @@ mod tests {
             vault::VaultAccess,
             addressbook::AddressBookmark
         },
-        convert::proto::book::{
+        structs::book::{
             BookmarkDetails,
             AddressRef
         },

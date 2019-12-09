@@ -2,12 +2,22 @@ use uuid::Uuid;
 use crate::{
     Address,
     convert::{
-        proto::crypto::{Aes128CtrCipher, MacType, Encrypted, Cipher, Kdf},
         error::ConversionError
     },
+    structs::{
+        crypto::{
+            Aes128CtrCipher,
+            MacType,
+            Encrypted,
+            Cipher,
+            Kdf,
+            Pbkdf2,
+            ScryptKdf,
+            PrfType
+        }
+    }
 };
 use std::convert::TryFrom;
-use crate::convert::proto::crypto::{Pbkdf2, ScryptKdf, PrfType};
 
 /// Keccak-256 crypto hash length in bytes
 const KECCAK256_BYTES: usize = 32;

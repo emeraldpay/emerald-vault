@@ -21,9 +21,7 @@ pub mod vault;
 pub mod error;
 pub mod archive;
 
-use std::boxed::Box;
 use std::env;
-use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Base dir for internal data, all chain-related should be store in subdirectories

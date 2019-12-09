@@ -65,6 +65,7 @@ pub mod convert;
 pub mod crypto;
 pub mod migration;
 pub mod proto;
+pub mod structs;
 
 pub use self::core::*;
 pub use self::util::*;

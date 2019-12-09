@@ -1,18 +1,9 @@
-use std::convert::{TryFrom, TryInto};
+use std::convert::{TryFrom};
 use protobuf::{parse_from_bytes, Message};
 use std::str::FromStr;
 use uuid::Uuid;
 use crate::{
-    core::{Address, PrivateKey as core_PK},
-    convert::{
-        json::keyfile::EthereumJsonV3File,
-        proto::{
-            types::HasUuid,
-            crypto::{
-                Encrypted,
-            }
-        }
-    },
+    core::{Address},
     proto::{
         crypto::{
             Encrypted as proto_Encrypted
@@ -21,41 +12,19 @@ use crate::{
             PrivateKey as proto_PrivateKey,
             EthereumPrivateKey as proto_EthereumPrivateKey,
             EthereumPK3 as proto_EthereumPK3
-        },
-        seed::{
-            SeedHD as proto_SeedHD
         }
     },
-    crypto::error::CryptoError,
-    storage::error::VaultError
-};
-
-
-pub struct PrivateKeyHolder {
-    pub id: Uuid,
-    pub pk: PrivateKeyType
-}
-
-pub enum PrivateKeyType {
-    EthereumPk(EthereumPk3)
-}
-
-pub struct EthereumPk3 {
-    pub address: Option<Address>,
-    pub key: Encrypted
-}
-
-impl TryFrom<&EthereumJsonV3File> for EthereumPk3 {
-    type Error = VaultError;
-
-    fn try_from(json: &EthereumJsonV3File) -> Result<Self, Self::Error> {
-        let result = EthereumPk3 {
-            address: json.address,
-            key: Encrypted::try_from(json)?
-        };
-        Ok(result)
+    storage::error::VaultError,
+    structs::{
+        types::HasUuid,
+        crypto::{
+            Encrypted,
+        },
+        pk::{
+            PrivateKeyHolder, EthereumPk3, PrivateKeyType
+        }
     }
-}
+};
 
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for PrivateKeyHolder {
@@ -122,17 +91,5 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
         result.set_ethereum(ethereum);
         result.write_to_bytes()
             .map_err(|e| VaultError::from(e))
-    }
-}
-
-impl HasUuid for PrivateKeyHolder {
-    fn get_id(&self) -> Uuid {
-        self.id
-    }
-}
-
-impl PrivateKeyHolder {
-    pub fn generate_id(&mut self) {
-        self.id = Uuid::new_v4();
     }
 }

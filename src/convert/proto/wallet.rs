@@ -3,14 +3,14 @@ use std::convert::TryFrom;
 use protobuf::{parse_from_bytes, Message};
 use std::str::FromStr;
 use crate::{
-    convert::{
-        proto::types::HasUuid,
-        proto::seed::SeedRef
+    structs::{
+        seed::SeedRef,
+        wallet::{WalletAccount, Wallet, PKType}
     },
     util::optional::none_if_empty,
     storage::error::VaultError,
     core::{
-        chains::{Blockchain, EthereumChainId},
+        chains::{Blockchain},
         Address
     },
     proto::{
@@ -29,32 +29,6 @@ use crate::{
         }
     },
 };
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Wallet {
-    pub id: Uuid,
-    pub label: Option<String>,
-    pub accounts: Vec<WalletAccount>
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct WalletAccount {
-    pub blockchain: Blockchain,
-    pub address: Option<Address>,
-    pub key: PKType
-}
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum PKType {
-    PrivateKeyRef(Uuid),
-    SeedHd(SeedRef)
-}
-
-impl HasUuid for Wallet {
-    fn get_id(&self) -> Uuid {
-        self.id
-    }
-}
 
 impl TryFrom<&proto_WalletAccount> for WalletAccount {
     type Error = VaultError;
@@ -180,15 +154,19 @@ impl TryFrom<Wallet> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::convert::proto::wallet::{
-        Wallet, WalletAccount, PKType
-    };
     use uuid::Uuid;
-    use crate::core::Address;
     use std::str::FromStr;
     use std::convert::{TryInto, TryFrom};
-    use crate::chains::Blockchain;
-    use crate::convert::proto::seed::SeedRef;
+    use crate::{
+        chains::Blockchain,
+        core::Address,
+        structs::{
+            wallet::{
+                Wallet, WalletAccount, PKType
+            },
+            seed::SeedRef
+        }
+    };
 
     #[test]
     fn write_and_read_wallet() {
