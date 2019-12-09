@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 //! # Addressbook utils
-pub mod error;
 
-use self::error::AddressbookError;
 use glob::glob;
 use serde_json;
 use std::fs::{remove_file, OpenOptions};
@@ -25,7 +23,11 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use uuid::Uuid;
 use crate::{
-    convert::proto::book::{BookmarkDetails},
+    convert::{
+        proto::book::{BookmarkDetails},
+        error::ConversionError,
+        proto::types::HasUuid
+    },
     storage::{
         vault::VaultAccess,
         error::VaultError
@@ -33,8 +35,6 @@ use crate::{
     core::Address,
 };
 use std::convert::{TryFrom, TryInto};
-use crate::convert::ethereum::ConversionError;
-use crate::convert::proto::types::HasUuid;
 use std::fs;
 use csv::{Writer, StringRecord};
 
@@ -234,7 +234,6 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
 mod tests {
     use crate::{
         storage::{
-            AddressbookStorage,
             vault::VaultAccess,
             addressbook::AddressBookmark
         },
@@ -251,6 +250,7 @@ mod tests {
     use std::fs::File;
     use std::fs;
     use std::path::Path;
+    use crate::storage::addressbook::AddressbookStorage;
 
     fn extract_address_str(details: &BookmarkDetails) -> Option<String> {
         match details.address {

@@ -3,31 +3,22 @@ use pbkdf2::pbkdf2;
 use scrypt::{scrypt, ScryptParams};
 use sha2::{Sha256, Sha512};
 use std::convert::{TryFrom, TryInto};
-use crate::proto::crypto::{
-    Encrypted as proto_Encrypted,
-    Encrypted_CipherType as proto_CipherType,
-    Encrypted_oneof_kdf_type as proto_Encrypted_oneof_kdf_type,
-    PrfType as proto_PrfType,
-    ScryptKdf as proto_ScryptKdf,
-    Pbkdf2 as proto_Pbkdf2,
-    Mac as proto_Mac,
-    Mac_MacType as proto_MacType
-};
-use crate::storage::error::VaultError;
-use crate::convert::ethereum::EthereumJsonV3File;
-use crate::convert::proto::types::IsVerified;
-use crate::keystore::{
-    Salt as ks_Salt,
-    Kdf as ks_Kdf,
-    Prf as ks_Prf,
-    KdfParams as ks_KdfParams,
-    CoreCrypto as ks_CoreCrypto,
-    Cipher as ks_Cipher,
-    Mac as ks_Mac,
-    serialize::{
-        crypto::CipherParams as ks_CipherParams,
-        Iv as ks_Iv
+use crate::{
+    storage::error::VaultError,
+    proto::crypto::{
+        Encrypted as proto_Encrypted,
+        Encrypted_CipherType as proto_CipherType,
+        Encrypted_oneof_kdf_type as proto_Encrypted_oneof_kdf_type,
+        PrfType as proto_PrfType,
+        ScryptKdf as proto_ScryptKdf,
+        Pbkdf2 as proto_Pbkdf2,
+        Mac as proto_Mac,
+        Mac_MacType as proto_MacType
     },
+    convert::{
+        json::keyfile::{EthereumJsonV3File, KdfJson, CoreCryptoJson, CipherParamsJson, KdfParamsJson, PrfJson, CipherId},
+        proto::types::IsVerified
+    }
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -285,58 +276,60 @@ impl TryFrom<&Encrypted> for proto_Encrypted {
     }
 }
 
-impl From<&EthereumJsonV3File> for Encrypted {
-    fn from(json: &EthereumJsonV3File) -> Self {
+impl TryFrom<&EthereumJsonV3File> for Encrypted {
+    type Error = VaultError;
+
+    fn try_from(json: &EthereumJsonV3File) -> Result<Self, Self::Error> {
         let cipher = Cipher::Aes128Ctr(
             Aes128CtrCipher {
-                encrypted: json.crypto.cipher_text.clone(),
-                iv: json.crypto.cipher_params.iv.clone().to_vec(),
-                mac: MacType::Web3(json.crypto.mac.clone().to_vec())
+                encrypted: hex::decode(json.crypto.cipher_text.clone())?,
+                iv: hex::decode(json.crypto.cipher_params.iv.clone())?,
+                mac: MacType::Web3(hex::decode(json.crypto.mac.clone())?)
             }
         );
         let kdf = match json.crypto.kdf_params.kdf {
-            ks_Kdf::Pbkdf2 { prf, c } => {
+            KdfJson::Pbkdf2 { prf, c } => {
                 let prf = match prf {
-                    ks_Prf::HmacSha256 => PrfType::HmacSha256,
-                    ks_Prf::HmacSha512 => PrfType::HmacSha512
+                    PrfJson::HmacSha256 => PrfType::HmacSha256,
+                    PrfJson::HmacSha512 => PrfType::HmacSha512
                 };
                 Kdf::Pbkdf2(Pbkdf2 {
                     dklen: json.crypto.kdf_params.dklen as u32,
                     c,
-                    salt: json.crypto.kdf_params.salt.clone().to_vec(),
+                    salt: hex::decode(json.crypto.kdf_params.salt.clone())?,
                     prf
                 })
             },
-            ks_Kdf::Scrypt { n, r, p } => {
+            KdfJson::Scrypt { n, r, p } => {
                 Kdf::Scrypt(ScryptKdf {
                     dklen: json.crypto.kdf_params.dklen as u32,
-                    salt: json.crypto.kdf_params.salt.clone().to_vec(),
+                    salt: hex::decode(json.crypto.kdf_params.salt.clone())?,
                     n,
                     r,
                     p
                 })
             },
         };
-        Encrypted { cipher, kdf }
+        Ok(Encrypted { cipher, kdf })
     }
 }
 
 
-impl TryFrom<&Encrypted> for ks_CoreCrypto {
+impl TryFrom<&Encrypted> for CoreCryptoJson {
     type Error = VaultError;
 
     fn try_from(value: &Encrypted) -> Result<Self, Self::Error> {
         match &value.cipher {
             Cipher::Aes128Ctr(cipher) => {
                 let kdf = match &value.kdf {
-                    Kdf::Pbkdf2(value) => ks_Kdf::Pbkdf2 {
+                    Kdf::Pbkdf2(value) => KdfJson::Pbkdf2 {
                         prf: match value.prf {
-                            PrfType::HmacSha256 => ks_Prf::HmacSha256,
-                            PrfType::HmacSha512 => ks_Prf::HmacSha512,
+                            PrfType::HmacSha256 => PrfJson::HmacSha256,
+                            PrfType::HmacSha512 => PrfJson::HmacSha512,
                         },
                         c: value.c
                     },
-                    Kdf::Scrypt(value) => ks_Kdf::Scrypt {
+                    Kdf::Scrypt(value) => KdfJson::Scrypt {
                         n: value.n,
                         r: value.r,
                         p: value.p
@@ -345,21 +338,21 @@ impl TryFrom<&Encrypted> for ks_CoreCrypto {
                 let mac = match &cipher.mac {
                     MacType::Web3(v) => v.clone()
                 };
-                let result = ks_CoreCrypto {
-                    cipher: ks_Cipher::Aes128Ctr,
-                    cipher_text: cipher.encrypted.clone(),
-                    cipher_params: ks_CipherParams {
-                        iv: cipher.iv.clone().try_into()?
+                let result = CoreCryptoJson {
+                    cipher: CipherId::Aes128Ctr,
+                    cipher_text: hex::encode(cipher.encrypted.clone()),
+                    cipher_params: CipherParamsJson {
+                        iv: hex::encode(cipher.iv.clone())
                     },
-                    kdf_params: ks_KdfParams {
+                    kdf_params: KdfParamsJson {
                         kdf,
                         dklen: 32,
-                        salt: match &value.kdf {
+                        salt: hex::encode(match &value.kdf {
                             Kdf::Pbkdf2(v) => v.salt.clone(),
                             Kdf::Scrypt(v) => v.salt.clone()
-                        }.try_into()?
+                        })
                     },
-                    mac: mac.try_into()?
+                    mac: hex::encode(mac)
                 };
                 Ok(result)
             }

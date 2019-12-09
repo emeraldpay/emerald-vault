@@ -17,16 +17,10 @@ limitations under the License.
 
 pub mod addressbook;
 pub mod keyfile;
-mod storage_ctrl;
 pub mod vault;
 pub mod error;
 pub mod archive;
 
-pub use self::addressbook::error::AddressbookError;
-pub use self::addressbook::AddressbookStorage;
-pub use self::keyfile::*;
-pub use self::storage_ctrl::StorageController;
-pub use self::KeystoreError;
 use std::boxed::Box;
 use std::env;
 use std::fs;
@@ -84,52 +78,3 @@ pub fn build_path(base_path: &Path, chain: &str, folder: &str) -> PathBuf {
     path.push(folder);
     path
 }
-
-/// Creates specific type of `KeyFile` storage (database or filesystem)
-///
-/// # Arguments:
-///
-/// * `keystore_path` - path for `KeyFile` storage
-///
-pub fn build_keyfile_storage<P>(path: P) -> Result<Box<KeyfileStorage>, KeystoreError>
-where
-    P: AsRef<Path>,
-{
-    #[cfg(feature = "default")]
-    {
-        let mut p = PathBuf::new();
-        p.push(path);
-        p.push(".db");
-        match DbStorage::new(p) {
-            Ok(db) => Ok(Box::new(db)),
-            Err(er) => Err(KeystoreError::StorageError(
-                format!("Can't create database Keyfile storage. {}", er),
-            )),
-        }
-    }
-    #[cfg(feature = "fs-storage")]
-    match FsStorage::new(path) {
-        Ok(fs) => Ok(Box::new(fs)),
-        Err(_) => Err(KeystoreError::StorageError(
-            "Can't create filesystem Keyfile storage".to_string(),
-        )),
-    }
-}
-
-///// Creates specific type of `Addressbook` storage (database or filesystem)
-/////
-///// # Arguments:
-/////
-///// * `path` - path for `Addressbook` storage
-/////
-//pub fn build_addressbook_storage<P>(path: P) -> Result<Box<AddressbookStorage>, KeystoreError>
-//where
-//    P: AsRef<Path>,
-//{
-//    // TODO: implement DB storage. Add conditional compilation.
-//    let mut p = PathBuf::new();
-//    p.push(path);
-//    fs::create_dir_all(&p)?;
-//
-//    Ok(Box::new(AddressbookStorage::new(p)))
-//}

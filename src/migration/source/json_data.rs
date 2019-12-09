@@ -3,12 +3,11 @@ use crate::{
     Address,
     convert::{
         proto::crypto::{Aes128CtrCipher, MacType, Encrypted, Cipher, Kdf},
-        ethereum::ConversionError
+        error::ConversionError
     },
 };
 use std::convert::TryFrom;
 use crate::convert::proto::crypto::{Pbkdf2, ScryptKdf, PrfType};
-use crate::keystore::SerializableKeyFileCore;
 
 /// Keccak-256 crypto hash length in bytes
 const KECCAK256_BYTES: usize = 32;
@@ -42,21 +41,6 @@ pub struct KeyFileV2 {
     ///
     pub crypto: CryptoTypeV2,
 }
-
-// {"version":3,
-// "id":"1d098815-15b2-42da-9bd6-e549396a3a4d",
-// "address":"3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3",
-// "name":"foo bar",
-// "description":"teßt account #1",
-// "visible":true,
-// "crypto":{
-//   "cipher":"aes-128-ctr",
-//   "ciphertext":"91cc591b18f6a9b115555990db18f647ed828dad30cdf7e3493e2eb0a1f80514",
-//   "cipherparams":{"iv":"07d2a1660d8d02f0dbf55578044bb2b7"},
-//   "kdf":"scrypt",
-//   "kdfparams":{"n":1024,"r":8,"p":1,"dklen":32,"salt":"8c20d18ae12d11128aad057e37dd840a695b60c22ef020fae1827308a6bdf485"},
-//   "mac":"a37f95a2e5726c45c88153dad4d88b58acf72655c173bf2f0f0444a3b42b4790"
-// }}
 
 /// A serializable keystore file (UTC / JSON format)
 #[derive(Deserialize, Clone, Debug)]
@@ -115,25 +99,6 @@ pub struct CoreCryptoV2 {
     /// HMAC authentication code
     pub mac: Mac,
 }
-
-///// Serialization representation for `CoreCryptoV2`
-//#[derive( Deserialize, Debug)]
-//struct SerCoreCryptoV2 {
-//    pub cipher: Cipher,
-//
-//    #[serde(rename = "ciphertext")]
-//    pub cipher_text: String,
-//
-//    #[serde(rename = "cipherparams")]
-//    pub cipher_params: CipherParamsV2,
-//
-//    pub kdf: String,
-//
-//    #[serde(rename = "kdfparams")]
-//    pub kdf_params: KdfParamsV2,
-//
-//    pub mac: Mac,
-//}
 
 /// Cipher type
 #[derive(Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
@@ -395,8 +360,6 @@ mod tests {
         };
         assert_eq!("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46".to_string(), cyphertext);
     }
-
-    // {"version":3,"id":"f37f1640-d34f-4202-bbca-c11139b7ab7e","address":"bd5222391bbb9f17484f2565455fb6610d9e145f","name": "ledger m/44\'/60\'/0\'/0","description":null,"visible":null,"crypto":{"cipher":"hardware","hardware":"ledger-nano-s:v1","hd_path":"m/44\'/60\'/0\'/0"}}
 
     #[test]
     fn parse_keyfile_ledger() {

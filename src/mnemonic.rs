@@ -24,7 +24,6 @@ mod language;
 pub use self::error::Error;
 pub use self::language::{Language, BIP39_ENGLISH_WORDLIST};
 pub use crate::hdwallet::bip32::{generate_key, HDPath};
-use crate::keystore::{Kdf, Prf};
 use num::bigint::BigUint;
 use num::{FromPrimitive, ToPrimitive};
 use rand::{rngs::OsRng, Rng, thread_rng, RngCore};
@@ -32,6 +31,9 @@ use sha2::{self, Digest};
 use std::ops::{BitAnd, BitOr, Shr, Shl};
 use crate::mnemonic::error::Error::MnemonicError;
 use rand::distributions::Standard;
+use pbkdf2::pbkdf2;
+use sha2::{Sha256, Sha512};
+use hmac::Hmac;
 
 /// Count of iterations for `pbkdf2`
 const PBKDF2_ROUNDS: usize = 2048;
@@ -218,12 +220,20 @@ impl Mnemonic {
             Some(p) => "mnemonic".to_string() + &p.to_string(),
             None => "mnemonic".to_string()
         };
-        let prf = Kdf::Pbkdf2 {
-            prf: Prf::HmacSha512,
-            c: PBKDF2_ROUNDS as u32,
-        };
 
-        prf.derive(64, passphrase.as_bytes(), &self.sentence())
+        let mut result = vec![0u8; 64];
+        let kdf = pbkdf2::<Hmac<Sha512>>(
+            // password
+            &self.sentence().as_str().as_bytes(),
+            // salt
+            passphrase.as_bytes(),
+            // size
+            PBKDF2_ROUNDS,
+            // result
+            &mut result
+        );
+
+        result
     }
 
     /// Convert a string into `Mnemonic`.

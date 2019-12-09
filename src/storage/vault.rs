@@ -7,7 +7,6 @@ use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
 use crate::{
     storage::{
-        AddressbookStorage,
         archive::Archive,
         error::VaultError
     },
@@ -31,9 +30,10 @@ use crate::{
             },
             seed::Seed
         },
-        ethereum::EthereumJsonV3File,
+        json::keyfile::EthereumJsonV3File,
     }
 };
+use crate::storage::addressbook::AddressbookStorage;
 
 
 pub struct VaultStorage {
@@ -260,7 +260,7 @@ mod tests {
         EthereumPk3
     };
     use crate::convert::proto::crypto::Encrypted;
-    use crate::convert::ethereum::EthereumJsonV3File;
+    use crate::convert::json::keyfile::EthereumJsonV3File;
 
 
     #[test]
@@ -321,7 +321,7 @@ mod tests {
 
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
         let vault_pk = vault.keys();
-        let pk = PrivateKeyHolder::create_ethereum_v3(EthereumPk3::from(&json));
+        let pk = PrivateKeyHolder::create_ethereum_v3(EthereumPk3::try_from(&json).unwrap());
         let pk_id = pk.id;
         let saved = vault_pk.add(pk);
         assert!(saved.is_ok());
@@ -364,7 +364,7 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
         let vault_pk = vault.keys();
-        let pk = PrivateKeyHolder::create_ethereum_v3(EthereumPk3::from(&json));
+        let pk = PrivateKeyHolder::create_ethereum_v3(EthereumPk3::try_from(&json).unwrap());
         let exp_id = pk.id;
         let saved = vault_pk.add(pk);
         assert!(saved.is_ok());

@@ -59,7 +59,6 @@ extern crate csv;
 pub mod util;
 pub mod core;
 pub mod hdwallet;
-pub mod keystore;
 pub mod mnemonic;
 pub mod storage;
 pub mod convert;

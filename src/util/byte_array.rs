@@ -30,6 +30,12 @@ macro_rules! byte_array_struct {
             }
         }
 
+        impl ToString for $name {
+            fn to_string(&self) -> String {
+                hex::encode(&self.0)
+            }
+        }
+
         impl From<[u8; $num]> for $name {
             fn from(bytes: [u8; $num]) -> Self {
                 $name(bytes)

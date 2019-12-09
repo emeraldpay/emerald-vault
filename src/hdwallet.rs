@@ -23,12 +23,10 @@ mod apdu;
 pub mod bip32;
 mod comm;
 mod error;
-mod keystore;
 
 use self::apdu::ApduBuilder;
 use self::comm::sendrecv;
 pub use self::error::Error;
-pub use self::keystore::HdwalletCrypto;
 use bip32::HDPath;
 use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};

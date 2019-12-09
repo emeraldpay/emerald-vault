@@ -1,6 +1,6 @@
 use crate::core;
 use std::fmt::Display;
-use crate::convert::ethereum::ConversionError;
+use crate::convert::error::ConversionError;
 
 #[derive(Debug, Display, Clone)]
 pub enum VaultError {
@@ -67,5 +67,11 @@ impl std::convert::From<std::convert::Infallible> for VaultError {
 impl std::convert::From<csv::Error> for VaultError {
     fn from(err: csv::Error) -> Self {
         VaultError::InvalidDataError("Not a CSV".to_string())
+    }
+}
+
+impl std::convert::From<hex::FromHexError> for VaultError {
+    fn from(err: hex::FromHexError) -> Self {
+        VaultError::InvalidDataError("Not HEX".to_string())
     }
 }
