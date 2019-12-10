@@ -56,8 +56,8 @@ impl VaultStorage {
     pub fn seeds(&self) -> Arc<dyn VaultAccess<Seed>> {
         self.seeds.clone()
     }
-    pub fn create_new(&self) -> CreateNew {
-        CreateNew {
+    pub fn create_new(&self) -> CreateWallet {
+        CreateWallet {
             keys: self.keys(),
             wallets: self.wallets(),
             seeds: self.seeds()
@@ -65,6 +65,14 @@ impl VaultStorage {
     }
     pub fn addressbook(&self) -> AddressbookStorage {
         AddressbookStorage::from_path(self.dir.clone().join("addressbook.csv"))
+    }
+    pub fn add_account(&self, wallet_id: Uuid) -> AddAccount {
+        AddAccount {
+            keys: self.keys().clone(),
+            seeds: self.seeds().clone(),
+            wallets: self.wallets().clone(),
+            wallet_id
+        }
     }
 }
 
@@ -102,13 +110,13 @@ fn try_vault_file(file: &Path, suffix: &str) -> Result<Uuid, ()> {
     }
 }
 
-pub struct CreateNew {
+pub struct CreateWallet {
     keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccess<Wallet>>,
     seeds: Arc<dyn VaultAccess<Seed>>,
 }
 
-impl CreateNew {
+impl CreateWallet {
     pub fn ethereum(&self, json: &EthereumJsonV3File, blockchain: Blockchain) -> Result<Uuid, VaultError> {
         let mut pk = PrivateKeyHolder::try_from(json).map_err(|e| VaultError::ConversionError)?;
         pk.generate_id();
@@ -150,6 +158,49 @@ impl CreateNew {
     }
 }
 
+pub struct AddAccount {
+    keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
+    seeds: Arc<dyn VaultAccess<Seed>>,
+    wallets: Arc<dyn VaultAccess<Wallet>>,
+    wallet_id: Uuid
+}
+
+impl AddAccount {
+    pub fn ethereum(&self, json: &EthereumJsonV3File, blockchain: Blockchain) -> Result<u32, VaultError> {
+        let mut wallet = self.wallets.get(&self.wallet_id)?;
+        let mut pk = PrivateKeyHolder::try_from(json).map_err(|e| VaultError::ConversionError)?;
+        let pk_id = pk.generate_id();
+        self.keys.add(pk)?;
+        wallet.accounts.push(
+            WalletAccount {
+                blockchain,
+                address: json.address,
+                key: PKType::PrivateKeyRef(pk_id)
+            }
+        );
+        self.wallets.update(wallet.clone());
+        Ok(wallet.accounts.len() as u32 - 1)
+    }
+
+    pub fn raw_pk(&mut self, pk: Vec<u8>, password: &str, blockchain: Blockchain) -> Result<u32, VaultError> {
+        let mut wallet = self.wallets.get(&self.wallet_id)?;
+        let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
+            .map_err(|e| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
+        let pk_id = pk.get_id();
+        let address = pk.get_ethereum_address().clone();
+        self.keys.add(pk)?;
+        wallet.accounts.push(
+            WalletAccount {
+                blockchain,
+                address,
+                key: PKType::PrivateKeyRef(pk_id)
+            }
+        );
+        self.wallets.update(wallet.clone());
+        Ok(wallet.accounts.len() as u32 - 1)
+    }
+}
+
 impl VaultStorage {
     pub fn create<P: AsRef<Path>>(path: P) -> Result<VaultStorage, VaultError> {
         let path = path.as_ref().to_path_buf();
@@ -170,16 +221,10 @@ impl VaultStorage {
 }
 
 pub trait VaultAccess<P> where P: HasUuid {
-    fn list_entries(&self) -> Result<Vec<P>, VaultError>;
     fn list(&self) -> Result<Vec<Uuid>, VaultError>;
     fn get(&self, id: &Uuid) -> Result<P, VaultError>;
     fn add(&self, entry: P) -> Result<(), VaultError>;
     fn remove(&self, id: &Uuid) -> Result<bool, VaultError>;
-}
-
-impl <P> VaultAccess<P> for StandardVaultFiles
-    where P: TryFrom<Vec<u8>> + HasUuid,
-          Vec<u8>: std::convert::TryFrom<P> {
 
     fn list_entries(&self) -> Result<Vec<P>, VaultError> {
         let all = self.list()?.iter()
@@ -189,6 +234,22 @@ impl <P> VaultAccess<P> for StandardVaultFiles
             .collect();
         Ok(all)
     }
+
+    fn update(&self, entry: P) -> Result<bool, VaultError> {
+        //TODO safe update, with .bak/.tmp files
+        let id = entry.get_id();
+        if self.remove(&id)? {
+            self.add(entry);
+            Ok(true)
+        } else {
+            Err(VaultError::IncorrectIdError)
+        }
+    }
+}
+
+impl <P> VaultAccess<P> for StandardVaultFiles
+    where P: TryFrom<Vec<u8>> + HasUuid,
+          Vec<u8>: std::convert::TryFrom<P> {
 
     fn list(&self) -> Result<Vec<Uuid>, VaultError> {
         let mut result = Vec::new();

@@ -24,7 +24,8 @@ impl HasUuid for PrivateKeyHolder {
 }
 
 impl PrivateKeyHolder {
-    pub fn generate_id(&mut self) {
+    pub fn generate_id(&mut self) -> Uuid {
         self.id = Uuid::new_v4();
+        self.id.clone()
     }
 }

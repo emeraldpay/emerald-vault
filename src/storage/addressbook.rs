@@ -132,15 +132,6 @@ impl AddressbookStorage {
 
 impl VaultAccess<AddressBookmark> for AddressbookStorage {
 
-    fn list_entries(&self) -> Result<Vec<AddressBookmark>, VaultError> {
-        let all = self.list()?.iter()
-            .map(|id| self.get(id))
-            .filter(|it| it.is_ok())
-            .map(|it| it.unwrap())
-            .collect();
-        Ok(all)
-    }
-
     fn list(&self) -> Result<Vec<Uuid>, VaultError> {
         let ids = self.get_all()?.iter()
             .map(|b| b.id)
