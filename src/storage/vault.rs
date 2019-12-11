@@ -5,31 +5,28 @@ use regex::Regex;
 use std::str::FromStr;
 use std::convert::{TryFrom, TryInto};
 use std::sync::Arc;
-use crate::{
-    storage::{
-        archive::Archive,
-        error::VaultError
+use crate::{storage::{
+    archive::Archive,
+    error::VaultError
+}, chains::Blockchain, convert::{
+    json::keyfile::EthereumJsonV3File,
+}, structs::{
+    pk::{
+        PrivateKeyHolder
     },
-    chains::Blockchain,
-    convert::{
-        json::keyfile::EthereumJsonV3File,
+    wallet::{
+        WalletAccount,
+        PKType,
+        Wallet
     },
-    structs::{
-        pk::{
-            PrivateKeyHolder
-        },
-        wallet::{
-            WalletAccount,
-            PKType,
-            Wallet
-        },
-        types::{
-            HasUuid
-        },
-        seed::Seed
-    }
-};
+    types::{
+        HasUuid
+    },
+    seed::Seed
+}, Address};
 use crate::storage::addressbook::AddressbookStorage;
+use crate::hdwallet::bip32::{HDPath, generate_key};
+use crate::structs::seed::{SeedSource, SeedRef};
 
 
 pub struct VaultStorage {
@@ -199,6 +196,36 @@ impl AddAccount {
         self.wallets.update(wallet.clone());
         Ok(wallet.accounts.len() as u32 - 1)
     }
+
+    pub fn seed_hd(&self, seed_id: Uuid, hd_path: HDPath, blockchain: Blockchain,
+                   password: Option<String>, expected_address: Option<Address>) -> Result<u32, VaultError> {
+        let seed = self.seeds.get(&seed_id)?;
+        let seed = match seed.source {
+            SeedSource::Bytes(seed) => {
+                if password.is_none() {
+                    return Err(VaultError::PasswordRequired);
+                }
+                seed.decrypt(password.unwrap().as_str())?
+            },
+            _ => return Err(VaultError::UnsupportedDataError("No implemented yet".to_string()))
+        };
+        let mut wallet = self.wallets.get(&self.wallet_id)?;
+        let ephemeral_pk = generate_key(&hd_path, seed.as_slice())?;
+        let address = ephemeral_pk.to_address();
+        if expected_address.is_some() && address != expected_address.unwrap() {
+            return Err(VaultError::InvalidDataError("Different address".to_string()));
+        }
+
+        wallet.accounts.push(
+            WalletAccount {
+                blockchain,
+                address: Some(address),
+                key: PKType::SeedHd(SeedRef { seed_id, hd_path: hd_path.to_string() })
+            }
+        );
+        self.wallets.update(wallet.clone());
+        Ok(wallet.accounts.len() as u32 - 1)
+    }
 }
 
 impl VaultStorage {
@@ -223,7 +250,7 @@ impl VaultStorage {
 pub trait VaultAccess<P> where P: HasUuid {
     fn list(&self) -> Result<Vec<Uuid>, VaultError>;
     fn get(&self, id: &Uuid) -> Result<P, VaultError>;
-    fn add(&self, entry: P) -> Result<(), VaultError>;
+    fn add(&self, entry: P) -> Result<Uuid, VaultError>;
     fn remove(&self, id: &Uuid) -> Result<bool, VaultError>;
 
     fn list_entries(&self) -> Result<Vec<P>, VaultError> {
@@ -280,17 +307,18 @@ impl <P> VaultAccess<P> for StandardVaultFiles
         }
     }
 
-    fn add(&self, pk: P) -> Result<(), VaultError> {
-        let f = self.dir.join(Path::new(as_filename(&pk.get_id(), self.suffix.as_str()).as_str()));
+    fn add(&self, entry: P) -> Result<Uuid, VaultError> {
+        let id = entry.get_id();
+        let f = self.dir.join(Path::new(as_filename(&id, self.suffix.as_str()).as_str()));
         if f.exists() {
             return Err(VaultError::FilesystemError("Already exists".to_string()));
         }
 
-        let data: Vec<u8> = pk.try_into()
+        let data: Vec<u8> = entry.try_into()
             .map_err(|x| VaultError::ConversionError)?;
 //        let data: Vec<u8> = Vec::try_from(pk)?;
         fs::write(f, data.as_slice())?;
-        Ok(())
+        Ok(id)
     }
 
     fn remove(&self, id: &Uuid) -> Result<bool, VaultError> {

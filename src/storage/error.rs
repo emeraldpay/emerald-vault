@@ -1,6 +1,8 @@
 use crate::core;
 use std::fmt::Display;
 use crate::convert::error::ConversionError;
+use crate::crypto::error::CryptoError;
+use crate::hdwallet::Error as HWalletError;
 
 #[derive(Debug, Display, Clone)]
 pub enum VaultError {
@@ -10,7 +12,8 @@ pub enum VaultError {
     InvalidDataError(String),
     IncorrectIdError,
     ConversionError,
-    UnrecognizedError
+    UnrecognizedError,
+    PasswordRequired
 }
 
 impl std::convert::From<ConversionError> for VaultError {
@@ -73,5 +76,19 @@ impl std::convert::From<csv::Error> for VaultError {
 impl std::convert::From<hex::FromHexError> for VaultError {
     fn from(err: hex::FromHexError) -> Self {
         VaultError::InvalidDataError("Not HEX".to_string())
+    }
+}
+
+impl std::convert::From<CryptoError> for VaultError {
+    fn from(err: CryptoError) -> Self {
+        //TODO
+        VaultError::ConversionError
+    }
+}
+
+impl std::convert::From<HWalletError> for VaultError {
+    fn from(err: HWalletError) -> Self {
+        //TODO
+        VaultError::ConversionError
     }
 }

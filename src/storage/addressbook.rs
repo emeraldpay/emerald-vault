@@ -149,7 +149,9 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
         }
     }
 
-    fn add(&self, item: AddressBookmark) -> Result<(), VaultError> {
+    fn add(&self, item: AddressBookmark) -> Result<Uuid, VaultError> {
+        let id = item.get_id();
+
         let first_time = !self.path.exists();
         let f = OpenOptions::new()
             .read(true)
@@ -162,12 +164,12 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
 
         let data: Vec<u8> = item.details.try_into()?;
         AddressbookStorage::write(&mut wrt, CsvRecord {
-            id: item.id.to_string(),
+            id: id.to_string(),
             format: FORMAT.to_string(),
             data: base64::encode(&data)
         })?;
         wrt.flush();
-        Ok(())
+        Ok(id)
     }
 
     fn remove(&self, id: &Uuid) -> Result<bool, VaultError> {
