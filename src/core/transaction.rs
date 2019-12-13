@@ -26,7 +26,7 @@ pub struct Transaction {
     pub nonce: u64,
 
     /// Gas Price
-    pub gas_price: [u8; 32],
+    pub gas_price: [u8; 32], //TODO why 32??? why slice?
 
     /// Gas Limit
     pub gas_limit: u64,
@@ -35,7 +35,7 @@ pub struct Transaction {
     pub to: Option<Address>,
 
     /// Value transferred with transaction
-    pub value: [u8; 32],
+    pub value: [u8; 32],  //TODO why 32??? why slice?
 
     /// Data transferred with transaction
     pub data: Vec<u8>,

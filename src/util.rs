@@ -231,7 +231,13 @@ pub fn to_20bytes(hex: &str) -> [u8; 20] {
 
 ///
 pub fn to_32bytes(hex: &str) -> [u8; 32] {
-    to_arr(Vec::from_hex(&hex).unwrap().as_slice())
+    let parsed = Vec::from_hex(&hex).unwrap();
+    if parsed.len() != 32 {
+        let aligned = align_bytes(parsed.as_slice(), 32);
+        to_arr(aligned.as_slice())
+    } else {
+        to_arr(parsed.as_slice())
+    }
 }
 
 #[cfg(test)]

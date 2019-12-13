@@ -63,7 +63,9 @@ impl TryFrom<&proto_WalletAccount> for WalletAccount {
             },
             None => return Err(VaultError::UnsupportedDataError("PrivateKey is not set".to_string()))
         };
+        let id = value.get_id() as usize;
         let result = WalletAccount {
+            id,
             blockchain,
             address,
             key
@@ -175,6 +177,7 @@ mod tests {
             label: Some("Test wallet 1".to_string()),
             accounts: vec![
                 WalletAccount {
+                    id: 0,
                     blockchain: Blockchain::Ethereum,
                     address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
                     key: PKType::PrivateKeyRef(Uuid::new_v4())
@@ -195,6 +198,7 @@ mod tests {
             label: None,
             accounts: vec![
                 WalletAccount {
+                    id: 0,
                     blockchain: Blockchain::Ethereum,
                     address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
                     key: PKType::PrivateKeyRef(Uuid::new_v4())
@@ -215,6 +219,7 @@ mod tests {
             label: None,
             accounts: vec![
                 WalletAccount {
+                    id: 0,
                     blockchain: Blockchain::Ethereum,
                     address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
                     key: PKType::SeedHd(SeedRef {

@@ -122,6 +122,7 @@ impl CreateWallet {
             label: json.name.clone(),
             accounts: vec![
                 WalletAccount {
+                    id: 0,
                     blockchain,
                     address: json.address,
                     key: PKType::PrivateKeyRef(pk.get_id())
@@ -142,6 +143,7 @@ impl CreateWallet {
             label: None,
             accounts: vec![
                 WalletAccount {
+                    id: 0,
                     blockchain,
                     address: pk.get_ethereum_address(),
                     key: PKType::PrivateKeyRef(pk.get_id())
@@ -168,8 +170,10 @@ impl AddAccount {
         let mut pk = PrivateKeyHolder::try_from(json).map_err(|e| VaultError::ConversionError)?;
         let pk_id = pk.generate_id();
         self.keys.add(pk)?;
+        let id = wallet.get_account_id();
         wallet.accounts.push(
             WalletAccount {
+                id,
                 blockchain,
                 address: json.address,
                 key: PKType::PrivateKeyRef(pk_id)
@@ -185,9 +189,11 @@ impl AddAccount {
             .map_err(|e| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let pk_id = pk.get_id();
         let address = pk.get_ethereum_address().clone();
+        let id = wallet.get_account_id();
         self.keys.add(pk)?;
         wallet.accounts.push(
             WalletAccount {
+                id,
                 blockchain,
                 address,
                 key: PKType::PrivateKeyRef(pk_id)
@@ -215,9 +221,10 @@ impl AddAccount {
         if expected_address.is_some() && address != expected_address.unwrap() {
             return Err(VaultError::InvalidDataError("Different address".to_string()));
         }
-
+        let id = wallet.get_account_id();
         wallet.accounts.push(
             WalletAccount {
+                id,
                 blockchain,
                 address: Some(address),
                 key: PKType::SeedHd(SeedRef { seed_id, hd_path: hd_path.to_string() })

@@ -51,6 +51,7 @@ pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2
             let pk_id = pk.get_id();
             vault.keys().add(pk).map_err(|e| "Failed to add converted Private Key to the Vault")?;
             WalletAccount {
+                id: 0,
                 blockchain,
                 address: kf.address,
                 key: PKType::PrivateKeyRef(pk_id)
@@ -91,6 +92,7 @@ pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2
             };
 
             WalletAccount {
+                id: 0,
                 blockchain,
                 address: kf.address,
                 key: PKType::SeedHd(SeedRef {
