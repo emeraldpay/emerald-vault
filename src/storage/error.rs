@@ -15,7 +15,8 @@ pub enum VaultError {
     UnrecognizedError,
     PasswordRequired,
     DataNotFound,
-    InvalidPrivateKey
+    InvalidPrivateKey,
+    PrivateKeyUnavailable
 }
 
 impl std::convert::From<ConversionError> for VaultError {

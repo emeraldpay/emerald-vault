@@ -4,6 +4,7 @@ use crate::Address;
 use sha2::Digest;
 use std::convert::TryFrom;
 use crate::structs::types::HasUuid;
+use crate::crypto::error::CryptoError;
 
 byte_array_struct!(Bytes256, 32);
 
@@ -55,5 +56,12 @@ impl HDPathFingerprint {
 impl HasUuid for Seed {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+}
+
+impl SeedSource {
+    pub fn create_bytes(seed: Vec<u8>, password: &str) -> Result<Self, CryptoError> {
+        let value = Encrypted::encrypt(seed, password)?;
+        Ok(SeedSource::Bytes(value))
     }
 }

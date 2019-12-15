@@ -2,22 +2,16 @@ use uuid::Uuid;
 use std::convert::{TryFrom};
 use std::fmt;
 use std::str::FromStr;
-use crate::{
-    convert::{
-        error::ConversionError,
-    },
-    structs::{
-        crypto::{Encrypted, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, PrfType, ScryptKdf, MacType},
-        pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType},
-        wallet::{Wallet},
-        types::{HasUuid},
-    },
-    core::Address,
-    storage::error::VaultError,
-    util::KECCAK256_BYTES,
-    Error,
-};
+use crate::{convert::{
+    error::ConversionError,
+}, structs::{
+    crypto::{Encrypted, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, PrfType, ScryptKdf, MacType},
+    pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType},
+    wallet::{Wallet},
+    types::{HasUuid},
+}, core::Address, storage::error::VaultError, util::KECCAK256_BYTES, Error, PrivateKey};
 use serde::{Deserialize, Deserializer};
+use crate::crypto::error::CryptoError;
 
 /// `PBKDF2` key derivation function name
 pub const PBKDF2_KDF_NAME: &str = "pbkdf2";
@@ -349,7 +343,7 @@ impl From<&CoreCryptoJson> for Kdf {
 }
 
 impl EthereumJsonV3File {
-    pub fn from_wallet(wallet: &Wallet, pk: &PrivateKeyHolder) -> Result<EthereumJsonV3File, ()> {
+    pub fn from_wallet(label: Option<String>, pk: &PrivateKeyHolder) -> Result<EthereumJsonV3File, ()> {
         let result = match &pk.pk {
             PrivateKeyType::EthereumPk(pk3) => {
                 let crypto = CoreCryptoJson::try_from(&pk3.key);
@@ -357,14 +351,29 @@ impl EthereumJsonV3File {
                     return Err(())
                 }
                 EthereumJsonV3File {
-                    id: wallet.get_id(),
+                    id: pk.id.clone(),
                     version: 3,
                     address: pk3.address,
                     crypto: crypto.unwrap(),
-                    name: wallet.label.clone(),
+                    name: label,
                     description: None
                 }
             }
+        };
+        Ok(result)
+    }
+
+    pub fn from_pk(label: Option<String>, pk: PrivateKey, password: String) -> Result<EthereumJsonV3File, CryptoError> {
+        let encrypted = Encrypted::encrypt(pk.to_vec(), password.as_str())?;
+        let crypto = CoreCryptoJson::try_from(&encrypted)
+            .map_err(|e| CryptoError::UnsupportedSource("encrypted format".to_string()))?;
+        let result = EthereumJsonV3File {
+            id: Uuid::new_v4(),
+            version: 3,
+            address: Some(pk.to_address()),
+            crypto,
+            name: label,
+            description: None
         };
         Ok(result)
     }
