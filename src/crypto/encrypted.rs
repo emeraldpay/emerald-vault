@@ -31,6 +31,10 @@ fn decrypt_aes128(data: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
 
 impl Encrypted {
     pub fn encrypt(msg: Vec<u8>, password: &str) -> Result<Encrypted, CryptoError> {
+        // for security reasons shouldn't allow empty passwords
+        if password.len() == 0 {
+            return Err(CryptoError::InvalidKey)
+        }
         let mut salt: [u8; 32] = [0; 32];
         thread_rng().try_fill(&mut salt);
         let kdf = ScryptKdf::create_with_salt(salt);
@@ -267,5 +271,15 @@ mod tests {
             "fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd",
             hex::encode(decrypted)
         )
+    }
+
+    #[test]
+    fn doesnt_allow_empty_passwrod() {
+        let act = Encrypted::encrypt(
+            hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd").unwrap(),
+            ""
+        );
+        assert!(act.is_err());
+        assert_eq!(CryptoError::InvalidKey, act.err().unwrap());
     }
 }
