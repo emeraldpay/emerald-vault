@@ -13,6 +13,9 @@ use crate::convert::json::keyfile::EthereumJsonV3File;
 use crate::structs::pk::PrivateKeyType;
 use crate::proto::crypto::Encrypted;
 use std::convert::TryFrom;
+use regex::Regex;
+use std::str::FromStr;
+use crate::storage::error::VaultError::ConversionError;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
@@ -33,6 +36,12 @@ pub struct WalletAccount {
 pub enum PKType {
     PrivateKeyRef(Uuid),
     SeedHd(SeedRef)
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct AccountId {
+    pub wallet_id: Uuid,
+    pub account_id: usize
 }
 
 impl HasUuid for Wallet {
@@ -64,7 +73,41 @@ impl Wallet {
     }
 }
 
+lazy_static! {
+    static ref ACCOUNT_RE: Regex = Regex::new(r"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})-([0-9]+)$").unwrap();
+}
+
+impl AccountId {
+    pub fn from(wallet: &Wallet, account: &WalletAccount) -> AccountId {
+        AccountId {
+            wallet_id: wallet.id.clone(),
+            account_id: account.id
+        }
+    }
+
+    pub fn from_str(value: &str) -> Result<AccountId, VaultError> {
+        let cap = ACCOUNT_RE.captures(value);
+        match cap {
+            Some(cap) => Ok(AccountId {
+                wallet_id: Uuid::from_str(cap.get(1).unwrap().as_str()).unwrap(),
+                account_id: cap.get(2).unwrap().as_str().parse::<usize>().unwrap()
+            }),
+            None => Err(VaultError::ConversionError)
+        }
+    }
+}
+
+impl ToString for AccountId {
+    fn to_string(&self) -> String {
+        return format!("{}-{}", self.wallet_id, self.account_id)
+    }
+}
+
 impl WalletAccount {
+
+    pub fn get_full_id(&self, wallet: &Wallet) -> AccountId {
+        AccountId::from(wallet, self)
+    }
 
     fn sign_tx_by_pk(&self, tx: Transaction, key: PrivateKey) -> Result<Vec<u8>, VaultError> {
         let chain_id = EthereumChainId::from(self.blockchain);
@@ -156,7 +199,7 @@ impl WalletAccount {
 
 #[cfg(test)]
 mod tests {
-    use crate::structs::wallet::{WalletAccount, PKType};
+    use crate::structs::wallet::{WalletAccount, PKType, AccountId};
     use crate::core::chains::Blockchain;
     use uuid::Uuid;
     use crate::{Transaction, to_32bytes, PrivateKey, Address, ToHex};
@@ -287,5 +330,14 @@ mod tests {
             pk.to_hex(),
             "62a54ec79949cf6eb3bec6d67a3cd5fab835899f80c99785b73e8cd2ae9cfadb"
         )
+    }
+
+    #[test]
+    fn parse_valid_account_it() {
+        let act = AccountId::from_str("94d70ee7-1657-442e-af87-0210e985f29e-1");
+        assert!(act.is_ok());
+        let act = act.unwrap();
+        assert_eq!(1, act.account_id);
+        assert_eq!(Uuid::from_str("94d70ee7-1657-442e-af87-0210e985f29e").unwrap(), act.wallet_id);
     }
 }
