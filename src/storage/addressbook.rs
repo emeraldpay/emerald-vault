@@ -126,7 +126,7 @@ impl AddressbookStorage {
         line.push(FORMAT.to_string());
         line.push(record.data);
         wrt.write_record(&line)
-            .map_err(|e| VaultError::FilesystemError("CSV record not written".to_string()))
+            .map_err(|_| VaultError::FilesystemError("CSV record not written".to_string()))
     }
 }
 
@@ -198,7 +198,7 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
                             id: item.id.to_string(),
                             format: FORMAT.to_string(),
                             data: base64::encode(&data)
-                        });
+                        })?;
                     },
                     Err(e) => {
                         err = Some(e);
@@ -208,12 +208,16 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
                 found = true;
             }
         }
-        wrt.flush();
+        wrt.flush()?;
 
         if err.is_some() {
             // Restore backup if error happened
-            fs::remove_file(&self.path);
-            fs::rename(&bak_path, &self.path);
+            if fs::remove_file(&self.path).is_err() {
+                warn!("Failed to remove tmp file")
+            }
+            if fs::rename(&bak_path, &self.path).is_err() {
+                error!("Failed to restore original file")
+            }
             Err(err.unwrap())
         } else {
             Ok(found)

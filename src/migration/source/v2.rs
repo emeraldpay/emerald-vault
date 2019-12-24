@@ -1,9 +1,8 @@
 use rocksdb::{DB, IteratorMode, Options};
-use crate::migration::source::json_data::{KeyFileV2, CryptoTypeV2, AddressBookItem};
+use crate::migration::source::json_data::{KeyFileV2, AddressBookItem};
 use crate::migration::types::{Migrate, MigrationResult, MigrationError};
 use std::path::{PathBuf, Path};
 use uuid::Uuid;
-use std::convert::TryFrom;
 use std::str::{from_utf8};
 use crate::{
     util,
@@ -16,10 +15,6 @@ use crate::{
     },
     core::chains::{Blockchain, EthereumChainId},
     structs::{
-        types::HasUuid,
-        pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3},
-        crypto::Encrypted,
-        wallet::{Wallet, WalletAccount, PKType},
         book::{BookmarkDetails, AddressRef}
     }
 };
@@ -92,7 +87,7 @@ impl V2Storage {
             let mut copy = String::new();
             copy.push_str(filename.as_str());
             copy.push_str(".json");
-            archive.write(copy.as_str(), json.as_str());
+            archive.write(copy.as_str(), json.as_str())?;
             match KeyFileV2::decode(&json) {
                 Ok(kf) => { accounts.push(kf) },
                 Err(e) => {
@@ -192,7 +187,7 @@ impl V2Storage {
         let book = vault.addressbook();
         for item in items {
             migrated = true;
-            book.add(AddressBookmark {
+            let added = book.add(AddressBookmark {
                 id: Uuid::new_v4(),
                 details: BookmarkDetails {
                     blockchain: blockchain.clone(),
@@ -201,6 +196,9 @@ impl V2Storage {
                     address: AddressRef::EthereumAddress(item.address)
                 }
             });
+            if added.is_err() {
+                error!("Failed to copy Bookmark {:?}", added.err())
+            }
         }
         migrated
     }
@@ -230,9 +228,14 @@ impl Migrate for V2Storage {
             if migrated_keys || migrated_book {
                 self.migration.info(format!("Moving to archive keys for {:?}", blockchain));
                 match self.blockchain_path(blockchain) {
-                    Some(path) => { vault.archive.submit(path); },
+                    Some(path) => {
+                        let archived = vault.archive.submit(path);
+                        if archived.is_err() {
+                            self.migration.error(format!("Failed to add to archive. Error: {}", archived.err().unwrap()));
+                        }
+                    },
                     None => {}
-                }
+                };
                 moved += 1;
             }
         });

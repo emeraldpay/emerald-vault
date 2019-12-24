@@ -16,7 +16,6 @@ use crate::{
     },
     storage::error::VaultError,
     structs::{
-        types::HasUuid,
         crypto::{
             Encrypted,
         },

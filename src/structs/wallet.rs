@@ -1,21 +1,33 @@
 use uuid::Uuid;
-use crate::{structs::{
-    seed::SeedRef,
-    types::HasUuid
-}, Address, core::chains::Blockchain, Transaction, PrivateKey};
-use crate::storage::error::VaultError;
-use crate::crypto::error::CryptoError;
-use crate::storage::vault::VaultStorage;
-use crate::structs::seed::SeedSource;
-use crate::mnemonic::{HDPath, generate_key};
-use crate::core::chains::EthereumChainId;
-use crate::convert::json::keyfile::EthereumJsonV3File;
-use crate::structs::pk::PrivateKeyType;
-use crate::proto::crypto::Encrypted;
-use std::convert::TryFrom;
+use crate::{
+    structs::{
+        seed::{
+            SeedRef,
+            SeedSource
+        },
+        types::HasUuid,
+        pk::PrivateKeyType
+    },
+    Address,
+    core::{
+        chains::{
+            Blockchain,
+            EthereumChainId
+        }
+    },
+    Transaction,
+    PrivateKey,
+    storage::{
+        error::VaultError,
+        vault::VaultStorage,
+    },
+    crypto::error::CryptoError,
+    mnemonic::{HDPath, generate_key},
+    convert::json::keyfile::EthereumJsonV3File,
+    proto::crypto::Encrypted,
+};
 use regex::Regex;
 use std::str::FromStr;
-use crate::storage::error::VaultError::ConversionError;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {

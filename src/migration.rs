@@ -13,9 +13,15 @@ pub fn auto_migrate<P>(dir: P)
 
 
     let mut migration_v1 = V1Storage::create(path.clone());
-    migration_v1.migrate(path.clone());
+    let migrated_v1 = migration_v1.migrate(path.clone());
+    if migrated_v1.is_err() {
+        error!("Failed to migrate from Vault V1 {:?}", migrated_v1.err())
+    }
 
     let mut migration_v2 = V2Storage::create(path.clone());
-    migration_v2.migrate(path.clone());
+    let migrated_v2 = migration_v2.migrate(path.clone());
+    if migrated_v2.is_err() {
+        error!("Failed to migrate from Vault V1 {:?}", migrated_v2.err())
+    }
 
 }

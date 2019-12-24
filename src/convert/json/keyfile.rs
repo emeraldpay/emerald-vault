@@ -2,16 +2,20 @@ use uuid::Uuid;
 use std::convert::{TryFrom};
 use std::fmt;
 use std::str::FromStr;
-use crate::{convert::{
-    error::ConversionError,
-}, structs::{
-    crypto::{Encrypted, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, PrfType, ScryptKdf, MacType},
-    pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType},
-    wallet::{Wallet},
-    types::{HasUuid},
-}, core::Address, storage::error::VaultError, util::KECCAK256_BYTES, Error, PrivateKey};
+use crate::{
+    convert::{
+        error::ConversionError,
+    },
+    structs::{
+        crypto::{Encrypted, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, PrfType, ScryptKdf, MacType},
+        pk::{PrivateKeyHolder, EthereumPk3, PrivateKeyType},
+    },
+    core::Address,
+    storage::error::VaultError,
+    PrivateKey,
+    crypto::error::CryptoError
+};
 use serde::{Deserialize, Deserializer};
-use crate::crypto::error::CryptoError;
 
 /// `PBKDF2` key derivation function name
 pub const PBKDF2_KDF_NAME: &str = "pbkdf2";

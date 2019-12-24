@@ -1,4 +1,4 @@
-use std::path::{PathBuf, Path};
+use std::path::{Path};
 use uuid::Uuid;
 use crate::storage::error::VaultError;
 
@@ -18,6 +18,7 @@ pub enum LogMessage {
     Info(String)
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MigrationError {
     VaultError(String),
     OtherError(String)

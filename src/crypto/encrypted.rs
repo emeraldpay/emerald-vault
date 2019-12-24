@@ -36,12 +36,12 @@ impl Encrypted {
             return Err(CryptoError::InvalidKey)
         }
         let mut salt: [u8; 32] = [0; 32];
-        thread_rng().try_fill(&mut salt);
+        thread_rng().try_fill(&mut salt).map_err(|_| CryptoError::NoEntropy)?;
         let kdf = ScryptKdf::create_with_salt(salt);
         let key = kdf.derive(password)?;
 
         let mut iv: [u8; 16] = [0; 16];
-        thread_rng().try_fill(&mut iv);
+        thread_rng().try_fill(&mut iv).map_err(|_| CryptoError::NoEntropy)?;
         let key = Web3Key::try_from(key)?;
         let encrypted = encrypt_aes128(msg.as_slice(), &key.message_key, &iv);
         let result = Encrypted {

@@ -26,7 +26,9 @@ impl Archive {
         if self.dir.exists() {
             return;
         }
-        fs::create_dir_all(&self.dir.clone());
+        if fs::create_dir_all(&self.dir.clone()).is_err() {
+            error!("Failed to create archive directory");
+        }
     }
 
     pub fn submit<P>(&self, from: P) -> Result<(), String> where P: AsRef<Path> {

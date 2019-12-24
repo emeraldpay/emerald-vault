@@ -93,7 +93,7 @@ pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2
                         )
                     };
                     let id = seed.id.clone();
-                    seeds.add(seed).map_err(|e| "Failed to add converted Ledger Seed to the Vault")?;;
+                    seeds.add(seed).map_err(|e| "Failed to add converted Ledger Seed to the Vault")?;
                     id
                 }
             };
@@ -116,6 +116,6 @@ pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2
         accounts: vec![account]
     };
     let wallet_id = wallet.get_id();
-    vault.wallets().add(wallet);
+    vault.wallets().add(wallet).map_err(|e| format!("Failed to create wallet. {:?}", e))?;
     Ok(wallet_id)
 }

@@ -1,4 +1,4 @@
-use std::convert::{TryFrom, TryInto};
+use std::convert::{TryFrom};
 use crate::{
     structs::{
         crypto::{PrfType, MacType, Cipher, Aes128CtrCipher, Kdf, Pbkdf2, ScryptKdf, Encrypted},

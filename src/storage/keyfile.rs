@@ -20,7 +20,6 @@ use crate::{
         wallet::{Wallet}
     }
 };
-use hex::ToHex;
 
 /// Short account info
 ///

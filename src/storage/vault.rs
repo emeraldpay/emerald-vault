@@ -179,14 +179,14 @@ impl AddAccount {
                 key: PKType::PrivateKeyRef(pk_id)
             }
         );
-        self.wallets.update(wallet.clone());
+        self.wallets.update(wallet.clone())?;
         Ok(wallet.accounts.len() as u32 - 1)
     }
 
     pub fn raw_pk(&mut self, pk: Vec<u8>, password: &str, blockchain: Blockchain) -> Result<u32, VaultError> {
         let mut wallet = self.wallets.get(&self.wallet_id)?;
         let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
-            .map_err(|e| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
+            .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let pk_id = pk.get_id();
         let address = pk.get_ethereum_address().clone();
         let id = wallet.get_account_id();
@@ -199,7 +199,7 @@ impl AddAccount {
                 key: PKType::PrivateKeyRef(pk_id)
             }
         );
-        self.wallets.update(wallet.clone());
+        self.wallets.update(wallet.clone())?;
         Ok(wallet.accounts.len() as u32 - 1)
     }
 
@@ -230,7 +230,7 @@ impl AddAccount {
                 key: PKType::SeedHd(SeedRef { seed_id, hd_path: hd_path.to_string() })
             }
         );
-        self.wallets.update(wallet.clone());
+        self.wallets.update(wallet.clone())?;
         Ok(wallet.accounts.len() as u32 - 1)
     }
 }
@@ -273,7 +273,7 @@ pub trait VaultAccess<P> where P: HasUuid {
         //TODO safe update, with .bak/.tmp files
         let id = entry.get_id();
         if self.remove(&id)? {
-            self.add(entry);
+            self.add(entry)?;
             Ok(true)
         } else {
             Err(VaultError::IncorrectIdError)
@@ -306,7 +306,7 @@ impl <P> VaultAccess<P> for StandardVaultFiles
         let f = self.dir.join(Path::new(as_filename(id, self.suffix.as_str()).as_str()));
 
         let data = fs::read(f)?;
-        let pk = P::try_from(data).map_err(|e| VaultError::ConversionError)?;
+        let pk = P::try_from(data).map_err(|_| VaultError::ConversionError)?;
         if !pk.get_id().eq(id) {
             Err(VaultError::IncorrectIdError)
         } else {
@@ -322,7 +322,7 @@ impl <P> VaultAccess<P> for StandardVaultFiles
         }
 
         let data: Vec<u8> = entry.try_into()
-            .map_err(|x| VaultError::ConversionError)?;
+            .map_err(|_| VaultError::ConversionError)?;
 //        let data: Vec<u8> = Vec::try_from(pk)?;
         fs::write(f, data.as_slice())?;
         Ok(id)

@@ -4,7 +4,8 @@ pub enum CryptoError {
     InvalidParams,
     InvalidKey,
     WrongKey,
-    UnsupportedSource(String)
+    UnsupportedSource(String),
+    NoEntropy
 }
 
 impl From<scrypt::errors::InvalidParams> for CryptoError {

@@ -1,7 +1,5 @@
-use std::fs::{read_dir, File};
 use uuid::Uuid;
 use std::path::{PathBuf, Path};
-use std::io::Read;
 use crate::{
     storage::vault::VaultStorage,
     core::chains::{Blockchain, EthereumChainId},
@@ -101,9 +99,14 @@ impl Migrate for V1Storage {
             if migrated_keys {
                 &self.migration.info(format!("Moving to archive keys for {:?}", blockchain));
                 match self.blockchain_path(blockchain) {
-                    Some(path) => { vault.archive.submit(path); },
+                    Some(path) => {
+                        let archived = vault.archive.submit(path);
+                        if archived.is_err() {
+                            &self.migration.error(format!("Failed to add to archive. Error: {}", archived.err().unwrap()));
+                        }
+                    },
                     None => {}
-                }
+                };
                 moved += 1;
             }
         });
