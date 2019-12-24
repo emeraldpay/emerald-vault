@@ -35,14 +35,10 @@ impl TryFrom<&[u8]> for BookmarkDetails {
             None => return Err(VaultError::InvalidDataError("address is empty".to_string()))
         }?;
 
-        let blockchains = m.blockchains.iter()
-            .map(|i| Blockchain::try_from(*i))
-            .filter(|b| b.is_ok())
-            .map(|b| b.unwrap())
-            .collect();
+        let blockchain = Blockchain::try_from(m.get_blockchain())?;
 
         let result = BookmarkDetails {
-            blockchains,
+            blockchain,
             label: none_if_empty(m.get_label()),
             description: none_if_empty(m.get_description()),
             address: AddressRef::EthereumAddress(address)
@@ -67,10 +63,7 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
 
     fn try_from(value: BookmarkDetails) -> Result<Self, Self::Error> {
         let mut m = proto_BookItem::new();
-        let blockchains = value.blockchains.iter()
-            .map(|b| *b as u32)
-            .collect();
-        m.set_blockchains(blockchains);
+        m.set_blockchain(value.blockchain as u32);
         if value.label.is_some() {
             m.set_label(value.label.unwrap());
         }

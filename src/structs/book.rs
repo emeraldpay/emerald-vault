@@ -3,7 +3,7 @@ use crate::core::chains::Blockchain;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct BookmarkDetails {
-    pub blockchains: Vec<Blockchain>,
+    pub blockchain: Blockchain,
     pub label: Option<String>,
     pub description: Option<String>,
     pub address: AddressRef

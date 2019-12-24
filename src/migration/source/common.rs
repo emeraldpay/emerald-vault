@@ -19,6 +19,13 @@ fn extract_label(kf: &KeyFileV2) -> Option<String> {
         Some(name) => result.push_str(name.as_str()),
         None => {}
     }
+    // kf.name may be None or Some(empty) value, on both cases it makes sense to use address as a name
+    if result.len() == 0 {
+        match kf.address {
+            Some(address) => result.push_str(address.to_string().as_str()),
+            None => {}
+        }
+    }
     match &kf.visible {
         Some(visible) if !visible => {
             if !result.is_empty() {

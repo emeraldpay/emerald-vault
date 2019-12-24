@@ -273,7 +273,7 @@ mod tests {
         assert_eq!(1, all.len());
         let item = all.first().unwrap();
         assert_eq!("9c404f6f-49a1-4911-9ee2-feaa6abb03f1", item.id.to_string());
-        assert_eq!(vec![Blockchain::Ethereum], item.details.blockchains);
+        assert_eq!(Blockchain::Ethereum, item.details.blockchain);
         assert_eq!("Test!", item.details.label.clone().expect("Label not set"));
         assert!(item.details.description.is_none());
         assert_eq!(
@@ -289,7 +289,7 @@ mod tests {
         assert_eq!(1, all.len());
         let item = all.first().unwrap();
         assert_eq!("9c404f6f-49a1-4911-9ee2-feaa6abb03f1", item.id.to_string());
-        assert_eq!(vec![Blockchain::Ethereum], item.details.blockchains);
+        assert_eq!(Blockchain::Ethereum, item.details.blockchain);
         assert_eq!("Test!", item.details.label.clone().expect("Label not set"));
         assert!(item.details.description.is_none());
         assert_eq!(
@@ -303,7 +303,7 @@ mod tests {
         let book = AddressbookStorage::from_path("./tests/addressbook/one_item.csv");
         let item = book.get(&Uuid::from_str("9c404f6f-49a1-4911-9ee2-feaa6abb03f1").unwrap()).expect("get_all() failed");
         assert_eq!("9c404f6f-49a1-4911-9ee2-feaa6abb03f1", item.id.to_string());
-        assert_eq!(vec![Blockchain::Ethereum], item.details.blockchains);
+        assert_eq!(Blockchain::Ethereum, item.details.blockchain);
         assert_eq!("Test!", item.details.label.clone().expect("Label not set"));
         assert!(item.details.description.is_none());
         assert_eq!(
@@ -319,7 +319,7 @@ mod tests {
         let item = AddressBookmark {
             id: Uuid::from_str("9c404f6f-49a1-4911-9ee2-feaa6abb03f1").unwrap(),
             details: BookmarkDetails {
-                blockchains: vec![Blockchain::Ethereum],
+                blockchain: Blockchain::Ethereum,
                 label: Some("Hello World!".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(Address::from_str("0x085fb4f24031eaedbc2b611aa528f22343eb52db").unwrap())
@@ -332,7 +332,7 @@ mod tests {
         assert_eq!(1, all.len());
         let item = all.first().unwrap();
         assert_eq!("9c404f6f-49a1-4911-9ee2-feaa6abb03f1", item.id.to_string());
-        assert_eq!(vec![Blockchain::Ethereum], item.details.blockchains);
+        assert_eq!(Blockchain::Ethereum, item.details.blockchain);
         assert_eq!("Hello World!", item.details.label.clone().expect("Label not set"));
         assert!(item.details.description.is_none());
         assert_eq!(
@@ -348,7 +348,7 @@ mod tests {
         let item1 = AddressBookmark {
             id: Uuid::from_str("6f42441b-1541-4e29-9f5e-5fef6c79fb9a").unwrap(),
             details: BookmarkDetails {
-                blockchains: vec![Blockchain::Ethereum],
+                blockchain: Blockchain::Ethereum,
                 label: Some("Hello World 1".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(Address::from_str("0x5bee6233f7e2307746266deb0678f22686932c26").unwrap())
@@ -357,7 +357,7 @@ mod tests {
         let item2 = AddressBookmark {
             id: Uuid::from_str("d27171c5-f458-4973-bd00-0415cf1c47aa").unwrap(),
             details: BookmarkDetails {
-                blockchains: vec![Blockchain::Ethereum],
+                blockchain: Blockchain::Ethereum,
                 label: Some("Hello World 2".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(Address::from_str("0x732c628300f2da4d54f988b22eeca520356743dc").unwrap())
@@ -366,7 +366,7 @@ mod tests {
         let item3 = AddressBookmark {
             id: Uuid::from_str("b6b22cc7-1419-4056-b49e-c6bbcde9b4cd").unwrap(),
             details: BookmarkDetails {
-                blockchains: vec![Blockchain::Ethereum],
+                blockchain: Blockchain::Ethereum,
                 label: Some("Hello World 3".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(Address::from_str("0xfac41abcf13f5dcd83d8c20d5ed5e07e1968a348").unwrap())

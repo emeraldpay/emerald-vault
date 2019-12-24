@@ -31,7 +31,7 @@ pub struct BookItem {
     // message fields
     pub label: ::std::string::String,
     pub description: ::std::string::String,
-    pub blockchains: ::std::vec::Vec<u32>,
+    pub blockchain: u32,
     pub address: ::protobuf::SingularPtrField<super::address::Address>,
     // special fields
     pub unknown_fields: ::protobuf::UnknownFields,
@@ -101,29 +101,19 @@ impl BookItem {
         ::std::mem::replace(&mut self.description, ::std::string::String::new())
     }
 
-    // repeated uint32 blockchains = 3;
+    // uint32 blockchain = 3;
 
 
-    pub fn get_blockchains(&self) -> &[u32] {
-        &self.blockchains
+    pub fn get_blockchain(&self) -> u32 {
+        self.blockchain
     }
-    pub fn clear_blockchains(&mut self) {
-        self.blockchains.clear();
+    pub fn clear_blockchain(&mut self) {
+        self.blockchain = 0;
     }
 
     // Param is passed by value, moved
-    pub fn set_blockchains(&mut self, v: ::std::vec::Vec<u32>) {
-        self.blockchains = v;
-    }
-
-    // Mutable pointer to the field.
-    pub fn mut_blockchains(&mut self) -> &mut ::std::vec::Vec<u32> {
-        &mut self.blockchains
-    }
-
-    // Take field
-    pub fn take_blockchains(&mut self) -> ::std::vec::Vec<u32> {
-        ::std::mem::replace(&mut self.blockchains, ::std::vec::Vec::new())
+    pub fn set_blockchain(&mut self, v: u32) {
+        self.blockchain = v;
     }
 
     // .emerald.vault.Address address = 4;
@@ -181,7 +171,11 @@ impl ::protobuf::Message for BookItem {
                     ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.description)?;
                 },
                 3 => {
-                    ::protobuf::rt::read_repeated_uint32_into(wire_type, is, &mut self.blockchains)?;
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint32()?;
+                    self.blockchain = tmp;
                 },
                 4 => {
                     ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.address)?;
@@ -204,9 +198,9 @@ impl ::protobuf::Message for BookItem {
         if !self.description.is_empty() {
             my_size += ::protobuf::rt::string_size(2, &self.description);
         }
-        for value in &self.blockchains {
-            my_size += ::protobuf::rt::value_size(3, *value, ::protobuf::wire_format::WireTypeVarint);
-        };
+        if self.blockchain != 0 {
+            my_size += ::protobuf::rt::value_size(3, self.blockchain, ::protobuf::wire_format::WireTypeVarint);
+        }
         if let Some(ref v) = self.address.as_ref() {
             let len = v.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
@@ -223,9 +217,9 @@ impl ::protobuf::Message for BookItem {
         if !self.description.is_empty() {
             os.write_string(2, &self.description)?;
         }
-        for v in &self.blockchains {
-            os.write_uint32(3, *v)?;
-        };
+        if self.blockchain != 0 {
+            os.write_uint32(3, self.blockchain)?;
+        }
         if let Some(ref v) = self.address.as_ref() {
             os.write_tag(4, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
@@ -283,10 +277,10 @@ impl ::protobuf::Message for BookItem {
                     |m: &BookItem| { &m.description },
                     |m: &mut BookItem| { &mut m.description },
                 ));
-                fields.push(::protobuf::reflect::accessor::make_vec_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
-                    "blockchains",
-                    |m: &BookItem| { &m.blockchains },
-                    |m: &mut BookItem| { &mut m.blockchains },
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
+                    "blockchain",
+                    |m: &BookItem| { &m.blockchain },
+                    |m: &mut BookItem| { &mut m.blockchain },
                 ));
                 fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<super::address::Address>>(
                     "address",
@@ -317,7 +311,7 @@ impl ::protobuf::Clear for BookItem {
     fn clear(&mut self) {
         self.label.clear();
         self.description.clear();
-        self.blockchains.clear();
+        self.blockchain = 0;
         self.address.clear();
         self.unknown_fields.clear();
     }
@@ -336,25 +330,25 @@ impl ::protobuf::reflect::ProtobufValue for BookItem {
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\nbook.proto\x12\remerald.vault\x1a\raddress.proto\"\x96\x01\n\x08Book\
+    \n\nbook.proto\x12\remerald.vault\x1a\raddress.proto\"\x94\x01\n\x08Book\
     Item\x12\x14\n\x05label\x18\x01\x20\x01(\tR\x05label\x12\x20\n\x0bdescri\
-    ption\x18\x02\x20\x01(\tR\x0bdescription\x12\x20\n\x0bblockchains\x18\
-    \x03\x20\x03(\rR\x0bblockchains\x120\n\x07address\x18\x04\x20\x01(\x0b2\
-    \x16.emerald.vault.AddressR\x07addressJ\xd6\x02\n\x06\x12\x04\0\0\t\x01\
-    \n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\t\n\
-    \x02\x03\0\x12\x03\x02\0\x17\n\n\n\x02\x04\0\x12\x04\x04\0\t\x01\n\n\n\
-    \x03\x04\0\x01\x12\x03\x04\x08\x10\n\x0b\n\x04\x04\0\x02\0\x12\x03\x05\
-    \x04\x15\n\r\n\x05\x04\0\x02\0\x04\x12\x04\x05\x04\x04\x12\n\x0c\n\x05\
-    \x04\0\x02\0\x05\x12\x03\x05\x04\n\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\
-    \x05\x0b\x10\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x05\x13\x14\n\x0b\n\x04\
-    \x04\0\x02\x01\x12\x03\x06\x04\x1b\n\r\n\x05\x04\0\x02\x01\x04\x12\x04\
-    \x06\x04\x05\x15\n\x0c\n\x05\x04\0\x02\x01\x05\x12\x03\x06\x04\n\n\x0c\n\
-    \x05\x04\0\x02\x01\x01\x12\x03\x06\x0b\x16\n\x0c\n\x05\x04\0\x02\x01\x03\
-    \x12\x03\x06\x19\x1a\n\x0b\n\x04\x04\0\x02\x02\x12\x03\x07\x04$\n\x0c\n\
-    \x05\x04\0\x02\x02\x04\x12\x03\x07\x04\x0c\n\x0c\n\x05\x04\0\x02\x02\x05\
-    \x12\x03\x07\r\x13\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\x07\x14\x1f\n\
-    \x0c\n\x05\x04\0\x02\x02\x03\x12\x03\x07\"#\n\x0b\n\x04\x04\0\x02\x03\
-    \x12\x03\x08\x04\x18\n\r\n\x05\x04\0\x02\x03\x04\x12\x04\x08\x04\x07$\n\
+    ption\x18\x02\x20\x01(\tR\x0bdescription\x12\x1e\n\nblockchain\x18\x03\
+    \x20\x01(\rR\nblockchain\x120\n\x07address\x18\x04\x20\x01(\x0b2\x16.eme\
+    rald.vault.AddressR\x07addressJ\xd7\x02\n\x06\x12\x04\0\0\t\x01\n\x08\n\
+    \x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\t\n\x02\x03\
+    \0\x12\x03\x02\0\x17\n\n\n\x02\x04\0\x12\x04\x04\0\t\x01\n\n\n\x03\x04\0\
+    \x01\x12\x03\x04\x08\x10\n\x0b\n\x04\x04\0\x02\0\x12\x03\x05\x04\x15\n\r\
+    \n\x05\x04\0\x02\0\x04\x12\x04\x05\x04\x04\x12\n\x0c\n\x05\x04\0\x02\0\
+    \x05\x12\x03\x05\x04\n\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\x05\x0b\x10\n\
+    \x0c\n\x05\x04\0\x02\0\x03\x12\x03\x05\x13\x14\n\x0b\n\x04\x04\0\x02\x01\
+    \x12\x03\x06\x04\x1b\n\r\n\x05\x04\0\x02\x01\x04\x12\x04\x06\x04\x05\x15\
+    \n\x0c\n\x05\x04\0\x02\x01\x05\x12\x03\x06\x04\n\n\x0c\n\x05\x04\0\x02\
+    \x01\x01\x12\x03\x06\x0b\x16\n\x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x06\
+    \x19\x1a\n\x0b\n\x04\x04\0\x02\x02\x12\x03\x07\x04\x1a\n\r\n\x05\x04\0\
+    \x02\x02\x04\x12\x04\x07\x04\x06\x1b\n\x0c\n\x05\x04\0\x02\x02\x05\x12\
+    \x03\x07\x04\n\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\x07\x0b\x15\n\x0c\n\
+    \x05\x04\0\x02\x02\x03\x12\x03\x07\x18\x19\n\x0b\n\x04\x04\0\x02\x03\x12\
+    \x03\x08\x04\x18\n\r\n\x05\x04\0\x02\x03\x04\x12\x04\x08\x04\x07\x1a\n\
     \x0c\n\x05\x04\0\x02\x03\x06\x12\x03\x08\x04\x0b\n\x0c\n\x05\x04\0\x02\
     \x03\x01\x12\x03\x08\x0c\x13\n\x0c\n\x05\x04\0\x02\x03\x03\x12\x03\x08\
     \x16\x17b\x06proto3\

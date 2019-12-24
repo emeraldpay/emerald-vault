@@ -195,7 +195,7 @@ impl V2Storage {
             book.add(AddressBookmark {
                 id: Uuid::new_v4(),
                 details: BookmarkDetails {
-                    blockchains: vec![blockchain.clone()],
+                    blockchain: blockchain.clone(),
                     label: item.name,
                     description: item.description,
                     address: AddressRef::EthereumAddress(item.address)
