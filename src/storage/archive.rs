@@ -5,7 +5,9 @@ use fs_extra::{
     move_items,
     file::write_all
 };
-use chrono::Utc;
+use chrono::{Utc, SecondsFormat};
+use std::fs::File;
+use std::io::Write;
 
 pub struct Archive {
     dir: PathBuf
@@ -16,7 +18,11 @@ impl Archive {
     pub fn create<P>(base: P) -> Archive where P: AsRef<Path> {
         let dir = PathBuf::from(base.as_ref())
             .join("archive")
-            .join(Utc::now().to_rfc3339());
+            .join(
+                Utc::now()
+                    .to_rfc3339_opts(SecondsFormat::Secs, true)
+                    .replace(":", "-")
+            );
         Archive {
             dir
         }
@@ -51,8 +57,11 @@ impl Archive {
         if path.exists() {
             return Err("File already exists".to_string());
         }
-        write_all(path, content)
-            .map(|_| ())
+        let mut f = match File::create(path) {
+            Ok(f) => f,
+            Err(e) => return Err(format!("Failed to create file. Error: {}", e.to_string()))
+        };
+        f.write_all(content.as_bytes())
             .map_err(|e| format!("Failed to write to archive. Error: {}", e.to_string()))
     }
 }
@@ -63,8 +72,6 @@ mod tests {
     use crate::storage::archive::Archive;
     use std::fs;
     use std::fs::DirEntry;
-    use std::borrow::Borrow;
-    use std::ops::Deref;
     use std::path::{PathBuf, Path};
 
     fn read_dir_fully<P: AsRef<Path>>(path: P) -> Vec<DirEntry> {
