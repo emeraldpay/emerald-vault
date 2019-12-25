@@ -53,7 +53,7 @@ impl Archive {
         }
         write_all(path, content)
             .map(|_| ())
-            .map_err(|e| format!("Failed to add to archive. Error: {}", e.to_string()))
+            .map_err(|e| format!("Failed to write to archive. Error: {}", e.to_string()))
     }
 }
 
@@ -63,22 +63,63 @@ mod tests {
     use crate::storage::archive::Archive;
     use std::fs;
     use std::fs::DirEntry;
+    use std::borrow::Borrow;
+    use std::ops::Deref;
+    use std::path::{PathBuf, Path};
+
+    fn read_dir_fully<P: AsRef<Path>>(path: P) -> Vec<DirEntry> {
+        fs::read_dir(path)
+            .unwrap()
+            .map(|i| i.unwrap())
+            .collect()
+    }
+
+    fn read_archives<P: AsRef<Path>>(dir: P) -> Result<Vec<DirEntry>, String> {
+        let path = dir.as_ref().to_path_buf();
+        let mut in_arch: Vec<DirEntry> = read_dir_fully(path.join("archive"));
+        if in_arch.len() != 1 {
+            return Err(format!("There're {} elements in archive", in_arch.len()))
+        }
+        Ok(in_arch)
+    }
+
+    fn read_archive<P: AsRef<Path>>(dir: P) -> Result<PathBuf, String> {
+        let all = read_archives(dir)?;
+        Ok(all.first().unwrap().path())
+    }
+
+    #[test]
+    pub fn add_existing_file() {
+        let tmp_dir = TempDir::new("emerald-archive-test").expect("Dir not created");
+        let test_file = tmp_dir.path().join("test.txt");
+        fs_extra::file::write_all(test_file.clone(), "test 1").unwrap();
+
+        assert!(test_file.clone().exists());
+
+        let archive = Archive::create(tmp_dir.path());
+        let result = archive.submit(test_file.clone());
+        assert_eq!(Ok(()), result);
+        assert!(!test_file.exists());
+
+        let archive_dir = read_archive(&tmp_dir).unwrap();
+        let archived_files = read_dir_fully(&archive_dir);
+        assert_eq!(1, archived_files.len());
+        assert_eq!("test.txt", archived_files[0].file_name());
+        let content = fs::read_to_string(archive_dir.join("test.txt")).unwrap();
+        assert_eq!("test 1", content);
+    }
 
     #[test]
     pub fn writes_readme() {
-        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let tmp_dir = TempDir::new("emerald-archive-test").expect("Dir not created");
         let archive = Archive::create(tmp_dir.path());
         let written = archive.write("README.txt", "Hello\nworld");
-        assert!(written.is_ok());
-        let mut in_arch: Vec<DirEntry> = fs::read_dir(tmp_dir.into_path().join("archive"))
-            .unwrap()
-            .map(|i| i.unwrap())
-            .collect();
-        assert_eq!(1, in_arch.len());
-        let elem = &in_arch[0];
-        let mut act_archive = fs::read_dir(elem.path()).unwrap();
-        assert_eq!(1, act_archive.count());
-        let content = fs::read_to_string(elem.path().join("README.txt")).unwrap();
+        assert_eq!(Ok(()), written);
+
+        let archive_dir = read_archive(&tmp_dir).unwrap();
+        let archived_files = read_dir_fully(&archive_dir);
+        assert_eq!(1, archived_files.len());
+        let content = fs::read_to_string(archive_dir.join("README.txt")).unwrap();
         assert_eq!("Hello\nworld", content);
     }
 }
