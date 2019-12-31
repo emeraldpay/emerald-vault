@@ -211,7 +211,7 @@ impl Migrate for V2Storage {
         self.migration.info("Start migration from Vault V2".to_string());
         let supported_blockchains = vec![
             Blockchain::EthereumClassic, Blockchain::Ethereum,
-            Blockchain::MordenTestnet, Blockchain::KovanTestnet
+            Blockchain::KovanTestnet
         ];
         let vault = VaultStorage::create(target)?;
         let mut created_wallets = Vec::new();

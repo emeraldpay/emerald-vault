@@ -83,8 +83,8 @@ impl Migrate for V1Storage {
     fn migrate<P>(&mut self, target: P) -> Result<&MigrationResult, MigrationError> where P: AsRef<Path> {
         self.migration.info("Start migration from Vault V1".to_string());
         let supported_blockchains = vec![
-            Blockchain::EthereumClassic,
-            Blockchain::MordenTestnet,
+            // V1 had only Morden and ETC Mainnet
+            Blockchain::EthereumClassic
         ];
         let vault = VaultStorage::create(target)?;
         let mut created_wallets = Vec::new();

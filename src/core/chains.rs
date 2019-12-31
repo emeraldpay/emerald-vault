@@ -7,6 +7,7 @@ pub enum EthereumChainId {
     /// Ethereum
     Ethereum,
     /// Morden Testnet
+    #[deprecated]
     Morden,
     /// Ethereum Classic
     EthereumClassic,
@@ -22,6 +23,7 @@ pub enum EthereumChainId {
     /// Rinkeby Testnet
     Rinkeby,
     /// Morden Testnet configured for Ethereum Classic
+    #[deprecated]
     MordenClassic,
     #[deprecated]
     /// Ropsten Testnet
@@ -32,7 +34,6 @@ pub enum EthereumChainId {
 pub enum Blockchain {
     Ethereum = 100,
     EthereumClassic = 101,
-    MordenTestnet = 10001,
     KovanTestnet = 10002
 }
 
@@ -41,7 +42,6 @@ impl From<Blockchain> for EthereumChainId {
         match blockchain {
             Blockchain::Ethereum => EthereumChainId::Ethereum,
             Blockchain::EthereumClassic => EthereumChainId::EthereumClassic,
-            Blockchain::MordenTestnet => EthereumChainId::MordenClassic,
             Blockchain::KovanTestnet => EthereumChainId::Kovan
         }
     }
@@ -55,8 +55,6 @@ impl TryFrom<EthereumChainId> for Blockchain {
             EthereumChainId::Ethereum => Ok(Blockchain::Ethereum),
             EthereumChainId::EthereumClassic => Ok(Blockchain::EthereumClassic),
             EthereumChainId::Kovan => Ok(Blockchain::KovanTestnet),
-            EthereumChainId::Morden=> Ok(Blockchain::MordenTestnet),
-            EthereumChainId::MordenClassic => Ok(Blockchain::MordenTestnet),
             _ => Err(())
         }
     }
@@ -69,7 +67,6 @@ impl TryFrom<u32> for Blockchain {
         match value {
             100 => Ok(Blockchain::Ethereum),
             101 => Ok(Blockchain::EthereumClassic),
-            10001 => Ok(Blockchain::MordenTestnet),
             10002 => Ok(Blockchain::KovanTestnet),
             _ => Err(())
         }

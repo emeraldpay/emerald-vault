@@ -100,7 +100,6 @@ enum BlockchainId {
     CHAIN_LIGHTNING = 1001;
 
     // Testnets
-    CHAIN_MORDEN = 10001;
     CHAIN_KOVAN = 10002;
     CHAIN_TESTNET_BITCOIN = 10003;
     CHAIN_FLOONET = 10004;
