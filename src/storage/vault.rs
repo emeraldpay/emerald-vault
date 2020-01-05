@@ -165,7 +165,7 @@ pub struct AddAccount {
 }
 
 impl AddAccount {
-    pub fn ethereum(&self, json: &EthereumJsonV3File, blockchain: Blockchain) -> Result<u32, VaultError> {
+    pub fn ethereum(&self, json: &EthereumJsonV3File, blockchain: Blockchain) -> Result<usize, VaultError> {
         let mut wallet = self.wallets.get(&self.wallet_id)?;
         let mut pk = PrivateKeyHolder::try_from(json).map_err(|e| VaultError::ConversionError)?;
         let pk_id = pk.generate_id();
@@ -180,10 +180,10 @@ impl AddAccount {
             }
         );
         self.wallets.update(wallet.clone())?;
-        Ok(wallet.accounts.len() as u32 - 1)
+        Ok(id)
     }
 
-    pub fn raw_pk(&mut self, pk: Vec<u8>, password: &str, blockchain: Blockchain) -> Result<u32, VaultError> {
+    pub fn raw_pk(&mut self, pk: Vec<u8>, password: &str, blockchain: Blockchain) -> Result<usize, VaultError> {
         let mut wallet = self.wallets.get(&self.wallet_id)?;
         let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
             .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
@@ -200,11 +200,11 @@ impl AddAccount {
             }
         );
         self.wallets.update(wallet.clone())?;
-        Ok(wallet.accounts.len() as u32 - 1)
+        Ok(id)
     }
 
     pub fn seed_hd(&self, seed_id: Uuid, hd_path: HDPath, blockchain: Blockchain,
-                   password: Option<String>, expected_address: Option<Address>) -> Result<u32, VaultError> {
+                   password: Option<String>, expected_address: Option<Address>) -> Result<usize, VaultError> {
         let seed = self.seeds.get(&seed_id)?;
         let seed = match seed.source {
             SeedSource::Bytes(seed) => {
@@ -231,7 +231,7 @@ impl AddAccount {
             }
         );
         self.wallets.update(wallet.clone())?;
-        Ok(wallet.accounts.len() as u32 - 1)
+        Ok(id)
     }
 }
 
@@ -516,5 +516,45 @@ mod tests {
 
         let all = vault.seeds.list().unwrap();
         assert_eq!(0, all.len());
+    }
+
+    #[test]
+    fn uses_different_account_ids() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let wallet = Wallet {
+            id: Default::default(),
+            label: None,
+            accounts: vec![]
+        };
+        let wallet_id = vault.wallets.add(wallet).unwrap();
+
+        let wallet = vault.wallets.get(&wallet_id).unwrap();
+        assert_eq!(0, wallet.accounts.len());
+
+        let id1 = vault.add_account(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd").unwrap(),
+                "test",
+                Blockchain::Ethereum
+            ).unwrap();
+        let id2 = vault.add_account(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd").unwrap(),
+                "test",
+                Blockchain::EthereumClassic
+            ).unwrap();
+        assert_ne!(id1, id2);
+
+        let wallet = vault.wallets.get(&wallet_id).unwrap();
+        assert_eq!(2, wallet.accounts.len());
+        assert_eq!(id1, wallet.accounts[0].id);
+        assert_eq!(id2, wallet.accounts[1].id);
+
+        //not necessary, but true for the current implementation
+        assert_eq!(id1 + 1, id2);
+        assert_eq!(0, id1);
+        assert_eq!(1, id2);
     }
 }

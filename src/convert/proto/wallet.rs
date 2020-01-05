@@ -79,6 +79,7 @@ impl From<&WalletAccount> for proto_WalletAccount {
 
     fn from(value: &WalletAccount) -> Self {
         let mut result = proto_WalletAccount::default();
+        result.set_id(value.id as u32);
         result.set_blockchain_id(value.blockchain.to_owned() as u32);
 
         let mut ethereum = proto_EthereumAddress::default();
