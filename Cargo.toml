@@ -62,6 +62,8 @@ base64 = "0.11.0"
 tempdir = "0.3"
 quickcheck = "0.6"
 bencher = "0.1.5"
+# default feature bzip2 conflicts with rocksdb
+zip = { version = "0.5.3", default-features = false, features = ["deflate"] }
 # quickcheck_macros = "0.4"
 
 [features]

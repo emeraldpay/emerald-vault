@@ -131,3 +131,54 @@ impl Migrate for V1Storage {
         Ok(&self.migration)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tempdir::TempDir;
+    use crate::migration::types::Migrate;
+    use crate::storage::vault::VaultStorage;
+    use crate::core::chains::Blockchain;
+    use crate::structs::wallet::{Wallet, PKType};
+    use crate::Address;
+    use std::str::FromStr;
+    use std::path::{PathBuf, Path};
+    use crate::migration::test_commons::{unzip, show_dir, sort_wallets};
+    use crate::migration::source::v1::V1Storage;
+
+
+    #[test]
+    fn migrate_basic() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        unzip("./tests/migration/vault-0.10.1-migrate.zip", tmp_dir.clone());
+
+        let mut storage = V1Storage::create(tmp_dir.join("vault-0.10.1-migrate"));
+        let result = storage.migrate(tmp_dir.join("migrated")).unwrap();
+//        println!("Migrated:");
+//        show_dir(tmp_dir.clone(), None);
+//        println!("---");
+        assert_eq!(result.wallets.len(), 2);
+
+        let vault = VaultStorage::create(tmp_dir.join("migrated")).unwrap();
+        let mut wallets = vault.wallets().list_entries().unwrap();
+        sort_wallets(&mut wallets);
+
+        assert_eq!(wallets.len(), 2);
+
+        let eth_wallets: Vec<&Wallet> = wallets.iter()
+            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::Ethereum)
+            .collect();
+        assert_eq!(eth_wallets.len(), 0);
+
+        let etc_wallets: Vec<&Wallet> = wallets.iter()
+            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::EthereumClassic)
+            .collect();
+        assert_eq!(etc_wallets.len(), 2);
+        assert_eq!(etc_wallets[0].get_account(0).unwrap().address, Some(Address::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap()));
+        assert_eq!(etc_wallets[1].get_account(0).unwrap().address, Some(Address::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap()));
+
+        let kovan_wallets: Vec<&Wallet> = wallets.iter()
+            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::KovanTestnet)
+            .collect();
+        assert_eq!(kovan_wallets.len(), 0);
+    }
+}

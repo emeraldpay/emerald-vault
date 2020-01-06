@@ -25,3 +25,58 @@ pub fn auto_migrate<P>(dir: P)
     }
 
 }
+
+
+#[cfg(test)]
+mod test_commons {
+    use std::path::{Path, PathBuf};
+    use std::fs::File;
+    use std::fs;
+    use std::io::{Read, Write};
+    use std::convert::TryInto;
+    use crate::structs::wallet::Wallet;
+
+    pub fn unzip<P: AsRef<Path>>(src: P, target: PathBuf) {
+        let file = File::open(src).unwrap();
+        let mut zip = zip::ZipArchive::new(file).unwrap();
+        for i in 0..zip.len() {
+            let mut file = zip.by_index(i).unwrap();
+            let target_path = target.join(file.name());
+//            println!("Filename: {}", file.name());
+            if file.is_dir() {
+                fs::create_dir(target_path);
+            } else {
+                let mut f = File::create(target_path).unwrap();
+                let mut buf = Vec::new();
+                file.read_to_end(&mut buf);
+                f.write_all(&buf);
+            }
+        }
+    }
+
+    pub fn show_dir<P: AsRef<Path>>(dir: P, parent: Option<PathBuf>) {
+        if dir.as_ref().is_dir() {
+            for entry in fs::read_dir(dir.as_ref().clone()).unwrap() {
+                let entry = entry.unwrap();
+                let path = entry.path();
+                if path.is_dir() {
+                    show_dir(&path, Some(dir.as_ref().to_path_buf()));
+                } else {
+                    let x = match parent {
+                        Some(ref p) => p.join(path),
+                        None => path
+                    };
+                    println!("Filename: {:?}", x);
+                }
+            }
+        }
+    }
+    pub fn sort_wallets(wallets: &mut Vec<Wallet>) {
+        wallets.sort_by(|a, b|
+            a.get_account(0).unwrap()
+                .address.unwrap()
+                .cmp(&b.get_account(0).unwrap()
+                    .address.unwrap())
+        );
+    }
+}

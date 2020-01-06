@@ -313,7 +313,6 @@ impl TryFrom<&EthereumJsonV3File> for PrivateKeyHolder {
     }
 }
 
-// DELETE
 impl From<&CoreCryptoJson> for Kdf {
     fn from(crypto: &CoreCryptoJson) -> Self {
         match crypto.kdf_params.kdf {
@@ -725,5 +724,147 @@ mod tests {
     fn should_not_decode_not_wrong_crypto() {
         assert!(serde_json::from_str::<CoreCryptoJson>("garbage").is_err());
     }
+
+    #[test]
+    fn extracts_encrypted_from_json_scrypt() {
+        let json = EthereumJsonV3File {
+            id: Default::default(),
+            version: 3,
+            address: None,
+            crypto: CoreCryptoJson {
+                cipher: CipherId::Aes128Ctr,
+                cipher_text: "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1".to_string(),
+                cipher_params: CipherParamsJson {
+                    iv: "9df1649dd1c50f2153917e3b9e7164e9".to_string()
+                },
+                kdf_params: KdfParamsJson {
+                    kdf: KdfJson::Scrypt {
+                        n: 1024,
+                        r: 8,
+                        p: 1
+                    },
+                    dklen: 32,
+                    salt: "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4".to_string()
+                },
+                mac: "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5".to_string()
+            },
+            name: None,
+            description: None
+        };
+
+        let act = Encrypted::try_from(&json).unwrap();
+
+        assert_eq!(hex::encode(act.get_iv()), "9df1649dd1c50f2153917e3b9e7164e9");
+        assert_eq!(hex::encode(act.get_mac()), "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5");
+        assert_eq!(hex::encode(act.get_message()), "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1");
+
+        let kdf = match act.kdf {
+            Kdf::Scrypt(x) => x,
+            _ => panic!("not scrypt")
+        };
+        assert_eq!(kdf.dklen, 32);
+        assert_eq!(kdf.n, 1024);
+        assert_eq!(kdf.r, 8);
+        assert_eq!(kdf.p, 1);
+        assert_eq!(hex::encode(kdf.salt), "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4");
+    }
+
+    #[test]
+    fn extracts_encrypted_from_json_pbkdf() {
+        let json = EthereumJsonV3File {
+            id: Default::default(),
+            version: 3,
+            address: None,
+            crypto: CoreCryptoJson {
+                cipher: CipherId::Aes128Ctr,
+                cipher_text: "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1".to_string(),
+                cipher_params: CipherParamsJson {
+                    iv: "9df1649dd1c50f2153917e3b9e7164e9".to_string()
+                },
+                kdf_params: KdfParamsJson {
+                    kdf: KdfJson::Pbkdf2 {
+                        prf: PrfJson::HmacSha256,
+                        c: 10240
+                    },
+                    dklen: 32,
+                    salt: "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4".to_string()
+                },
+                mac: "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5".to_string()
+            },
+            name: None,
+            description: None
+        };
+
+        let act = Encrypted::try_from(&json).unwrap();
+
+        assert_eq!(hex::encode(act.get_iv()), "9df1649dd1c50f2153917e3b9e7164e9");
+        assert_eq!(hex::encode(act.get_mac()), "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5");
+        assert_eq!(hex::encode(act.get_message()), "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1");
+
+        let kdf = match act.kdf {
+            Kdf::Pbkdf2(x) => x,
+            _ => panic!("not pbkdf")
+        };
+        assert_eq!(kdf.dklen, 32);
+        assert_eq!(kdf.c, 10240);
+        assert_eq!(kdf.prf, PrfType::HmacSha256);
+        assert_eq!(hex::encode(kdf.salt), "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4");
+    }
+
+    #[test]
+    fn export_json_from_encrypted_pk() {
+        let pk = PrivateKeyHolder {
+            id: Default::default(),
+            pk: PrivateKeyType::EthereumPk(EthereumPk3 {
+                address: None,
+                key: Encrypted {
+                    cipher: Cipher::Aes128Ctr(Aes128CtrCipher {
+                        encrypted: hex::decode("c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1").unwrap(),
+                        iv: hex::decode("9df1649dd1c50f2153917e3b9e7164e9").unwrap(),
+                        mac: MacType::Web3(hex::decode("9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5").unwrap())
+                    }),
+                    kdf: Kdf::Pbkdf2(Pbkdf2 {
+                        dklen: 32,
+                        c: 10240,
+                        salt: hex::decode("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4").unwrap(),
+                        prf: PrfType::HmacSha256
+                    }) }
+            })
+        };
+
+        let json = EthereumJsonV3File::from_wallet(Some("test".to_string()), &pk).unwrap();
+        assert_eq!(json.address, None);
+        assert_eq!(json.version, 3);
+        assert_eq!(json.description, None);
+        assert_eq!(json.name, Some("test".to_string()));
+
+        assert_eq!(json.crypto.cipher, CipherId::Aes128Ctr);
+        assert_eq!(json.crypto.cipher_text, "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1".to_string());
+        assert_eq!(json.crypto.cipher_params.iv, "9df1649dd1c50f2153917e3b9e7164e9".to_string());
+        let kdf = match json.crypto.kdf_params.kdf {
+            KdfJson::Pbkdf2 { prf, c} => (prf, c),
+            _ => panic!("not pbkdf2")
+        };
+        assert_eq!(kdf.0, PrfJson::HmacSha256);
+        assert_eq!(kdf.1, 10240);
+        assert_eq!(json.crypto.kdf_params.salt, "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4".to_string());
+        assert_eq!(json.crypto.kdf_params.dklen, 32);
+        assert_eq!(json.crypto.mac, "9f8a85347fd1a81f14b99f69e2b401d68fb48904efe6a66b357d8d1d61ab14e5".to_string());
+    }
+
+    #[test]
+    fn export_json_from_raw_pk() {
+        let pk = PrivateKey::try_from(hex::decode("7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d").unwrap().as_slice()).unwrap();
+        let json = EthereumJsonV3File::from_pk(Some("Test".to_string()), pk, "testpassword".to_string()).unwrap();
+        assert_eq!(json.address, Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()));
+        assert_eq!(json.version, 3);
+        assert_eq!(json.description, None);
+        assert_eq!(json.name, Some("Test".to_string()));
+        assert_eq!(json.crypto.cipher, CipherId::Aes128Ctr);
+
+        let mkg = Encrypted::try_from(&json).unwrap().decrypt("testpassword").unwrap();
+        assert_eq!(hex::encode(mkg), "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d");
+    }
+
 }
 

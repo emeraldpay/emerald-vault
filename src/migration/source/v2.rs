@@ -291,3 +291,100 @@ impl Migrate for V2Storage {
         Ok(&self.migration)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tempdir::TempDir;
+    use crate::migration::source::v2::V2Storage;
+    use crate::migration::types::Migrate;
+    use crate::storage::vault::VaultStorage;
+    use crate::core::chains::Blockchain;
+    use crate::structs::wallet::{Wallet, PKType};
+    use crate::Address;
+    use std::str::FromStr;
+    use std::path::{PathBuf, Path};
+    use crate::migration::test_commons::{unzip, sort_wallets};
+    use crate::structs::seed::SeedSource;
+
+
+    #[test]
+    fn migrate_basic() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        unzip("./tests/migration/vault-0.26-basic.zip", tmp_dir.clone());
+
+        let mut storage = V2Storage::create(tmp_dir.join("vault-0.26-basic"));
+        let result = storage.migrate(tmp_dir.join("migrated")).unwrap();
+        assert_eq!(result.wallets.len(), 3);
+
+        let vault = VaultStorage::create(tmp_dir.join("migrated")).unwrap();
+        let mut wallets = vault.wallets().list_entries().unwrap();
+        sort_wallets(&mut wallets);
+
+        assert_eq!(wallets.len(), 3);
+
+        let eth_wallets: Vec<&Wallet> = wallets.iter()
+            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::Ethereum)
+            .collect();
+        assert_eq!(eth_wallets.len(), 2);
+        assert_eq!(eth_wallets[0].get_account(0).unwrap().address, Some(Address::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap()));
+        assert_eq!(eth_wallets[1].get_account(0).unwrap().address, Some(Address::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap()));
+
+        let etc_wallets: Vec<&Wallet> = wallets.iter()
+            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::EthereumClassic)
+            .collect();
+        assert_eq!(etc_wallets.len(), 1);
+        assert_eq!(etc_wallets[0].get_account(0).unwrap().address, Some(Address::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap()));
+
+        let kovan_wallets: Vec<&Wallet> = wallets.iter()
+            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::KovanTestnet)
+            .collect();
+        assert_eq!(kovan_wallets.len(), 0);
+    }
+
+    #[test]
+    fn migrate_ledger() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        unzip("./tests/migration/vault-0.26-ledger.zip", tmp_dir.clone());
+
+        let mut storage = V2Storage::create(tmp_dir.join("vault-0.26-ledger"));
+        let result = storage.migrate(tmp_dir.join("migrated")).unwrap();
+        assert_eq!(result.wallets.len(), 4);
+
+        let vault = VaultStorage::create(tmp_dir.join("migrated")).unwrap();
+        let mut wallets = vault.wallets().list_entries().unwrap();
+        sort_wallets(&mut wallets);
+
+        assert_eq!(wallets.len(), 4);
+
+        let eth_wallets: Vec<&Wallet> = wallets.iter()
+            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::Ethereum)
+            .collect();
+        assert_eq!(eth_wallets.len(), 3);
+        assert_eq!(eth_wallets[0].get_account(0).unwrap().address, Some(Address::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap()));
+        assert_eq!(eth_wallets[1].get_account(0).unwrap().address, Some(Address::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap()));
+        assert_eq!(eth_wallets[2].get_account(0).unwrap().address, Some(Address::from_str("0xBD5222391BBB9F17484F2565455FB6610D9E145F").unwrap()));
+
+        let ledger_acc = eth_wallets[2].get_account(0).unwrap();
+        let seed = match ledger_acc.key {
+            PKType::SeedHd(x) => x,
+            _ => panic!("not seed")
+        };
+        assert_eq!(seed.hd_path, "m/44'/60'/0'/0");
+        let seed_value = vault.seeds().get(&seed.seed_id).unwrap();
+        let l = match seed_value.source {
+            SeedSource::Ledger(x) => x,
+            _ => panic!("not ledger")
+        };
+
+        let etc_wallets: Vec<&Wallet> = wallets.iter()
+            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::EthereumClassic)
+            .collect();
+        assert_eq!(etc_wallets.len(), 1);
+        assert_eq!(etc_wallets[0].get_account(0).unwrap().address, Some(Address::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap()));
+
+        let kovan_wallets: Vec<&Wallet> = wallets.iter()
+            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::KovanTestnet)
+            .collect();
+        assert_eq!(kovan_wallets.len(), 0);
+    }
+}
