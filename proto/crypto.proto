@@ -1,0 +1,48 @@
+syntax = "proto3";
+package emerald.vault;
+
+message ScryptKdf {
+    uint32 dklen = 1;
+    bytes salt = 2;
+    uint32 n = 3;
+    uint32 r = 4;
+    uint32 p = 5;
+}
+
+message Pbkdf2 {
+    uint32 dklen = 1;
+    uint32 c = 2;
+    PrfType prf = 3;
+    bytes salt = 4;
+}
+
+enum PrfType {
+    PRF_UNKNOWN = 0;
+    PRF_HMAC_SHA256 = 1;
+}
+
+message Encrypted {
+    CipherType type = 1;
+    bytes secret = 2;
+    bytes iv = 3;
+    Mac mac = 4;
+    oneof kdf_type {
+        ScryptKdf kdf_scrypt = 5;
+        Pbkdf2 kdf_pbkdf = 6;
+    }
+
+    enum CipherType {
+        CIPHER_UNKNOWN=0;
+        CIPHER_AES128_CTR=1;
+    }
+}
+
+message Mac {
+    MacType type = 1;
+    bytes value = 2;
+
+    enum MacType {
+        MAC_UNKNOWN = 0;
+        MAC_WEB3 = 1;
+    }
+}

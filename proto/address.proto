@@ -1,0 +1,17 @@
+syntax = "proto3";
+package emerald.vault;
+
+message Address {
+    oneof address_type {
+        Bip32Public xpub = 1;
+        string plain_address = 3;
+    }
+}
+
+message Bip32Public {
+    uint32 level = 1;
+    uint32 parent_fingerprint = 2;
+    uint32 child_number = 3;
+    bytes chaincode = 4;
+    bytes point = 5;
+}

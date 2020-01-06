@@ -11,12 +11,9 @@ rust:
 os:
   - linux
   - osx
+  - windows
 
 osx_image: xcode11.2
-
-# Need for gitversion
-git:
-    depth: false
 
 addons:
   apt:
@@ -28,30 +25,18 @@ addons:
       - libiberty-dev
       - libusb-1.0-0-dev
       - libcurl3
-      - mono-complete # for gitversion
 
 notifications:
   email:
     on_success: never
 
 before_install:
-  - echo Installing GitVersion...
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update && brew install gitversion; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then rustup component add rustfmt --toolchain stable-x86_64-apple-darwin; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then wget https://github.com/GitTools/GitVersion/releases/download/v4.0.0/GitVersion-bin-net40-v4.0.0.zip && unzip GitVersion-bin-net40-v4.0.0.zip -d GitVersion; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then mkdir bin && echo "#!/bin/bash" > ./bin/gitversion && echo 'mono GitVersion/GitVersion.exe "$@"' >> ./bin/gitversion && chmod 755 ./bin/gitversion; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then export PATH=$PATH:$PWD/bin; fi
-  - gitversion /version
-  - echo Janus...
-  - curl -sL https://raw.githubusercontent.com/ETCDEVTeam/janus/master/get.sh | bash
-  - export PATH=$PATH:$PWD/janusbin
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then rustup toolchain install stable-msvc && rustup target install x86_64-pc-windows-msvc && rustup set default-host x86_64-pc-windows-msvc; fi
 
 script:
-  - export APP_VERSION_GIT_TAG="$(gitversion /showvariable FullSemVer)-$(gitversion /showvariable ShortSha)"
-  - export VERSION_BASE="v$(gitversion /showvariable Major).$(gitversion /showvariable Minor).x"
-  - echo "Building app version $APP_VERSION_GIT_TAG"
-  - cargo test --all --release
   - cargo build --all --release
+  - cargo test --all --release
 
 after_success: |
     [ $TRAVIS_RUST_VERSION = stable ] &&
@@ -69,10 +54,3 @@ after_success: |
     done &&
     kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/*
 
-deploy:
-    skip_cleanup: true
-    provider: script
-    script: ./deploy.sh
-    on:
-        branch: master
-    tags: true
