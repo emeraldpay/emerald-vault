@@ -130,7 +130,7 @@ impl WalletAccount {
     fn is_hardware(&self, vault: &VaultStorage) -> Result<bool, VaultError> {
         match &self.key {
             PKType::SeedHd(seed) => {
-                let seed_details = vault.seeds().get(&seed.seed_id)?;
+                let seed_details = vault.seeds().get(seed.seed_id)?;
                 match seed_details.source {
                     SeedSource::Ledger(ledger) => {
                         Ok(true)
@@ -156,13 +156,13 @@ impl WalletAccount {
     pub fn export_pk(&self, password: String, vault: &VaultStorage) -> Result<PrivateKey, VaultError> {
         match &self.key {
             PKType::PrivateKeyRef(pk) => {
-                let key = vault.keys().get(&pk)?;
+                let key = vault.keys().get(pk.clone())?;
                 let key = key.decrypt(password.as_str())?;
                 PrivateKey::try_from(key.as_slice())
                     .map_err(|e| VaultError::InvalidPrivateKey)
             }
             PKType::SeedHd(seed) => {
-                let seed_details = vault.seeds().get(&seed.seed_id)?;
+                let seed_details = vault.seeds().get(seed.seed_id.clone())?;
                 match seed_details.source {
                     SeedSource::Bytes(bytes) => {
                         let seed_key = bytes.decrypt(password.as_str())?;
@@ -181,12 +181,12 @@ impl WalletAccount {
     pub fn export_web3(&self, password: Option<String>, vault: &VaultStorage) -> Result<EthereumJsonV3File, VaultError> {
         match &self.key {
             PKType::PrivateKeyRef(pk) => {
-                let key = vault.keys().get(&pk)?;
+                let key = vault.keys().get(pk.clone())?;
                 EthereumJsonV3File::from_wallet(None, &key)
                     .map_err(|e| VaultError::InvalidPrivateKey)
             }
             PKType::SeedHd(seed) => {
-                let seed_details = vault.seeds().get(&seed.seed_id)?;
+                let seed_details = vault.seeds().get(seed.seed_id.clone())?;
                 match seed_details.source {
                     SeedSource::Bytes(bytes) => {
                         if password.is_none() {

@@ -43,6 +43,7 @@ struct StandardVaultFiles {
     suffix: String
 }
 
+/// Main interface to the Emerald Vault storage
 impl VaultStorage {
     pub fn keys(&self) -> Arc<dyn VaultAccess<PrivateKeyHolder>> {
         self.keys.clone()
@@ -166,7 +167,7 @@ pub struct AddAccount {
 
 impl AddAccount {
     pub fn ethereum(&self, json: &EthereumJsonV3File, blockchain: Blockchain) -> Result<usize, VaultError> {
-        let mut wallet = self.wallets.get(&self.wallet_id)?;
+        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
         let mut pk = PrivateKeyHolder::try_from(json).map_err(|e| VaultError::ConversionError)?;
         let pk_id = pk.generate_id();
         self.keys.add(pk)?;
@@ -184,7 +185,7 @@ impl AddAccount {
     }
 
     pub fn raw_pk(&mut self, pk: Vec<u8>, password: &str, blockchain: Blockchain) -> Result<usize, VaultError> {
-        let mut wallet = self.wallets.get(&self.wallet_id)?;
+        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
         let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
             .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let pk_id = pk.get_id();
@@ -205,7 +206,7 @@ impl AddAccount {
 
     pub fn seed_hd(&self, seed_id: Uuid, hd_path: HDPath, blockchain: Blockchain,
                    password: Option<String>, expected_address: Option<Address>) -> Result<usize, VaultError> {
-        let seed = self.seeds.get(&seed_id)?;
+        let seed = self.seeds.get(seed_id)?;
         let seed = match seed.source {
             SeedSource::Bytes(seed) => {
                 if password.is_none() {
@@ -215,7 +216,7 @@ impl AddAccount {
             },
             _ => return Err(VaultError::UnsupportedDataError("No implemented yet".to_string()))
         };
-        let mut wallet = self.wallets.get(&self.wallet_id)?;
+        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
         let ephemeral_pk = generate_key(&hd_path, seed.as_slice())?;
         let address = ephemeral_pk.to_address();
         if expected_address.is_some() && address != expected_address.unwrap() {
@@ -254,25 +255,32 @@ impl VaultStorage {
     }
 }
 
+/// Access to Vault storage
 pub trait VaultAccess<P> where P: HasUuid {
+    /// List ids of all items in the storage
     fn list(&self) -> Result<Vec<Uuid>, VaultError>;
-    fn get(&self, id: &Uuid) -> Result<P, VaultError>;
+    /// Get Item by ID
+    fn get(&self, id: Uuid) -> Result<P, VaultError>;
+    /// Add a new item
     fn add(&self, entry: P) -> Result<Uuid, VaultError>;
-    fn remove(&self, id: &Uuid) -> Result<bool, VaultError>;
+    /// Remove item
+    fn remove(&self, id: Uuid) -> Result<bool, VaultError>;
 
+    /// Read all entries in the storage
     fn list_entries(&self) -> Result<Vec<P>, VaultError> {
         let all = self.list()?.iter()
-            .map(|id| self.get(id))
+            .map(|id| self.get(*id))
             .filter(|it| it.is_ok())
             .map(|it| it.unwrap())
             .collect();
         Ok(all)
     }
 
+    /// Set new value for the specified item
     fn update(&self, entry: P) -> Result<bool, VaultError> {
         //TODO safe update, with .bak/.tmp files
         let id = entry.get_id();
-        if self.remove(&id)? {
+        if self.remove(id)? {
             self.add(entry)?;
             Ok(true)
         } else {
@@ -302,12 +310,12 @@ impl <P> VaultAccess<P> for StandardVaultFiles
         Ok(result)
     }
 
-    fn get(&self, id: &Uuid) -> Result<P, VaultError> {
-        let f = self.dir.join(Path::new(as_filename(id, self.suffix.as_str()).as_str()));
+    fn get(&self, id: Uuid) -> Result<P, VaultError> {
+        let f = self.dir.join(Path::new(as_filename(&id, self.suffix.as_str()).as_str()));
 
         let data = fs::read(f)?;
         let pk = P::try_from(data).map_err(|_| VaultError::ConversionError)?;
-        if !pk.get_id().eq(id) {
+        if !pk.get_id().eq(&id) {
             Err(VaultError::IncorrectIdError)
         } else {
             Ok(pk)
@@ -328,7 +336,7 @@ impl <P> VaultAccess<P> for StandardVaultFiles
         Ok(id)
     }
 
-    fn remove(&self, id: &Uuid) -> Result<bool, VaultError> {
+    fn remove(&self, id: Uuid) -> Result<bool, VaultError> {
         let f = self.dir.join(Path::new(as_filename(&id, self.suffix.as_str()).as_str()));
         if !f.exists() {
             return Ok(false)
@@ -426,7 +434,7 @@ mod tests {
         assert_eq!(1, list.len());
         assert_eq!(pk_id, list[0]);
 
-        let stored: PrivateKeyHolder = vault_pk.get(&pk_id).unwrap();
+        let stored: PrivateKeyHolder = vault_pk.get(pk_id).unwrap();
     }
 
     #[test]
@@ -468,7 +476,7 @@ mod tests {
         let list = vault_pk.list().unwrap();
         assert_eq!(1, list.len());
 
-        let deleted = vault_pk.remove(&exp_id);
+        let deleted = vault_pk.remove(exp_id);
         assert!(deleted.is_ok());
         assert!(deleted.unwrap());
 
@@ -491,7 +499,7 @@ mod tests {
 
         let all = vault.seeds.list();
         assert_eq!(vec![id], all.unwrap());
-        let seed_act = vault.seeds.get(&id).expect("Seed not available");
+        let seed_act = vault.seeds.get(id).expect("Seed not available");
         assert_eq!(seed, seed_act);
     }
 
@@ -507,10 +515,10 @@ mod tests {
 
         let all = vault.seeds.list();
         assert_eq!(vec![id], all.unwrap());
-        let seed_act = vault.seeds.get(&id).expect("Seed not available");
+        let seed_act = vault.seeds.get(id).expect("Seed not available");
         assert_eq!(seed, seed_act);
 
-        let deleted = vault.seeds.remove(&id);
+        let deleted = vault.seeds.remove(id);
         assert!(deleted.is_ok());
         assert!(deleted.unwrap());
 
@@ -530,7 +538,7 @@ mod tests {
         };
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
-        let wallet = vault.wallets.get(&wallet_id).unwrap();
+        let wallet = vault.wallets.get(wallet_id.clone()).unwrap();
         assert_eq!(0, wallet.accounts.len());
 
         let id1 = vault.add_account(wallet_id.clone())
@@ -547,7 +555,7 @@ mod tests {
             ).unwrap();
         assert_ne!(id1, id2);
 
-        let wallet = vault.wallets.get(&wallet_id).unwrap();
+        let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(2, wallet.accounts.len());
         assert_eq!(id1, wallet.accounts[0].id);
         assert_eq!(id2, wallet.accounts[1].id);

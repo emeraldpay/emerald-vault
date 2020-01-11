@@ -139,9 +139,9 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
         Ok(ids)
     }
 
-    fn get(&self, id: &Uuid) -> Result<AddressBookmark, VaultError> {
+    fn get(&self, id: Uuid) -> Result<AddressBookmark, VaultError> {
         let all = self.get_all()?;
-        let found = all.iter().find(|b| b.id == *id);
+        let found = all.iter().find(|b| b.id == id);
         if found.is_none() {
             Err(VaultError::IncorrectIdError)
         } else {
@@ -172,7 +172,7 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
         Ok(id)
     }
 
-    fn remove(&self, id: &Uuid) -> Result<bool, VaultError> {
+    fn remove(&self, id: Uuid) -> Result<bool, VaultError> {
         let all = self.get_all()?;
         let mut bak_path = self.path.clone();
         if !bak_path.set_extension(".bak") {
@@ -190,7 +190,7 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
         let mut err: Option<VaultError> = None;
         let mut found = false;
         for item in all {
-            if item.id != *id {
+            if item.id != id {
                 let data: Result<Vec<u8>, VaultError> = item.details.try_into();
                 match data {
                     Ok(data) => {
@@ -305,7 +305,7 @@ mod tests {
     #[test]
     fn get_one_by_id() {
         let book = AddressbookStorage::from_path("./tests/addressbook/one_item.csv");
-        let item = book.get(&Uuid::from_str("9c404f6f-49a1-4911-9ee2-feaa6abb03f1").unwrap()).expect("get_all() failed");
+        let item = book.get(Uuid::from_str("9c404f6f-49a1-4911-9ee2-feaa6abb03f1").unwrap()).expect("get_all() failed");
         assert_eq!("9c404f6f-49a1-4911-9ee2-feaa6abb03f1", item.id.to_string());
         assert_eq!(Blockchain::Ethereum, item.details.blockchain);
         assert_eq!("Test!", item.details.label.clone().expect("Label not set"));
@@ -400,7 +400,7 @@ mod tests {
         assert_eq!("b6b22cc7-1419-4056-b49e-c6bbcde9b4cd", item.id.to_string());
         assert_eq!("Hello World 3", item.details.label.clone().expect("Label not set"));
 
-        let removed = book.remove(&Uuid::from_str("d27171c5-f458-4973-bd00-0415cf1c47aa").unwrap());
+        let removed = book.remove(Uuid::from_str("d27171c5-f458-4973-bd00-0415cf1c47aa").unwrap());
         assert!(removed.is_ok());
         assert_eq!(true, removed.unwrap());
 
@@ -412,7 +412,7 @@ mod tests {
         assert_eq!("Hello World 3", item.details.label.clone().expect("Label not set"));
 
 
-        let removed = book.remove(&Uuid::from_str("d27171c5-f458-4973-bd00-0415cf1c47aa").unwrap());
+        let removed = book.remove(Uuid::from_str("d27171c5-f458-4973-bd00-0415cf1c47aa").unwrap());
         assert!(removed.is_ok());
         assert_eq!(false, removed.unwrap());
 
@@ -423,7 +423,7 @@ mod tests {
         let item = all.get(1).unwrap();
         assert_eq!("Hello World 3", item.details.label.clone().expect("Label not set"));
 
-        let removed = book.remove(&Uuid::from_str("b6b22cc7-1419-4056-b49e-c6bbcde9b4cd").unwrap());
+        let removed = book.remove(Uuid::from_str("b6b22cc7-1419-4056-b49e-c6bbcde9b4cd").unwrap());
         assert!(removed.is_ok());
         assert_eq!(true, removed.unwrap());
 
@@ -434,7 +434,7 @@ mod tests {
         let item = all.get(0).unwrap();
         assert_eq!("Hello World 1", item.details.label.clone().expect("Label not set"));
 
-        let removed = book.remove(&Uuid::from_str("6f42441b-1541-4e29-9f5e-5fef6c79fb9a").unwrap());
+        let removed = book.remove(Uuid::from_str("6f42441b-1541-4e29-9f5e-5fef6c79fb9a").unwrap());
         assert!(removed.is_ok());
         assert_eq!(true, removed.unwrap());
 
