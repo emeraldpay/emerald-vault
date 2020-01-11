@@ -2,8 +2,7 @@ use std::path::{PathBuf, Path};
 use std::fs;
 use fs_extra::{
     dir,
-    move_items,
-    file::write_all
+    move_items
 };
 use chrono::{Utc, SecondsFormat};
 use std::fs::File;
@@ -73,6 +72,7 @@ mod tests {
     use std::fs;
     use std::fs::DirEntry;
     use std::path::{PathBuf, Path};
+    use fs_extra::file::write_all;
 
     fn read_dir_fully<P: AsRef<Path>>(path: P) -> Vec<DirEntry> {
         fs::read_dir(path)
@@ -83,7 +83,7 @@ mod tests {
 
     fn read_archives<P: AsRef<Path>>(dir: P) -> Result<Vec<DirEntry>, String> {
         let path = dir.as_ref().to_path_buf();
-        let mut in_arch: Vec<DirEntry> = read_dir_fully(path.join("archive"));
+        let in_arch: Vec<DirEntry> = read_dir_fully(path.join("archive"));
         if in_arch.len() != 1 {
             return Err(format!("There're {} elements in archive", in_arch.len()))
         }
@@ -99,7 +99,7 @@ mod tests {
     pub fn add_existing_file() {
         let tmp_dir = TempDir::new("emerald-archive-test").expect("Dir not created");
         let test_file = tmp_dir.path().join("test.txt");
-        fs_extra::file::write_all(test_file.clone(), "test 1").unwrap();
+        write_all(test_file.clone(), "test 1").unwrap();
 
         assert!(test_file.clone().exists());
 

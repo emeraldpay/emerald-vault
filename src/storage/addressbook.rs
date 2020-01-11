@@ -168,8 +168,11 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
             format: FORMAT.to_string(),
             data: base64::encode(&data)
         })?;
-        wrt.flush();
-        Ok(id)
+        if wrt.flush().is_err() {
+            Err(VaultError::FilesystemError("Flush failed".to_string()))
+        } else {
+            Ok(id)
+        }
     }
 
     fn remove(&self, id: Uuid) -> Result<bool, VaultError> {
@@ -242,7 +245,6 @@ mod tests {
     use uuid::Uuid;
     use std::str::FromStr;
     use tempdir::TempDir;
-    use std::fs::File;
     use std::fs;
     use std::path::Path;
     use crate::storage::addressbook::AddressbookStorage;

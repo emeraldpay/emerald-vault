@@ -111,7 +111,7 @@ impl EthereumChainId {
 
     /// Try to find Chain by provided chain_id
     ///
-    pub fn from_chainid(id: u8) -> Result<Self, (u8)> {
+    pub fn from_chainid(id: u8) -> Result<Self, u8> {
         match id {
             1 => Ok(EthereumChainId::Ethereum),
             2 => Ok(EthereumChainId::Morden),

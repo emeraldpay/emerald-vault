@@ -16,7 +16,6 @@ limitations under the License.
 //! # Storage for `KeyFiles` and `Contracts`
 
 pub mod addressbook;
-pub mod keyfile;
 pub mod vault;
 pub mod error;
 pub mod archive;

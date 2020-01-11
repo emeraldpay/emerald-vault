@@ -15,13 +15,13 @@ impl From<serde_json::Error> for ConversionError {
 }
 
 impl From<VaultError> for ConversionError {
-    fn from(e: VaultError) -> Self {
+    fn from(_: VaultError) -> Self {
         ConversionError::InvalidData("Vault Error".to_string())
     }
 }
 
 impl From<hex::FromHexError> for ConversionError {
-    fn from(e: hex::FromHexError) -> Self {
+    fn from(_: hex::FromHexError) -> Self {
         ConversionError::InvalidData("Not HEX".to_string())
     }
 }

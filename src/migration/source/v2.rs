@@ -81,8 +81,8 @@ impl V2Storage {
         let mut accounts = vec![];
 
         for (addr, val) in db.iterator(IteratorMode::Start) {
-            let vec = from_utf8(&val).map_err(|e| "Not a string value")?;
-            let (filename, json) = V2Storage::split(vec).map_err(|e| "Not a Vault value")?;
+            let vec = from_utf8(&val).map_err(|_| "Not a string value")?;
+            let (filename, json) = V2Storage::split(vec).map_err(|_| "Not a Vault value")?;
             &self.migration.info(format!("Process {}", filename));
             let mut copy = String::new();
             copy.push_str(filename.as_str());
@@ -265,7 +265,9 @@ impl Migrate for V2Storage {
                         },
                         None => {}
                     }
-                    vault.archive.submit(path);
+                    if vault.archive.submit(path.clone()).is_err() {
+                        self.migration.warn(format!("Failed to copy file {:?} to archive", path))
+                    }
                 },
                 None => {}
             }
@@ -302,7 +304,6 @@ mod tests {
     use crate::structs::wallet::{Wallet, PKType};
     use crate::Address;
     use std::str::FromStr;
-    use std::path::{PathBuf, Path};
     use crate::migration::test_commons::{unzip, sort_wallets};
     use crate::structs::seed::SeedSource;
 
@@ -371,7 +372,7 @@ mod tests {
         };
         assert_eq!(seed.hd_path, "m/44'/60'/0'/0");
         let seed_value = vault.seeds().get(seed.seed_id).unwrap();
-        let l = match seed_value.source {
+        match seed_value.source {
             SeedSource::Ledger(x) => x,
             _ => panic!("not ledger")
         };

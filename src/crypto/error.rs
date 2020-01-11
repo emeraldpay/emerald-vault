@@ -9,13 +9,13 @@ pub enum CryptoError {
 }
 
 impl From<scrypt::errors::InvalidParams> for CryptoError {
-    fn from(x: scrypt::errors::InvalidParams) -> Self {
+    fn from(_: scrypt::errors::InvalidParams) -> Self {
         CryptoError::InvalidParams
     }
 }
 
 impl From<scrypt::errors::InvalidOutputLen> for CryptoError {
-    fn from(x: scrypt::errors::InvalidOutputLen) -> Self {
+    fn from(_: scrypt::errors::InvalidOutputLen) -> Self {
         CryptoError::InvalidParams
     }
 }

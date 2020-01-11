@@ -369,7 +369,7 @@ impl EthereumJsonV3File {
     pub fn from_pk(label: Option<String>, pk: PrivateKey, password: String) -> Result<EthereumJsonV3File, CryptoError> {
         let encrypted = Encrypted::encrypt(pk.to_vec(), password.as_str())?;
         let crypto = CoreCryptoJson::try_from(&encrypted)
-            .map_err(|e| CryptoError::UnsupportedSource("encrypted format".to_string()))?;
+            .map_err(|_| CryptoError::UnsupportedSource("encrypted format".to_string()))?;
         let result = EthereumJsonV3File {
             id: Uuid::new_v4(),
             version: 3,
@@ -483,9 +483,7 @@ mod tests {
     use super::*;
     use crate::tests::*;
     use hex;
-    use crate::util::KECCAK256_BYTES;
     use crate::convert::json::keyfile::{CoreCryptoJson, KdfJson, PrfJson};
-    use hex::ToHex;
 
     #[test]
     fn import_pbkdf_default() {

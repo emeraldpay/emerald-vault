@@ -6,7 +6,6 @@ use crate::{
             SeedSource
         },
         types::HasUuid,
-        pk::PrivateKeyType
     },
     Address,
     core::{
@@ -21,10 +20,8 @@ use crate::{
         error::VaultError,
         vault::VaultStorage,
     },
-    crypto::error::CryptoError,
     mnemonic::{HDPath, generate_key},
-    convert::json::keyfile::EthereumJsonV3File,
-    proto::crypto::Encrypted,
+    convert::json::keyfile::EthereumJsonV3File
 };
 use regex::Regex;
 use std::str::FromStr;
@@ -124,7 +121,7 @@ impl WalletAccount {
     fn sign_tx_by_pk(&self, tx: Transaction, key: PrivateKey) -> Result<Vec<u8>, VaultError> {
         let chain_id = EthereumChainId::from(self.blockchain);
         tx.to_signed_raw(key, chain_id)
-            .map_err(|e| VaultError::InvalidPrivateKey)
+            .map_err(|_| VaultError::InvalidPrivateKey)
     }
 
     fn is_hardware(&self, vault: &VaultStorage) -> Result<bool, VaultError> {
@@ -132,7 +129,7 @@ impl WalletAccount {
             PKType::SeedHd(seed) => {
                 let seed_details = vault.seeds().get(seed.seed_id)?;
                 match seed_details.source {
-                    SeedSource::Ledger(ledger) => {
+                    SeedSource::Ledger(_) => {
                         Ok(true)
                     }
                     SeedSource::Bytes(_) => Ok(false)
@@ -159,7 +156,7 @@ impl WalletAccount {
                 let key = vault.keys().get(pk.clone())?;
                 let key = key.decrypt(password.as_str())?;
                 PrivateKey::try_from(key.as_slice())
-                    .map_err(|e| VaultError::InvalidPrivateKey)
+                    .map_err(|_| VaultError::InvalidPrivateKey)
             }
             PKType::SeedHd(seed) => {
                 let seed_details = vault.seeds().get(seed.seed_id.clone())?;
@@ -168,9 +165,9 @@ impl WalletAccount {
                         let seed_key = bytes.decrypt(password.as_str())?;
                         let hd_path = HDPath::try_from(seed.hd_path.as_str())?;
                         generate_key(&hd_path, &seed_key)
-                            .map_err(|e| VaultError::InvalidPrivateKey)
+                            .map_err(|_| VaultError::InvalidPrivateKey)
                     },
-                    SeedSource::Ledger(ledger) => {
+                    SeedSource::Ledger(_) => {
                         Err(VaultError::PrivateKeyUnavailable)
                     }
                 }
@@ -183,7 +180,7 @@ impl WalletAccount {
             PKType::PrivateKeyRef(pk) => {
                 let key = vault.keys().get(pk.clone())?;
                 EthereumJsonV3File::from_wallet(None, &key)
-                    .map_err(|e| VaultError::InvalidPrivateKey)
+                    .map_err(|_| VaultError::InvalidPrivateKey)
             }
             PKType::SeedHd(seed) => {
                 let seed_details = vault.seeds().get(seed.seed_id.clone())?;
@@ -196,11 +193,11 @@ impl WalletAccount {
                         let seed_key = bytes.decrypt(password.as_str())?;
                         let hd_path = HDPath::try_from(seed.hd_path.as_str())?;
                         let key = generate_key(&hd_path, &seed_key)
-                            .map_err(|e| VaultError::InvalidPrivateKey)?;
+                            .map_err(|_| VaultError::InvalidPrivateKey)?;
                         EthereumJsonV3File::from_pk(None, key, password)
-                            .map_err(|e| VaultError::InvalidPrivateKey)
+                            .map_err(|_| VaultError::InvalidPrivateKey)
                     },
-                    SeedSource::Ledger(ledger) => {
+                    SeedSource::Ledger(_) => {
                         Err(VaultError::PrivateKeyUnavailable)
                     }
                 }
@@ -261,7 +258,7 @@ mod tests {
             })
         };
         let key_id = key.get_id();
-        vault.keys().add(key);
+        vault.keys().add(key).expect("Key not added");
 
         let account = WalletAccount {
             id: 0,

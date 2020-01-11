@@ -138,10 +138,9 @@ mod tests {
     use crate::migration::types::Migrate;
     use crate::storage::vault::VaultStorage;
     use crate::core::chains::Blockchain;
-    use crate::structs::wallet::{Wallet, PKType};
+    use crate::structs::wallet::{Wallet};
     use crate::Address;
     use std::str::FromStr;
-    use std::path::{PathBuf, Path};
     use crate::migration::test_commons::{unzip, show_dir, sort_wallets};
     use crate::migration::source::v1::V1Storage;
 

@@ -18,7 +18,7 @@ impl PrivateKeyHolder {
     }
 
     pub fn create_ethereum_raw(pk: Vec<u8>, password: &str) -> Result<PrivateKeyHolder, CryptoError> {
-        let parsed = core_PK::try_from(&pk).map_err(|e| CryptoError::InvalidKey)?;
+        let parsed = core_PK::try_from(&pk).map_err(|_| CryptoError::InvalidKey)?;
         let encrypted = EthereumPk3 {
             address: Some(parsed.to_address()),
             key: Encrypted::encrypt(pk, password)?

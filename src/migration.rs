@@ -33,7 +33,6 @@ mod test_commons {
     use std::fs::File;
     use std::fs;
     use std::io::{Read, Write};
-    use std::convert::TryInto;
     use crate::structs::wallet::Wallet;
 
     pub fn unzip<P: AsRef<Path>>(src: P, target: PathBuf) {
@@ -44,12 +43,12 @@ mod test_commons {
             let target_path = target.join(file.name());
 //            println!("Filename: {}", file.name());
             if file.is_dir() {
-                fs::create_dir(target_path);
+                fs::create_dir(target_path).unwrap();
             } else {
                 let mut f = File::create(target_path).unwrap();
                 let mut buf = Vec::new();
-                file.read_to_end(&mut buf);
-                f.write_all(&buf);
+                file.read_to_end(&mut buf).expect("File not read");
+                f.write_all(&buf).expect("Not written");
             }
         }
     }

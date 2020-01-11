@@ -209,7 +209,7 @@ impl TryFrom<&CoreCryptoV2> for Encrypted {
         let mac: [u8; KECCAK256_BYTES] = value.mac.clone().into();
         let cipher = Cipher::Aes128Ctr(
             Aes128CtrCipher {
-                encrypted: hex::decode(value.cipher_text.clone()).map_err(|e| ConversionError::InvalidJson)?,
+                encrypted: hex::decode(value.cipher_text.clone()).map_err(|_| ConversionError::InvalidJson)?,
                 iv: iv.to_vec(),
                 mac: MacType::Web3(mac.to_vec())
             }

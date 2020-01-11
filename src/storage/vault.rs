@@ -116,7 +116,7 @@ pub struct CreateWallet {
 
 impl CreateWallet {
     pub fn ethereum(&self, json: &EthereumJsonV3File, blockchain: Blockchain) -> Result<Uuid, VaultError> {
-        let mut pk = PrivateKeyHolder::try_from(json).map_err(|e| VaultError::ConversionError)?;
+        let mut pk = PrivateKeyHolder::try_from(json).map_err(|_| VaultError::ConversionError)?;
         pk.generate_id();
         let wallet = Wallet {
             id: Uuid::new_v4(),
@@ -138,7 +138,7 @@ impl CreateWallet {
 
     pub fn raw_pk(&self, pk: Vec<u8>, password: &str, blockchain: Blockchain) -> Result<Uuid, VaultError> {
         let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
-            .map_err(|e| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
+            .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let wallet = Wallet {
             id: Uuid::new_v4(),
             label: None,
@@ -168,7 +168,7 @@ pub struct AddAccount {
 impl AddAccount {
     pub fn ethereum(&self, json: &EthereumJsonV3File, blockchain: Blockchain) -> Result<usize, VaultError> {
         let mut wallet = self.wallets.get(self.wallet_id.clone())?;
-        let mut pk = PrivateKeyHolder::try_from(json).map_err(|e| VaultError::ConversionError)?;
+        let mut pk = PrivateKeyHolder::try_from(json).map_err(|_| VaultError::ConversionError)?;
         let pk_id = pk.generate_id();
         self.keys.add(pk)?;
         let id = wallet.get_account_id();
@@ -359,8 +359,7 @@ mod tests {
             pk::{
                 PrivateKeyHolder,
                 EthereumPk3
-            },
-            crypto::Encrypted
+            }
         },
         tests::*,
         convert::json::keyfile::EthereumJsonV3File
@@ -434,7 +433,7 @@ mod tests {
         assert_eq!(1, list.len());
         assert_eq!(pk_id, list[0]);
 
-        let stored: PrivateKeyHolder = vault_pk.get(pk_id).unwrap();
+        vault_pk.get(pk_id).unwrap();
     }
 
     #[test]

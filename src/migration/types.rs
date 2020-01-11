@@ -85,9 +85,9 @@ impl MigrationResult {
 
         self.logs.iter().for_each(|l| {
             match l {
-                LogMessage::Error(msg) => buf.push_str("ERROR  "),
-                LogMessage::Warning(msg) => buf.push_str("WARN   "),
-                LogMessage::Info(msg) => buf.push_str("INFO   "),
+                LogMessage::Error(_) => buf.push_str("ERROR  "),
+                LogMessage::Warning(_) => buf.push_str("WARN   "),
+                LogMessage::Info(_) => buf.push_str("INFO   "),
             };
             buf.push_str(l.get_msg());
             buf.push('\n');

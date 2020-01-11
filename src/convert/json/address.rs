@@ -25,7 +25,6 @@ impl Serialize for Address {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::tests::*;
 
     #[test]

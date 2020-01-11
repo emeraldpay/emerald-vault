@@ -51,12 +51,12 @@ pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2
                 pk: PrivateKeyType::EthereumPk(
                     EthereumPk3 {
                         address: kf.address,
-                        key: Encrypted::try_from(data).map_err(|e| "Failed to convert encrypted Private Key")?
+                        key: Encrypted::try_from(data).map_err(|_| "Failed to convert encrypted Private Key")?
                     }
                 )
             };
             let pk_id = pk.get_id();
-            vault.keys().add(pk).map_err(|e| "Failed to add converted Private Key to the Vault")?;
+            vault.keys().add(pk).map_err(|_| "Failed to add converted Private Key to the Vault")?;
             WalletAccount {
                 id: 0,
                 blockchain,
@@ -93,7 +93,7 @@ pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2
                         )
                     };
                     let id = seed.id.clone();
-                    seeds.add(seed).map_err(|e| "Failed to add converted Ledger Seed to the Vault")?;
+                    seeds.add(seed).map_err(|_| "Failed to add converted Ledger Seed to the Vault")?;
                     id
                 }
             };
