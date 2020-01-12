@@ -111,9 +111,9 @@ pub fn add_to_vault(blockchain: Blockchain, vault: &VaultStorage, kf: &KeyFileV2
     };
 
     let wallet = Wallet {
-        id: Uuid::new_v4(),
         label: extract_label(kf),
-        accounts: vec![account]
+        accounts: vec![account],
+        .. Wallet::default()
     };
     let wallet_id = wallet.get_id();
     vault.wallets().add(wallet).map_err(|e| format!("Failed to create wallet. {:?}", e))?;

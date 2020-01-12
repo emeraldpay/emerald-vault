@@ -29,6 +29,7 @@ use crate::{
         }
     },
 };
+use std::cmp;
 
 impl TryFrom<&proto_WalletAccount> for WalletAccount {
     type Error = VaultError;
@@ -120,7 +121,8 @@ impl TryFrom<&[u8]> for Wallet {
         let result = Wallet {
             id: Uuid::from_str(m.get_id())?,
             label: none_if_empty(m.get_label()),
-            accounts
+            accounts,
+            account_seq: m.get_account_seq() as usize
         };
         Ok(result)
     }
@@ -149,6 +151,16 @@ impl TryFrom<Wallet> for Vec<u8> {
             .map(|acc| proto_WalletAccount::from(acc))
             .collect();
         result.set_accounts(accounts);
+
+        // Find max unused account_id and remember account seq value
+        let max_account_id = value.accounts.iter().map(|a| a.id).max();
+        let account_seq = match max_account_id {
+            // If wallet has accounts then account_seq is at least the next number after current
+            Some(id) => cmp::max(id + 1, value.account_seq),
+            // Otherwise just keep current seq value
+            None => value.account_seq
+        };
+        result.set_account_seq(account_seq as u32);
 
         result.write_to_bytes()
             .map_err(|e| VaultError::from(e))
@@ -183,7 +195,8 @@ mod tests {
                     address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
                     key: PKType::PrivateKeyRef(Uuid::new_v4())
                 }
-            ]
+            ],
+            account_seq: 1
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
@@ -204,7 +217,8 @@ mod tests {
                     address: Some(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
                     key: PKType::PrivateKeyRef(Uuid::new_v4())
                 }
-            ]
+            ],
+            account_seq: 1
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
@@ -228,7 +242,8 @@ mod tests {
                         hd_path: "m/44'/60'/0'/0".to_string()
                     })
                 }
-            ]
+            ],
+            account_seq: 1
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();

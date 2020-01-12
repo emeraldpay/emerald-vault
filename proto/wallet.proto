@@ -15,6 +15,10 @@ message Wallet {
     repeated Reserved hd_accounts = 3;
     // Actual accounts in the wallet
     repeated WalletAccount accounts = 4;
+    // Sequence for account ids in that wallet. Incremented each time a new account added, and used
+    // as the id that new account. Using this sequence, if account gets deleted its id is not going
+    // to be reused
+    uint32 account_seq = 5;
 }
 
 // Reserved index on a HD path, an x from m/44'/x'

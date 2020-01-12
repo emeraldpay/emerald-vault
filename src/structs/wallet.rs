@@ -30,7 +30,8 @@ use std::str::FromStr;
 pub struct Wallet {
     pub id: Uuid,
     pub label: Option<String>,
-    pub accounts: Vec<WalletAccount>
+    pub accounts: Vec<WalletAccount>,
+    pub account_seq: usize
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -75,9 +76,25 @@ impl Wallet {
         let current = self.accounts.iter()
             .map(|a| a.id)
             .max();
-        match current {
+        let value = match current {
             Some(id) => id + 1,
             None => 0
+        };
+        if value < self.account_seq {
+            self.account_seq
+        } else {
+            value
+        }
+    }
+}
+
+impl Default for Wallet {
+    fn default() -> Self {
+        Wallet {
+            id: Uuid::new_v4(),
+            label: None,
+            accounts: vec![],
+            account_seq: 0
         }
     }
 }
