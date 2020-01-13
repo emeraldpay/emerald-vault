@@ -27,18 +27,20 @@ impl TryFrom<&proto_LedgerSeed> for LedgerSource {
 
     fn try_from(value: &proto_LedgerSeed) -> Result<Self, Self::Error> {
         let fp = value.get_fingerprints();
-        if fp.is_empty() {
-            return Err(VaultError::InvalidDataError("Empty fingerprints".to_string()))
-        }
-        let mut fingerprints = Vec::new();
-        for f in value.get_fingerprints() {
-            let data = Bytes256::try_from(f.get_fingerprint())?;
-            let value = HDPathFingerprint {
-                hd_path: f.get_path().to_string(),
-                value: FingerprintType::AddressSha256(data)
-            };
-            fingerprints.push(value)
-        }
+        let fingerprints = if fp.is_empty() {
+            Vec::new()
+        } else {
+            let mut fingerprints = Vec::new();
+            for f in value.get_fingerprints() {
+                let data = Bytes256::try_from(f.get_fingerprint())?;
+                let value = HDPathFingerprint {
+                    hd_path: f.get_path().to_string(),
+                    value: FingerprintType::AddressSha256(data)
+                };
+                fingerprints.push(value)
+            }
+            fingerprints
+        };
         let result = LedgerSource { fingerprints };
         Ok(result)
     }
@@ -50,18 +52,20 @@ impl TryFrom<LedgerSource> for proto_LedgerSeed {
 
     fn try_from(value: LedgerSource) -> Result<Self, Self::Error> {
         let mut m = proto_LedgerSeed::new();
-        let fingerprings: Vec<proto_HDFingerprint> = value.fingerprints.iter()
-            .map(|f| {
-                let mut pf = proto_HDFingerprint::new();
-                pf.set_path(f.hd_path.clone());
-                match f.value {
-                    FingerprintType::AddressSha256(b) => pf.set_fingerprint(b.into())
-                }
-                pf
-            })
-            .collect();
+        if m.get_fingerprints().len() > 0 {
+            let fingerprings: Vec<proto_HDFingerprint> = value.fingerprints.iter()
+                .map(|f| {
+                    let mut pf = proto_HDFingerprint::new();
+                    pf.set_path(f.hd_path.clone());
+                    match f.value {
+                        FingerprintType::AddressSha256(b) => pf.set_fingerprint(b.into())
+                    }
+                    pf
+                })
+                .collect();
 
-        m.set_fingerprints(protobuf::RepeatedField::from_vec(fingerprings));
+            m.set_fingerprints(protobuf::RepeatedField::from_vec(fingerprings));
+        }
         Ok(m)
     }
 }
@@ -117,4 +121,47 @@ impl TryFrom<Seed> for Vec<u8> {
         m.write_to_bytes()
             .map_err(|e| VaultError::from(e))
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::structs::seed::{Seed, SeedSource, LedgerSource};
+    use uuid::Uuid;
+    use std::convert::{TryInto, TryFrom};
+    use crate::structs::crypto::Encrypted;
+
+    #[test]
+    fn write_and_read_bytes() {
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap())
+        };
+        let seed_id = seed.id.clone();
+        let buf: Vec<u8> = seed.try_into().unwrap();
+        let seed_act = Seed::try_from(buf).unwrap();
+
+        assert_eq!(seed_act.id, seed_id);
+        let source = match seed_act.source {
+            SeedSource::Bytes(e) => e,
+            _ => panic!("Not bytes")
+        };
+    }
+
+    #[test]
+    fn write_and_read_ledger() {
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] })
+        };
+        let seed_id = seed.id.clone();
+        let buf: Vec<u8> = seed.try_into().unwrap();
+        let seed_act = Seed::try_from(buf).unwrap();
+
+        assert_eq!(seed_act.id, seed_id);
+        let source = match seed_act.source {
+            SeedSource::Ledger(v) => v,
+            _ => panic!("Not ledger")
+        };
+    }
+
 }

@@ -255,27 +255,51 @@ impl WManager {
 }
 
 #[cfg(test)]
+pub mod test_commons {
+    use std::env;
+
+    pub fn is_ledger_enabled() -> bool {
+        match env::var("EMRLD_TEST_LEDGER") {
+            Ok(v) => v == "true",
+            Err(_) => false
+        }
+    }
+
+    /// Config:
+    /// * ADDR0 - address on 44'/60'/160720'/0'/0
+    /// * SIGN1 - hex of a signed transaction, 1 ETH to 78296F1058dD49C5D6500855F59094F0a2876397, nonce 0, gas_price 21 gwei, gas 21000
+    pub fn get_ledger_conf(name: &str) -> String {
+        let mut path = String::new();
+        path.push_str("EMRLD_TEST_LEDGER_");
+        path.push_str(name);
+        match env::var(path) {
+            Ok(v) => v,
+            Err(_) => "NOT_SET".to_string()
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::core::Transaction;
     use crate::hdwallet::bip32::{path_to_arr, to_prefixed_path};
     use hex;
     use crate::tests::*;
+    use crate::hdwallet::test_commons::{is_ledger_enabled, get_ledger_conf};
 
     pub const ETC_DERIVATION_PATH: [u8; 21] = [
         5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0,
     ]; // 44'/60'/160720'/0'/0
 
     #[test]
-    #[ignore]
     pub fn should_sign_with_ledger() {
-        let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
-        manager.update(None).unwrap();
-
-        if manager.devices().is_empty() {
-            // No device connected, skip test
+        if !is_ledger_enabled() {
+            warn!("Ledger test is disabled");
             return;
         }
+        let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
+        manager.update(None).unwrap();
 
         let tx = Transaction {
             nonce: 0x00,
@@ -297,7 +321,8 @@ mod tests {
         let fd = &manager.devices()[0].1;
         let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
 
-        assert_eq!(hex::encode(tx.raw_from_sig(Some(chain), &sign)),
+        let signed = hex::encode(tx.raw_from_sig(Some(chain), &sign));
+        assert!(signed.starts_with(
                    "f86d80\
                    85\
                    04e3b29200\
@@ -310,22 +335,20 @@ mod tests {
                    80\
                    81\
                    9d\
-                   a0\
-                   5cba84eb9aac6854c8ff6aa21b3e0c6c2036e07ebdee44bcf7ace95bab569d8f\
-                   a0\
-                   6eab3be528ef7565c887e147a2d53340c6c9fab5d6f56694681c90b518b64183");
+                   a0"
+        ));
+
+        assert_eq!(get_ledger_conf("SIGN1"), signed);
     }
 
     #[test]
-    #[ignore]
     pub fn should_sign_with_ledger_big_data() {
-        let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
-        manager.update(None).unwrap();
-
-        if manager.devices().is_empty() {
-            // No device connected, skip test
+        if !is_ledger_enabled() {
+            warn!("Ledger test is disabled");
             return;
         }
+        let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
+        manager.update(None).unwrap();
 
         let mut data = Vec::new();
 
@@ -395,27 +418,30 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
     pub fn should_get_address_with_ledger() {
+        if !is_ledger_enabled() {
+            warn!("Ledger test is disabled");
+            return;
+        }
         let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
         manager.update(None).unwrap();
 
-        if manager.devices().is_empty() {
-            // No device connected, skip test
-            return;
-        }
+        assert!(!manager.devices().is_empty());
 
         let fd = &manager.devices()[0].1;
         let addr = manager.get_address(fd, None).unwrap();
         assert_eq!(
-            "78296f1058dd49c5d6500855f59094f0a2876397",
-            hex::encode(&*addr)
+            addr.to_string().to_lowercase(),
+            get_ledger_conf("ADDR0").to_lowercase()
         );
     }
 
     #[test]
-    #[ignore]
     pub fn should_pick_hd_path() {
+        if !is_ledger_enabled() {
+            warn!("Ledger test is disabled");
+            return;
+        }
         let buf1 = vec![0];
         let buf2 = vec![1];
 
