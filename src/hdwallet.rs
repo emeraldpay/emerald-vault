@@ -255,19 +255,10 @@ impl WManager {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::core::Transaction;
-    use crate::hdwallet::bip32::{path_to_arr, to_prefixed_path};
-    use hex;
-    use crate::tests::*;
+pub mod test_commons {
     use std::env;
 
-    pub const ETC_DERIVATION_PATH: [u8; 21] = [
-        5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0,
-    ]; // 44'/60'/160720'/0'/0
-
-    fn is_ledger_enabled() -> bool {
+    pub fn is_ledger_enabled() -> bool {
         match env::var("EMRLD_TEST_LEDGER") {
             Ok(v) => v == "true",
             Err(_) => false
@@ -277,7 +268,7 @@ mod tests {
     /// Config:
     /// * ADDR0 - address on 44'/60'/160720'/0'/0
     /// * SIGN1 - hex of a signed transaction, 1 ETH to 78296F1058dD49C5D6500855F59094F0a2876397, nonce 0, gas_price 21 gwei, gas 21000
-    fn get_ledger_conf(name: &str) -> String {
+    pub fn get_ledger_conf(name: &str) -> String {
         let mut path = String::new();
         path.push_str("EMRLD_TEST_LEDGER_");
         path.push_str(name);
@@ -286,6 +277,20 @@ mod tests {
             Err(_) => "NOT_SET".to_string()
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::Transaction;
+    use crate::hdwallet::bip32::{path_to_arr, to_prefixed_path};
+    use hex;
+    use crate::tests::*;
+    use crate::hdwallet::test_commons::{is_ledger_enabled, get_ledger_conf};
+
+    pub const ETC_DERIVATION_PATH: [u8; 21] = [
+        5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0,
+    ]; // 44'/60'/160720'/0'/0
 
     #[test]
     pub fn should_sign_with_ledger() {
@@ -295,11 +300,6 @@ mod tests {
         }
         let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
         manager.update(None).unwrap();
-
-        if manager.devices().is_empty() {
-            // No device connected, skip test
-            return;
-        }
 
         let tx = Transaction {
             nonce: 0x00,
@@ -349,11 +349,6 @@ mod tests {
         }
         let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
         manager.update(None).unwrap();
-
-        if manager.devices().is_empty() {
-            // No device connected, skip test
-            return;
-        }
 
         let mut data = Vec::new();
 

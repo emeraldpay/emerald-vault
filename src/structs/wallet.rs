@@ -25,6 +25,8 @@ use crate::{
 };
 use regex::Regex;
 use std::str::FromStr;
+use crate::hdwallet::WManager;
+use crate::hdwallet::bip32::path_to_arr;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
@@ -141,14 +143,34 @@ impl WalletAccount {
             .map_err(|_| VaultError::InvalidPrivateKey)
     }
 
+    fn sign_tx_with_hardware(&self, tx: Transaction, seed: Uuid, hd_path: String) -> Result<Vec<u8>, VaultError> {
+        let hd_path = HDPath::try_from(hd_path.as_str())
+            .map_err(|_| VaultError::InvalidDataError("HDPath".to_string()))?;
+
+        //TODO verify actual device, right now vault just uses a first currently available device
+        let mut manager = WManager::new(Some(hd_path.to_bytes()))?;
+        if manager.update(None).is_err() {
+            return Err(VaultError::PrivateKeyUnavailable)
+        }
+        if manager.devices().is_empty() {
+            return Err(VaultError::PrivateKeyUnavailable)
+        }
+        let chain_id = EthereumChainId::from(self.blockchain);
+        let rlp = tx.to_rlp(Some(chain_id.as_chainid()));
+        let fd = &manager.devices()[0].1;
+        let sign = manager.sign_transaction(&fd, &rlp, None)
+            .map_err(|e| VaultError::InvalidPrivateKey)?;
+        let raw = tx.raw_from_sig(Some(chain_id.as_chainid()), &sign);
+        //TODO verify that signature is from account address
+        Ok(raw)
+    }
+
     fn is_hardware(&self, vault: &VaultStorage) -> Result<bool, VaultError> {
         match &self.key {
             PKType::SeedHd(seed) => {
                 let seed_details = vault.seeds().get(seed.seed_id)?;
                 match seed_details.source {
-                    SeedSource::Ledger(_) => {
-                        Ok(true)
-                    }
+                    SeedSource::Ledger(_) => Ok(true),
                     SeedSource::Bytes(_) => Ok(false)
                 }
             },
@@ -158,8 +180,14 @@ impl WalletAccount {
 
     pub fn sign_tx(&self, tx: Transaction, password: Option<String>, vault: &VaultStorage) -> Result<Vec<u8>, VaultError> {
         if self.is_hardware(vault)? {
-            unimplemented!()
+            return match &self.key {
+                PKType::SeedHd(seed) => {
+                    Ok(self.sign_tx_with_hardware(tx, seed.seed_id, seed.hd_path.clone())?)
+                }
+                _ => Err(VaultError::UnsupportedDataError("NOT_SEED".to_string()))
+            }
         }
+        // Continue with using a key stored in the vault, it's always encrypted with a password, so it's required
         if password.is_none() {
             return Err(VaultError::PasswordRequired);
         }
@@ -225,7 +253,7 @@ impl WalletAccount {
 
 #[cfg(test)]
 mod tests {
-    use crate::structs::wallet::{WalletAccount, PKType, AccountId};
+    use crate::structs::wallet::{WalletAccount, PKType, AccountId, Wallet};
     use crate::core::chains::Blockchain;
     use uuid::Uuid;
     use crate::{Transaction, to_32bytes, PrivateKey, Address, ToHex};
@@ -235,8 +263,8 @@ mod tests {
     use crate::structs::pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3};
     use crate::structs::crypto::Encrypted;
     use crate::structs::types::HasUuid;
-    use crate::structs::seed::{Seed, SeedSource, SeedRef};
-
+    use crate::structs::seed::{Seed, SeedSource, SeedRef, LedgerSource};
+    use crate::hdwallet::test_commons::{is_ledger_enabled, get_ledger_conf};
 
     #[test]
     fn sign_with_provided_pk() {
@@ -359,11 +387,111 @@ mod tests {
     }
 
     #[test]
+    fn create_and_access_ledger_seed() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] })
+        };
+        let seed_id = vault.seeds().add(seed).unwrap();
+
+        let account = WalletAccount {
+            id: 0,
+            blockchain: Blockchain::EthereumClassic,
+            address: None,
+            key: PKType::SeedHd(SeedRef {
+                seed_id,
+                hd_path: "m/44'/60'/160720'/0'/0".to_string()
+            })
+        };
+
+        let wallet = Wallet {
+            accounts: vec![account],
+            .. Wallet::default()
+        };
+
+        let wallet_id = vault.wallets().add(wallet).unwrap();
+
+        let wallet_act = vault.wallets().get(wallet_id).unwrap();
+        assert_eq!(wallet_act.accounts.len(), 1);
+        assert_eq!(wallet_act.accounts[0].id, 0);
+        let account_act = wallet_act.accounts[0].clone();
+        let seed_ref = match account_act.key {
+            PKType::SeedHd(x) => x,
+            _ => panic!("Not Seed HDPath")
+        };
+        assert_eq!(seed_ref.hd_path, "m/44'/60'/160720'/0'/0".to_string());
+        assert_eq!(seed_ref.seed_id, seed_id);
+
+        let seed_act = vault.seeds().get(seed_id).unwrap();
+        let l = match seed_act.source {
+            SeedSource::Ledger(x) => x,
+            _ => panic!("Not ledger")
+        };
+    }
+
+    #[test]
     fn parse_valid_account_it() {
         let act = AccountId::from_str("94d70ee7-1657-442e-af87-0210e985f29e-1");
         assert!(act.is_ok());
         let act = act.unwrap();
         assert_eq!(1, act.account_id);
         assert_eq!(Uuid::from_str("94d70ee7-1657-442e-af87-0210e985f29e").unwrap(), act.wallet_id);
+    }
+
+    #[test]
+    fn sign_tx_with_ledger() {
+        if !is_ledger_enabled() {
+            warn!("Ledger test is disabled");
+            return;
+        }
+
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] })
+        };
+        let seed_id = vault.seeds().add(seed).unwrap();
+
+        let account = WalletAccount {
+            id: 0,
+            blockchain: Blockchain::EthereumClassic,
+            address: None,
+            key: PKType::SeedHd(SeedRef {
+                seed_id,
+                hd_path: "m/44'/60'/160720'/0'/0".to_string()
+            })
+        };
+
+        let tx = Transaction {
+            nonce: 0,
+            gas_price: to_32bytes("04e3b29200"),
+            gas_limit: 21000,
+            to: Some(Address::from_str("0x78296F1058dD49C5D6500855F59094F0a2876397").unwrap()),
+            value: to_32bytes("0de0b6b3a7640000"),
+            data: vec![]
+        };
+
+        let signed = account.sign_tx(tx, None, &vault).unwrap();
+        let signed = hex::encode(signed);
+        assert!(signed.starts_with(
+            "f86d80\
+                   85\
+                   04e3b29200\
+                   82\
+                   5208\
+                   94\
+                   78296f1058dd49c5d6500855f59094f0a2876397\
+                   88\
+                   0de0b6b3a7640000\
+                   80\
+                   81\
+                   9d\
+                   a0"
+        ));
+
+        assert_eq!(get_ledger_conf("SIGN1"), signed);
     }
 }
