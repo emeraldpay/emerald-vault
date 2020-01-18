@@ -82,4 +82,14 @@ mod tests {
     pub use super::*;
     pub use hex::{FromHex, ToHex};
     pub use regex::Regex;
+    use std::fs;
+    use std::path::Path;
+    use std::fs::DirEntry;
+
+    pub fn read_dir_fully<P: AsRef<Path>>(path: P) -> Vec<DirEntry> {
+        fs::read_dir(path)
+            .unwrap()
+            .map(|i| i.unwrap())
+            .collect()
+    }
 }

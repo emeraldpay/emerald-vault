@@ -27,11 +27,11 @@ use crate::{storage::{
 use crate::storage::addressbook::AddressbookStorage;
 use crate::hdwallet::bip32::{HDPath, generate_key};
 use crate::structs::seed::{SeedSource, SeedRef};
+use crate::storage::archive::ArchiveType;
 
 
 pub struct VaultStorage {
-    dir: PathBuf,
-    pub archive: Archive,
+    pub dir: PathBuf,
 
     keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccess<Wallet>>,
@@ -285,7 +285,6 @@ impl VaultStorage {
         }
         Ok(VaultStorage {
             dir: path.clone(),
-            archive: Archive::create(path.clone()),
             keys: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "key".to_string() }),
             wallets: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "wallet".to_string() }),
             seeds: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "seed".to_string() }),
@@ -392,9 +391,12 @@ impl <P> VaultAccess<P> for StandardVaultFiles
         if !f.is_file() {
             return Err(VaultError::FilesystemError("Not a file".to_string()))
         }
-        //TODO move to trash
-        fs::remove_file(f)?;
-        Ok(true)
+        let archive = Archive::create(&self.dir, ArchiveType::Delete);
+        if archive.submit(f.clone()).is_err() {
+            Err(VaultError::FilesystemError("Failed to add to archive".to_string()))
+        } else {
+            Ok(true)
+        }
     }
 }
 
@@ -412,7 +414,8 @@ mod tests {
         tests::*,
         convert::json::keyfile::EthereumJsonV3File
     };
-
+    use std::fs::DirEntry;
+    use crate::tests::read_dir_fully;
 
     #[test]
     fn try_vault_file_from_standard() {
@@ -566,8 +569,7 @@ mod tests {
         assert_eq!(seed, seed_act);
 
         let deleted = vault.seeds.remove(id);
-        assert!(deleted.is_ok());
-        assert!(deleted.unwrap());
+        assert_eq!(deleted, Ok(true));
 
         let all = vault.seeds.list().unwrap();
         assert_eq!(0, all.len());
@@ -715,5 +717,32 @@ mod tests {
         assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 2);
         let act = fs::read_to_string(&f).unwrap();
         assert_eq!(act, "test 1")
+    }
+
+    #[test]
+    fn removes_to_archive() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f, "test 1");
+        let vault = VaultStorage::create(tmp_dir.clone()).unwrap();
+        let removed = vault.keys().remove(Uuid::from_str("e779c975-6791-47a3-a4d6-d0e976d02820").unwrap());
+
+        assert_eq!(removed, Ok(true));
+
+        let in_arch: Vec<DirEntry> = read_dir_fully(tmp_dir.clone().join("archive"));
+        if in_arch.len() != 1 {
+            panic!("There're {} elements in archive", in_arch.len());
+        }
+
+        let arch_dir = in_arch.first().unwrap();
+        let archive_copy = arch_dir.path().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        assert!(archive_copy.exists());
+        assert_eq!(fs::read_to_string(archive_copy).unwrap(), "test 1");
+
+        assert!(!f.exists());
+        let in_vault = read_dir_fully(tmp_dir.clone()).iter()
+            .filter(|x| x.path().is_file())
+            .count();
+        assert_eq!(in_vault, 0);
     }
 }

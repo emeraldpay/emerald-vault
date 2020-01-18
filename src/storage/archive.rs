@@ -9,12 +9,19 @@ use std::fs::File;
 use std::io::Write;
 
 pub struct Archive {
-    dir: PathBuf
+    dir: PathBuf,
+    archive_type: ArchiveType
+}
+
+pub enum ArchiveType {
+    Migrate,
+    Delete,
+    Other
 }
 
 /// Vault archive
 impl Archive {
-    pub fn create<P>(base: P) -> Archive where P: AsRef<Path> {
+    pub fn create<P>(base: P, archive_type: ArchiveType) -> Archive where P: AsRef<Path> {
         let dir = PathBuf::from(base.as_ref())
             .join("archive")
             .join(
@@ -23,7 +30,8 @@ impl Archive {
                     .replace(":", "-")
             );
         Archive {
-            dir
+            dir,
+            archive_type
         }
     }
 
@@ -34,6 +42,27 @@ impl Archive {
         if fs::create_dir_all(&self.dir.clone()).is_err() {
             error!("Failed to create archive directory");
         }
+    }
+
+    /// Close archive by writing a description file with details about archive
+    pub fn finalize(&self) {
+        match self.archive_type {
+            ArchiveType::Delete => {
+                let description = ArchiveDescription {
+                    title: "Delete".to_string(),
+                    content: vec![
+                        DescriptionBlock {
+                            title: "DESCRIPTION".to_string(),
+                            message: "Files removed from the vault".to_string()
+                        }
+                    ]
+                };
+                if self.write("README.txt", description.to_string().as_str()).is_err() {
+                    warn!("Failed to create README.txt for archive")
+                }
+            },
+            _ => {}
+        };
     }
 
     pub fn submit<P>(&self, from: P) -> Result<(), String> where P: AsRef<Path> {
@@ -65,21 +94,56 @@ impl Archive {
     }
 }
 
+struct ArchiveDescription {
+    title: String,
+    content: Vec<DescriptionBlock>
+}
+
+struct DescriptionBlock {
+    title: String,
+    message: String
+}
+
+impl ToString for DescriptionBlock {
+    fn to_string(&self) -> String {
+        let mut buf = String::new();
+        buf.push_str("== ");
+        buf.push_str(self.title.as_str());
+        buf.push('\n');
+        buf.push('\n');
+        buf.push_str(self.message.as_str());
+
+        buf
+    }
+}
+
+impl ToString for ArchiveDescription {
+    fn to_string(&self) -> String {
+        let mut buf = String::new();
+        buf.push_str("= ");
+        buf.push_str(self.title.as_str());
+        buf.push('\n');
+        buf.push('\n');
+
+        self.content.iter().for_each(|block| {
+            buf.push('\n');
+            buf.push_str(block.to_string().as_str());
+            buf.push('\n');
+        });
+
+        buf.trim_end().to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use tempdir::TempDir;
-    use crate::storage::archive::Archive;
+    use crate::storage::archive::{Archive, DescriptionBlock, ArchiveDescription, ArchiveType};
     use std::fs;
     use std::fs::DirEntry;
     use std::path::{PathBuf, Path};
     use fs_extra::file::write_all;
-
-    fn read_dir_fully<P: AsRef<Path>>(path: P) -> Vec<DirEntry> {
-        fs::read_dir(path)
-            .unwrap()
-            .map(|i| i.unwrap())
-            .collect()
-    }
+    use crate::tests::read_dir_fully;
 
     fn read_archives<P: AsRef<Path>>(dir: P) -> Result<Vec<DirEntry>, String> {
         let path = dir.as_ref().to_path_buf();
@@ -103,7 +167,7 @@ mod tests {
 
         assert!(test_file.clone().exists());
 
-        let archive = Archive::create(tmp_dir.path());
+        let archive = Archive::create(tmp_dir.path(), ArchiveType::Other);
         let result = archive.submit(test_file.clone());
         assert_eq!(Ok(()), result);
         assert!(!test_file.exists());
@@ -119,7 +183,7 @@ mod tests {
     #[test]
     pub fn writes_readme() {
         let tmp_dir = TempDir::new("emerald-archive-test").expect("Dir not created");
-        let archive = Archive::create(tmp_dir.path());
+        let archive = Archive::create(tmp_dir.path(), ArchiveType::Other);
         let written = archive.write("README.txt", "Hello\nworld");
         assert_eq!(Ok(()), written);
 
@@ -128,5 +192,51 @@ mod tests {
         assert_eq!(1, archived_files.len());
         let content = fs::read_to_string(archive_dir.join("README.txt")).unwrap();
         assert_eq!("Hello\nworld", content);
+    }
+
+    #[test]
+    fn formats_block() {
+        let block = DescriptionBlock {
+            title: "Hello World".to_string(),
+            message: "TEST 1\ntest 2".to_string()
+        };
+        assert_eq!(
+            block.to_string(),
+            "== Hello World\n".to_owned() +
+                "\n" +
+                "TEST 1\n" +
+                "test 2"
+        )
+    }
+
+    #[test]
+    fn formats_description() {
+        let descr = ArchiveDescription {
+            title: "Test Archive".to_string(),
+            content: vec![
+                DescriptionBlock {
+                    title: "Description".to_string(),
+                    message: "This is a test archive".to_string()
+                },
+                DescriptionBlock {
+                    title: "Hello World".to_string(),
+                    message: "TEST 1\ntest 2".to_string()
+                }
+            ]
+        };
+        assert_eq!(
+            descr.to_string(),
+            "= Test Archive\n".to_owned() +
+                "\n" +
+                "\n" +
+                "== Description\n" +
+                "\n" +
+                "This is a test archive\n" +
+                "\n" +
+                "== Hello World\n" +
+                "\n" +
+                "TEST 1\n" +
+                "test 2"
+        )
     }
 }

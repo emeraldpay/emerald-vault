@@ -20,6 +20,7 @@ use crate::{
 };
 use std::fs;
 use crate::migration::source::common::add_to_vault;
+use crate::storage::archive::ArchiveType;
 
 /// Separator for data in RocksDB
 /// `value = <filename> + SEPARATOR + <keyfile_json>`
@@ -133,7 +134,7 @@ impl V2Storage {
         }
     }
 
-    fn migrate_wallets(&mut self, vault: &VaultStorage, created_wallets: &mut Vec<Uuid>, blockchain: &Blockchain) -> bool {
+    fn migrate_wallets(&mut self, vault: &VaultStorage, archive: &Archive, created_wallets: &mut Vec<Uuid>, blockchain: &Blockchain) -> bool {
         let mut migrated = false;
         let path = self.blockchain_path(blockchain);
         if path.is_none() {
@@ -142,7 +143,7 @@ impl V2Storage {
         let path = path.unwrap();
         match self.get_db(path) {
             Some(db) => {
-                let accounts = self.list_accounts(db, &vault.archive)
+                let accounts = self.list_accounts(db, &archive)
                     .map_err(|e| {
                         &self.migration.error(format!("Failed to read accounts {}", e));
                     });
@@ -217,10 +218,12 @@ impl Migrate for V2Storage {
         let mut created_wallets = Vec::new();
         let mut moved = 0;
 
+        let archive = Archive::create(vault.dir.clone(), ArchiveType::Migrate);
+
         supported_blockchains.iter().for_each(|blockchain| {
             // Migrate all data for a single blockchain
             self.migration.info(format!("Migrate {:?}", blockchain));
-            let migrated_keys = self.migrate_wallets(&vault, &mut created_wallets, blockchain);
+            let migrated_keys = self.migrate_wallets(&vault, &archive, &mut created_wallets,  blockchain);
             let migrated_book = self.migrate_addressbook(&vault, blockchain);
             self.migration.info(format!("Done migrating {:?}", blockchain));
 
@@ -229,7 +232,7 @@ impl Migrate for V2Storage {
                 self.migration.info(format!("Moving to archive keys for {:?}", blockchain));
                 match self.blockchain_path(blockchain) {
                     Some(path) => {
-                        let archived = vault.archive.submit(path);
+                        let archived = archive.submit(path);
                         if archived.is_err() {
                             self.migration.error(format!("Failed to add to archive. Error: {}", archived.err().unwrap()));
                         }
@@ -250,7 +253,7 @@ impl Migrate for V2Storage {
                     self.migration.warn(format!("Archive unsupported {:?}", blockchain));
                     match self.get_db(path.clone()) {
                         Some(db) => {
-                            match self.list_accounts(db, &vault.archive) {
+                            match self.list_accounts(db, &archive) {
                                 Ok(items) => {
                                     for item in items {
                                         self.migration.warn(
@@ -265,7 +268,7 @@ impl Migrate for V2Storage {
                         },
                         None => {}
                     }
-                    if vault.archive.submit(path.clone()).is_err() {
+                    if archive.submit(path.clone()).is_err() {
                         self.migration.warn(format!("Failed to copy file {:?} to archive", path))
                     }
                 },
@@ -282,7 +285,7 @@ impl Migrate for V2Storage {
             readme.push_str("Necessary upgrade of the Vault storage from Version 2 to Version 3\n");
             readme.push_str("\n== LOG\n\n");
             readme.push_str(&self.migration.logs_to_string().as_str());
-            match vault.archive.write("README.txt", readme.as_str()) {
+            match archive.write("README.txt", readme.as_str()) {
                 Err(e) => {
                     println!("ERROR Failed to write README. Error: {}", e)
                 },

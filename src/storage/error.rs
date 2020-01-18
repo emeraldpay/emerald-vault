@@ -4,7 +4,7 @@ use crate::convert::error::ConversionError;
 use crate::crypto::error::CryptoError;
 use crate::hdwallet::Error as HWalletError;
 
-#[derive(Debug, Display, Clone)]
+#[derive(Debug, Display, Clone, PartialEq)]
 pub enum VaultError {
     FilesystemError(String),
     ProtobufError(String),
