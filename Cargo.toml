@@ -65,6 +65,7 @@ bencher = "0.1.5"
 # default feature bzip2 conflicts with rocksdb
 zip = { version = "0.5.3", default-features = false, features = ["deflate"] }
 # quickcheck_macros = "0.4"
+simple_logger = "1.4.0"
 
 [features]
 default = []

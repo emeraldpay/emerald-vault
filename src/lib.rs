@@ -85,6 +85,11 @@ mod tests {
     use std::fs;
     use std::path::Path;
     use std::fs::DirEntry;
+    use log::Level;
+
+    pub fn init_tests() {
+        simple_logger::init_with_level(Level::Debug);
+    }
 
     pub fn read_dir_fully<P: AsRef<Path>>(path: P) -> Vec<DirEntry> {
         fs::read_dir(path)

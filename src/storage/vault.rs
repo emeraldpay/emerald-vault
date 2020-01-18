@@ -77,7 +77,7 @@ impl VaultStorage {
 /// Safe update of a file, with making a .bak copy of the existing file, writing new content and
 /// only then removing initial data. If it fails at some point, or backup is already exists, it
 /// returns error
-fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(file: P, new_content: C) -> Result<(), VaultError> {
+fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(file: P, new_content: C, archive: Option<&Archive>) -> Result<(), VaultError> {
     let file = file.as_ref();
     if !file.exists() || file.is_dir() {
         return Err(VaultError::FilesystemError("Original file doesn't exist or invalid".to_string()))
@@ -94,6 +94,7 @@ fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(file: P, new_content: C) -> Resul
     bak_extension.push_str(".bak");
     let bak_file_name = file.with_extension(bak_extension);
     if bak_file_name.exists() {
+        println!("bak {:?}", bak_file_name);
         return Err(VaultError::FilesystemError("Already updating".to_string()))
     }
 
@@ -108,8 +109,21 @@ fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(file: P, new_content: C) -> Resul
         }
         return Err(VaultError::FilesystemError("Failed to update".to_string()))
     }
-    if fs::remove_file(bak_file_name).is_err() {
-        error!("Failed to delete backup file")
+    let archived = match archive {
+        Some(archive) =>
+            match archive.submit(bak_file_name.clone()) {
+                Ok(()) => true,
+                Err(e) => {
+                    error!("Failed to archive backup file. {}", e);
+                    false
+                }
+            },
+        None => false
+    };
+    if !archived {
+        if fs::remove_file(bak_file_name).is_err() {
+            error!("Failed to delete backup file")
+        }
     }
     Ok(())
 }
@@ -334,7 +348,10 @@ impl <P> VaultAccess<P> for StandardVaultFiles
         if fname.exists() {
             let data: Vec<u8> = entry.try_into()
                 .map_err(|_| VaultError::ConversionError)?;
-            safe_update(fname, data.as_slice()).map(|_| true)
+            let archive = Archive::create(&self.dir, ArchiveType::Update);
+            let result = safe_update(fname, data.as_slice(), Some(&archive)).map(|_| true);
+            archive.finalize();
+            result
         } else {
             Err(VaultError::IncorrectIdError)
         }
@@ -395,6 +412,7 @@ impl <P> VaultAccess<P> for StandardVaultFiles
         if archive.submit(f.clone()).is_err() {
             Err(VaultError::FilesystemError("Failed to add to archive".to_string()))
         } else {
+            archive.finalize();
             Ok(true)
         }
     }
@@ -416,6 +434,7 @@ mod tests {
     };
     use std::fs::DirEntry;
     use crate::tests::read_dir_fully;
+    use std::thread;
 
     #[test]
     fn try_vault_file_from_standard() {
@@ -693,7 +712,7 @@ mod tests {
         let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
         fs::write(&f, "test 1");
         assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 1);
-        let result = safe_update(&f, "test 2");
+        let result = safe_update(&f, "test 2", None);
         assert!(result.is_ok());
         assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 1);
         let act = fs::read_to_string(&f).unwrap();
@@ -711,13 +730,65 @@ mod tests {
 
         assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 2);
 
-        let result = safe_update(&f, "test 3");
+        let result = safe_update(&f, "test 3", None);
         assert!(result.is_err());
 
         assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 2);
         let act = fs::read_to_string(&f).unwrap();
         assert_eq!(act, "test 1")
     }
+
+    #[test]
+    fn safe_update_copies_to_archive() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let archive = Archive::create(tmp_dir.clone(), ArchiveType::Other);
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f, "test 1");
+        let result = safe_update(&f, "test 2", Some(&archive));
+        assert!(result.is_ok());
+
+        let in_arch: Vec<DirEntry> = read_dir_fully(tmp_dir.clone().join("archive"));
+        if in_arch.len() != 1 {
+            panic!("There're {} elements in archive", in_arch.len());
+        }
+        let arch_dir = in_arch.first().unwrap();
+        println!("Archive: {:?}", arch_dir.clone());
+        let archive_copy = arch_dir.path().join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
+        assert!(archive_copy.exists());
+        assert_eq!(fs::read_to_string(archive_copy).unwrap(), "test 1");
+    }
+
+    #[test]
+    fn safe_update_deletes_if_archive_full() {
+        init_tests();
+
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let archive = Archive::create(tmp_dir.clone(), ArchiveType::Other);
+        archive.write("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak", "test old backup");
+
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f, "test orig");
+        let result = safe_update(&f, "test updated", Some(&archive));
+        assert!(result.is_ok());
+        let act = fs::read_to_string(&f).unwrap();
+        assert_eq!(act, "test updated");
+
+
+        let in_arch: Vec<DirEntry> = read_dir_fully(tmp_dir.clone().join("archive"));
+        if in_arch.len() != 1 {
+            panic!("There're {} elements in archive", in_arch.len());
+        }
+        let arch_dir = in_arch.first().unwrap();
+        let archive_copy = arch_dir.path().join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
+        assert!(archive_copy.exists());
+        assert_eq!(fs::read_to_string(archive_copy).unwrap(), "test old backup");
+
+        let in_vault = read_dir_fully(tmp_dir.clone()).iter()
+            .filter(|x| x.path().is_file())
+            .count();
+        assert_eq!(in_vault, 1);
+    }
+
 
     #[test]
     fn removes_to_archive() {
@@ -733,7 +804,6 @@ mod tests {
         if in_arch.len() != 1 {
             panic!("There're {} elements in archive", in_arch.len());
         }
-
         let arch_dir = in_arch.first().unwrap();
         let archive_copy = arch_dir.path().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
         assert!(archive_copy.exists());

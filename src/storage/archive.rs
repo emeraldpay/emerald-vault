@@ -16,6 +16,7 @@ pub struct Archive {
 pub enum ArchiveType {
     Migrate,
     Delete,
+    Update,
     Other
 }
 
@@ -26,7 +27,8 @@ impl Archive {
             .join("archive")
             .join(
                 Utc::now()
-                    .to_rfc3339_opts(SecondsFormat::Secs, true)
+                    // use nanoseconds to avoid reusing archive for consecutive updates
+                    .to_rfc3339_opts(SecondsFormat::Nanos, true)
                     .replace(":", "-")
             );
         Archive {
@@ -46,7 +48,7 @@ impl Archive {
 
     /// Close archive by writing a description file with details about archive
     pub fn finalize(&self) {
-        match self.archive_type {
+        let readme = match self.archive_type {
             ArchiveType::Delete => {
                 let description = ArchiveDescription {
                     title: "Delete".to_string(),
@@ -57,11 +59,29 @@ impl Archive {
                         }
                     ]
                 };
+                Some(description)
+            },
+            ArchiveType::Update => {
+                let description = ArchiveDescription {
+                    title: "Update".to_string(),
+                    content: vec![
+                        DescriptionBlock {
+                            title: "DESCRIPTION".to_string(),
+                            message: "File updated. Save a backup copy of the original data".to_string()
+                        }
+                    ]
+                };
+                Some(description)
+            },
+            _ => None
+        };
+        match readme {
+            Some(description) => {
                 if self.write("README.txt", description.to_string().as_str()).is_err() {
                     warn!("Failed to create README.txt for archive")
                 }
             },
-            _ => {}
+            None => {}
         };
     }
 
