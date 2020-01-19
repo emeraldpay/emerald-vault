@@ -435,6 +435,7 @@ mod tests {
     use std::fs::DirEntry;
     use crate::tests::read_dir_fully;
     use std::thread;
+    use crate::storage::archive::ARCHIVE_DIR;
 
     #[test]
     fn try_vault_file_from_standard() {
@@ -747,7 +748,7 @@ mod tests {
         let result = safe_update(&f, "test 2", Some(&archive));
         assert!(result.is_ok());
 
-        let in_arch: Vec<DirEntry> = read_dir_fully(tmp_dir.clone().join("archive"));
+        let in_arch: Vec<DirEntry> = read_dir_fully(tmp_dir.clone().join(ARCHIVE_DIR));
         if in_arch.len() != 1 {
             panic!("There're {} elements in archive", in_arch.len());
         }
@@ -774,7 +775,7 @@ mod tests {
         assert_eq!(act, "test updated");
 
 
-        let in_arch: Vec<DirEntry> = read_dir_fully(tmp_dir.clone().join("archive"));
+        let in_arch: Vec<DirEntry> = read_dir_fully(tmp_dir.clone().join(ARCHIVE_DIR));
         if in_arch.len() != 1 {
             panic!("There're {} elements in archive", in_arch.len());
         }
@@ -800,7 +801,7 @@ mod tests {
 
         assert_eq!(removed, Ok(true));
 
-        let in_arch: Vec<DirEntry> = read_dir_fully(tmp_dir.clone().join("archive"));
+        let in_arch: Vec<DirEntry> = read_dir_fully(tmp_dir.clone().join(ARCHIVE_DIR));
         if in_arch.len() != 1 {
             panic!("There're {} elements in archive", in_arch.len());
         }

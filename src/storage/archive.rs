@@ -20,11 +20,13 @@ pub enum ArchiveType {
     Other
 }
 
+pub const ARCHIVE_DIR: &str = ".archive";
+
 /// Vault archive
 impl Archive {
     pub fn create<P>(base: P, archive_type: ArchiveType) -> Archive where P: AsRef<Path> {
         let dir = PathBuf::from(base.as_ref())
-            .join("archive")
+            .join(ARCHIVE_DIR)
             .join(
                 Utc::now()
                     // use nanoseconds to avoid reusing archive for consecutive updates
@@ -158,7 +160,7 @@ impl ToString for ArchiveDescription {
 #[cfg(test)]
 mod tests {
     use tempdir::TempDir;
-    use crate::storage::archive::{Archive, DescriptionBlock, ArchiveDescription, ArchiveType};
+    use crate::storage::archive::{Archive, DescriptionBlock, ArchiveDescription, ArchiveType, ARCHIVE_DIR};
     use std::fs;
     use std::fs::DirEntry;
     use std::path::{PathBuf, Path};
@@ -167,7 +169,7 @@ mod tests {
 
     fn read_archives<P: AsRef<Path>>(dir: P) -> Result<Vec<DirEntry>, String> {
         let path = dir.as_ref().to_path_buf();
-        let in_arch: Vec<DirEntry> = read_dir_fully(path.join("archive"));
+        let in_arch: Vec<DirEntry> = read_dir_fully(path.join(ARCHIVE_DIR));
         if in_arch.len() != 1 {
             return Err(format!("There're {} elements in archive", in_arch.len()))
         }
