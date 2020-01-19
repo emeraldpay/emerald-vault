@@ -17,6 +17,7 @@ pub enum ArchiveType {
     Migrate,
     Delete,
     Update,
+    Recover,
     Other
 }
 
@@ -70,6 +71,18 @@ impl Archive {
                         DescriptionBlock {
                             title: "DESCRIPTION".to_string(),
                             message: "File updated. Save a backup copy of the original data".to_string()
+                        }
+                    ]
+                };
+                Some(description)
+            },
+            ArchiveType::Recover => {
+                let description = ArchiveDescription {
+                    title: "Recover corrupted vault".to_string(),
+                    content: vec![
+                        DescriptionBlock {
+                            title: "DESCRIPTION".to_string(),
+                            message: "Recover from stale or corrupted data in the vault".to_string()
                         }
                     ]
                 };

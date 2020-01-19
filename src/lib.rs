@@ -83,9 +83,10 @@ mod tests {
     pub use hex::{FromHex, ToHex};
     pub use regex::Regex;
     use std::fs;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
     use std::fs::DirEntry;
     use log::Level;
+    use crate::storage::archive::ARCHIVE_DIR;
 
     pub fn init_tests() {
         simple_logger::init_with_level(Level::Debug);
@@ -96,5 +97,15 @@ mod tests {
             .unwrap()
             .map(|i| i.unwrap())
             .collect()
+    }
+
+    pub fn get_archived<P: AsRef<Path>>(dir: P) -> Option<PathBuf> {
+        let in_arch: Vec<DirEntry> = read_dir_fully(dir.as_ref().to_path_buf().join(ARCHIVE_DIR));
+        if in_arch.len() != 1 {
+            warn!("There're {} elements in archive", in_arch.len());
+            return None;
+        }
+        let arch_dir = in_arch.first().unwrap();
+        Some(arch_dir.path())
     }
 }
