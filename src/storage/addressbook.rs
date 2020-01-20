@@ -226,6 +226,17 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
             Ok(found)
         }
     }
+
+    fn update(&self, entry: AddressBookmark) -> Result<bool, VaultError> {
+        //TODO atomic update, in one rewrite
+        let id = entry.get_id();
+        if self.remove(id)? {
+            self.add(entry)?;
+            Ok(true)
+        } else {
+            Err(VaultError::IncorrectIdError)
+        }
+    }
 }
 
 #[cfg(test)]

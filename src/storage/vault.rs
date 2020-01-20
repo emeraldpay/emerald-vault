@@ -27,11 +27,11 @@ use crate::{storage::{
 use crate::storage::addressbook::AddressbookStorage;
 use crate::hdwallet::bip32::{HDPath, generate_key};
 use crate::structs::seed::{SeedSource, SeedRef};
+use crate::storage::archive::ArchiveType;
 
 
 pub struct VaultStorage {
-    dir: PathBuf,
-    pub archive: Archive,
+    pub dir: PathBuf,
 
     keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccess<Wallet>>,
@@ -72,10 +72,122 @@ impl VaultStorage {
             wallet_id
         }
     }
+
+    /// Check the Vault directory and revert stale backups. I.e., restore from a situation when
+    /// file was moved to backup, but update has failed because of some reasons, as a result there is no usable file,
+    /// only backup. If both original file and backup exists, then backup file is going to be moved to archive
+    pub fn revert_backups(&self) -> Result<usize, VaultError> {
+        lazy_static! {
+            static ref BACKUP_RE: Regex = Regex::new(r"(?P<id>[0-9a-f]{8}\-[0-9a-f]{4}\-[0-9a-f]{4}\-[0-9a-f]{4}\-[0-9a-f]{12})\.(?P<suffix>[a-z]+).bak").unwrap();
+        }
+
+        let archive = Archive::create(&self.dir, ArchiveType::Recover);
+
+        let dir = fs::read_dir(&self.dir)?;
+        let backups: Vec<PathBuf> = dir
+            .filter(|i| i.is_ok())
+            .map(|i| i.unwrap())
+            .map(|i| i.path())
+            .filter(|i| i.is_file())
+            .filter(|i| match i.file_name() {
+                Some(fname) => match fname.to_str() {
+                    Some(fname) => BACKUP_RE.is_match(fname),
+                    None => false
+                },
+                None => false
+            })
+            .collect();
+
+        let mut count = 0;
+        let mut count_archived = 0;
+
+        backups.iter().for_each(|f| {
+            match f.file_stem() {
+                Some(orig) => {
+                    let orig = self.dir.join(orig);
+                    // double check that we have two different files
+                    if &orig == f {
+                        error!("Invalid state. Backup is same as source file. {:?} == {:?}", orig, f)
+                    } else {
+                        count += 1;
+                        if !&orig.exists() {
+                            if fs::rename(f, orig.clone()).is_err() {
+                                warn!("Failed to rename backup file {:?} to {:?}", f, orig)
+                            }
+                        } else {
+                            count_archived += 1; // count it regardless the status of the following submit, at least we'll have a readme as a marker
+                            if archive.submit(f).is_err() {
+                                warn!("Failed to move backup to archive {:?}", f)
+                            }
+                        }
+                    }
+                },
+                None => {
+                    warn!("Unsupported filename: {:?}", f)
+                }
+            }
+        });
+
+        if count_archived > 0 {
+            archive.finalize()
+        }
+
+        Ok(count)
+    }
 }
 
-fn as_filename(uuid: &Uuid, suffix: &str) -> String {
-    format!("{}.{}", uuid, suffix)
+/// Safe update of a file, with making a .bak copy of the existing file, writing new content and
+/// only then removing initial data. If it fails at some point, or backup is already exists, it
+/// returns error
+fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(file: P, new_content: C, archive: Option<&Archive>) -> Result<(), VaultError> {
+    let file = file.as_ref();
+    if !file.exists() || file.is_dir() {
+        return Err(VaultError::FilesystemError("Original file doesn't exist or invalid".to_string()))
+    }
+
+    // bak file should keep original extension as part of it, it allows to recover original file,
+    // because file extension is the type of data
+    // so something.key -> something.key.bak
+    let current_extension = file.extension()
+        .ok_or(VaultError::FilesystemError("Invalid extension".to_string()))?
+        .to_str().unwrap();
+    let mut bak_extension = String::with_capacity(current_extension.len() + 4);
+    bak_extension.push_str(current_extension);
+    bak_extension.push_str(".bak");
+    let bak_file_name = file.with_extension(bak_extension);
+    if bak_file_name.exists() {
+        println!("bak {:?}", bak_file_name);
+        return Err(VaultError::FilesystemError("Already updating".to_string()))
+    }
+
+    if fs::rename(file, &bak_file_name).is_err() {
+        return Err(VaultError::FilesystemError("Failed to create backup".to_string()))
+    }
+    if fs::write(file, new_content).is_err() {
+        // FAILURE! Revert back!
+        fs::remove_file(file);
+        if fs::rename(&bak_file_name, file).is_err() {
+            return Err(VaultError::FilesystemError("Failed to create update filesystem, and data stuck with backup".to_string()))
+        }
+        return Err(VaultError::FilesystemError("Failed to update".to_string()))
+    }
+    let archived = match archive {
+        Some(archive) =>
+            match archive.submit(bak_file_name.clone()) {
+                Ok(()) => true,
+                Err(e) => {
+                    error!("Failed to archive backup file. {}", e);
+                    false
+                }
+            },
+        None => false
+    };
+    if !archived {
+        if fs::remove_file(bak_file_name).is_err() {
+            error!("Failed to delete backup file")
+        }
+    }
+    Ok(())
 }
 
 fn try_vault_file(file: &Path, suffix: &str) -> Result<Uuid, ()> {
@@ -92,7 +204,7 @@ fn try_vault_file(file: &Path, suffix: &str) -> Result<Uuid, ()> {
                     if act_suffix.eq(suffix) {
                         let id: &str = caps.name("id").unwrap().as_str();
                         let uuid = Uuid::from_str(id).unwrap();
-                        if as_filename(&uuid, suffix).eq(file_name) {
+                        if format!("{}.{}", &uuid, suffix).eq(file_name) {
                             Ok(uuid)
                         } else {
                             Err(())
@@ -249,12 +361,19 @@ impl VaultStorage {
         }
         Ok(VaultStorage {
             dir: path.clone(),
-            archive: Archive::create(path.clone()),
             keys: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "key".to_string() }),
             wallets: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "wallet".to_string() }),
             seeds: Arc::new(StandardVaultFiles { dir: path.clone(), suffix: "seed".to_string() }),
         })
     }
+}
+
+impl StandardVaultFiles {
+    fn get_filename_for(&self, id: Uuid) -> PathBuf {
+        let fname = format!("{}.{}", id, self.suffix);
+        return self.dir.join(fname);
+    }
+
 }
 
 /// Access to Vault storage
@@ -267,6 +386,8 @@ pub trait VaultAccess<P> where P: HasUuid {
     fn add(&self, entry: P) -> Result<Uuid, VaultError>;
     /// Remove item
     fn remove(&self, id: Uuid) -> Result<bool, VaultError>;
+    /// Set the new value of the specified item. The id it taken for entry itself, and used to update the value
+    fn update(&self, entry: P) -> Result<bool, VaultError>;
 
     /// Read all entries in the storage
     fn list_entries(&self) -> Result<Vec<P>, VaultError> {
@@ -277,23 +398,26 @@ pub trait VaultAccess<P> where P: HasUuid {
             .collect();
         Ok(all)
     }
-
-    /// Set new value for the specified item
-    fn update(&self, entry: P) -> Result<bool, VaultError> {
-        //TODO safe update, with .bak/.tmp files
-        let id = entry.get_id();
-        if self.remove(id)? {
-            self.add(entry)?;
-            Ok(true)
-        } else {
-            Err(VaultError::IncorrectIdError)
-        }
-    }
 }
 
 impl <P> VaultAccess<P> for StandardVaultFiles
     where P: TryFrom<Vec<u8>> + HasUuid,
           Vec<u8>: std::convert::TryFrom<P> {
+
+    fn update(&self, entry: P) -> Result<bool, VaultError> {
+        let id = entry.get_id();
+        let fname = self.get_filename_for(id.clone());
+        if fname.exists() {
+            let data: Vec<u8> = entry.try_into()
+                .map_err(|_| VaultError::ConversionError)?;
+            let archive = Archive::create(&self.dir, ArchiveType::Update);
+            let result = safe_update(fname, data.as_slice(), Some(&archive)).map(|_| true);
+            archive.finalize();
+            result
+        } else {
+            Err(VaultError::IncorrectIdError)
+        }
+    }
 
     fn list(&self) -> Result<Vec<Uuid>, VaultError> {
         let mut result = Vec::new();
@@ -313,7 +437,7 @@ impl <P> VaultAccess<P> for StandardVaultFiles
     }
 
     fn get(&self, id: Uuid) -> Result<P, VaultError> {
-        let f = self.dir.join(Path::new(as_filename(&id, self.suffix.as_str()).as_str()));
+        let f = self.get_filename_for(id.clone());
 
         let data = fs::read(f)?;
         let pk = P::try_from(data).map_err(|_| VaultError::ConversionError)?;
@@ -326,7 +450,7 @@ impl <P> VaultAccess<P> for StandardVaultFiles
 
     fn add(&self, entry: P) -> Result<Uuid, VaultError> {
         let id = entry.get_id();
-        let f = self.dir.join(Path::new(as_filename(&id, self.suffix.as_str()).as_str()));
+        let f = self.get_filename_for(id.clone());
         if f.exists() {
             return Err(VaultError::FilesystemError("Already exists".to_string()));
         }
@@ -339,16 +463,20 @@ impl <P> VaultAccess<P> for StandardVaultFiles
     }
 
     fn remove(&self, id: Uuid) -> Result<bool, VaultError> {
-        let f = self.dir.join(Path::new(as_filename(&id, self.suffix.as_str()).as_str()));
+        let f = self.get_filename_for(id.clone());
         if !f.exists() {
             return Ok(false)
         }
         if !f.is_file() {
             return Err(VaultError::FilesystemError("Not a file".to_string()))
         }
-        //TODO move to trash
-        fs::remove_file(f)?;
-        Ok(true)
+        let archive = Archive::create(&self.dir, ArchiveType::Delete);
+        if archive.submit(f.clone()).is_err() {
+            Err(VaultError::FilesystemError("Failed to add to archive".to_string()))
+        } else {
+            archive.finalize();
+            Ok(true)
+        }
     }
 }
 
@@ -366,7 +494,10 @@ mod tests {
         tests::*,
         convert::json::keyfile::EthereumJsonV3File
     };
-
+    use std::fs::DirEntry;
+    use crate::tests::read_dir_fully;
+    use std::thread;
+    use crate::storage::archive::ARCHIVE_DIR;
 
     #[test]
     fn try_vault_file_from_standard() {
@@ -520,8 +651,7 @@ mod tests {
         assert_eq!(seed, seed_act);
 
         let deleted = vault.seeds.remove(id);
-        assert!(deleted.is_ok());
-        assert!(deleted.unwrap());
+        assert_eq!(deleted, Ok(true));
 
         let all = vault.seeds.list().unwrap();
         assert_eq!(0, all.len());
@@ -638,4 +768,156 @@ mod tests {
         assert_eq!(1, id2);
         assert_eq!(2, id3);
     }
+
+    #[test]
+    fn safe_update_ok() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f, "test 1");
+        assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 1);
+        let result = safe_update(&f, "test 2", None);
+        assert!(result.is_ok());
+        assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 1);
+        let act = fs::read_to_string(&f).unwrap();
+        assert_eq!(act, "test 2")
+    }
+
+    #[test]
+    fn safe_update_when_bak_exists() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f, "test 1");
+
+        let f_bak = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
+        fs::write(&f_bak, "test 2");
+
+        assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 2);
+
+        let result = safe_update(&f, "test 3", None);
+        assert!(result.is_err());
+
+        assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 2);
+        let act = fs::read_to_string(&f).unwrap();
+        assert_eq!(act, "test 1")
+    }
+
+    #[test]
+    fn safe_update_copies_to_archive() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let archive = Archive::create(tmp_dir.clone(), ArchiveType::Other);
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f, "test 1");
+        let result = safe_update(&f, "test 2", Some(&archive));
+        assert!(result.is_ok());
+
+        let arch_dir = get_archived(tmp_dir.clone()).unwrap();
+        println!("Archive: {:?}", arch_dir.clone());
+        let archive_copy = arch_dir.join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
+        assert!(archive_copy.exists());
+        assert_eq!(fs::read_to_string(archive_copy).unwrap(), "test 1");
+    }
+
+    #[test]
+    fn safe_update_deletes_if_archive_full() {
+        init_tests();
+
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let archive = Archive::create(tmp_dir.clone(), ArchiveType::Other);
+        archive.write("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak", "test old backup");
+
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f, "test orig");
+        let result = safe_update(&f, "test updated", Some(&archive));
+        assert!(result.is_ok());
+        let act = fs::read_to_string(&f).unwrap();
+        assert_eq!(act, "test updated");
+
+        let arch_dir = get_archived(tmp_dir.clone()).unwrap();
+        let archive_copy = arch_dir.join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
+        assert!(archive_copy.exists());
+        assert_eq!(fs::read_to_string(archive_copy).unwrap(), "test old backup");
+
+        let in_vault = read_dir_fully(tmp_dir.clone()).iter()
+            .filter(|x| x.path().is_file())
+            .count();
+        assert_eq!(in_vault, 1);
+    }
+
+
+    #[test]
+    fn removes_to_archive() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f, "test 1");
+        let vault = VaultStorage::create(tmp_dir.clone()).unwrap();
+        let removed = vault.keys().remove(Uuid::from_str("e779c975-6791-47a3-a4d6-d0e976d02820").unwrap());
+
+        assert_eq!(removed, Ok(true));
+
+        let arch_dir = get_archived(tmp_dir.clone()).unwrap();
+        let archive_copy = arch_dir.join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        assert!(archive_copy.exists());
+        assert_eq!(fs::read_to_string(archive_copy).unwrap(), "test 1");
+
+        assert!(!f.exists());
+        let in_vault = read_dir_fully(tmp_dir.clone()).iter()
+            .filter(|x| x.path().is_file())
+            .count();
+        assert_eq!(in_vault, 0);
+    }
+
+    #[test]
+    fn skip_restore_if_ok() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f, "test 1");
+        let vault = VaultStorage::create(tmp_dir.clone()).unwrap();
+
+        let act = vault.revert_backups();
+        assert_eq!(act, Ok(0));
+
+        assert!(f.exists());
+    }
+
+    #[test]
+    fn restores_backup() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let f = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
+        fs::write(&f, "test 1");
+        let vault = VaultStorage::create(tmp_dir.clone()).unwrap();
+
+        let act = vault.revert_backups();
+        assert_eq!(act, Ok(1));
+
+        assert!(!f.exists());
+
+        let f_orig = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        assert!(f_orig.exists());
+        assert_eq!(fs::read_to_string(f_orig).unwrap(), "test 1");
+    }
+
+    #[test]
+    fn archive_stale_backup() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created").into_path();
+        let f_bak = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
+        let f_orig = tmp_dir.clone().join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
+        fs::write(&f_bak, "test 1");
+        fs::write(&f_orig, "test 2");
+
+        let vault = VaultStorage::create(tmp_dir.clone()).unwrap();
+
+        let act = vault.revert_backups();
+        assert_eq!(act, Ok(1));
+
+        assert!(f_orig.exists());
+        assert_eq!(fs::read_to_string(f_orig).unwrap(), "test 2");
+        assert!(!f_bak.exists());
+
+        let arch_dir = get_archived(tmp_dir.clone()).unwrap();
+
+        let f_archived = arch_dir.join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
+        assert!(f_archived.exists());
+        assert_eq!(fs::read_to_string(f_archived).unwrap(), "test 1");
+    }
+
 }

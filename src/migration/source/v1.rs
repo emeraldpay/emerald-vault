@@ -9,6 +9,7 @@ use crate::{
 };
 use std::fs;
 use crate::migration::source::json_data::SerializableKeyFileCoreV2;
+use crate::storage::archive::{Archive, ArchiveType};
 
 pub struct V1Storage {
     /// Parent directory for storage
@@ -90,6 +91,8 @@ impl Migrate for V1Storage {
         let mut created_wallets = Vec::new();
         let mut moved = 0;
 
+        let archive = Archive::create(vault.dir.clone(), ArchiveType::Migrate);
+
         supported_blockchains.iter().for_each(|blockchain| {
             // Migrate all data for a single blockchain
             &self.migration.info(format!("Migrate {:?}", blockchain));
@@ -100,7 +103,7 @@ impl Migrate for V1Storage {
                 &self.migration.info(format!("Moving to archive keys for {:?}", blockchain));
                 match self.blockchain_path(blockchain) {
                     Some(path) => {
-                        let archived = vault.archive.submit(path);
+                        let archived = archive.submit(path);
                         if archived.is_err() {
                             &self.migration.error(format!("Failed to add to archive. Error: {}", archived.err().unwrap()));
                         }
@@ -120,7 +123,7 @@ impl Migrate for V1Storage {
             readme.push_str("Necessary upgrade of the Vault storage from Version 1 to Version 3\n");
             readme.push_str("\n== LOG\n\n");
             readme.push_str(&self.migration.logs_to_string().as_str());
-            match vault.archive.write("README.txt", readme.as_str()) {
+            match archive.write("README.txt", readme.as_str()) {
                 Err(e) => {
                     println!("ERROR Failed to write README. Error: {}", e)
                 },
