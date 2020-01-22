@@ -1,0 +1,72 @@
+= Emerald Vault (library)
+
+image:https://travis-ci.org/emeraldpay/emerald-vault.svg?branch=master["Travis CI", link="https://travis-ci.org/emeraldpay/emerald-vault"]
+image:https://coveralls.io/repos/github/emeraldpay/emerald-vault/badge.svg["Coveralls"]
+image:https://img.shields.io/crates/v/emerald-vault-core.svg?style=flat-square["Crates", link="https://crates.io/crates/emerald-vault-core"]
+image:https://img.shields.io/badge/License-Apache%202.0-blue.svg["License"]
+
+
+Rust library to access and operate Private Keys, part of https://emeraldwallet.io[Emerald Wallet].
+
+== Architecture and Features
+
+=== Features
+
+* Supports Ethereum-based keys
+* JSON-based _WEB3 keys_ (Import/Export)
+* Raw private keys (Generate/Import/Export, Export as WEB3 JSON)
+* HDPath on a Seed 
+* Mnemonic based seed (Generate/Import) 
+* Ledger Nano based seed
+* Sign transaction
+
+=== Architecture
+
+* File based storage, with random UUID identifiers
+  - `b6923a7f-033f-4370-8861-2621871aeeec.wallet`
+  - `130d0800-462c-4c48-8b4a-94cef23351a2.key`
+  - `7dc9347a-5ef0-4dc3-bae1-d75d20b1259c.seed` 
+* Data encoded with protobuf (see `proto/`)
+* `.wallet` is general container for different types accounts. Vault can have multiple wallets
+* `.key` is an encrypted Private Key used by an account. Can be multiple
+* `.seed` is a reference to a Hardware Key, or encrypted Seed bytes. Can be multiple 
+
+== Development
+
+Ensure you have these dependencies installed:
+
+[source]
+----
+openssl pkgconfig rustc cargo clang
+----
+
+`cargo` and `rustc` should be at least versions 0.31 and 1.31 respectively.
+
+Should your distribution or operating system not have a recent `cargo` and `rustc` binaries, you can install them from http://doc.crates.io/
+
+[source]
+----
+cargo build
+----
+
+== Contact
+
+image:https://badges.gitter.im/emeraldpay/community.svg?style=flat-square["Gitter", link="https://gitter.im/emeraldpay/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge"]
+
+Chat with us via https://gitter.im/emeraldpay/community[Gitter]
+
+== License
+
+Copyright 2019 ETCDEV GmbH
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
