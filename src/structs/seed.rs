@@ -1,45 +1,45 @@
-use uuid::Uuid;
+use crate::crypto::error::CryptoError;
 use crate::structs::crypto::Encrypted;
+use crate::structs::types::HasUuid;
 use crate::Address;
 use sha2::Digest;
 use std::convert::TryFrom;
-use crate::structs::types::HasUuid;
-use crate::crypto::error::CryptoError;
+use uuid::Uuid;
 
 byte_array_struct!(Bytes256, 32);
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Seed {
     pub id: Uuid,
-    pub source: SeedSource
+    pub source: SeedSource,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum SeedSource {
     Bytes(Encrypted),
-    Ledger(LedgerSource)
+    Ledger(LedgerSource),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct LedgerSource {
-    pub fingerprints: Vec<HDPathFingerprint>
+    pub fingerprints: Vec<HDPathFingerprint>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct HDPathFingerprint {
     pub hd_path: String,
-    pub value: FingerprintType
+    pub value: FingerprintType,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum FingerprintType {
-    AddressSha256(Bytes256)
+    AddressSha256(Bytes256),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SeedRef {
     pub seed_id: Uuid,
-    pub hd_path: String
+    pub hd_path: String,
 }
 
 impl HDPathFingerprint {
@@ -48,7 +48,7 @@ impl HDPathFingerprint {
         let f = Bytes256::try_from(hash.as_slice()).unwrap();
         HDPathFingerprint {
             hd_path,
-            value: FingerprintType::AddressSha256(f)
+            value: FingerprintType::AddressSha256(f),
         }
     }
 }

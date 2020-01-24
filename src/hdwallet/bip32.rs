@@ -18,15 +18,15 @@ limitations under the License.
 //!
 
 use super::error::Error;
+use crate::core::{PrivateKey, PRIVATE_KEY_BYTES};
+use crate::hdwallet::DERIVATION_INDEX_SIZE;
+use crate::util::to_bytes;
 use bitcoin::network::constants::Network;
 use bitcoin::util::bip32::ChildNumber;
 use bitcoin::util::bip32::ExtendedPrivKey;
-use crate::core::{PrivateKey, PRIVATE_KEY_BYTES};
-use crate::hdwallet::DERIVATION_INDEX_SIZE;
 use regex::Regex;
 use secp256k1::Secp256k1;
 use std::ops;
-use crate::util::to_bytes;
 use std::string::ToString;
 
 lazy_static! {
@@ -65,13 +65,9 @@ impl HDPath {
             match s.parse::<u32>() {
                 Ok(v) => {
                     if is_hardened {
-                        res.push(ChildNumber::Hardened {
-                            index: v
-                        })
+                        res.push(ChildNumber::Hardened { index: v })
                     } else {
-                        res.push(ChildNumber::Normal {
-                            index: v
-                        })
+                        res.push(ChildNumber::Normal { index: v })
                     }
                 }
                 Err(e) => {
@@ -99,11 +95,13 @@ impl HDPath {
         let mut pos = 0;
         while left.len() > pos {
             let mut item_bytes: [u8; 4] = Default::default();
-            item_bytes.copy_from_slice(&left[pos..pos+4]);
+            item_bytes.copy_from_slice(&left[pos..pos + 4]);
             pos += 4;
             let item = u32::from_be_bytes(item_bytes);
             if item >= 0x8000_0000 {
-                res.push(ChildNumber::Hardened { index: item - 0x8000_0000 });
+                res.push(ChildNumber::Hardened {
+                    index: item - 0x8000_0000,
+                });
             } else {
                 res.push(ChildNumber::Normal { index: item });
             }
@@ -117,8 +115,8 @@ impl HDPath {
         buf.push(self.0.len() as u8);
         for item in &self.0 {
             let x = match item {
-                ChildNumber::Hardened { index} => 0x8000_0000 + *index,
-                ChildNumber::Normal { index } => *index
+                ChildNumber::Hardened { index } => 0x8000_0000 + *index,
+                ChildNumber::Normal { index } => *index,
             };
             buf.extend(to_bytes(x as u64, 4));
         }
@@ -141,18 +139,17 @@ impl std::string::ToString for HDPath {
         for item in &self.0 {
             buf.push('/');
             match item {
-                ChildNumber::Hardened{ index} => {
+                ChildNumber::Hardened { index } => {
                     buf.push_str(&index.to_string());
                     buf.push('\'');
-                },
-                ChildNumber::Normal { index} => {
+                }
+                ChildNumber::Normal { index } => {
                     buf.push_str(&index.to_string());
                 }
             }
         }
         buf
     }
-
 }
 
 /// Generate `PrivateKey` using BIP32
@@ -249,12 +246,7 @@ mod test {
     #[test]
     fn create_from_bytes() {
         let path: [u8; 21] = [
-            5,
-            0x80, 0, 0, 44,
-            0x80, 0, 0, 60,
-            0x80, 0x02, 0x73, 0xd0,
-            0x80, 0, 0, 0,
-            0, 0, 0, 0,
+            5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0,
         ];
 
         let parsed = HDPath::from_bytes(&path).unwrap();
@@ -263,7 +255,7 @@ mod test {
             ChildNumber::Hardened { index: 60 },
             ChildNumber::Hardened { index: 160720 },
             ChildNumber::Hardened { index: 0 },
-            ChildNumber::Normal { index: 0 }
+            ChildNumber::Normal { index: 0 },
         ]);
 
         assert_eq!(parsed, exp)
@@ -272,12 +264,7 @@ mod test {
     #[test]
     fn convert_to_bytes_zero() {
         let exp: [u8; 21] = [
-            5,
-            0x80, 0, 0, 44,
-            0x80, 0, 0, 60,
-            0x80, 0x02, 0x73, 0xd0,
-            0x80, 0, 0, 0,
-            0, 0, 0, 0,
+            5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0,
         ];
 
         let parsed = HDPath::try_from("m/44'/60'/160720'/0'/0").unwrap();
@@ -287,12 +274,7 @@ mod test {
     #[test]
     fn convert_to_bytes_zero_normal() {
         let exp: [u8; 21] = [
-            5,
-            0x80, 0, 0, 44,
-            0x80, 0, 0, 60,
-            0x80, 0x02, 0x73, 0xd0,
-            0, 0, 0, 0,
-            0, 0, 0, 0,
+            5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
 
         let parsed = HDPath::try_from("m/44'/60'/160720'/0/0").unwrap();
@@ -302,12 +284,8 @@ mod test {
     #[test]
     fn convert_to_bytes_some() {
         let exp: [u8; 21] = [
-            5,
-            0x80, 0, 0, 44,
-            0x80, 0, 0, 60,
-            0x80, 0x02, 0x73, 0xd0,
-            0x80, 0, 0, 0,
-            0, 0, 0x02, 0x45,
+            5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0x02,
+            0x45,
         ];
 
         let parsed = HDPath::try_from("m/44'/60'/160720'/0'/581").unwrap();
@@ -317,12 +295,7 @@ mod test {
     #[test]
     fn convert_to_bytes_eth() {
         let exp: [u8; 21] = [
-            5,
-            0x80, 0, 0, 44,
-            0x80, 0, 0, 60,
-            0x80, 0, 0, 0,
-            0x80, 0, 0, 0,
-            0, 0, 0, 1,
+            5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0, 0, 0, 0x80, 0, 0, 0, 0, 0, 0, 1,
         ];
 
         let parsed = HDPath::try_from("m/44'/60'/0'/0'/1").unwrap();
@@ -332,12 +305,7 @@ mod test {
     #[test]
     fn convert_to_bytes_music() {
         let exp: [u8; 21] = [
-            5,
-            0x80, 0, 0, 44,
-            0x80, 0, 0, 184,
-            0x80, 0, 0, 0,
-            0x80, 0, 0, 0,
-            0, 0, 0, 17,
+            5, 0x80, 0, 0, 44, 0x80, 0, 0, 184, 0x80, 0, 0, 0, 0x80, 0, 0, 0, 0, 0, 0, 17,
         ];
 
         let parsed = HDPath::try_from("m/44'/184'/0'/0'/17").unwrap();
@@ -361,10 +329,13 @@ mod test {
 
     #[test]
     fn test_key_generation() {
-        let seed = Vec::from_hex("b15509eaa2d09d3efd3e006ef42151b3\
-            0367dc6e3aa5e44caba3fe4d3e352e65\
-            101fbdb86a96776b91946ff06f8eac59\
-            4dc6ee1d3e82a42dfe1b40fef6bcc3fd").unwrap();
+        let seed = Vec::from_hex(
+            "b15509eaa2d09d3efd3e006ef42151b3\
+             0367dc6e3aa5e44caba3fe4d3e352e65\
+             101fbdb86a96776b91946ff06f8eac59\
+             4dc6ee1d3e82a42dfe1b40fef6bcc3fd",
+        )
+        .unwrap();
 
         let path = vec![
             ChildNumber::from_hardened_idx(44).unwrap(),
@@ -383,8 +354,11 @@ mod test {
 
     #[test]
     fn test_key_generation_eth() {
-        let seed = Vec::from_hex("b016ba229b339e148dd72843a8423499ade5ddee29d3d1eb18315\
-        516661c63a3e700fb4b995a7173ad0987ffcec7aa1ddb6bbdd2d2299b9ed23cce5d514b4986").unwrap();
+        let seed = Vec::from_hex(
+            "b016ba229b339e148dd72843a8423499ade5ddee29d3d1eb18315\
+             516661c63a3e700fb4b995a7173ad0987ffcec7aa1ddb6bbdd2d2299b9ed23cce5d514b4986",
+        )
+        .unwrap();
 
         let path = vec![
             ChildNumber::from_hardened_idx(44).unwrap(),

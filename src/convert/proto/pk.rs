@@ -1,29 +1,22 @@
-use std::convert::{TryFrom};
-use protobuf::{parse_from_bytes, Message};
-use std::str::FromStr;
-use uuid::Uuid;
 use crate::{
-    core::{Address},
+    core::Address,
     proto::{
-        crypto::{
-            Encrypted as proto_Encrypted
-        },
+        crypto::Encrypted as proto_Encrypted,
         pk::{
+            EthereumPK3 as proto_EthereumPK3, EthereumPrivateKey as proto_EthereumPrivateKey,
             PrivateKey as proto_PrivateKey,
-            EthereumPrivateKey as proto_EthereumPrivateKey,
-            EthereumPK3 as proto_EthereumPK3
-        }
+        },
     },
     storage::error::VaultError,
     structs::{
-        crypto::{
-            Encrypted,
-        },
-        pk::{
-            PrivateKeyHolder, EthereumPk3, PrivateKeyType
-        }
-    }
+        crypto::Encrypted,
+        pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
+    },
 };
+use protobuf::{parse_from_bytes, Message};
+use std::convert::TryFrom;
+use std::str::FromStr;
+use uuid::Uuid;
 
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for PrivateKeyHolder {
@@ -36,24 +29,28 @@ impl TryFrom<&[u8]> for PrivateKeyHolder {
                 let pk = pk.get_pk();
                 let key = match &pk.value.clone().into_option() {
                     Some(v) => Encrypted::try_from(v),
-                    None => Err(VaultError::InvalidDataError("Encryption is not specified".to_string()))
+                    None => Err(VaultError::InvalidDataError(
+                        "Encryption is not specified".to_string(),
+                    )),
                 }?;
                 let address = match Address::from_str(pk.get_address()) {
                     Ok(a) => Some(a),
-                    Err(_) => None
+                    Err(_) => None,
                 };
-                let result = EthereumPk3 {
-                    address,
-                    key
-                };
+                let result = EthereumPk3 { address, key };
                 let pk = PrivateKeyType::EthereumPk(result);
-                let result = PrivateKeyHolder { id: Uuid::from_str(m.get_id())?, pk };
+                let result = PrivateKeyHolder {
+                    id: Uuid::from_str(m.get_id())?,
+                    pk,
+                };
                 Ok(result)
             } else {
                 Err(VaultError::UnsupportedDataError("PK is empty".to_string()))
             }
         } else {
-            Err(VaultError::UnsupportedDataError("Unsupported type of PK".to_string()))
+            Err(VaultError::UnsupportedDataError(
+                "Unsupported type of PK".to_string(),
+            ))
         }
     }
 }
@@ -66,7 +63,6 @@ impl TryFrom<Vec<u8>> for PrivateKeyHolder {
         PrivateKeyHolder::try_from(value.as_slice())
     }
 }
-
 
 /// Write as Protobuf bytes
 impl TryFrom<PrivateKeyHolder> for Vec<u8> {
@@ -88,7 +84,6 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
             }
         }
         result.set_ethereum(ethereum);
-        result.write_to_bytes()
-            .map_err(|e| VaultError::from(e))
+        result.write_to_bytes().map_err(|e| VaultError::from(e))
     }
 }

@@ -1,5 +1,8 @@
 # [config.rs](https://github.com/rust-lang-nursery/rustfmt/blob/master/src/config.rs)
-# [rustfmt-configs-guide](https://github.com/regexident/rustfmt-configs-guide)
-format_strings = true
+# [rustfmt-configs-guide](https://rust-lang.github.io/rustfmt/)
 newline_style = "Unix"
 reorder_imports = true
+# unstable
+# merge_imports = true
+# report_todo = "Always"
+# report_fixme = "Always"

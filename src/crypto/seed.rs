@@ -1,9 +1,9 @@
 use crate::{
-    mnemonic::{Mnemonic},
+    mnemonic::Mnemonic,
     structs::{
+        crypto::Encrypted,
         seed::{Seed, SeedSource},
-        crypto::Encrypted
-    }
+    },
 };
 use uuid::Uuid;
 
@@ -13,7 +13,7 @@ impl Seed {
         let seed = mnemonic.seed(seed_password);
         let result = Seed {
             id: Uuid::new_v4(),
-            source: SeedSource::Bytes(Encrypted::encrypt(seed, save_password).map_err(|_| ())?)
+            source: SeedSource::Bytes(Encrypted::encrypt(seed, save_password).map_err(|_| ())?),
         };
         Ok(result)
     }

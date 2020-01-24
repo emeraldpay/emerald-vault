@@ -1,16 +1,13 @@
-use std::path::{PathBuf, Path};
+use chrono::{SecondsFormat, Utc};
+use fs_extra::{dir, move_items};
 use std::fs;
-use fs_extra::{
-    dir,
-    move_items
-};
-use chrono::{Utc, SecondsFormat};
 use std::fs::File;
 use std::io::Write;
+use std::path::{Path, PathBuf};
 
 pub struct Archive {
     dir: PathBuf,
-    archive_type: ArchiveType
+    archive_type: ArchiveType,
 }
 
 pub enum ArchiveType {
@@ -18,26 +15,24 @@ pub enum ArchiveType {
     Delete,
     Update,
     Recover,
-    Other
+    Other,
 }
 
 pub const ARCHIVE_DIR: &str = ".archive";
 
 /// Vault archive
 impl Archive {
-    pub fn create<P>(base: P, archive_type: ArchiveType) -> Archive where P: AsRef<Path> {
-        let dir = PathBuf::from(base.as_ref())
-            .join(ARCHIVE_DIR)
-            .join(
-                Utc::now()
-                    // use nanoseconds to avoid reusing archive for consecutive updates
-                    .to_rfc3339_opts(SecondsFormat::Nanos, true)
-                    .replace(":", "-")
-            );
-        Archive {
-            dir,
-            archive_type
-        }
+    pub fn create<P>(base: P, archive_type: ArchiveType) -> Archive
+    where
+        P: AsRef<Path>,
+    {
+        let dir = PathBuf::from(base.as_ref()).join(ARCHIVE_DIR).join(
+            Utc::now()
+                // use nanoseconds to avoid reusing archive for consecutive updates
+                .to_rfc3339_opts(SecondsFormat::Nanos, true)
+                .replace(":", "-"),
+        );
+        Archive { dir, archive_type }
     }
 
     fn check_opened(&self) {
@@ -55,52 +50,53 @@ impl Archive {
             ArchiveType::Delete => {
                 let description = ArchiveDescription {
                     title: "Delete".to_string(),
-                    content: vec![
-                        DescriptionBlock {
-                            title: "DESCRIPTION".to_string(),
-                            message: "Files removed from the vault".to_string()
-                        }
-                    ]
+                    content: vec![DescriptionBlock {
+                        title: "DESCRIPTION".to_string(),
+                        message: "Files removed from the vault".to_string(),
+                    }],
                 };
                 Some(description)
-            },
+            }
             ArchiveType::Update => {
                 let description = ArchiveDescription {
                     title: "Update".to_string(),
-                    content: vec![
-                        DescriptionBlock {
-                            title: "DESCRIPTION".to_string(),
-                            message: "File updated. Save a backup copy of the original data".to_string()
-                        }
-                    ]
+                    content: vec![DescriptionBlock {
+                        title: "DESCRIPTION".to_string(),
+                        message: "File updated. Save a backup copy of the original data"
+                            .to_string(),
+                    }],
                 };
                 Some(description)
-            },
+            }
             ArchiveType::Recover => {
                 let description = ArchiveDescription {
                     title: "Recover corrupted vault".to_string(),
-                    content: vec![
-                        DescriptionBlock {
-                            title: "DESCRIPTION".to_string(),
-                            message: "Recover from stale or corrupted data in the vault".to_string()
-                        }
-                    ]
+                    content: vec![DescriptionBlock {
+                        title: "DESCRIPTION".to_string(),
+                        message: "Recover from stale or corrupted data in the vault".to_string(),
+                    }],
                 };
                 Some(description)
-            },
-            _ => None
+            }
+            _ => None,
         };
         match readme {
             Some(description) => {
-                if self.write("README.txt", description.to_string().as_str()).is_err() {
+                if self
+                    .write("README.txt", description.to_string().as_str())
+                    .is_err()
+                {
                     warn!("Failed to create README.txt for archive")
                 }
-            },
+            }
             None => {}
         };
     }
 
-    pub fn submit<P>(&self, from: P) -> Result<(), String> where P: AsRef<Path> {
+    pub fn submit<P>(&self, from: P) -> Result<(), String>
+    where
+        P: AsRef<Path>,
+    {
         self.check_opened();
         let options = dir::CopyOptions::new();
         let mut from_vec = Vec::new();
@@ -113,8 +109,11 @@ impl Archive {
     pub fn write(&self, file_name: &str, content: &str) -> Result<(), String> {
         self.check_opened();
         let path = &self.dir.join(file_name);
-        if path.parent().is_none() || path.parent().unwrap() != &self.dir
-            || path.file_name().is_none() || path.file_name().unwrap().to_str().unwrap() != file_name {
+        if path.parent().is_none()
+            || path.parent().unwrap() != &self.dir
+            || path.file_name().is_none()
+            || path.file_name().unwrap().to_str().unwrap() != file_name
+        {
             return Err("File should be on the first level".to_string());
         }
         if path.exists() {
@@ -122,7 +121,7 @@ impl Archive {
         }
         let mut f = match File::create(path) {
             Ok(f) => f,
-            Err(e) => return Err(format!("Failed to create file. Error: {}", e.to_string()))
+            Err(e) => return Err(format!("Failed to create file. Error: {}", e.to_string())),
         };
         f.write_all(content.as_bytes())
             .map_err(|e| format!("Failed to write to archive. Error: {}", e.to_string()))
@@ -131,12 +130,12 @@ impl Archive {
 
 struct ArchiveDescription {
     title: String,
-    content: Vec<DescriptionBlock>
+    content: Vec<DescriptionBlock>,
 }
 
 struct DescriptionBlock {
     title: String,
-    message: String
+    message: String,
 }
 
 impl ToString for DescriptionBlock {
@@ -172,19 +171,21 @@ impl ToString for ArchiveDescription {
 
 #[cfg(test)]
 mod tests {
-    use tempdir::TempDir;
-    use crate::storage::archive::{Archive, DescriptionBlock, ArchiveDescription, ArchiveType, ARCHIVE_DIR};
+    use crate::storage::archive::{
+        Archive, ArchiveDescription, ArchiveType, DescriptionBlock, ARCHIVE_DIR,
+    };
+    use crate::tests::read_dir_fully;
+    use fs_extra::file::write_all;
     use std::fs;
     use std::fs::DirEntry;
-    use std::path::{PathBuf, Path};
-    use fs_extra::file::write_all;
-    use crate::tests::read_dir_fully;
+    use std::path::{Path, PathBuf};
+    use tempdir::TempDir;
 
     fn read_archives<P: AsRef<Path>>(dir: P) -> Result<Vec<DirEntry>, String> {
         let path = dir.as_ref().to_path_buf();
         let in_arch: Vec<DirEntry> = read_dir_fully(path.join(ARCHIVE_DIR));
         if in_arch.len() != 1 {
-            return Err(format!("There're {} elements in archive", in_arch.len()))
+            return Err(format!("There're {} elements in archive", in_arch.len()));
         }
         Ok(in_arch)
     }
@@ -233,14 +234,11 @@ mod tests {
     fn formats_block() {
         let block = DescriptionBlock {
             title: "Hello World".to_string(),
-            message: "TEST 1\ntest 2".to_string()
+            message: "TEST 1\ntest 2".to_string(),
         };
         assert_eq!(
             block.to_string(),
-            "== Hello World\n".to_owned() +
-                "\n" +
-                "TEST 1\n" +
-                "test 2"
+            "== Hello World\n".to_owned() + "\n" + "TEST 1\n" + "test 2"
         )
     }
 
@@ -251,27 +249,27 @@ mod tests {
             content: vec![
                 DescriptionBlock {
                     title: "Description".to_string(),
-                    message: "This is a test archive".to_string()
+                    message: "This is a test archive".to_string(),
                 },
                 DescriptionBlock {
                     title: "Hello World".to_string(),
-                    message: "TEST 1\ntest 2".to_string()
-                }
-            ]
+                    message: "TEST 1\ntest 2".to_string(),
+                },
+            ],
         };
         assert_eq!(
             descr.to_string(),
-            "= Test Archive\n".to_owned() +
-                "\n" +
-                "\n" +
-                "== Description\n" +
-                "\n" +
-                "This is a test archive\n" +
-                "\n" +
-                "== Hello World\n" +
-                "\n" +
-                "TEST 1\n" +
-                "test 2"
+            "= Test Archive\n".to_owned()
+                + "\n"
+                + "\n"
+                + "== Description\n"
+                + "\n"
+                + "This is a test archive\n"
+                + "\n"
+                + "== Hello World\n"
+                + "\n"
+                + "TEST 1\n"
+                + "test 2"
         )
     }
 }

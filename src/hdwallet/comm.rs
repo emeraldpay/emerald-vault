@@ -20,11 +20,11 @@ use super::apdu::APDU;
 use super::error::Error;
 use super::to_arr;
 use super::HidDevice;
+use hex;
 use log;
 use std::cmp::min;
 use std::mem::size_of_val;
 use std::slice;
-use hex;
 
 ///
 pub const HID_RPT_SIZE: usize = 64;
@@ -155,7 +155,9 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
     frame_index += 1;
     debug!(
         "\t\t|-- init data: {:?}, recvlen: {}, datalen: {}",
-        hex::encode(&data), recvlen, datalen
+        hex::encode(&data),
+        recvlen,
+        datalen
     );
 
     while recvlen < datalen {

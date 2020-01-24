@@ -16,9 +16,9 @@ limitations under the License.
 //! # Storage for `KeyFiles` and `Contracts`
 
 pub mod addressbook;
-pub mod vault;
-pub mod error;
 pub mod archive;
+pub mod error;
+pub mod vault;
 
 use std::env;
 use std::path::{Path, PathBuf};

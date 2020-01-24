@@ -9,11 +9,11 @@ use crate::emerald::keccak256;
 use crate::emerald::keystore::{os_random, Kdf, KdfDepthLevel, KeyFile};
 use crate::emerald::PrivateKey;
 
+use bencher::Bencher;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use tempdir::TempDir;
-use bencher::Bencher;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 
@@ -82,5 +82,13 @@ fn bench_big_sha3(b: &mut Bencher) {
     b.iter(|| keccak256(&[b'-'; 1024]));
 }
 
-benchmark_group!(benches, bench_decrypt_scrypt, bench_decrypt_pbkdf2, bench_encrypt_scrypt, bench_encrypt_pbkdf2, bench_small_sha3, bench_big_sha3);
+benchmark_group!(
+    benches,
+    bench_decrypt_scrypt,
+    bench_decrypt_pbkdf2,
+    bench_encrypt_scrypt,
+    bench_encrypt_pbkdf2,
+    bench_small_sha3,
+    bench_big_sha3
+);
 benchmark_main!(benches);

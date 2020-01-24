@@ -8,5 +8,6 @@ pub trait HasUuid {
 
 pub trait IsVerified {
     fn verify(self) -> Result<Self, String>
-        where Self: std::marker::Sized;
+    where
+        Self: std::marker::Sized;
 }

@@ -1,23 +1,29 @@
+use crate::Address;
 use serde::de;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
-use crate::Address;
 
 impl<'de> Deserialize<'de> for Address {
     fn deserialize<D>(deserializer: D) -> Result<Address, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         String::deserialize(deserializer)
-            .map(|s| if s.starts_with("0x") { s } else { format!("0x{}", s) })
+            .map(|s| {
+                if s.starts_with("0x") {
+                    s
+                } else {
+                    format!("0x{}", s)
+                }
+            })
             .and_then(|s| Address::from_str(&s).map_err(de::Error::custom))
     }
 }
 
 impl Serialize for Address {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&self.to_string()[2..]) /* cut '0x' prefix */
     }

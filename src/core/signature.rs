@@ -133,7 +133,7 @@ impl PrivateKey {
     /// Sign hash from message (Keccak-256)
     pub fn sign_hash(&self, hash: [u8; KECCAK256_BYTES]) -> Result<Signature, Error> {
         let msg = Message::from_slice(&hash)?;
-        let key = SecretKey::from_slice( self)?;
+        let key = SecretKey::from_slice(self)?;
 
         let s = ECDSA.sign_recoverable(&msg, &key);
         let (rid, sig) = s.serialize_compact();

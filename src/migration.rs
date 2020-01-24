@@ -1,16 +1,16 @@
-pub mod types;
 pub mod source;
+pub mod types;
 
-use std::path::{Path, PathBuf};
 use crate::migration::source::v1::V1Storage;
 use crate::migration::source::v2::V2Storage;
 use crate::migration::types::Migrate;
+use std::path::{Path, PathBuf};
 
 pub fn auto_migrate<P>(dir: P)
-    where P: AsRef<Path> {
-
+where
+    P: AsRef<Path>,
+{
     let path = PathBuf::from(dir.as_ref());
-
 
     let mut migration_v1 = V1Storage::create(path.clone());
     let migrated_v1 = migration_v1.migrate(path.clone());
@@ -23,17 +23,15 @@ pub fn auto_migrate<P>(dir: P)
     if migrated_v2.is_err() {
         error!("Failed to migrate from Vault V1 {:?}", migrated_v2.err())
     }
-
 }
-
 
 #[cfg(test)]
 mod test_commons {
-    use std::path::{Path, PathBuf};
-    use std::fs::File;
-    use std::fs;
-    use std::io::{Read, Write};
     use crate::structs::wallet::Wallet;
+    use std::fs;
+    use std::fs::File;
+    use std::io::{Read, Write};
+    use std::path::{Path, PathBuf};
 
     pub fn unzip<P: AsRef<Path>>(src: P, target: PathBuf) {
         let file = File::open(src).unwrap();
@@ -41,7 +39,7 @@ mod test_commons {
         for i in 0..zip.len() {
             let mut file = zip.by_index(i).unwrap();
             let target_path = target.join(file.name());
-//            println!("Filename: {}", file.name());
+            //            println!("Filename: {}", file.name());
             if file.is_dir() {
                 fs::create_dir(target_path).unwrap();
             } else {
@@ -63,7 +61,7 @@ mod test_commons {
                 } else {
                     let x = match parent {
                         Some(ref p) => p.join(path),
-                        None => path
+                        None => path,
                     };
                     println!("Filename: {:?}", x);
                 }
@@ -71,11 +69,12 @@ mod test_commons {
         }
     }
     pub fn sort_wallets(wallets: &mut Vec<Wallet>) {
-        wallets.sort_by(|a, b|
-            a.get_account(0).unwrap()
-                .address.unwrap()
-                .cmp(&b.get_account(0).unwrap()
-                    .address.unwrap())
-        );
+        wallets.sort_by(|a, b| {
+            a.get_account(0)
+                .unwrap()
+                .address
+                .unwrap()
+                .cmp(&b.get_account(0).unwrap().address.unwrap())
+        });
     }
 }

@@ -19,14 +19,14 @@ mod rlp;
 pub mod byte_array;
 pub mod optional;
 
-pub use crate::crypto::util::{keccak256, KECCAK256_BYTES};
 pub use self::rlp::{RLPList, WriteRLP};
+use crate::core::chains::EthereumChainId;
+pub use crate::crypto::util::{keccak256, KECCAK256_BYTES};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use chrono::prelude::Utc;
 use hex::FromHex;
 use std::io::Cursor;
 use std::mem::transmute;
-use crate::core::chains::EthereumChainId;
 
 static HEX_CHARS: &'static [u8] = b"0123456789abcdef";
 
@@ -65,8 +65,8 @@ pub fn to_chain_name(id: u8) -> Option<String> {
         Ok(chain) => {
             let s = chain.get_code();
             Some(s)
-        },
-        Err(_) => None
+        }
+        Err(_) => None,
     }
 }
 
@@ -78,7 +78,7 @@ pub fn to_chain_name(id: u8) -> Option<String> {
 pub fn to_chain_id(name: &str) -> Option<u8> {
     match EthereumChainId::from_str(name) {
         Ok(chain) => Some(chain.as_chainid()),
-        Err(_) => None
+        Err(_) => None,
     }
 }
 

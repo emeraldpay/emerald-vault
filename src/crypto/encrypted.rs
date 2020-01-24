@@ -1,14 +1,13 @@
+use crate::crypto::error::CryptoError;
+use crate::crypto::kdf::KeyDerive;
+use crate::keccak256;
+use crate::structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, ScryptKdf};
 use aes_ctr::stream_cipher::generic_array::GenericArray;
 use aes_ctr::stream_cipher::{NewFixStreamCipher, StreamCipherCore};
 use aes_ctr::Aes128Ctr;
-use rand::prelude::{Rng};
+use rand::prelude::Rng;
 use rand::thread_rng;
 use std::convert::TryFrom;
-use crate::structs::crypto::{Encrypted, Cipher, MacType, Aes128CtrCipher, ScryptKdf, Kdf};
-use crate::keccak256;
-use crate::crypto::error::CryptoError;
-use crate::crypto::kdf::KeyDerive;
-
 
 /// Encrypt given text with provided key and initial vector
 fn encrypt_aes128(data: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
@@ -33,26 +32,28 @@ impl Encrypted {
     pub fn encrypt(msg: Vec<u8>, password: &str) -> Result<Encrypted, CryptoError> {
         // for security reasons shouldn't allow empty passwords
         if password.len() == 0 {
-            return Err(CryptoError::InvalidKey)
+            return Err(CryptoError::InvalidKey);
         }
         let mut salt: [u8; 32] = [0; 32];
-        thread_rng().try_fill(&mut salt).map_err(|_| CryptoError::NoEntropy)?;
+        thread_rng()
+            .try_fill(&mut salt)
+            .map_err(|_| CryptoError::NoEntropy)?;
         let kdf = ScryptKdf::create_with_salt(salt);
         let key = kdf.derive(password)?;
 
         let mut iv: [u8; 16] = [0; 16];
-        thread_rng().try_fill(&mut iv).map_err(|_| CryptoError::NoEntropy)?;
+        thread_rng()
+            .try_fill(&mut iv)
+            .map_err(|_| CryptoError::NoEntropy)?;
         let key = Web3Key::try_from(key)?;
         let encrypted = encrypt_aes128(msg.as_slice(), &key.message_key, &iv);
         let result = Encrypted {
-            cipher: Cipher::Aes128Ctr(
-                Aes128CtrCipher {
-                    encrypted: encrypted.clone(),
-                    iv: iv.to_vec(),
-                    mac: MacType::sign_web3(&key.mac_key.to_vec(), encrypted)?
-                }
-            ),
-            kdf: Kdf::Scrypt(kdf)
+            cipher: Cipher::Aes128Ctr(Aes128CtrCipher {
+                encrypted: encrypted.clone(),
+                iv: iv.to_vec(),
+                mac: MacType::sign_web3(&key.mac_key.to_vec(), encrypted)?,
+            }),
+            kdf: Kdf::Scrypt(kdf),
         };
         Ok(result)
     }
@@ -77,19 +78,19 @@ impl TryFrom<Vec<u8>> for Web3Key {
             return Err(CryptoError::InvalidKey);
         }
         // left part of the key is Msg key, right part is Mac key
-        let mut message_key : [u8; 16] = [0; 16];
-        let mut mac_key : [u8; 16] = [0; 16];
+        let mut message_key: [u8; 16] = [0; 16];
+        let mut mac_key: [u8; 16] = [0; 16];
         message_key.copy_from_slice(&key[0..16]);
         mac_key.copy_from_slice(&key[16..]);
         Ok(Web3Key {
             message_key,
-            mac_key
+            mac_key,
         })
     }
 }
 
 impl Cipher {
-    pub fn decrypt_value(&self, key: Vec<u8>) -> Result<Vec<u8>,CryptoError> {
+    pub fn decrypt_value(&self, key: Vec<u8>) -> Result<Vec<u8>, CryptoError> {
         match &self {
             Cipher::Aes128Ctr(conf) => {
                 let key = Web3Key::try_from(key)?;
@@ -126,7 +127,7 @@ impl MacType {
 }
 
 impl MacType {
-    fn sign_web3(key: &Vec<u8>, message: Vec<u8>) -> Result<MacType,CryptoError> {
+    fn sign_web3(key: &Vec<u8>, message: Vec<u8>) -> Result<MacType, CryptoError> {
         if key.len() != 16 {
             return Err(CryptoError::InvalidKey);
         }
@@ -140,15 +141,20 @@ impl MacType {
 
 #[cfg(test)]
 mod tests {
-    use crate::structs::crypto::{MacType, Encrypted, Cipher, Aes128CtrCipher};
+    use crate::crypto::encrypted::{decrypt_aes128, encrypt_aes128, Web3Key};
     use crate::crypto::error::CryptoError;
-    use crate::crypto::encrypted::{Web3Key, encrypt_aes128, decrypt_aes128};
+    use crate::structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, MacType};
     use std::convert::TryFrom;
 
     #[test]
     fn verify_mac_1() {
-        let mac = MacType::Web3(hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2").unwrap());
-        let ciphertext = hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46").unwrap();
+        let mac = MacType::Web3(
+            hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
+                .unwrap(),
+        );
+        let ciphertext =
+            hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46")
+                .unwrap();
         let mac_passwd = hex::decode("e31891a3a773950e6d0fea48a7188551").unwrap();
         // mac body = e31891a3a773950e6d0fea48a71885515318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46
         //   = e31891a3a773950e6d0fea48a7188551 + 5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46
@@ -158,8 +164,13 @@ mod tests {
 
     #[test]
     fn verify_mac_2() {
-        let mac = MacType::Web3(hex::decode("2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097").unwrap());
-        let ciphertext = hex::decode("d172bf743a674da9cdad04534d56926ef8358534d458fffccd4e6ad2fbde479c").unwrap();
+        let mac = MacType::Web3(
+            hex::decode("2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097")
+                .unwrap(),
+        );
+        let ciphertext =
+            hex::decode("d172bf743a674da9cdad04534d56926ef8358534d458fffccd4e6ad2fbde479c")
+                .unwrap();
         let mac_password = hex::decode("bb5cc24229e20d8766fd298291bba6bd").unwrap();
         let act = mac.verify(&mac_password, &ciphertext);
         assert!(act)
@@ -167,20 +178,35 @@ mod tests {
 
     #[test]
     fn deny_invalid_mac() {
-        let mac = MacType::Web3(hex::decode("617ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2").unwrap());
-        let ciphertext = hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46").unwrap();
+        let mac = MacType::Web3(
+            hex::decode("617ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
+                .unwrap(),
+        );
+        let ciphertext =
+            hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46")
+                .unwrap();
         let pk = hex::decode("e31891a3a773950e6d0fea48a7188551").unwrap();
         let act = mac.verify(&pk, &ciphertext);
         assert!(!act);
 
-        let mac = MacType::Web3(hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2").unwrap());
-        let ciphertext = hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46").unwrap();
+        let mac = MacType::Web3(
+            hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
+                .unwrap(),
+        );
+        let ciphertext =
+            hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46")
+                .unwrap();
         let pk = hex::decode("e31891a3a773950e6d0fea48a7188552").unwrap();
         let act = mac.verify(&pk, &ciphertext);
         assert!(!act);
 
-        let mac = MacType::Web3(hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2").unwrap());
-        let ciphertext = hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa47").unwrap();
+        let mac = MacType::Web3(
+            hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
+                .unwrap(),
+        );
+        let ciphertext =
+            hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa47")
+                .unwrap();
         let pk = hex::decode("e31891a3a773950e6d0fea48a7188551").unwrap();
         let act = mac.verify(&pk, &ciphertext);
         assert!(!act);
@@ -188,16 +214,19 @@ mod tests {
 
     #[test]
     fn decrypt_std_1() {
-        let encrypted = Cipher::Aes128Ctr(
-            Aes128CtrCipher {
-                encrypted: hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46").unwrap(),
-                iv: hex::decode("6087dab2f9fdbbfaddc31a909735c1e6").unwrap(),
-                mac: MacType::Web3(
-                    hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2").unwrap()
-                )
-            },
-        );
-        let key = hex::decode("f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551").unwrap();
+        let encrypted = Cipher::Aes128Ctr(Aes128CtrCipher {
+            encrypted: hex::decode(
+                "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46",
+            )
+            .unwrap(),
+            iv: hex::decode("6087dab2f9fdbbfaddc31a909735c1e6").unwrap(),
+            mac: MacType::Web3(
+                hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
+                    .unwrap(),
+            ),
+        });
+        let key = hex::decode("f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551")
+            .unwrap();
 
         let act = encrypted.decrypt_value(key);
         assert!(act.is_ok());
@@ -209,16 +238,19 @@ mod tests {
 
     #[test]
     fn fail_to_decrypt_with_wrong_key() {
-        let encrypted = Cipher::Aes128Ctr(
-            Aes128CtrCipher {
-                encrypted: hex::decode("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46").unwrap(),
-                iv: hex::decode("6087dab2f9fdbbfaddc31a909735c1e6").unwrap(),
-                mac: MacType::Web3(
-                    hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2").unwrap()
-                )
-            },
-        );
-        let key = hex::decode("f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188552").unwrap();
+        let encrypted = Cipher::Aes128Ctr(Aes128CtrCipher {
+            encrypted: hex::decode(
+                "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46",
+            )
+            .unwrap(),
+            iv: hex::decode("6087dab2f9fdbbfaddc31a909735c1e6").unwrap(),
+            mac: MacType::Web3(
+                hex::decode("517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2")
+                    .unwrap(),
+            ),
+        });
+        let key = hex::decode("f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188552")
+            .unwrap();
 
         let act = encrypted.decrypt_value(key);
         assert!(act.is_err());
@@ -228,13 +260,15 @@ mod tests {
     #[test]
     fn encrypt_0xfac192ce() {
         let encrypted = Encrypted::encrypt(
-            hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd").unwrap(),
-            "test");
+            hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                .unwrap(),
+            "test",
+        );
 
         assert!(encrypted.is_ok());
 
         let decrypted = encrypted.unwrap().decrypt("test");
-//        println!("{:?}", decrypted.err());
+        //        println!("{:?}", decrypted.err());
         assert!(decrypted.is_ok());
         assert_eq!(
             "fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd",
@@ -244,27 +278,43 @@ mod tests {
 
     #[test]
     fn split_web3_key() {
-        let key = Web3Key::try_from(hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd").unwrap());
+        let key = Web3Key::try_from(
+            hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                .unwrap(),
+        );
         assert!(key.is_ok());
         let key = key.unwrap();
-        assert_eq!("fac192ceb5fd772906bea3e118a69e8b", hex::encode(key.message_key));
+        assert_eq!(
+            "fac192ceb5fd772906bea3e118a69e8b",
+            hex::encode(key.message_key)
+        );
         assert_eq!("bb5cc24229e20d8766fd298291bba6bd", hex::encode(key.mac_key));
     }
 
     #[test]
     fn encrypt_descrypt_aes128() {
         let encrypted = encrypt_aes128(
-            hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd").unwrap().as_slice(),
-            hex::decode("fac192ceb5fd772906bea3e118a69e8b").unwrap().as_slice(),
-            hex::decode("bb5cc24229e20d8766fd298291bba6bd").unwrap().as_slice(),
+            hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                .unwrap()
+                .as_slice(),
+            hex::decode("fac192ceb5fd772906bea3e118a69e8b")
+                .unwrap()
+                .as_slice(),
+            hex::decode("bb5cc24229e20d8766fd298291bba6bd")
+                .unwrap()
+                .as_slice(),
         );
 
         assert!(encrypted.len() > 0);
 
         let decrypted = decrypt_aes128(
             encrypted.as_slice(),
-            hex::decode("fac192ceb5fd772906bea3e118a69e8b").unwrap().as_slice(),
-            hex::decode("bb5cc24229e20d8766fd298291bba6bd").unwrap().as_slice(),
+            hex::decode("fac192ceb5fd772906bea3e118a69e8b")
+                .unwrap()
+                .as_slice(),
+            hex::decode("bb5cc24229e20d8766fd298291bba6bd")
+                .unwrap()
+                .as_slice(),
         );
 
         assert_eq!(
@@ -276,8 +326,9 @@ mod tests {
     #[test]
     fn doesnt_allow_empty_passwrod() {
         let act = Encrypted::encrypt(
-            hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd").unwrap(),
-            ""
+            hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                .unwrap(),
+            "",
         );
         assert!(act.is_err());
         assert_eq!(CryptoError::InvalidKey, act.err().unwrap());

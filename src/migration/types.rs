@@ -1,6 +1,6 @@
-use std::path::{Path};
-use uuid::Uuid;
 use crate::storage::error::VaultError;
+use std::path::Path;
+use uuid::Uuid;
 
 /// Migration Results
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -8,25 +8,26 @@ pub struct MigrationResult {
     /// Ids of newly created wallets
     pub wallets: Vec<Uuid>,
     /// Log of the migration
-    pub logs: Vec<LogMessage>
+    pub logs: Vec<LogMessage>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LogMessage {
     Error(String),
     Warning(String),
-    Info(String)
+    Info(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MigrationError {
     VaultError(String),
-    OtherError(String)
+    OtherError(String),
 }
 
 pub trait Migrate {
     fn migrate<P>(&mut self, target: P) -> Result<&MigrationResult, MigrationError>
-        where P: AsRef<Path>;
+    where
+        P: AsRef<Path>;
 }
 
 impl From<VaultError> for MigrationError {
@@ -45,7 +46,7 @@ impl Default for MigrationResult {
     fn default() -> Self {
         MigrationResult {
             wallets: Vec::new(),
-            logs: Vec::new()
+            logs: Vec::new(),
         }
     }
 }
@@ -99,7 +100,7 @@ impl MigrationResult {
     pub fn has_log(&self) -> bool {
         self.logs.iter().any(|l| match l {
             LogMessage::Warning(_) | LogMessage::Error(_) => true,
-            LogMessage::Info(_) => false
+            LogMessage::Info(_) => false,
         })
     }
 }

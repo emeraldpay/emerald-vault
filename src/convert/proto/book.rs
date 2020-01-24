@@ -1,21 +1,16 @@
-use std::convert::TryFrom;
-use protobuf::{parse_from_bytes, Message};
 use crate::{
-    util::optional::none_if_empty,
+    core::chains::Blockchain,
     proto::{
-        book::{
-            BookItem as proto_BookItem
-        },
-        address::{
-            Address as proto_Address,
-            Address_oneof_address_type as proto_AddressType
-        }
+        address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
+        book::BookItem as proto_BookItem,
     },
     storage::error::VaultError,
+    structs::book::{AddressRef, BookmarkDetails},
+    util::optional::none_if_empty,
     Address,
-    core::chains::Blockchain,
-    structs::book::{BookmarkDetails, AddressRef}
 };
+use protobuf::{parse_from_bytes, Message};
+use std::convert::TryFrom;
 use std::str::FromStr;
 
 /// Read from Protobuf bytes
@@ -26,13 +21,11 @@ impl TryFrom<&[u8]> for BookmarkDetails {
         let m = parse_from_bytes::<proto_BookItem>(value)?;
 
         let address = match &m.get_address().address_type {
-            Some(t) => {
-                match t {
-                    proto_AddressType::plain_address(s) => Address::from_str(s.as_str()),
-                    _ => return Err(VaultError::InvalidDataError("address_type".to_string()))
-                }
+            Some(t) => match t {
+                proto_AddressType::plain_address(s) => Address::from_str(s.as_str()),
+                _ => return Err(VaultError::InvalidDataError("address_type".to_string())),
             },
-            None => return Err(VaultError::InvalidDataError("address is empty".to_string()))
+            None => return Err(VaultError::InvalidDataError("address is empty".to_string())),
         }?;
 
         let blockchain = Blockchain::try_from(m.get_blockchain())?;
@@ -41,7 +34,7 @@ impl TryFrom<&[u8]> for BookmarkDetails {
             blockchain,
             label: none_if_empty(m.get_label()),
             description: none_if_empty(m.get_description()),
-            address: AddressRef::EthereumAddress(address)
+            address: AddressRef::EthereumAddress(address),
         };
 
         Ok(result)
@@ -78,7 +71,6 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
             }
         };
 
-        m.write_to_bytes()
-            .map_err(|e| VaultError::from(e))
+        m.write_to_bytes().map_err(|e| VaultError::from(e))
     }
 }

@@ -1,25 +1,21 @@
-use uuid::Uuid;
-use std::convert::{TryFrom, TryInto};
-use std::str::FromStr;
-use protobuf::{parse_from_bytes, Message};
 use crate::{
-    storage::error::VaultError,
     proto::{
-        crypto::{
-            Encrypted as proto_Encrypted
-        },
+        crypto::Encrypted as proto_Encrypted,
         seed::{
-            Seed as proto_Seed,
-            Seed_oneof_seed_source as proto_SeedType,
-            LedgerSeed as proto_LedgerSeed,
-            HDPathFingerprint as proto_HDFingerprint
-        }
+            HDPathFingerprint as proto_HDFingerprint, LedgerSeed as proto_LedgerSeed,
+            Seed as proto_Seed, Seed_oneof_seed_source as proto_SeedType,
+        },
     },
+    storage::error::VaultError,
     structs::{
         crypto::Encrypted,
-        seed::{LedgerSource, HDPathFingerprint, FingerprintType, Seed, SeedSource, Bytes256}
-    }
+        seed::{Bytes256, FingerprintType, HDPathFingerprint, LedgerSource, Seed, SeedSource},
+    },
 };
+use protobuf::{parse_from_bytes, Message};
+use std::convert::{TryFrom, TryInto};
+use std::str::FromStr;
+use uuid::Uuid;
 
 /// Read from Protobuf message
 impl TryFrom<&proto_LedgerSeed> for LedgerSource {
@@ -35,7 +31,7 @@ impl TryFrom<&proto_LedgerSeed> for LedgerSource {
                 let data = Bytes256::try_from(f.get_fingerprint())?;
                 let value = HDPathFingerprint {
                     hd_path: f.get_path().to_string(),
-                    value: FingerprintType::AddressSha256(data)
+                    value: FingerprintType::AddressSha256(data),
                 };
                 fingerprints.push(value)
             }
@@ -53,12 +49,14 @@ impl TryFrom<LedgerSource> for proto_LedgerSeed {
     fn try_from(value: LedgerSource) -> Result<Self, Self::Error> {
         let mut m = proto_LedgerSeed::new();
         if m.get_fingerprints().len() > 0 {
-            let fingerprings: Vec<proto_HDFingerprint> = value.fingerprints.iter()
+            let fingerprings: Vec<proto_HDFingerprint> = value
+                .fingerprints
+                .iter()
                 .map(|f| {
                     let mut pf = proto_HDFingerprint::new();
                     pf.set_path(f.hd_path.clone());
                     match f.value {
-                        FingerprintType::AddressSha256(b) => pf.set_fingerprint(b.into())
+                        FingerprintType::AddressSha256(b) => pf.set_fingerprint(b.into()),
                     }
                     pf
                 })
@@ -77,18 +75,14 @@ impl TryFrom<&[u8]> for Seed {
         let m = parse_from_bytes::<proto_Seed>(data)?;
         let source = match &m.seed_source {
             Some(source) => match source {
-                proto_SeedType::bytes(e) => SeedSource::Bytes(
-                    Encrypted::try_from(e)?
-                ),
-                proto_SeedType::ledger(l) => SeedSource::Ledger(
-                    LedgerSource::try_from(l)?
-                )
+                proto_SeedType::bytes(e) => SeedSource::Bytes(Encrypted::try_from(e)?),
+                proto_SeedType::ledger(l) => SeedSource::Ledger(LedgerSource::try_from(l)?),
             },
-            None => return Err(VaultError::InvalidDataError("Seed is not set".to_string()))
+            None => return Err(VaultError::InvalidDataError("Seed is not set".to_string())),
         };
         let result = Seed {
             id: Uuid::from_str(m.get_id())?,
-            source
+            source,
         };
         Ok(result)
     }
@@ -111,30 +105,25 @@ impl TryFrom<Seed> for Vec<u8> {
         let mut m = proto_Seed::new();
         m.set_id(value.id.to_string());
         match value.source {
-            SeedSource::Bytes(s) => {
-                m.set_bytes(proto_Encrypted::try_from(&s)?)
-            },
-            SeedSource::Ledger(s) => {
-                m.set_ledger(s.try_into()?)
-            }
+            SeedSource::Bytes(s) => m.set_bytes(proto_Encrypted::try_from(&s)?),
+            SeedSource::Ledger(s) => m.set_ledger(s.try_into()?),
         }
-        m.write_to_bytes()
-            .map_err(|e| VaultError::from(e))
+        m.write_to_bytes().map_err(|e| VaultError::from(e))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::structs::seed::{Seed, SeedSource, LedgerSource};
-    use uuid::Uuid;
-    use std::convert::{TryInto, TryFrom};
     use crate::structs::crypto::Encrypted;
+    use crate::structs::seed::{LedgerSource, Seed, SeedSource};
+    use std::convert::{TryFrom, TryInto};
+    use uuid::Uuid;
 
     #[test]
     fn write_and_read_bytes() {
         let seed = Seed {
             id: Uuid::new_v4(),
-            source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap())
+            source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap()),
         };
         let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
@@ -143,7 +132,7 @@ mod tests {
         assert_eq!(seed_act.id, seed_id);
         let source = match seed_act.source {
             SeedSource::Bytes(e) => e,
-            _ => panic!("Not bytes")
+            _ => panic!("Not bytes"),
         };
     }
 
@@ -151,7 +140,9 @@ mod tests {
     fn write_and_read_ledger() {
         let seed = Seed {
             id: Uuid::new_v4(),
-            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] })
+            source: SeedSource::Ledger(LedgerSource {
+                fingerprints: vec![],
+            }),
         };
         let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
@@ -160,8 +151,7 @@ mod tests {
         assert_eq!(seed_act.id, seed_id);
         let source = match seed_act.source {
             SeedSource::Ledger(v) => v,
-            _ => panic!("Not ledger")
+            _ => panic!("Not ledger"),
         };
     }
-
 }

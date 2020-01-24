@@ -34,7 +34,7 @@ extern crate aes_ctr;
 extern crate bitcoin;
 extern crate byteorder;
 extern crate chrono;
-extern crate rocksdb;
+extern crate csv;
 extern crate ethabi;
 extern crate glob;
 extern crate hex;
@@ -42,8 +42,10 @@ extern crate hidapi;
 extern crate hmac;
 extern crate num;
 extern crate pbkdf2;
+extern crate protobuf;
 extern crate rand;
 extern crate regex;
+extern crate rocksdb;
 extern crate scrypt;
 extern crate secp256k1;
 extern crate serde;
@@ -52,19 +54,17 @@ extern crate sha2;
 extern crate sha3;
 extern crate time;
 extern crate uuid;
-extern crate protobuf;
-extern crate csv;
 
 #[macro_use]
 pub mod util;
-pub mod core;
-pub mod hdwallet;
-pub mod mnemonic;
-pub mod storage;
 pub mod convert;
+pub mod core;
 pub mod crypto;
+pub mod hdwallet;
 pub mod migration;
+pub mod mnemonic;
 pub mod proto;
+pub mod storage;
 pub mod structs;
 
 pub use self::core::*;
@@ -80,23 +80,20 @@ pub fn version() -> &'static str {
 #[cfg(test)]
 mod tests {
     pub use super::*;
+    use crate::storage::archive::ARCHIVE_DIR;
     pub use hex::{FromHex, ToHex};
+    use log::Level;
     pub use regex::Regex;
     use std::fs;
-    use std::path::{Path, PathBuf};
     use std::fs::DirEntry;
-    use log::Level;
-    use crate::storage::archive::ARCHIVE_DIR;
+    use std::path::{Path, PathBuf};
 
     pub fn init_tests() {
         simple_logger::init_with_level(Level::Debug);
     }
 
     pub fn read_dir_fully<P: AsRef<Path>>(path: P) -> Vec<DirEntry> {
-        fs::read_dir(path)
-            .unwrap()
-            .map(|i| i.unwrap())
-            .collect()
+        fs::read_dir(path).unwrap().map(|i| i.unwrap()).collect()
     }
 
     pub fn get_archived<P: AsRef<Path>>(dir: P) -> Option<PathBuf> {

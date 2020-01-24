@@ -1,23 +1,12 @@
-use uuid::Uuid;
 use crate::{
-    Address,
-    convert::{
-        error::ConversionError
+    convert::error::ConversionError,
+    structs::crypto::{
+        Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, Pbkdf2, PrfType, ScryptKdf,
     },
-    structs::{
-        crypto::{
-            Aes128CtrCipher,
-            MacType,
-            Encrypted,
-            Cipher,
-            Kdf,
-            Pbkdf2,
-            ScryptKdf,
-            PrfType
-        }
-    }
+    Address,
 };
 use std::convert::TryFrom;
+use uuid::Uuid;
 
 /// Keccak-256 crypto hash length in bytes
 const KECCAK256_BYTES: usize = 32;
@@ -118,7 +107,6 @@ pub enum CipherV2 {
     Aes128Ctr,
 }
 
-
 #[derive(Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct CipherParamsV2 {
     pub iv: Iv,
@@ -195,11 +183,10 @@ pub struct HdwalletCryptoV2 {
 pub struct AddressBookItem {
     pub address: Address,
     pub name: Option<String>,
-    pub description: Option<String>
+    pub description: Option<String>,
 }
 
 // ---
-
 
 impl TryFrom<&CoreCryptoV2> for Encrypted {
     type Error = ConversionError;
@@ -207,17 +194,14 @@ impl TryFrom<&CoreCryptoV2> for Encrypted {
     fn try_from(value: &CoreCryptoV2) -> Result<Self, Self::Error> {
         let iv: [u8; CIPHER_IV_BYTES] = value.cipher_params.iv.clone().into();
         let mac: [u8; KECCAK256_BYTES] = value.mac.clone().into();
-        let cipher = Cipher::Aes128Ctr(
-            Aes128CtrCipher {
-                encrypted: hex::decode(value.cipher_text.clone()).map_err(|_| ConversionError::InvalidJson)?,
-                iv: iv.to_vec(),
-                mac: MacType::Web3(mac.to_vec())
-            }
-        );
+        let cipher = Cipher::Aes128Ctr(Aes128CtrCipher {
+            encrypted: hex::decode(value.cipher_text.clone())
+                .map_err(|_| ConversionError::InvalidJson)?,
+            iv: iv.to_vec(),
+            mac: MacType::Web3(mac.to_vec()),
+        });
         let kdf = Kdf::from(value);
-        let result = Encrypted {
-            cipher, kdf
-        };
+        let result = Encrypted { cipher, kdf };
         Ok(result)
     }
 }
@@ -225,31 +209,25 @@ impl TryFrom<&CoreCryptoV2> for Encrypted {
 impl From<&CoreCryptoV2> for Kdf {
     fn from(crypto: &CoreCryptoV2) -> Self {
         match crypto.kdf_params.kdf {
-            KdfV2::Pbkdf2 {prf, c} => {
+            KdfV2::Pbkdf2 { prf, c } => {
                 let prf = match prf {
                     PrfV2::HmacSha256 => PrfType::HmacSha256,
-                    PrfV2::HmacSha512 => PrfType::HmacSha512
+                    PrfV2::HmacSha512 => PrfType::HmacSha512,
                 };
-                Kdf::Pbkdf2(
-                    Pbkdf2 {
-                        dklen: crypto.kdf_params.dklen as u32,
-                        c,
-                        salt: crypto.kdf_params.salt.clone().to_vec(),
-                        prf
-                    }
-                )
-            },
-            KdfV2::Scrypt {n, r, p} => {
-                Kdf::Scrypt(
-                    ScryptKdf {
-                        dklen: crypto.kdf_params.dklen as u32,
-                        salt: crypto.kdf_params.salt.clone().to_vec(),
-                        n,
-                        r,
-                        p
-                    }
-                )
+                Kdf::Pbkdf2(Pbkdf2 {
+                    dklen: crypto.kdf_params.dklen as u32,
+                    c,
+                    salt: crypto.kdf_params.salt.clone().to_vec(),
+                    prf,
+                })
             }
+            KdfV2::Scrypt { n, r, p } => Kdf::Scrypt(ScryptKdf {
+                dklen: crypto.kdf_params.dklen as u32,
+                salt: crypto.kdf_params.salt.clone().to_vec(),
+                n,
+                r,
+                p,
+            }),
         }
     }
 }
@@ -280,7 +258,6 @@ impl Into<KeyFileV2> for SerializableKeyFileHDV2 {
     }
 }
 
-
 impl KeyFileV2 {
     /// Decode `KeyfileV2` from JSON
     /// Handles different variants of `crypto` section
@@ -306,10 +283,9 @@ impl KeyFileV2 {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::migration::source::json_data::{AddressBookItem, KeyFileV2, CryptoTypeV2};
+    use crate::migration::source::json_data::{AddressBookItem, CryptoTypeV2, KeyFileV2};
     use crate::Address;
     use std::str::FromStr;
 
@@ -334,7 +310,7 @@ mod tests {
                 name: Some("name 1".to_string())
             },
             act
-            );
+        );
     }
 
     #[test]
@@ -366,9 +342,12 @@ mod tests {
         let kf = kf.unwrap();
         let cyphertext = match kf.crypto {
             CryptoTypeV2::Core(x) => x.cipher_text,
-            _ => "not_core".to_string()
+            _ => "not_core".to_string(),
         };
-        assert_eq!("5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46".to_string(), cyphertext);
+        assert_eq!(
+            "5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46".to_string(),
+            cyphertext
+        );
     }
 
     #[test]
@@ -394,7 +373,7 @@ mod tests {
         let kf = kf.unwrap();
         let hd_path = match kf.crypto {
             CryptoTypeV2::HdWallet(hw) => hw.hd_path,
-            _ => "not_hd".to_string()
+            _ => "not_hd".to_string(),
         };
         assert_eq!("m/44'/60'/0'/0".to_string(), hd_path);
     }

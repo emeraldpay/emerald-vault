@@ -16,10 +16,10 @@ limitations under the License.
 //! # Core domain logic module
 
 pub mod address;
+pub mod chains;
 pub mod error;
 pub mod signature;
 pub mod transaction;
-pub mod chains;
 
 pub use self::address::{Address, ADDRESS_BYTES};
 pub use self::error::Error;

@@ -27,12 +27,12 @@ mod error;
 use self::apdu::ApduBuilder;
 use self::comm::sendrecv;
 pub use self::error::Error;
-use bip32::HDPath;
 use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
+use bip32::HDPath;
+use hex;
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
 use std::str::{from_utf8, FromStr};
 use std::{thread, time};
-use hex;
 
 const GET_ETH_ADDRESS: u8 = 0x02;
 const SIGN_ETH_TRANSACTION: u8 = 0x04;
@@ -248,9 +248,10 @@ impl WManager {
             thread::sleep(time::Duration::from_millis(100));
         }
 
-        Err(Error::HDWalletError(
-            format!("Can't open path: {:?}", self.hd_path.as_ref().map(|hd| HDPath::from_bytes(&hd)))
-        ))
+        Err(Error::HDWalletError(format!(
+            "Can't open path: {:?}",
+            self.hd_path.as_ref().map(|hd| HDPath::from_bytes(&hd))
+        )))
     }
 }
 
@@ -261,7 +262,7 @@ pub mod test_commons {
     pub fn is_ledger_enabled() -> bool {
         match env::var("EMRLD_TEST_LEDGER") {
             Ok(v) => v == "true",
-            Err(_) => false
+            Err(_) => false,
         }
     }
 
@@ -274,7 +275,7 @@ pub mod test_commons {
         path.push_str(name);
         match env::var(path) {
             Ok(v) => v,
-            Err(_) => "NOT_SET".to_string()
+            Err(_) => "NOT_SET".to_string(),
         }
     }
 }
@@ -284,9 +285,9 @@ mod tests {
     use super::*;
     use crate::core::Transaction;
     use crate::hdwallet::bip32::{path_to_arr, to_prefixed_path};
-    use hex;
+    use crate::hdwallet::test_commons::{get_ledger_conf, is_ledger_enabled};
     use crate::tests::*;
-    use crate::hdwallet::test_commons::{is_ledger_enabled, get_ledger_conf};
+    use hex;
 
     pub const ETC_DERIVATION_PATH: [u8; 21] = [
         5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0x80, 0, 0, 0, 0, 0, 0, 0,
@@ -323,19 +324,19 @@ mod tests {
 
         let signed = hex::encode(tx.raw_from_sig(Some(chain), &sign));
         assert!(signed.starts_with(
-                   "f86d80\
-                   85\
-                   04e3b29200\
-                   82\
-                   5208\
-                   94\
-                   78296f1058dd49c5d6500855f59094f0a2876397\
-                   88\
-                   0de0b6b3a7640000\
-                   80\
-                   81\
-                   9d\
-                   a0"
+            "f86d80\
+             85\
+             04e3b29200\
+             82\
+             5208\
+             94\
+             78296f1058dd49c5d6500855f59094f0a2876397\
+             88\
+             0de0b6b3a7640000\
+             80\
+             81\
+             9d\
+             a0"
         ));
 
         assert_eq!(get_ledger_conf("SIGN1"), signed);

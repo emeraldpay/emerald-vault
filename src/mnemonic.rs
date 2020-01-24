@@ -24,16 +24,16 @@ mod language;
 pub use self::error::Error;
 pub use self::language::{Language, BIP39_ENGLISH_WORDLIST};
 pub use crate::hdwallet::bip32::{generate_key, HDPath};
+use crate::mnemonic::error::Error::MnemonicError;
+use hmac::Hmac;
 use num::bigint::BigUint;
 use num::{FromPrimitive, ToPrimitive};
-use rand::{rngs::OsRng, Rng, thread_rng, RngCore};
-use sha2::{self, Digest};
-use std::ops::{BitAnd, BitOr, Shr, Shl};
-use crate::mnemonic::error::Error::MnemonicError;
-use rand::distributions::Standard;
 use pbkdf2::pbkdf2;
+use rand::distributions::Standard;
+use rand::{rngs::OsRng, thread_rng, Rng, RngCore};
+use sha2::{self, Digest};
 use sha2::{Sha256, Sha512};
-use hmac::Hmac;
+use std::ops::{BitAnd, BitOr, Shl, Shr};
 
 /// Count of iterations for `pbkdf2`
 const PBKDF2_ROUNDS: usize = 2048;
@@ -50,7 +50,7 @@ pub struct Mnemonic {
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct MnemonicSize {
     bits_length: usize,
-    checksum_length: usize
+    checksum_length: usize,
 }
 
 /// Standard Mnemonics
@@ -89,36 +89,55 @@ impl StandardMnemonic {
 }
 
 impl MnemonicSize {
-
     pub fn standard() -> [MnemonicSize; 5] {
         [
             MnemonicSize::from_length(12).unwrap(),
             MnemonicSize::from_length(15).unwrap(),
             MnemonicSize::from_length(18).unwrap(),
             MnemonicSize::from_length(21).unwrap(),
-            MnemonicSize::from_length(24).unwrap()
+            MnemonicSize::from_length(24).unwrap(),
         ]
     }
 
-    pub fn from_length(words: usize) -> Result<MnemonicSize, Error>  {
+    pub fn from_length(words: usize) -> Result<MnemonicSize, Error> {
         match words {
-            12 => Ok(MnemonicSize { bits_length: 128, checksum_length: 4 }),
-            15 => Ok(MnemonicSize { bits_length: 160, checksum_length: 5 }),
-            18 => Ok(MnemonicSize { bits_length: 192, checksum_length: 6 }),
-            21 => Ok(MnemonicSize { bits_length: 224, checksum_length: 7 }),
-            24 => Ok(MnemonicSize { bits_length: 256, checksum_length: 8 }),
-            _  => Err(Error::MnemonicError(format!("Invalid mnemonic size: {}", words)))
+            12 => Ok(MnemonicSize {
+                bits_length: 128,
+                checksum_length: 4,
+            }),
+            15 => Ok(MnemonicSize {
+                bits_length: 160,
+                checksum_length: 5,
+            }),
+            18 => Ok(MnemonicSize {
+                bits_length: 192,
+                checksum_length: 6,
+            }),
+            21 => Ok(MnemonicSize {
+                bits_length: 224,
+                checksum_length: 7,
+            }),
+            24 => Ok(MnemonicSize {
+                bits_length: 256,
+                checksum_length: 8,
+            }),
+            _ => Err(Error::MnemonicError(format!(
+                "Invalid mnemonic size: {}",
+                words
+            ))),
         }
     }
 
     pub fn from_entropy(entropy: &[u8]) -> Result<MnemonicSize, Error> {
         let all = MnemonicSize::standard();
         let entropy_len = entropy.len();
-        let found = all.iter().find(
-            |x| x.entropy_bytes_length() == entropy_len);
+        let found = all.iter().find(|x| x.entropy_bytes_length() == entropy_len);
         match found {
             Some(&m) => Ok(m),
-            None => Err(Error::MnemonicError(format!("Invalid entropy size: {}", entropy_len)))
+            None => Err(Error::MnemonicError(format!(
+                "Invalid entropy size: {}",
+                entropy_len
+            ))),
         }
     }
 
@@ -166,7 +185,6 @@ impl Default for Mnemonic {
 }
 
 impl Mnemonic {
-
     // Create new mnemonic phrase for selected lanaguage with provided size
     //
     pub fn new(lang: Language, size: MnemonicSize) -> Result<Mnemonic, Error> {
@@ -218,7 +236,7 @@ impl Mnemonic {
     pub fn seed(&self, password: Option<&str>) -> Vec<u8> {
         let passphrase = match password {
             Some(p) => "mnemonic".to_string() + &p.to_string(),
-            None => "mnemonic".to_string()
+            None => "mnemonic".to_string(),
         };
 
         let mut result = vec![0u8; 64];
@@ -230,7 +248,7 @@ impl Mnemonic {
             // size
             PBKDF2_ROUNDS,
             // result
-            &mut result
+            &mut result,
         );
 
         result
@@ -345,8 +363,8 @@ fn get_indexes(entropy: &[u8], size: MnemonicSize) -> Result<Vec<usize>, Error> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use hex::FromHex;
     use crate::ToHex;
+    use hex::FromHex;
 
     #[test]
     fn keeps_zeroes_with_checksum() {
@@ -354,28 +372,49 @@ mod tests {
         let act = with_checksum(zeroes.as_slice(), 15, StandardMnemonic::size12());
         assert_eq!(act.to_hex(), "000000000000000000000000000000000f");
 
-        let zeroes = Vec::from_hex(
-            "00000000000000000000000000000000000000000000000000000000000000").unwrap();
+        let zeroes =
+            Vec::from_hex("00000000000000000000000000000000000000000000000000000000000000")
+                .unwrap();
         let act = with_checksum(zeroes.as_slice(), 15, StandardMnemonic::size24());
-        assert_eq!(act.to_hex(), "000000000000000000000000000000000000000000000000000000000000000f");
+        assert_eq!(
+            act.to_hex(),
+            "000000000000000000000000000000000000000000000000000000000000000f"
+        );
 
-        let zeroes = Vec::from_hex(
-            "000100").unwrap();
+        let zeroes = Vec::from_hex("000100").unwrap();
         let act = with_checksum(zeroes.as_slice(), 15, StandardMnemonic::size12());
         assert_eq!(act.to_hex(), "000000000000000000000000000000100f");
 
         let zeroes = Vec::from_hex("000000000000000000000000000000000000000000000000").unwrap();
         let act = with_checksum(zeroes.as_slice(), 0b100111, StandardMnemonic::size18());
-        assert_eq!(act.to_hex(), "00000000000000000000000000000000000000000000000027");
+        assert_eq!(
+            act.to_hex(),
+            "00000000000000000000000000000000000000000000000027"
+        );
     }
 
     #[test]
     fn should_extract_length() {
-        assert_eq!(MnemonicSize::from_length(12).unwrap(), StandardMnemonic::size12());
-        assert_eq!(MnemonicSize::from_length(15).unwrap(), StandardMnemonic::size15());
-        assert_eq!(MnemonicSize::from_length(18).unwrap(), StandardMnemonic::size18());
-        assert_eq!(MnemonicSize::from_length(21).unwrap(), StandardMnemonic::size21());
-        assert_eq!(MnemonicSize::from_length(24).unwrap(), StandardMnemonic::size24());
+        assert_eq!(
+            MnemonicSize::from_length(12).unwrap(),
+            StandardMnemonic::size12()
+        );
+        assert_eq!(
+            MnemonicSize::from_length(15).unwrap(),
+            StandardMnemonic::size15()
+        );
+        assert_eq!(
+            MnemonicSize::from_length(18).unwrap(),
+            StandardMnemonic::size18()
+        );
+        assert_eq!(
+            MnemonicSize::from_length(21).unwrap(),
+            StandardMnemonic::size21()
+        );
+        assert_eq!(
+            MnemonicSize::from_length(24).unwrap(),
+            StandardMnemonic::size24()
+        );
     }
 
     #[test]
@@ -416,20 +455,40 @@ mod tests {
     #[test]
     fn generates_correct_mnemonic_length() {
         assert_eq!(
-            Mnemonic::new(Language::English, StandardMnemonic::size12()).unwrap().words.len(),
-            12);
+            Mnemonic::new(Language::English, StandardMnemonic::size12())
+                .unwrap()
+                .words
+                .len(),
+            12
+        );
         assert_eq!(
-            Mnemonic::new(Language::English, StandardMnemonic::size15()).unwrap().words.len(),
-            15);
+            Mnemonic::new(Language::English, StandardMnemonic::size15())
+                .unwrap()
+                .words
+                .len(),
+            15
+        );
         assert_eq!(
-            Mnemonic::new(Language::English, StandardMnemonic::size18()).unwrap().words.len(),
-            18);
+            Mnemonic::new(Language::English, StandardMnemonic::size18())
+                .unwrap()
+                .words
+                .len(),
+            18
+        );
         assert_eq!(
-            Mnemonic::new(Language::English, StandardMnemonic::size21()).unwrap().words.len(),
-            21);
+            Mnemonic::new(Language::English, StandardMnemonic::size21())
+                .unwrap()
+                .words
+                .len(),
+            21
+        );
         assert_eq!(
-            Mnemonic::new(Language::English, StandardMnemonic::size24()).unwrap().words.len(),
-            24);
+            Mnemonic::new(Language::English, StandardMnemonic::size24())
+                .unwrap()
+                .words
+                .len(),
+            24
+        );
     }
 
     #[test]
@@ -521,41 +580,38 @@ mod tests {
 
     #[test]
     fn get_index_24() {
-        let mut entropy = Vec::from_hex(
-            "0000000000000000000000000000000000000000000000000000000000000000").unwrap();
+        let mut entropy =
+            Vec::from_hex("0000000000000000000000000000000000000000000000000000000000000000")
+                .unwrap();
         entropy.push(0b01100110);
-        let res = get_indexes(
-            entropy.as_slice(),
-            StandardMnemonic::size24()
-        ).unwrap();
-        let exp: Vec<usize> = vec!(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102);
+        let res = get_indexes(entropy.as_slice(), StandardMnemonic::size24()).unwrap();
+        let exp: Vec<usize> = vec![
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102,
+        ];
         assert_eq!(res, exp);
 
-        let mut entropy = Vec::from_hex(
-            "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f").unwrap();
+        let mut entropy =
+            Vec::from_hex("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
+                .unwrap();
         entropy.push(0b00010111);
-        let res = get_indexes(
-            entropy.as_slice(),
-            StandardMnemonic::size24()
-        ).unwrap();
-        let exp: Vec<usize> = vec!(1019, 2015, 1790, 2039, 1983, 1533, 2031, 1919,
-                                   1019, 2015, 1790, 2039, 1983, 1533, 2031, 1919,
-                                   1019, 2015, 1790, 2039, 1983, 1533, 2031, 1815);
+        let res = get_indexes(entropy.as_slice(), StandardMnemonic::size24()).unwrap();
+        let exp: Vec<usize> = vec![
+            1019, 2015, 1790, 2039, 1983, 1533, 2031, 1919, 1019, 2015, 1790, 2039, 1983, 1533,
+            2031, 1919, 1019, 2015, 1790, 2039, 1983, 1533, 2031, 1815,
+        ];
 
         assert_eq!(res, exp);
     }
 
     #[test]
     fn get_index_18() {
-        let mut entropy = Vec::from_hex(
-            "ffffffffffffffffffffffffffffffffffffffffffffffffd1").unwrap();
-        let res = get_indexes(
-            entropy.as_slice(),
-            StandardMnemonic::size18()
-        ).unwrap();
-        let exp: Vec<usize> = vec!(2047, 2047, 2047, 2047, 2047, 2047,
-                                   2047, 2047, 2047, 2047, 2047, 2047,
-                                   2047, 2047, 2047, 2047, 2047, 2001);
+        let mut entropy =
+            Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffd1").unwrap();
+        let res = get_indexes(entropy.as_slice(), StandardMnemonic::size18()).unwrap();
+        let exp: Vec<usize> = vec![
+            2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047,
+            2047, 2047, 2047, 2001,
+        ];
 
         assert_eq!(res, exp);
     }
@@ -597,10 +653,16 @@ mod tests {
         );
 
         let entropy = mnemonic.seed(Some("TREZOR"));
-        assert_eq!(entropy, Vec::from_hex("bda85446c68413707090a52022edd26a\
-            1c9462295029f2e60cd7c4f2bbd309717\
-            0af7a4d73245cafa9c3cca8d561a7c3de6\
-            f5d4a10be8ed2a5e608d68f92fcc8").unwrap());
+        assert_eq!(
+            entropy,
+            Vec::from_hex(
+                "bda85446c68413707090a52022edd26a\
+                 1c9462295029f2e60cd7c4f2bbd309717\
+                 0af7a4d73245cafa9c3cca8d561a7c3de6\
+                 f5d4a10be8ed2a5e608d68f92fcc8"
+            )
+            .unwrap()
+        );
     }
 
     #[test]
@@ -614,10 +676,16 @@ mod tests {
             .collect();
 
         assert_eq!(w, mnemonic.words);
-        assert_eq!(mnemonic.seed(Some("TREZOR")), Vec::from_hex("274ddc525802f7c828d8ef7ddbcdc530\
-            4e87ac3535913611fbbfa986d0c9e547\
-            6c91689f9c8a54fd55bd38606aa6a859\
-            5ad213d4c9c9f9aca3fb217069a41028").unwrap());
+        assert_eq!(
+            mnemonic.seed(Some("TREZOR")),
+            Vec::from_hex(
+                "274ddc525802f7c828d8ef7ddbcdc530\
+                 4e87ac3535913611fbbfa986d0c9e547\
+                 6c91689f9c8a54fd55bd38606aa6a859\
+                 5ad213d4c9c9f9aca3fb217069a41028"
+            )
+            .unwrap()
+        );
     }
 
     #[test]
@@ -626,9 +694,15 @@ mod tests {
                  abandon abandon about";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
 
-        assert_eq!(mnemonic.seed(Some("TREZOR")), Vec::from_hex("c55257c360c07c72029aebc1b53c05ed03\
-            62ada38ead3e3e9efa3708e53495531f0\
-            9a6987599d18264c1e1c92f2cf141630c7a3c4ab7c81b2f001698e7463b04").unwrap());
+        assert_eq!(
+            mnemonic.seed(Some("TREZOR")),
+            Vec::from_hex(
+                "c55257c360c07c72029aebc1b53c05ed03\
+                 62ada38ead3e3e9efa3708e53495531f0\
+                 9a6987599d18264c1e1c92f2cf141630c7a3c4ab7c81b2f001698e7463b04"
+            )
+            .unwrap()
+        );
     }
 
     #[test]
@@ -637,9 +711,15 @@ mod tests {
                  abandon abandon about";
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
 
-        assert_eq!(mnemonic.seed(None), Vec::from_hex("5eb00bbddcf069084889a8ab9155568165f5c4\
-            53ccb85e70811aaed6f6da5fc19a5ac40b3\
-            89cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4").unwrap());
+        assert_eq!(
+            mnemonic.seed(None),
+            Vec::from_hex(
+                "5eb00bbddcf069084889a8ab9155568165f5c4\
+                 53ccb85e70811aaed6f6da5fc19a5ac40b3\
+                 89cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4"
+            )
+            .unwrap()
+        );
     }
 
     #[test]
@@ -654,10 +734,16 @@ mod tests {
             .collect();
 
         assert_eq!(w, mnemonic.words);
-        assert_eq!(mnemonic.seed(Some("TREZOR")), Vec::from_hex("b15509eaa2d09d3efd3e006ef42151b3\
-            0367dc6e3aa5e44caba3fe4d3e352e65\
-            101fbdb86a96776b91946ff06f8eac59\
-            4dc6ee1d3e82a42dfe1b40fef6bcc3fd").unwrap());
+        assert_eq!(
+            mnemonic.seed(Some("TREZOR")),
+            Vec::from_hex(
+                "b15509eaa2d09d3efd3e006ef42151b3\
+                 0367dc6e3aa5e44caba3fe4d3e352e65\
+                 101fbdb86a96776b91946ff06f8eac59\
+                 4dc6ee1d3e82a42dfe1b40fef6bcc3fd"
+            )
+            .unwrap()
+        );
     }
 
     #[test]
@@ -681,14 +767,13 @@ mod tests {
 
     #[test]
     fn should_create_from_entropy_15() {
-        let entropy = Vec::from_hex(
-            "ffffffffffffffffffffffffffffffffffffffffffffffff"
-        ).unwrap();
+        let entropy = Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffff").unwrap();
         let mnemonic = Mnemonic::from_entropy(Language::English, entropy.as_slice()).unwrap();
-        let words: Vec<String> = "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo when"
-            .split_whitespace()
-            .map(|w| w.to_string())
-            .collect();
+        let words: Vec<String> =
+            "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo when"
+                .split_whitespace()
+                .map(|w| w.to_string())
+                .collect();
 
         assert_eq!(mnemonic.words, words);
         assert_eq!(mnemonic.seed(None).to_hex(),
@@ -710,9 +795,7 @@ mod tests {
                    "4975bb3d1faf5308c86a30893ee903a976296609db223fd717e227da5a813a34dc1428b71c84a787fc51f3b9f9dc28e9459f48c08bd9578e9d1b170f2d7ea506"
         );
 
-        let entropy = Vec::from_hex(
-            "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f"
-        ).unwrap();
+        let entropy = Vec::from_hex("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f").unwrap();
         let mnemonic = Mnemonic::from_entropy(Language::English, entropy.as_slice()).unwrap();
         let words: Vec<String> = "legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal will"
             .split_whitespace()
@@ -724,9 +807,7 @@ mod tests {
                    "b059400ce0f55498a5527667e77048bb482ff6daa16c37b4b9e8af70c85b3f4df588004f19812a1a027c9a51e5e94259a560268e91cd10e206451a129826e740"
         );
 
-        let entropy = Vec::from_hex(
-            "808080808080808080808080808080808080808080808080"
-        ).unwrap();
+        let entropy = Vec::from_hex("808080808080808080808080808080808080808080808080").unwrap();
         let mnemonic = Mnemonic::from_entropy(Language::English, entropy.as_slice()).unwrap();
         let words: Vec<String> = "letter advice cage absurd amount doctor acoustic avoid letter advice cage absurd amount doctor acoustic avoid letter always"
             .split_whitespace()
@@ -738,14 +819,13 @@ mod tests {
                    "04d5f77103510c41d610f7f5fb3f0badc77c377090815cee808ea5d2f264fdfabf7c7ded4be6d4c6d7cdb021ba4c777b0b7e57ca8aa6de15aeb9905dba674d66"
         );
 
-        let entropy = Vec::from_hex(
-            "ffffffffffffffffffffffffffffffffffffffffffffffff"
-        ).unwrap();
+        let entropy = Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffff").unwrap();
         let mnemonic = Mnemonic::from_entropy(Language::English, entropy.as_slice()).unwrap();
-        let words: Vec<String> = "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo when"
-            .split_whitespace()
-            .map(|w| w.to_string())
-            .collect();
+        let words: Vec<String> =
+            "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo when"
+                .split_whitespace()
+                .map(|w| w.to_string())
+                .collect();
 
         assert_eq!(mnemonic.words, words);
         assert_eq!(mnemonic.seed(None).to_hex(),
@@ -755,9 +835,9 @@ mod tests {
 
     #[test]
     fn should_create_from_entropy_24() {
-        let entropy = Vec::from_hex(
-            "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f"
-        ).unwrap();
+        let entropy =
+            Vec::from_hex("7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
+                .unwrap();
         let mnemonic = Mnemonic::from_entropy(Language::English, entropy.as_slice()).unwrap();
         let words: Vec<String> = "legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth useful legal winner thank year wave sausage worth title"
             .split_whitespace()
@@ -823,30 +903,38 @@ mod tests {
 
     #[test]
     fn checksum_for_21() {
-        let value = Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff").unwrap();
+        let value =
+            Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffff").unwrap();
         let act = checksum(value.as_slice(), StandardMnemonic::size21());
         assert_eq!(act, 0b0011001);
 
-        let value = Vec::from_hex("1205c0b2e048ceef790d0433a902a070d0744af9b5e88edf7923c561").unwrap();
+        let value =
+            Vec::from_hex("1205c0b2e048ceef790d0433a902a070d0744af9b5e88edf7923c561").unwrap();
         let act = checksum(value.as_slice(), StandardMnemonic::size21());
         assert_eq!(act, 0b0011011);
 
-        let value = Vec::from_hex("b579f8e1dfc739a36a90a1f94cb33aef1bc28f43dc3533c829d5e935").unwrap();
+        let value =
+            Vec::from_hex("b579f8e1dfc739a36a90a1f94cb33aef1bc28f43dc3533c829d5e935").unwrap();
         let act = checksum(value.as_slice(), StandardMnemonic::size21());
         assert_eq!(act, 0b0000000);
 
-        let value = Vec::from_hex("b579f8e1dfc739a36a90a1f94cb33aef1bc28f43dc3533c829d5e95c").unwrap();
+        let value =
+            Vec::from_hex("b579f8e1dfc739a36a90a1f94cb33aef1bc28f43dc3533c829d5e95c").unwrap();
         let act = checksum(value.as_slice(), StandardMnemonic::size21());
         assert_eq!(act, 0b0000001);
     }
 
     #[test]
     fn checksum_for_24() {
-        let value = Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").unwrap();
+        let value =
+            Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+                .unwrap();
         let act = checksum(value.as_slice(), StandardMnemonic::size24());
         assert_eq!(act, 0b10101111);
 
-        let value = Vec::from_hex("e28a37058c7f5112ec9e16a3437cf363a2572d70b6ceb3b69654476253ed12fa").unwrap();
+        let value =
+            Vec::from_hex("e28a37058c7f5112ec9e16a3437cf363a2572d70b6ceb3b69654476253ed12fa")
+                .unwrap();
         let act = checksum(value.as_slice(), StandardMnemonic::size24());
         assert_eq!(act, 0b10111111);
     }

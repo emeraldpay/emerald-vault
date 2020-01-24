@@ -15,26 +15,18 @@ limitations under the License.
 */
 //! # Addressbook utils
 
-use std::fs::{OpenOptions};
-use std::fs::File;
-use std::path::{Path, PathBuf};
-use uuid::Uuid;
 use crate::{
-    convert::{
-        error::ConversionError,
-    },
-    structs::{
-        types::HasUuid,
-        book::{BookmarkDetails},
-    },
-    storage::{
-        vault::VaultAccess,
-        error::VaultError
-    }
+    convert::error::ConversionError,
+    storage::{error::VaultError, vault::VaultAccess},
+    structs::{book::BookmarkDetails, types::HasUuid},
 };
+use csv::{StringRecord, Writer};
 use std::convert::{TryFrom, TryInto};
 use std::fs;
-use csv::{Writer, StringRecord};
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 const FORMAT: &str = "bookmark/base64";
 
@@ -48,13 +40,13 @@ pub struct AddressbookStorage {
 struct CsvRecord {
     id: String,
     format: String,
-    data: String
+    data: String,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct AddressBookmark {
     pub id: Uuid,
-    pub details: BookmarkDetails
+    pub details: BookmarkDetails,
 }
 
 impl HasUuid for AddressBookmark {
@@ -70,7 +62,7 @@ impl TryFrom<CsvRecord> for AddressBookmark {
         let id = Uuid::parse_str(&value.id)
             .map_err(|_| ConversionError::InvalidData("id".to_string()))?;
         if FORMAT != value.format {
-            return Err(ConversionError::InvalidData("format".to_string()))
+            return Err(ConversionError::InvalidData("format".to_string()));
         }
         let data = base64::decode(&value.data)
             .map_err(|_| ConversionError::InvalidData("data".to_string()))?;
@@ -81,10 +73,12 @@ impl TryFrom<CsvRecord> for AddressBookmark {
 }
 
 impl AddressbookStorage {
-
-    pub fn from_path<P>(path: P) -> AddressbookStorage where P: AsRef<Path> {
+    pub fn from_path<P>(path: P) -> AddressbookStorage
+    where
+        P: AsRef<Path>,
+    {
         AddressbookStorage {
-            path: PathBuf::from(path.as_ref())
+            path: PathBuf::from(path.as_ref()),
         }
     }
 
@@ -99,23 +93,25 @@ impl AddressbookStorage {
         for (i, line) in rdr.records().enumerate() {
             let line = line?;
             if i == 0 && line.len() > 0 && line.get(0) == Some("id") {
-                continue
+                continue;
             }
             let record: CsvRecord = AddressbookStorage::read(line)?;
             let bookmark = AddressBookmark::try_from(record)?;
             result.push(bookmark);
-        };
+        }
         Ok(result)
     }
 
     fn read(record: StringRecord) -> Result<CsvRecord, VaultError> {
         if record.len() != 3 {
-            return Err(VaultError::UnsupportedDataError("Excessive column".to_string()))
+            return Err(VaultError::UnsupportedDataError(
+                "Excessive column".to_string(),
+            ));
         }
         let result = CsvRecord {
             id: record.get(0).unwrap().to_string(),
             format: record.get(1).unwrap().to_string(),
-            data: record.get(2).unwrap().to_string()
+            data: record.get(2).unwrap().to_string(),
         };
         Ok(result)
     }
@@ -131,11 +127,8 @@ impl AddressbookStorage {
 }
 
 impl VaultAccess<AddressBookmark> for AddressbookStorage {
-
     fn list(&self) -> Result<Vec<Uuid>, VaultError> {
-        let ids = self.get_all()?.iter()
-            .map(|b| b.id)
-            .collect();
+        let ids = self.get_all()?.iter().map(|b| b.id).collect();
         Ok(ids)
     }
 
@@ -163,11 +156,14 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
             .from_writer(f);
 
         let data: Vec<u8> = item.details.try_into()?;
-        AddressbookStorage::write(&mut wrt, CsvRecord {
-            id: id.to_string(),
-            format: FORMAT.to_string(),
-            data: base64::encode(&data)
-        })?;
+        AddressbookStorage::write(
+            &mut wrt,
+            CsvRecord {
+                id: id.to_string(),
+                format: FORMAT.to_string(),
+                data: base64::encode(&data),
+            },
+        )?;
         if wrt.flush().is_err() {
             Err(VaultError::FilesystemError("Flush failed".to_string()))
         } else {
@@ -179,11 +175,15 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
         let all = self.get_all()?;
         let mut bak_path = self.path.clone();
         if !bak_path.set_extension(".bak") {
-            return Err(VaultError::FilesystemError("Failed to initialized backup".to_string()))
+            return Err(VaultError::FilesystemError(
+                "Failed to initialized backup".to_string(),
+            ));
         }
 
         if !fs::rename(&self.path, &bak_path).is_ok() {
-            return Err(VaultError::FilesystemError("Failed to make a backup".to_string()))
+            return Err(VaultError::FilesystemError(
+                "Failed to make a backup".to_string(),
+            ));
         }
 
         let mut wrt = csv::WriterBuilder::new()
@@ -197,12 +197,15 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
                 let data: Result<Vec<u8>, VaultError> = item.details.try_into();
                 match data {
                     Ok(data) => {
-                        AddressbookStorage::write(&mut wrt, CsvRecord {
-                            id: item.id.to_string(),
-                            format: FORMAT.to_string(),
-                            data: base64::encode(&data)
-                        })?;
-                    },
+                        AddressbookStorage::write(
+                            &mut wrt,
+                            CsvRecord {
+                                id: item.id.to_string(),
+                                format: FORMAT.to_string(),
+                                data: base64::encode(&data),
+                            },
+                        )?;
+                    }
                     Err(e) => {
                         err = Some(e);
                     }
@@ -241,35 +244,31 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
 
 #[cfg(test)]
 mod tests {
+    use crate::storage::addressbook::AddressbookStorage;
     use crate::{
-        storage::{
-            vault::VaultAccess,
-            addressbook::AddressBookmark
-        },
-        structs::book::{
-            BookmarkDetails,
-            AddressRef
-        },
-        Address,
         core::chains::Blockchain,
+        storage::{addressbook::AddressBookmark, vault::VaultAccess},
+        structs::book::{AddressRef, BookmarkDetails},
+        Address,
     };
-    use uuid::Uuid;
-    use std::str::FromStr;
-    use tempdir::TempDir;
     use std::fs;
     use std::path::Path;
-    use crate::storage::addressbook::AddressbookStorage;
+    use std::str::FromStr;
+    use tempdir::TempDir;
+    use uuid::Uuid;
 
     fn extract_address_str(details: &BookmarkDetails) -> Option<String> {
         match details.address {
-            AddressRef::EthereumAddress(s) => Some(s.to_string())
+            AddressRef::EthereumAddress(s) => Some(s.to_string()),
         }
     }
 
-    fn dump_file<P>(path: P) where P: AsRef<Path> {
+    fn dump_file<P>(path: P)
+    where
+        P: AsRef<Path>,
+    {
         let f = fs::read(path.as_ref()).expect("read csv");
         println!("{}", String::from_utf8(f).expect("Non UTF8 content"));
-
     }
 
     // ----
@@ -318,7 +317,9 @@ mod tests {
     #[test]
     fn get_one_by_id() {
         let book = AddressbookStorage::from_path("./tests/addressbook/one_item.csv");
-        let item = book.get(Uuid::from_str("9c404f6f-49a1-4911-9ee2-feaa6abb03f1").unwrap()).expect("get_all() failed");
+        let item = book
+            .get(Uuid::from_str("9c404f6f-49a1-4911-9ee2-feaa6abb03f1").unwrap())
+            .expect("get_all() failed");
         assert_eq!("9c404f6f-49a1-4911-9ee2-feaa6abb03f1", item.id.to_string());
         assert_eq!(Blockchain::Ethereum, item.details.blockchain);
         assert_eq!("Test!", item.details.label.clone().expect("Label not set"));
@@ -339,8 +340,10 @@ mod tests {
                 blockchain: Blockchain::Ethereum,
                 label: Some("Hello World!".to_string()),
                 description: None,
-                address: AddressRef::EthereumAddress(Address::from_str("0x085fb4f24031eaedbc2b611aa528f22343eb52db").unwrap())
-            }
+                address: AddressRef::EthereumAddress(
+                    Address::from_str("0x085fb4f24031eaedbc2b611aa528f22343eb52db").unwrap(),
+                ),
+            },
         };
         let act = book.add(item);
         assert!(act.is_ok());
@@ -350,7 +353,10 @@ mod tests {
         let item = all.first().unwrap();
         assert_eq!("9c404f6f-49a1-4911-9ee2-feaa6abb03f1", item.id.to_string());
         assert_eq!(Blockchain::Ethereum, item.details.blockchain);
-        assert_eq!("Hello World!", item.details.label.clone().expect("Label not set"));
+        assert_eq!(
+            "Hello World!",
+            item.details.label.clone().expect("Label not set")
+        );
         assert!(item.details.description.is_none());
         assert_eq!(
             Some("0x085fb4f24031eaedbc2b611aa528f22343eb52db".to_string()),
@@ -368,8 +374,10 @@ mod tests {
                 blockchain: Blockchain::Ethereum,
                 label: Some("Hello World 1".to_string()),
                 description: None,
-                address: AddressRef::EthereumAddress(Address::from_str("0x5bee6233f7e2307746266deb0678f22686932c26").unwrap())
-            }
+                address: AddressRef::EthereumAddress(
+                    Address::from_str("0x5bee6233f7e2307746266deb0678f22686932c26").unwrap(),
+                ),
+            },
         };
         let item2 = AddressBookmark {
             id: Uuid::from_str("d27171c5-f458-4973-bd00-0415cf1c47aa").unwrap(),
@@ -377,8 +385,10 @@ mod tests {
                 blockchain: Blockchain::Ethereum,
                 label: Some("Hello World 2".to_string()),
                 description: None,
-                address: AddressRef::EthereumAddress(Address::from_str("0x732c628300f2da4d54f988b22eeca520356743dc").unwrap())
-            }
+                address: AddressRef::EthereumAddress(
+                    Address::from_str("0x732c628300f2da4d54f988b22eeca520356743dc").unwrap(),
+                ),
+            },
         };
         let item3 = AddressBookmark {
             id: Uuid::from_str("b6b22cc7-1419-4056-b49e-c6bbcde9b4cd").unwrap(),
@@ -386,8 +396,10 @@ mod tests {
                 blockchain: Blockchain::Ethereum,
                 label: Some("Hello World 3".to_string()),
                 description: None,
-                address: AddressRef::EthereumAddress(Address::from_str("0xfac41abcf13f5dcd83d8c20d5ed5e07e1968a348").unwrap())
-            }
+                address: AddressRef::EthereumAddress(
+                    Address::from_str("0xfac41abcf13f5dcd83d8c20d5ed5e07e1968a348").unwrap(),
+                ),
+            },
         };
 
         let added = book.add(item1);
@@ -402,16 +414,24 @@ mod tests {
         let all = book.get_all().expect("get_all() failed");
         assert_eq!(3, all.len());
 
-
         let item = all.get(0).unwrap();
         assert_eq!("6f42441b-1541-4e29-9f5e-5fef6c79fb9a", item.id.to_string());
-        assert_eq!("Hello World 1", item.details.label.clone().expect("Label not set"));
+        assert_eq!(
+            "Hello World 1",
+            item.details.label.clone().expect("Label not set")
+        );
         let item = all.get(1).unwrap();
         assert_eq!("d27171c5-f458-4973-bd00-0415cf1c47aa", item.id.to_string());
-        assert_eq!("Hello World 2", item.details.label.clone().expect("Label not set"));
+        assert_eq!(
+            "Hello World 2",
+            item.details.label.clone().expect("Label not set")
+        );
         let item = all.get(2).unwrap();
         assert_eq!("b6b22cc7-1419-4056-b49e-c6bbcde9b4cd", item.id.to_string());
-        assert_eq!("Hello World 3", item.details.label.clone().expect("Label not set"));
+        assert_eq!(
+            "Hello World 3",
+            item.details.label.clone().expect("Label not set")
+        );
 
         let removed = book.remove(Uuid::from_str("d27171c5-f458-4973-bd00-0415cf1c47aa").unwrap());
         assert!(removed.is_ok());
@@ -420,10 +440,15 @@ mod tests {
         let all = book.get_all().expect("get_all() failed");
         assert_eq!(2, all.len());
         let item = all.get(0).unwrap();
-        assert_eq!("Hello World 1", item.details.label.clone().expect("Label not set"));
+        assert_eq!(
+            "Hello World 1",
+            item.details.label.clone().expect("Label not set")
+        );
         let item = all.get(1).unwrap();
-        assert_eq!("Hello World 3", item.details.label.clone().expect("Label not set"));
-
+        assert_eq!(
+            "Hello World 3",
+            item.details.label.clone().expect("Label not set")
+        );
 
         let removed = book.remove(Uuid::from_str("d27171c5-f458-4973-bd00-0415cf1c47aa").unwrap());
         assert!(removed.is_ok());
@@ -432,30 +457,37 @@ mod tests {
         let all = book.get_all().expect("get_all() failed");
         assert_eq!(2, all.len());
         let item = all.get(0).unwrap();
-        assert_eq!("Hello World 1", item.details.label.clone().expect("Label not set"));
+        assert_eq!(
+            "Hello World 1",
+            item.details.label.clone().expect("Label not set")
+        );
         let item = all.get(1).unwrap();
-        assert_eq!("Hello World 3", item.details.label.clone().expect("Label not set"));
+        assert_eq!(
+            "Hello World 3",
+            item.details.label.clone().expect("Label not set")
+        );
 
         let removed = book.remove(Uuid::from_str("b6b22cc7-1419-4056-b49e-c6bbcde9b4cd").unwrap());
         assert!(removed.is_ok());
         assert_eq!(true, removed.unwrap());
 
-//        dump_file(book.path.clone());
+        //        dump_file(book.path.clone());
 
         let all = book.get_all().expect("get_all() failed");
         assert_eq!(1, all.len());
         let item = all.get(0).unwrap();
-        assert_eq!("Hello World 1", item.details.label.clone().expect("Label not set"));
+        assert_eq!(
+            "Hello World 1",
+            item.details.label.clone().expect("Label not set")
+        );
 
         let removed = book.remove(Uuid::from_str("6f42441b-1541-4e29-9f5e-5fef6c79fb9a").unwrap());
         assert!(removed.is_ok());
         assert_eq!(true, removed.unwrap());
 
-//        dump_file(book.path.clone());
-
+        //        dump_file(book.path.clone());
 
         let all = book.get_all().expect("get_all() failed");
         assert_eq!(0, all.len());
-
     }
 }

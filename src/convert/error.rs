@@ -5,7 +5,7 @@ pub enum ConversionError {
     InvalidArgument,
     InvalidJson,
     InvalidData(String),
-    UnsuportedVersion
+    UnsuportedVersion,
 }
 
 impl From<serde_json::Error> for ConversionError {

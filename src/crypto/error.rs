@@ -1,11 +1,10 @@
-
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum CryptoError {
     InvalidParams,
     InvalidKey,
     WrongKey,
     UnsupportedSource(String),
-    NoEntropy
+    NoEntropy,
 }
 
 impl From<scrypt::errors::InvalidParams> for CryptoError {

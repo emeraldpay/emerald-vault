@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use std::convert::TryFrom;
+use std::str::FromStr;
 
 /// Ethereum Chain Id Reference
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -34,7 +34,7 @@ pub enum EthereumChainId {
 pub enum Blockchain {
     Ethereum = 100,
     EthereumClassic = 101,
-    KovanTestnet = 10002
+    KovanTestnet = 10002,
 }
 
 impl From<Blockchain> for EthereumChainId {
@@ -42,7 +42,7 @@ impl From<Blockchain> for EthereumChainId {
         match blockchain {
             Blockchain::Ethereum => EthereumChainId::Ethereum,
             Blockchain::EthereumClassic => EthereumChainId::EthereumClassic,
-            Blockchain::KovanTestnet => EthereumChainId::Kovan
+            Blockchain::KovanTestnet => EthereumChainId::Kovan,
         }
     }
 }
@@ -55,7 +55,7 @@ impl TryFrom<EthereumChainId> for Blockchain {
             EthereumChainId::Ethereum => Ok(Blockchain::Ethereum),
             EthereumChainId::EthereumClassic => Ok(Blockchain::EthereumClassic),
             EthereumChainId::Kovan => Ok(Blockchain::KovanTestnet),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -68,13 +68,12 @@ impl TryFrom<u32> for Blockchain {
             100 => Ok(Blockchain::Ethereum),
             101 => Ok(Blockchain::EthereumClassic),
             10002 => Ok(Blockchain::KovanTestnet),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
 
 impl FromStr for EthereumChainId {
-
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -87,15 +86,16 @@ impl FromStr for EthereumChainId {
             "rootstock-main" => Ok(EthereumChainId::Rootstock),
             "rootstock-test" => Ok(EthereumChainId::RootstockTestnet),
             "kovan" => Ok(EthereumChainId::Kovan),
-            "mainnet" | "etc-mainnet" | "etc" | "ethereum-classic" | "ethereum classic" => Ok(EthereumChainId::EthereumClassic),
+            "mainnet" | "etc-mainnet" | "etc" | "ethereum-classic" | "ethereum classic" => {
+                Ok(EthereumChainId::EthereumClassic)
+            }
             "etc-morden" => Ok(EthereumChainId::MordenClassic),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
 
 impl EthereumChainId {
-
     pub fn get_all_paths() -> [String; 8] {
         [
             EthereumChainId::Ethereum.get_path_element(),
@@ -122,7 +122,7 @@ impl EthereumChainId {
             42 => Ok(EthereumChainId::Kovan),
             61 => Ok(EthereumChainId::EthereumClassic),
             62 => Ok(EthereumChainId::MordenClassic),
-            id => Err(id)
+            id => Err(id),
         }
     }
 
@@ -160,7 +160,7 @@ impl EthereumChainId {
     pub fn get_code(&self) -> String {
         match self {
             EthereumChainId::EthereumClassic => "etc".to_string(),
-            x => x.get_path_element()
+            x => x.get_path_element(),
         }
     }
 

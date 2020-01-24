@@ -1,7 +1,7 @@
-pub mod error;
-pub mod util;
 pub mod encrypted;
+pub mod error;
 pub mod kdf;
-pub mod sign;
 pub mod pk;
 pub mod seed;
+pub mod sign;
+pub mod util;
