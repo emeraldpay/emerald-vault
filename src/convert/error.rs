@@ -1,11 +1,24 @@
+use crate::error;
 use crate::storage::error::VaultError;
+use protobuf::ProtobufError;
+use std::fmt::Display;
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Display)]
 pub enum ConversionError {
     InvalidArgument,
     InvalidJson,
-    InvalidData(String),
+    /// Value is the field name
+    InvalidFieldValue(String),
+    /// value is the field name
+    FieldIsEmpty(String),
+    /// value  is the field name
+    UnsupportedValue(String),
     UnsuportedVersion,
+    NotHex,
+    CSVError,
+    InvalidProtobuf,
+    IOError,
+    OtherError,
 }
 
 impl From<serde_json::Error> for ConversionError {
@@ -14,14 +27,23 @@ impl From<serde_json::Error> for ConversionError {
     }
 }
 
-impl From<VaultError> for ConversionError {
-    fn from(_: VaultError) -> Self {
-        ConversionError::InvalidData("Vault Error".to_string())
+impl From<hex::FromHexError> for ConversionError {
+    fn from(_: hex::FromHexError) -> Self {
+        ConversionError::NotHex
     }
 }
 
-impl From<hex::FromHexError> for ConversionError {
-    fn from(_: hex::FromHexError) -> Self {
-        ConversionError::InvalidData("Not HEX".to_string())
+impl From<protobuf::ProtobufError> for ConversionError {
+    fn from(err: protobuf::ProtobufError) -> Self {
+        match err {
+            protobuf::ProtobufError::IoError(_) => ConversionError::IOError,
+            _ => ConversionError::InvalidProtobuf,
+        }
+    }
+}
+
+impl From<error::Error> for ConversionError {
+    fn from(_: error::Error) -> Self {
+        ConversionError::OtherError
     }
 }

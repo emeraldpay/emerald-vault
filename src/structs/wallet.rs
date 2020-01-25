@@ -1,7 +1,7 @@
 use crate::hdwallet::bip32::path_to_arr;
 use crate::hdwallet::WManager;
 use crate::{
-    convert::json::keyfile::EthereumJsonV3File,
+    convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
     core::chains::{Blockchain, EthereumChainId},
     mnemonic::{generate_key, HDPath},
     storage::{error::VaultError, vault::VaultStorage},
@@ -107,7 +107,7 @@ impl AccountId {
                 wallet_id: Uuid::from_str(cap.get(1).unwrap().as_str()).unwrap(),
                 account_id: cap.get(2).unwrap().as_str().parse::<usize>().unwrap(),
             }),
-            None => Err(VaultError::ConversionError),
+            None => Err(VaultError::from(ConversionError::InvalidArgument)),
         }
     }
 }

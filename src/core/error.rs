@@ -22,6 +22,7 @@ use std::{error, fmt};
 
 /// Core domain logic errors
 #[derive(Debug)]
+#[deprecated]
 pub enum Error {
     /// Invalid ABI
     InvalidABI(String),

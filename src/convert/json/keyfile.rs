@@ -2,7 +2,6 @@ use crate::{
     convert::error::ConversionError,
     core::Address,
     crypto::error::CryptoError,
-    storage::error::VaultError,
     structs::{
         crypto::{Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, Pbkdf2, PrfType, ScryptKdf},
         pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
@@ -157,7 +156,7 @@ impl FromStr for PrfJson {
         match s {
             _ if s == HMAC_SHA256_PRF_NAME => Ok(PrfJson::HmacSha256),
             _ if s == HMAC_SHA512_PRF_NAME => Ok(PrfJson::HmacSha512),
-            _ => Err(ConversionError::InvalidData("hmac".to_string())),
+            _ => Err(ConversionError::InvalidFieldValue("hmac".to_string())),
         }
     }
 }
@@ -244,7 +243,7 @@ impl FromStr for KdfJson {
                 c: 262_144,
             }),
             _ if s == SCRYPT_KDF_NAME => Ok(KdfJson::default()),
-            _ => Err(ConversionError::InvalidData(s.to_string())),
+            _ => Err(ConversionError::InvalidFieldValue(s.to_string())),
         }
     }
 }
@@ -372,7 +371,7 @@ impl EthereumJsonV3File {
 }
 
 impl TryFrom<&EthereumJsonV3File> for Encrypted {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(json: &EthereumJsonV3File) -> Result<Self, Self::Error> {
         let cipher = Cipher::Aes128Ctr(Aes128CtrCipher {
@@ -406,7 +405,7 @@ impl TryFrom<&EthereumJsonV3File> for Encrypted {
 }
 
 impl TryFrom<&Encrypted> for CoreCryptoJson {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: &Encrypted) -> Result<Self, Self::Error> {
         match &value.cipher {
@@ -451,7 +450,7 @@ impl TryFrom<&Encrypted> for CoreCryptoJson {
 }
 
 impl TryFrom<&EthereumJsonV3File> for EthereumPk3 {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(json: &EthereumJsonV3File) -> Result<Self, Self::Error> {
         let result = EthereumPk3 {

@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Eq, PartialEq)]
+use std::fmt::Display;
+
+#[derive(Debug, Clone, Eq, PartialEq, Display)]
 pub enum CryptoError {
     InvalidParams,
     InvalidKey,

@@ -60,12 +60,12 @@ impl TryFrom<CsvRecord> for AddressBookmark {
 
     fn try_from(value: CsvRecord) -> Result<Self, Self::Error> {
         let id = Uuid::parse_str(&value.id)
-            .map_err(|_| ConversionError::InvalidData("id".to_string()))?;
+            .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?;
         if FORMAT != value.format {
-            return Err(ConversionError::InvalidData("format".to_string()));
+            return Err(ConversionError::InvalidFieldValue("format".to_string()));
         }
         let data = base64::decode(&value.data)
-            .map_err(|_| ConversionError::InvalidData("data".to_string()))?;
+            .map_err(|_| ConversionError::InvalidFieldValue("data".to_string()))?;
         let details = BookmarkDetails::try_from(data)?;
         let result = AddressBookmark { id, details };
         Ok(result)
@@ -190,11 +190,11 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
             .has_headers(true)
             .from_path(&self.path)?;
 
-        let mut err: Option<VaultError> = None;
+        let mut err: Option<ConversionError> = None;
         let mut found = false;
         for item in all {
             if item.id != id {
-                let data: Result<Vec<u8>, VaultError> = item.details.try_into();
+                let data: Result<Vec<u8>, ConversionError> = item.details.try_into();
                 match data {
                     Ok(data) => {
                         AddressbookStorage::write(
@@ -224,7 +224,7 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
             if fs::rename(&bak_path, &self.path).is_err() {
                 error!("Failed to restore original file")
             }
-            Err(err.unwrap())
+            Err(VaultError::ConversionError(err.unwrap()))
         } else {
             Ok(found)
         }
