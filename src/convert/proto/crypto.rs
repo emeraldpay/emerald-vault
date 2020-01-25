@@ -1,3 +1,4 @@
+use crate::convert::error::ConversionError;
 use crate::{
     proto::crypto::{
         Encrypted as proto_Encrypted, Encrypted_CipherType as proto_CipherType,
@@ -5,7 +6,6 @@ use crate::{
         Mac_MacType as proto_MacType, Pbkdf2 as proto_Pbkdf2, PrfType as proto_PrfType,
         ScryptKdf as proto_ScryptKdf,
     },
-    storage::error::VaultError,
     structs::{
         crypto::{Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, Pbkdf2, PrfType, ScryptKdf},
         types::IsVerified,
@@ -15,37 +15,37 @@ use std::convert::TryFrom;
 
 /// From Protobuf Message
 impl TryFrom<proto_PrfType> for PrfType {
-    type Error = VaultError;
-    fn try_from(data: proto_PrfType) -> Result<Self, VaultError>
+    type Error = ConversionError;
+    fn try_from(data: proto_PrfType) -> Result<Self, Self::Error>
     where
         Self: std::marker::Sized,
     {
         match data {
             proto_PrfType::PRF_HMAC_SHA256 => Ok(PrfType::HmacSha256),
-            proto_PrfType::PRF_UNKNOWN => Err(VaultError::UnsupportedDataError(
-                "HMAC type is not set".to_string(),
-            )),
+            proto_PrfType::PRF_UNKNOWN => {
+                Err(ConversionError::FieldIsEmpty("prf_type".to_string()))
+            }
         }
     }
 }
 
 impl TryFrom<&proto_Mac> for MacType {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: &proto_Mac) -> Result<Self, Self::Error> {
         match value.field_type {
             proto_MacType::MAC_WEB3 => Ok(MacType::Web3(value.value.clone())),
-            proto_MacType::MAC_UNKNOWN => Err(VaultError::UnsupportedDataError(
-                "MAC type is not set".to_string(),
-            )),
+            proto_MacType::MAC_UNKNOWN => {
+                Err(ConversionError::FieldIsEmpty("mac_type".to_string()))
+            }
         }
     }
 }
 
 /// From Protobuf Message
 impl TryFrom<&proto_Encrypted> for Cipher {
-    type Error = VaultError;
-    fn try_from(data: &proto_Encrypted) -> Result<Self, VaultError>
+    type Error = ConversionError;
+    fn try_from(data: &proto_Encrypted) -> Result<Self, Self::Error>
     where
         Self: std::marker::Sized,
     {
@@ -55,20 +55,20 @@ impl TryFrom<&proto_Encrypted> for Cipher {
                 iv: data.iv.clone(),
                 mac: match data.mac.as_ref() {
                     Some(mac) => MacType::try_from(mac),
-                    None => Err(VaultError::InvalidDataError("MAC is not set".to_string())),
+                    None => Err(ConversionError::FieldIsEmpty("mac".to_string())),
                 }?,
             })),
-            proto_CipherType::CIPHER_UNKNOWN => Err(VaultError::UnsupportedDataError(
-                "Cipher type is not set".to_string(),
-            )),
+            proto_CipherType::CIPHER_UNKNOWN => {
+                Err(ConversionError::FieldIsEmpty("cipher_type".to_string()))
+            }
         }
     }
 }
 
 /// From Protobuf Message
 impl TryFrom<&proto_Encrypted_oneof_kdf_type> for Kdf {
-    type Error = VaultError;
-    fn try_from(data: &proto_Encrypted_oneof_kdf_type) -> Result<Self, VaultError>
+    type Error = ConversionError;
+    fn try_from(data: &proto_Encrypted_oneof_kdf_type) -> Result<Self, Self::Error>
     where
         Self: std::marker::Sized,
     {
@@ -81,7 +81,8 @@ impl TryFrom<&proto_Encrypted_oneof_kdf_type> for Kdf {
                     r: value.r,
                     p: value.p,
                 }
-                .verify()?,
+                .verify()
+                .map_err(|_| ConversionError::InvalidFieldValue("kdf_scrypt".to_string()))?,
             )),
             proto_Encrypted_oneof_kdf_type::kdf_pbkdf(value) => Ok(Kdf::Pbkdf2(Pbkdf2 {
                 dklen: value.dklen,
@@ -108,37 +109,35 @@ impl From<&ScryptKdf> for proto_ScryptKdf {
 
 /// To Protobuf Message
 impl TryFrom<&Pbkdf2> for proto_Pbkdf2 {
-    type Error = VaultError;
-    fn try_from(value: &Pbkdf2) -> Result<Self, VaultError> {
+    type Error = ConversionError;
+    fn try_from(value: &Pbkdf2) -> Result<Self, Self::Error> {
         let mut result = proto_Pbkdf2::new();
         result.set_dklen(value.dklen);
         result.set_salt(value.salt.clone());
         result.set_c(value.c);
         match value.prf {
-            PrfType::HmacSha256 => result.set_prf(proto_PrfType::PRF_HMAC_SHA256),
-            PrfType::HmacSha512 => {
-                return Err(VaultError::UnsupportedDataError(
-                    "HMAC-SHA512 is not supported".to_string(),
-                ))
+            PrfType::HmacSha256 => {
+                result.set_prf(proto_PrfType::PRF_HMAC_SHA256);
             }
-        }
+            PrfType::HmacSha512 => {
+                return Err(ConversionError::UnsupportedValue("prf".to_string()))
+            }
+        };
         Ok(result)
     }
 }
 
 /// From Protobuf Message
 impl TryFrom<&proto_Encrypted> for Encrypted {
-    type Error = VaultError;
-    fn try_from(data: &proto_Encrypted) -> Result<Self, VaultError>
+    type Error = ConversionError;
+    fn try_from(data: &proto_Encrypted) -> Result<Self, Self::Error>
     where
         Self: std::marker::Sized,
     {
         let cipher = Cipher::try_from(data)?;
         let kdf = match &data.kdf_type {
             Some(kdf_type) => Kdf::try_from(kdf_type),
-            None => Err(VaultError::InvalidDataError(
-                "KDF is not specified".to_string(),
-            )),
+            None => Err(ConversionError::FieldIsEmpty("kdf_type".to_string())),
         }?;
         Ok(Encrypted { cipher, kdf })
     }
@@ -146,7 +145,7 @@ impl TryFrom<&proto_Encrypted> for Encrypted {
 
 /// To Protobuf Message
 impl TryFrom<&Encrypted> for proto_Encrypted {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: &Encrypted) -> Result<Self, Self::Error> {
         let mut encrypted = proto_Encrypted::new();

@@ -20,7 +20,7 @@ use bitcoin::util::bip32;
 use std::{error, fmt, io};
 
 /// `HDWallet` Keystore file errors
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Error {
     /// An unsupported cipher
     HDWalletError(String),

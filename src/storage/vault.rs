@@ -4,7 +4,7 @@ use crate::storage::archive::ArchiveType;
 use crate::structs::seed::{SeedRef, SeedSource};
 use crate::{
     chains::Blockchain,
-    convert::json::keyfile::EthereumJsonV3File,
+    convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
     storage::{archive::Archive, error::VaultError},
     structs::{
         pk::PrivateKeyHolder,
@@ -236,7 +236,7 @@ impl CreateWallet {
         json: &EthereumJsonV3File,
         blockchain: Blockchain,
     ) -> Result<Uuid, VaultError> {
-        let mut pk = PrivateKeyHolder::try_from(json).map_err(|_| VaultError::ConversionError)?;
+        let mut pk = PrivateKeyHolder::try_from(json)?;
         pk.generate_id();
         let wallet = Wallet {
             label: json.name.clone(),
@@ -292,7 +292,7 @@ impl AddAccount {
         blockchain: Blockchain,
     ) -> Result<usize, VaultError> {
         let mut wallet = self.wallets.get(self.wallet_id.clone())?;
-        let mut pk = PrivateKeyHolder::try_from(json).map_err(|_| VaultError::ConversionError)?;
+        let mut pk = PrivateKeyHolder::try_from(json)?;
         let pk_id = pk.generate_id();
         self.keys.add(pk)?;
         let id = wallet.get_account_id();
@@ -451,7 +451,9 @@ where
         let id = entry.get_id();
         let fname = self.get_filename_for(id.clone());
         if fname.exists() {
-            let data: Vec<u8> = entry.try_into().map_err(|_| VaultError::ConversionError)?;
+            let data: Vec<u8> = entry
+                .try_into()
+                .map_err(|_| ConversionError::InvalidProtobuf)?;
             let archive = Archive::create(&self.dir, ArchiveType::Update);
             let result = safe_update(fname, data.as_slice(), Some(&archive)).map(|_| true);
             archive.finalize();
@@ -484,7 +486,7 @@ where
         let f = self.get_filename_for(id.clone());
 
         let data = fs::read(f)?;
-        let pk = P::try_from(data).map_err(|_| VaultError::ConversionError)?;
+        let pk = P::try_from(data).map_err(|_| ConversionError::InvalidProtobuf)?;
         if !pk.get_id().eq(&id) {
             Err(VaultError::IncorrectIdError)
         } else {
@@ -499,7 +501,9 @@ where
             return Err(VaultError::FilesystemError("Already exists".to_string()));
         }
 
-        let data: Vec<u8> = entry.try_into().map_err(|_| VaultError::ConversionError)?;
+        let data: Vec<u8> = entry
+            .try_into()
+            .map_err(|_| ConversionError::InvalidProtobuf)?;
         //        let data: Vec<u8> = Vec::try_from(pk)?;
         fs::write(f, data.as_slice())?;
         Ok(id)

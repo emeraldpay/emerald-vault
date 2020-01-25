@@ -1,3 +1,4 @@
+use crate::convert::error::ConversionError;
 use crate::{
     core::{chains::Blockchain, Address},
     proto::{
@@ -9,7 +10,6 @@ use crate::{
             WalletAccount_oneof_pk_type as proto_WalletAccountPkType,
         },
     },
-    storage::error::VaultError,
     structs::{
         seed::SeedRef,
         wallet::{PKType, Wallet, WalletAccount},
@@ -23,23 +23,19 @@ use std::str::FromStr;
 use uuid::Uuid;
 
 impl TryFrom<&proto_WalletAccount> for WalletAccount {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: &proto_WalletAccount) -> Result<Self, Self::Error> {
-        let blockchain = Blockchain::try_from(value.get_blockchain_id()).map_err(|_| {
-            VaultError::UnsupportedDataError(format!(
-                "Unsupported asset: {}",
-                value.get_blockchain_id()
-            ))
-        })?;
+        let blockchain = Blockchain::try_from(value.get_blockchain_id())
+            .map_err(|_| ConversionError::UnsupportedValue("blockchain_id".to_string()))?;
         let address = value.address.clone().into_option();
         let address = match &address {
             Some(a) => match &a.address_type {
                 Some(address_type) => match address_type {
                     proto_AddressType::plain_address(a) => Some(Address::from_str(a.as_str())?),
                     _ => {
-                        return Err(VaultError::UnsupportedDataError(
-                            "Only single type of address is supported".to_string(),
+                        return Err(ConversionError::UnsupportedValue(
+                            "address_type".to_string(),
                         ))
                     }
                 },
@@ -51,25 +47,20 @@ impl TryFrom<&proto_WalletAccount> for WalletAccount {
             Some(pk_type) => match pk_type {
                 proto_WalletAccountPkType::hd_path(seed) => {
                     let seed = SeedRef {
-                        seed_id: Uuid::from_str(seed.get_seed_id())?,
+                        seed_id: Uuid::from_str(seed.get_seed_id()).map_err(|_| {
+                            ConversionError::InvalidFieldValue("seed_id".to_string())
+                        })?,
                         hd_path: seed.path.clone(),
                     };
                     PKType::SeedHd(seed)
                 }
-                proto_WalletAccountPkType::ethereum(pk) => {
-                    PKType::PrivateKeyRef(Uuid::parse_str(pk.get_pk_id())?)
-                }
-                _ => {
-                    return Err(VaultError::UnsupportedDataError(
-                        "Unsupported type of PrivateKey".to_string(),
-                    ))
-                }
+                proto_WalletAccountPkType::ethereum(pk) => PKType::PrivateKeyRef(
+                    Uuid::parse_str(pk.get_pk_id())
+                        .map_err(|_| ConversionError::InvalidFieldValue("pk_id".to_string()))?,
+                ),
+                _ => return Err(ConversionError::UnsupportedValue("pk_type".to_string())),
             },
-            None => {
-                return Err(VaultError::UnsupportedDataError(
-                    "PrivateKey is not set".to_string(),
-                ))
-            }
+            None => return Err(ConversionError::FieldIsEmpty("pk_type".to_string())),
         };
         let id = value.get_id() as usize;
         let result = WalletAccount {
@@ -115,7 +106,7 @@ impl From<&WalletAccount> for proto_WalletAccount {
 
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for Wallet {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let m = parse_from_bytes::<proto_Wallet>(value)?;
@@ -125,7 +116,8 @@ impl TryFrom<&[u8]> for Wallet {
             accounts.push(acc);
         }
         let result = Wallet {
-            id: Uuid::from_str(m.get_id())?,
+            id: Uuid::from_str(m.get_id())
+                .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
             label: none_if_empty(m.get_label()),
             accounts,
             account_seq: m.get_account_seq() as usize,
@@ -136,7 +128,7 @@ impl TryFrom<&[u8]> for Wallet {
 
 /// Read from Protobuf bytes
 impl TryFrom<Vec<u8>> for Wallet {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
         Wallet::try_from(value.as_slice())
@@ -145,7 +137,7 @@ impl TryFrom<Vec<u8>> for Wallet {
 
 /// Write as Protobuf bytes
 impl TryFrom<Wallet> for Vec<u8> {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: Wallet) -> Result<Self, Self::Error> {
         let mut result = proto_Wallet::default();
@@ -170,7 +162,9 @@ impl TryFrom<Wallet> for Vec<u8> {
         };
         result.set_account_seq(account_seq as u32);
 
-        result.write_to_bytes().map_err(|e| VaultError::from(e))
+        result
+            .write_to_bytes()
+            .map_err(|e| ConversionError::from(e))
     }
 }
 

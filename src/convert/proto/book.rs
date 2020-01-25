@@ -1,10 +1,10 @@
+use crate::convert::error::ConversionError;
 use crate::{
     core::chains::Blockchain,
     proto::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         book::BookItem as proto_BookItem,
     },
-    storage::error::VaultError,
     structs::book::{AddressRef, BookmarkDetails},
     util::optional::none_if_empty,
     Address,
@@ -15,7 +15,7 @@ use std::str::FromStr;
 
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for BookmarkDetails {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let m = parse_from_bytes::<proto_BookItem>(value)?;
@@ -23,12 +23,21 @@ impl TryFrom<&[u8]> for BookmarkDetails {
         let address = match &m.get_address().address_type {
             Some(t) => match t {
                 proto_AddressType::plain_address(s) => Address::from_str(s.as_str()),
-                _ => return Err(VaultError::InvalidDataError("address_type".to_string())),
+                _ => {
+                    return Err(ConversionError::InvalidFieldValue(
+                        "address_type".to_string(),
+                    ))
+                }
             },
-            None => return Err(VaultError::InvalidDataError("address is empty".to_string())),
+            None => {
+                return Err(ConversionError::InvalidFieldValue(
+                    "address is empty".to_string(),
+                ))
+            }
         }?;
 
-        let blockchain = Blockchain::try_from(m.get_blockchain())?;
+        let blockchain = Blockchain::try_from(m.get_blockchain())
+            .map_err(|_| ConversionError::InvalidFieldValue("blockchain".to_string()))?;
 
         let result = BookmarkDetails {
             blockchain,
@@ -43,7 +52,7 @@ impl TryFrom<&[u8]> for BookmarkDetails {
 
 /// Read from Protobuf bytes
 impl TryFrom<Vec<u8>> for BookmarkDetails {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
         BookmarkDetails::try_from(value.as_slice())
@@ -52,7 +61,7 @@ impl TryFrom<Vec<u8>> for BookmarkDetails {
 
 /// Write as Protobuf bytes
 impl TryFrom<BookmarkDetails> for Vec<u8> {
-    type Error = VaultError;
+    type Error = ConversionError;
 
     fn try_from(value: BookmarkDetails) -> Result<Self, Self::Error> {
         let mut m = proto_BookItem::new();
@@ -71,6 +80,6 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
             }
         };
 
-        m.write_to_bytes().map_err(|e| VaultError::from(e))
+        m.write_to_bytes().map_err(|e| ConversionError::from(e))
     }
 }
