@@ -21,6 +21,13 @@ pub struct Wallet {
     pub label: Option<String>,
     pub accounts: Vec<WalletAccount>,
     pub account_seq: usize,
+    pub reserved: Vec<ReservedPath>
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct ReservedPath {
+    pub seed_id: Uuid,
+    pub account_id: u32,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -61,7 +68,6 @@ impl Wallet {
     }
 
     pub fn get_account_id(&self) -> usize {
-        //TODO consider removed last account, i.e. remember ids
         let current = self.accounts.iter().map(|a| a.id).max();
         let value = match current {
             Some(id) => id + 1,
@@ -82,6 +88,7 @@ impl Default for Wallet {
             label: None,
             accounts: vec![],
             account_seq: 0,
+            reserved: vec![]
         }
     }
 }

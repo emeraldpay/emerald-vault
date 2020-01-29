@@ -5,9 +5,11 @@ use crate::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         seed::SeedHD as proto_SeedHD,
         wallet::{
-            EthereumAddress as proto_EthereumAddress, Wallet as proto_Wallet,
+            EthereumAddress as proto_EthereumAddress,
+            Wallet as proto_Wallet,
             WalletAccount as proto_WalletAccount,
             WalletAccount_oneof_pk_type as proto_WalletAccountPkType,
+            Reserved as proto_Reserved
         },
     },
     structs::{
@@ -18,9 +20,10 @@ use crate::{
 };
 use protobuf::{parse_from_bytes, Message};
 use std::cmp;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 use uuid::Uuid;
+use crate::structs::wallet::ReservedPath;
 
 impl TryFrom<&proto_WalletAccount> for WalletAccount {
     type Error = ConversionError;
@@ -107,6 +110,26 @@ impl From<&WalletAccount> for proto_WalletAccount {
     }
 }
 
+impl TryFrom<proto_Wallet> for Vec<ReservedPath> {
+    type Error = ConversionError;
+
+    fn try_from(value: proto_Wallet) -> Result<Self, Self::Error> {
+        let mut result = Vec::with_capacity(value.hd_accounts.len());
+        for r in value.hd_accounts.to_vec() {
+            match Uuid::from_str(r.seed_id.as_str()) {
+                Ok(id) => {
+                    result.push(ReservedPath {
+                        seed_id: id,
+                        account_id: r.account_id
+                    })
+                },
+                Err(_) => {}
+            }
+        }
+        Ok(result)
+    }
+}
+
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for Wallet {
     type Error = ConversionError;
@@ -124,6 +147,7 @@ impl TryFrom<&[u8]> for Wallet {
             label: none_if_empty(m.get_label()),
             accounts,
             account_seq: m.get_account_seq() as usize,
+            reserved: m.try_into()?
         };
         Ok(result)
     }
@@ -164,6 +188,12 @@ impl TryFrom<Wallet> for Vec<u8> {
             None => value.account_seq,
         };
         result.set_account_seq(account_seq as u32);
+        for r in value.reserved {
+            let mut r_proto = proto_Reserved::new();
+            r_proto.set_seed_id(r.seed_id.to_string());
+            r_proto.set_account_id(r.account_id);
+            result.hd_accounts.push(r_proto);
+        }
 
         result
             .write_to_bytes()
@@ -184,6 +214,7 @@ mod tests {
     use std::convert::{TryFrom, TryInto};
     use std::str::FromStr;
     use uuid::Uuid;
+    use crate::structs::wallet::ReservedPath;
 
     #[test]
     fn write_and_read_empty() {
@@ -217,6 +248,7 @@ mod tests {
                 receive_disabled: false,
             }],
             account_seq: 1,
+            ..Wallet::default()
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
@@ -240,6 +272,7 @@ mod tests {
                 receive_disabled: false,
             }],
             account_seq: 1,
+            ..Wallet::default()
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
@@ -266,6 +299,7 @@ mod tests {
                 receive_disabled: false,
             }],
             account_seq: 1,
+            ..Wallet::default()
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
@@ -292,12 +326,32 @@ mod tests {
                 receive_disabled: true,
             }],
             account_seq: 1,
+            ..Wallet::default()
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
         assert!(b.len() > 0);
         let act = Wallet::try_from(b).unwrap();
         assert!(act.accounts[0].receive_disabled);
+        assert_eq!(act, wallet);
+    }
+
+    #[test]
+    fn write_and_read_reserved_hd() {
+        let wallet = Wallet {
+            id: Uuid::new_v4(),
+            reserved: vec![ReservedPath {
+                seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
+                account_id: 1
+            }],
+            ..Wallet::default()
+        };
+
+        let b: Vec<u8> = wallet.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = Wallet::try_from(b).unwrap();
+        assert_eq!(act.reserved[0].seed_id.to_string(), "126d8ad4-d5a3-4b42-ba31-365cb5c34b5f");
+        assert_eq!(act.reserved[0].account_id, 1);
         assert_eq!(act, wallet);
     }
 }
