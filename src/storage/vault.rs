@@ -245,6 +245,7 @@ impl CreateWallet {
                 blockchain,
                 address: json.address,
                 key: PKType::PrivateKeyRef(pk.get_id()),
+                receive_disabled: false,
             }],
             ..Wallet::default()
         };
@@ -268,6 +269,7 @@ impl CreateWallet {
                 blockchain,
                 address: pk.get_ethereum_address(),
                 key: PKType::PrivateKeyRef(pk.get_id()),
+                receive_disabled: false,
             }],
             ..Wallet::default()
         };
@@ -301,6 +303,7 @@ impl AddAccount {
             blockchain,
             address: json.address,
             key: PKType::PrivateKeyRef(pk_id),
+            receive_disabled: false,
         });
         wallet.account_seq = id + 1;
         self.wallets.update(wallet.clone())?;
@@ -325,6 +328,7 @@ impl AddAccount {
             blockchain,
             address,
             key: PKType::PrivateKeyRef(pk_id),
+            receive_disabled: false,
         });
         wallet.account_seq = id + 1;
         self.wallets.update(wallet.clone())?;
@@ -370,6 +374,7 @@ impl AddAccount {
                 seed_id,
                 hd_path: hd_path.to_string(),
             }),
+            receive_disabled: false,
         });
         wallet.account_seq = id + 1;
         self.wallets.update(wallet.clone())?;

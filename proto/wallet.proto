@@ -36,7 +36,7 @@ message WalletAccount {
     // Associated blockchain; account may have multiple different assets on a single blockchain
     uint32 blockchain_id = 2;
     // true if account is disabled for receiving, i.e. only for sending
-    bool accept_disabled = 3;
+    bool receive_disabled = 3;
     Role role = 4;
 
     Address address = 5;

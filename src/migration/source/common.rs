@@ -68,6 +68,7 @@ pub fn add_to_vault(
                 blockchain,
                 address: kf.address,
                 key: PKType::PrivateKeyRef(pk_id),
+                receive_disabled: false,
             }
         }
         CryptoTypeV2::HdWallet(data) => {
@@ -113,6 +114,7 @@ pub fn add_to_vault(
                     seed_id,
                     hd_path: data.hd_path.clone(),
                 }),
+                receive_disabled: false,
             }
         }
     };

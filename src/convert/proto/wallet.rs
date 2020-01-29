@@ -63,11 +63,13 @@ impl TryFrom<&proto_WalletAccount> for WalletAccount {
             None => return Err(ConversionError::FieldIsEmpty("pk_type".to_string())),
         };
         let id = value.get_id() as usize;
+        let receive_disabled = value.get_receive_disabled();
         let result = WalletAccount {
             id,
             blockchain,
             address,
             key,
+            receive_disabled,
         };
         Ok(result)
     }
@@ -79,6 +81,7 @@ impl From<&WalletAccount> for proto_WalletAccount {
         let mut result = proto_WalletAccount::default();
         result.set_id(value.id as u32);
         result.set_blockchain_id(value.blockchain.to_owned() as u32);
+        result.set_receive_disabled(value.receive_disabled);
 
         let mut ethereum = proto_EthereumAddress::default();
         if value.address.is_some() {
@@ -211,6 +214,7 @@ mod tests {
                     Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
+                receive_disabled: false,
             }],
             account_seq: 1,
         };
@@ -233,6 +237,7 @@ mod tests {
                     Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
+                receive_disabled: false,
             }],
             account_seq: 1,
         };
@@ -258,6 +263,7 @@ mod tests {
                     seed_id: Uuid::new_v4(),
                     hd_path: "m/44'/60'/0'/0".to_string(),
                 }),
+                receive_disabled: false,
             }],
             account_seq: 1,
         };
@@ -265,6 +271,33 @@ mod tests {
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
         assert!(b.len() > 0);
         let act = Wallet::try_from(b).unwrap();
+        assert_eq!(act, wallet);
+    }
+
+    #[test]
+    fn write_and_read_send_only_account() {
+        let wallet = Wallet {
+            id: Uuid::new_v4(),
+            label: None,
+            accounts: vec![WalletAccount {
+                id: 0,
+                blockchain: Blockchain::Ethereum,
+                address: Some(
+                    Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+                ),
+                key: PKType::SeedHd(SeedRef {
+                    seed_id: Uuid::new_v4(),
+                    hd_path: "m/44'/60'/0'/0".to_string(),
+                }),
+                receive_disabled: true,
+            }],
+            account_seq: 1,
+        };
+
+        let b: Vec<u8> = wallet.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = Wallet::try_from(b).unwrap();
+        assert!(act.accounts[0].receive_disabled);
         assert_eq!(act, wallet);
     }
 }

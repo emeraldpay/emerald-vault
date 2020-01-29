@@ -29,6 +29,7 @@ pub struct WalletAccount {
     pub blockchain: Blockchain,
     pub address: Option<Address>,
     pub key: PKType,
+    pub receive_disabled: bool
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -272,6 +273,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
+            receive_disabled: false
         };
         let tx = Transaction {
             nonce: 1,
@@ -316,6 +318,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(key_id),
+            receive_disabled: false
         };
         let tx = Transaction {
             nonce: 1,
@@ -358,6 +361,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(key_id),
+            receive_disabled: false
         };
 
         let pk = account.export_pk("testtest".to_string(), &vault).unwrap();
@@ -389,6 +393,7 @@ mod tests {
                 seed_id,
                 hd_path: "m/44'/60'/2'/0/52".to_string(),
             }),
+            receive_disabled: false
         };
 
         let pk = account.export_pk("test1234".to_string(), &vault).unwrap();
@@ -418,6 +423,7 @@ mod tests {
                 seed_id,
                 hd_path: "m/44'/60'/160720'/0'/0".to_string(),
             }),
+            receive_disabled: false
         };
 
         let wallet = Wallet {
@@ -482,6 +488,7 @@ mod tests {
                 seed_id,
                 hd_path: "m/44'/60'/160720'/0'/0".to_string(),
             }),
+            receive_disabled: false
         };
 
         let tx = Transaction {
