@@ -21,6 +21,13 @@ pub struct Wallet {
     pub label: Option<String>,
     pub accounts: Vec<WalletAccount>,
     pub account_seq: usize,
+    pub reserved: Vec<ReservedPath>
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct ReservedPath {
+    pub seed_id: Uuid,
+    pub account_id: u32,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -29,6 +36,7 @@ pub struct WalletAccount {
     pub blockchain: Blockchain,
     pub address: Option<Address>,
     pub key: PKType,
+    pub receive_disabled: bool
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -60,7 +68,6 @@ impl Wallet {
     }
 
     pub fn get_account_id(&self) -> usize {
-        //TODO consider removed last account, i.e. remember ids
         let current = self.accounts.iter().map(|a| a.id).max();
         let value = match current {
             Some(id) => id + 1,
@@ -81,6 +88,7 @@ impl Default for Wallet {
             label: None,
             accounts: vec![],
             account_seq: 0,
+            reserved: vec![]
         }
     }
 }
@@ -272,6 +280,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
+            receive_disabled: false
         };
         let tx = Transaction {
             nonce: 1,
@@ -316,6 +325,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(key_id),
+            receive_disabled: false
         };
         let tx = Transaction {
             nonce: 1,
@@ -358,6 +368,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(key_id),
+            receive_disabled: false
         };
 
         let pk = account.export_pk("testtest".to_string(), &vault).unwrap();
@@ -389,6 +400,7 @@ mod tests {
                 seed_id,
                 hd_path: "m/44'/60'/2'/0/52".to_string(),
             }),
+            receive_disabled: false
         };
 
         let pk = account.export_pk("test1234".to_string(), &vault).unwrap();
@@ -418,6 +430,7 @@ mod tests {
                 seed_id,
                 hd_path: "m/44'/60'/160720'/0'/0".to_string(),
             }),
+            receive_disabled: false
         };
 
         let wallet = Wallet {
@@ -482,6 +495,7 @@ mod tests {
                 seed_id,
                 hd_path: "m/44'/60'/160720'/0'/0".to_string(),
             }),
+            receive_disabled: false
         };
 
         let tx = Transaction {
