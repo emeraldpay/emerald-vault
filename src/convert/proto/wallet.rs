@@ -183,6 +183,23 @@ mod tests {
     use uuid::Uuid;
 
     #[test]
+    fn write_and_read_empty() {
+        let wallet = Wallet {
+            id: Uuid::new_v4(),
+            label: None,
+            accounts: vec![],
+            ..Wallet::default()
+        };
+
+        let b: Vec<u8> = wallet.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = Wallet::try_from(b).unwrap();
+        assert_eq!(act.label, None);
+        assert_eq!(act.accounts.len(), 0);
+        assert_eq!(act, wallet);
+    }
+
+    #[test]
     fn write_and_read_wallet() {
         let wallet = Wallet {
             id: Uuid::new_v4(),
