@@ -25,6 +25,7 @@ use serde_json;
 use std::path::Path;
 use std::str;
 use crate::util;
+use std::ops::Deref;
 
 /// Database backed storage for `KeyFile`
 ///
@@ -92,7 +93,7 @@ impl KeyfileStorage for DbStorage {
         let dbvec = self.db.get(addr)?;
 
         let val = dbvec
-            .and_then(|d| Some(String::from_utf8(d).expect("Not a string")))
+            .and_then(|d| String::from_utf8(d.deref().to_vec()).ok())
             .ok_or_else(|| KeystoreError::NotFound(format!("{}", addr)))?;
         let (filename, json) = DbStorage::split(&val)?;
         let kf = KeyFile::decode(&json)?;
