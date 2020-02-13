@@ -1,6 +1,6 @@
 [package]
 name = "emerald-vault-core"
-version = "0.26.3"
+version = "0.26.4"
 authors = ["Igor Artamonov <splix@emeraldpay.io>", "Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Ethereum secure account management core libary"
 homepage = "https://emeraldpay.io"
@@ -57,6 +57,7 @@ tempdir = "0.3"
 quickcheck = "0.6"
 bencher = "0.1.5"
 # quickcheck_macros = "0.4"
+simple_logger = "1.5.0"
 
 [features]
 default = []

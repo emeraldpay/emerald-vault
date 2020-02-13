@@ -25,6 +25,7 @@ use std::cmp::min;
 use std::mem::size_of_val;
 use std::slice;
 use hex;
+use hidapi::HidDeviceInfo;
 
 ///
 pub const HID_RPT_SIZE: usize = 64;
@@ -50,19 +51,25 @@ pub const SW_USER_CANCEL: [u8; 2] = [0x6A, 0x85];
 /// For more details refer APDU doc:
 /// <https://github.com/LedgerHQ/blue-app-eth/blob/master/doc/ethapp.asc#general-purpose-apdus>
 ///
-fn get_hid_header(index: usize) -> [u8; 5] {
-    [0x01, 0x01, 0x05, (index >> 8) as u8, (index & 0xff) as u8]
+fn get_hid_header(channel: u16, index: usize) -> [u8; 5] {
+    [
+        (channel >> 8) as u8, (channel & 0xff) as u8, //channel
+        0x05, //tag
+        (index >> 8) as u8, (index & 0xff) as u8 //length
+    ]
 }
 
 ///
-fn check_recv_frame(frame: &[u8], index: usize) -> Result<(), Error> {
-    if size_of_val(frame) < 5 || frame[0] != 0x01 || frame[1] != 0x01 || frame[2] != 0x05 {
+fn check_recv_frame(frame: &[u8], channel: u16, index: usize) -> Result<(), Error> {
+    if size_of_val(frame) < 5
+        || frame[0] != (channel >> 8) as u8 || frame[1] != (channel & 0xff) as u8
+        || frame[2] != 0x05 {
         return Err(Error::CommError("Invalid frame header size".to_string()));
     }
 
     let seq = (frame[3] as usize) << 8 | (frame[4] as usize);
     if seq != index {
-        return Err(Error::CommError("Invalid frame size".to_string()));
+       return Err(Error::CommError(format!("Invalid sequence. {:?} != {:?}", seq, index)));
     }
 
     if index == 0 && size_of_val(frame) < 7 {
@@ -107,10 +114,11 @@ fn sw_to_error(sw_h: u8, sw_l: u8) -> Result<(), Error> {
 }
 
 ///
-pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
+pub fn sendrecv(dev: &HidDevice, info: &HidDeviceInfo, apdu: &APDU) -> Result<Vec<u8>, Error> {
     let mut frame_index: usize = 0;
     let mut data_itr = apdu.data.iter();
     let mut init_sent = false;
+    let channel = info.usage_page;
 
     debug!(">> senrecv input: {:?}", &apdu);
     // Write Data.
@@ -119,7 +127,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
         // index.
         let mut frame: [u8; (HID_RPT_SIZE + 1) as usize] = [0; (HID_RPT_SIZE + 1) as usize];
 
-        frame[1..6].clone_from_slice(&get_hid_header(frame_index));
+        frame[1..6].clone_from_slice(&get_hid_header(channel, frame_index));
         if !init_sent {
             frame[6..13].clone_from_slice(&get_init_header(apdu));
             init_sent = true;
@@ -147,7 +155,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
     let mut frame: [u8; HID_RPT_SIZE] = [0u8; HID_RPT_SIZE];
     let frame_size = dev.read(&mut frame)?;
 
-    check_recv_frame(&frame, frame_index)?;
+    check_recv_frame(&frame, channel, frame_index)?;
     datalen = (frame[5] as usize) << 8 | (frame[6] as usize);
     data.extend_from_slice(&frame[7..frame_size]);
 
@@ -162,7 +170,7 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
         frame = [0u8; HID_RPT_SIZE];
         let frame_size = dev.read(&mut frame)?;
 
-        check_recv_frame(&frame, frame_index)?;
+        check_recv_frame(&frame, channel, frame_index)?;
         data.extend_from_slice(&frame[5..frame_size]);
         recvlen += frame_size;
         frame_index += 1;
@@ -178,4 +186,30 @@ pub fn sendrecv(dev: &HidDevice, apdu: &APDU) -> Result<Vec<u8>, Error> {
         Ok(_) => Ok(data),
         Err(e) => Err(e),
     }
+}
+
+pub fn ping(dev: &HidDevice, info: &HidDeviceInfo) -> Result<bool, Error> {
+    let mut frame: [u8; (HID_RPT_SIZE + 1) as usize] = [0; (HID_RPT_SIZE + 1) as usize];
+    let channel = info.usage_page;
+    frame[1] = (channel >> 8) as u8;
+    frame[2] = (channel & 0xff) as u8;
+    frame[3] = 2;
+    if log_enabled!(log::Level::Trace) {
+        let parts: Vec<String> = frame.iter().map(|byte| format!("{:02x}", byte)).collect();
+        trace!(">> PING USB send: {}", parts.join(""));
+    }
+    if let Err(err) = dev.write(&frame) {
+        return Err(err.into());
+    };
+    let mut frame: [u8; HID_RPT_SIZE] = [0u8; HID_RPT_SIZE];
+    let frame_size = dev.read(&mut frame)?;
+    let mut data: Vec<u8> = Vec::new();
+    data.extend_from_slice(&frame[7..frame_size]);
+
+    debug!(
+        "\t\t|-- PING response: {:?}",
+        hex::encode(&data)
+    );
+
+    Ok(data[0] == 0)
 }
