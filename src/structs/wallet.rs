@@ -261,7 +261,7 @@ impl WalletAccount {
 #[cfg(test)]
 mod tests {
     use crate::core::chains::Blockchain;
-    use crate::hdwallet::test_commons::{get_ledger_conf, is_ledger_enabled};
+    use crate::hdwallet::test_commons::{get_ledger_conf, is_ledger_enabled, read_test_txes};
     use crate::storage::vault::VaultStorage;
     use crate::structs::crypto::Encrypted;
     use crate::structs::pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType};
@@ -477,6 +477,9 @@ mod tests {
             return;
         }
 
+        let test_txes = read_test_txes();
+        let exp = &test_txes[0];
+
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
         let seed = Seed {
@@ -493,7 +496,7 @@ mod tests {
             address: None,
             key: PKType::SeedHd(SeedRef {
                 seed_id,
-                hd_path: "m/44'/60'/160720'/0'/0".to_string(),
+                hd_path: "m/44'/60'/160720'/0/0".to_string(),
             }),
             receive_disabled: false
         };
@@ -525,6 +528,6 @@ mod tests {
              a0"
         ));
 
-        assert_eq!(get_ledger_conf("SIGN1"), signed);
+        assert_eq!(exp.raw, signed);
     }
 }
