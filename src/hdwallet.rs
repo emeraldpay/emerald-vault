@@ -300,7 +300,8 @@ pub mod test_commons {
     #[derive(Deserialize)]
     pub struct TestTx {
         pub id: String,
-        pub descriptin: String,
+        pub description: Option<String>,
+        pub from: Option<String>,
         pub raw: String
     }
 
@@ -348,6 +349,7 @@ mod tests {
     use hex;
     use log::{LevelFilter, Level};
     use simple_logger::init_with_level;
+    use crate::core::chains::{Blockchain, EthereumChainId};
 
     pub const ETC_DERIVATION_PATH: [u8; 21] = [
         5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -402,6 +404,40 @@ mod tests {
              a0"
         ));
 
+        assert_eq!(exp.raw, signed);
+    }
+
+    #[test]
+    pub fn should_sign_etc() {
+        if !is_ledger_enabled() {
+            warn!("Ledger test is disabled");
+            return;
+        }
+        let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
+        manager.update(None).unwrap();
+
+        let tx = Transaction {
+            nonce: 0x05,
+            gas_price: /* 21000000000 */
+                to_32bytes("00000000000000000000000000000000000000000000000000000004e3b29200"),
+            gas_limit: 0x5208,
+            to: Some("78296F1058dD49C5D6500855F59094F0a2876397".parse::<Address>().unwrap()),
+            value: /* 1 ETC */
+                to_32bytes("0000000000000000000000000000000000000000000000000de0b6b3a7640000"),
+            data: Vec::new(),
+        };
+
+        let test_txes = read_test_txes();
+        let exp = &test_txes[1];
+        let from = exp.from.as_ref().unwrap();
+        let from = HDPath::try_from(from.as_str()).expect("invalid from");
+
+        let chain: u8 = EthereumChainId::from(Blockchain::EthereumClassic).as_chainid();
+        let rlp = tx.to_rlp(Some(chain));
+        let fd = &manager.devices()[0].1;
+        let sign = manager.sign_transaction(&fd, &rlp, Some(from.to_bytes())).unwrap();
+
+        let signed = hex::encode(tx.raw_from_sig(Some(chain), &sign));
         assert_eq!(exp.raw, signed);
     }
 
