@@ -356,7 +356,7 @@ mod tests {
     ]; // 44'/60'/160720'/0/0
 
     #[test]
-    pub fn should_sign_with_ledger() {
+    pub fn should_sign_eth() {
         if !is_ledger_enabled() {
             warn!("Ledger test is disabled");
             return;
@@ -380,29 +380,16 @@ mod tests {
         };
 
         let test_txes = read_test_txes();
-        let exp = &test_txes[0];
+        let exp = &test_txes[2];
+        let from = exp.from.as_ref().unwrap();
+        let from = HDPath::try_from(from.as_str()).expect("invalid from");
 
-        let chain: u8 = 61;
+        let chain: u8 = EthereumChainId::from(Blockchain::Ethereum).as_chainid();
         let rlp = tx.to_rlp(Some(chain));
         let fd = &manager.devices()[0].1;
-        let sign = manager.sign_transaction(&fd, &rlp, None).unwrap();
+        let sign = manager.sign_transaction(&fd, &rlp, Some(from.to_bytes())).unwrap();
 
-        let signed = hex::encode(tx.raw_from_sig(Some(chain), &sign));
-        assert!(signed.starts_with(
-            "f86d80\
-             85\
-             04e3b29200\
-             82\
-             5208\
-             94\
-             78296f1058dd49c5d6500855f59094f0a2876397\
-             88\
-             0de0b6b3a7640000\
-             80\
-             81\
-             9d\
-             a0"
-        ));
+        let signed = hex::encode(tx.raw_from_sig(None, &sign));
 
         assert_eq!(exp.raw, signed);
     }
@@ -437,7 +424,41 @@ mod tests {
         let fd = &manager.devices()[0].1;
         let sign = manager.sign_transaction(&fd, &rlp, Some(from.to_bytes())).unwrap();
 
-        let signed = hex::encode(tx.raw_from_sig(Some(chain), &sign));
+        let signed = hex::encode(tx.raw_from_sig(None, &sign));
+        assert_eq!(exp.raw, signed);
+    }
+
+    #[test]
+    pub fn should_sign_kovan() {
+        if !is_ledger_enabled() {
+            warn!("Ledger test is disabled");
+            return;
+        }
+        let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
+        manager.update(None).unwrap();
+
+        let tx = Transaction {
+            nonce: 0x05,
+            gas_price: /* 21000000000 */
+            to_32bytes("00000000000000000000000000000000000000000000000000000004e3b29200"),
+            gas_limit: 0x5208,
+            to: Some("78296F1058dD49C5D6500855F59094F0a2876397".parse::<Address>().unwrap()),
+            value: /* 1 ETC */
+            to_32bytes("0000000000000000000000000000000000000000000000000de0b6b3a7640000"),
+            data: Vec::new(),
+        };
+
+        let test_txes = read_test_txes();
+        let exp = &test_txes[3];
+        let from = exp.from.as_ref().unwrap();
+        let from = HDPath::try_from(from.as_str()).expect("invalid from");
+
+        let chain: u8 = EthereumChainId::from(Blockchain::KovanTestnet).as_chainid();
+        let rlp = tx.to_rlp(Some(chain));
+        let fd = &manager.devices()[0].1;
+        let sign = manager.sign_transaction(&fd, &rlp, Some(from.to_bytes())).unwrap();
+
+        let signed = hex::encode(tx.raw_from_sig(None, &sign));
         assert_eq!(exp.raw, signed);
     }
 

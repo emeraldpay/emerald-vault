@@ -49,6 +49,7 @@ impl Transaction {
     }
 
     /// RLP packed signed transaction from provided `Signature`
+    /// chain MUST NOT be specified for transactions signed by Ledger
     pub fn raw_from_sig(&self, chain: Option<u8>, sig: &Signature) -> Vec<u8> {
         let mut rlp = self.to_rlp_raw(None);
 
