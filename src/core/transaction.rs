@@ -15,9 +15,10 @@ limitations under the License.
 */
 //! # Account transaction
 
-use super::util::{keccak256, trim_bytes, RLPList, WriteRLP, KECCAK256_BYTES};
+use super::util::{keccak256, trim_bytes, KECCAK256_BYTES};
 use super::{Address, Error, PrivateKey, Signature};
 use crate::core::chains::EthereumChainId;
+use rlp::RlpStream;
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
@@ -67,52 +68,55 @@ impl Transaction {
             _ => {}
         }
 
-        rlp.push(&(v as u8));
-        rlp.push(trim_bytes(&sig.r[..]));
-        rlp.push(trim_bytes(&sig.s[..]));
+        rlp.append(&(v as u8));
+        rlp.append(&trim_bytes(&sig.r[..]));
+        rlp.append(&trim_bytes(&sig.s[..]));
 
-        let mut buf = Vec::new();
-        rlp.write_rlp(&mut buf);
-
-        buf
+        rlp.finalize_unbounded_list();
+        rlp.out()
     }
 
     /// RLP packed transaction
     pub fn to_rlp(&self, chain_id: Option<u8>) -> Vec<u8> {
-        let mut buf = Vec::new();
-        self.to_rlp_raw(chain_id).write_rlp(&mut buf);
-
-        buf
+        // let mut buf = Vec::new();
+        let mut rlp = self.to_rlp_raw(chain_id);
+        rlp.finalize_unbounded_list();
+        rlp.out()
     }
 
-    fn to_rlp_raw(&self, chain_id: Option<u8>) -> RLPList {
-        let mut data = RLPList::default();
+    fn to_rlp_raw(&self, chain_id: Option<u8>) -> RlpStream {
+        let mut data = RlpStream::new();
+        data.begin_unbounded_list();
 
-        data.push(&self.nonce);
-        data.push(trim_bytes(&self.gas_price));
-        data.push(&self.gas_limit);
+        data.append(&self.nonce);
+        data.append(&trim_bytes(&self.gas_price));
+        data.append(&self.gas_limit);
 
         match self.to {
-            Some(addr) => data.push(&Some(&addr[..])),
-            _ => data.push::<Option<&[u8]>>(&None),
+            Some(addr) => data.append(&addr.0.as_ref()),
+            _ => data.append_empty_data(),
         };
 
-        data.push(trim_bytes(&self.value));
-        data.push(self.data.as_slice());
+        data.append(&trim_bytes(&self.value));
+        if self.data.is_empty() {
+            data.append_empty_data();
+        } else {
+            data.append(&self.data);
+        }
 
         if let Some(id) = chain_id {
-            data.push(&id);
-            data.push(&[][..]);
-            data.push(&[][..]);
+            data.append(&id);
+            data.append_empty_data();
+            data.append_empty_data();
         }
 
         data
     }
 
     fn hash(&self, chain: u8) -> [u8; KECCAK256_BYTES] {
-        let rlp = self.to_rlp_raw(Some(chain));
-        let mut vec = Vec::new();
-        rlp.write_rlp(&mut vec);
+        let mut rlp = self.to_rlp_raw(Some(chain));
+        rlp.finalize_unbounded_list();
+        let vec = rlp.out();
 
         keccak256(&vec)
     }
@@ -122,6 +126,70 @@ impl Transaction {
 mod tests {
     use super::*;
     use crate::tests::*;
+
+    #[test]
+    fn encode_tx() {
+        let tx = Transaction {
+            nonce: 1,
+            gas_price:
+            to_32bytes("00000000000000000000000000000000000000000000000000000004e3b29200"),
+            gas_limit: 21000,
+            to: Some("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
+                .parse::<Address>()
+                .unwrap()),
+            value:
+            to_32bytes("00000000000000000000000000000000000000000000000000DE0B6B3A764000"),
+            data: Vec::new(),
+        };
+        let rlp = tx.to_rlp(Some(0x25));
+        let hex = hex::encode(rlp);
+
+        assert_eq!(hex,
+                   "".to_owned() +
+                       "eb" + //total size = 1 +6 +3 +21 +8 +1 +1 +1 +1 + 0xc0
+                       "01" + //nonce
+                       "85" + "04e3b29200" + //gasprice
+                       "82" + "5208" + //gas
+                       "94" + "3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3" + // to
+                       "87" + "de0b6b3a764000" + //value
+                       "80" + //data
+                       "25" + //v
+                       "80" + //r
+                       "80" //s
+        );
+    }
+
+    #[test]
+    fn encode_tx_with_small_gassprice() {
+        let tx = Transaction {
+            nonce: 0,
+            gas_price:
+            to_32bytes("0000000000000000000000000000000000000000000000000000000000000001"),
+            gas_limit: 21000,
+            to: Some("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
+                .parse::<Address>()
+                .unwrap()),
+            value:
+            to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
+            data: Vec::new(),
+        };
+        let rlp = tx.to_rlp(Some(0x25));
+        let hex = hex::encode(rlp);
+
+        assert_eq!(hex,
+                    "".to_owned() +
+                    "df" + //total size = 1 +1 +3 +21 +1 +1 +1 +1 +1 + 0xc0
+                    "80" + //nonce
+                    "01" + //gasprice
+                    "82" + "5208" + //gas
+                    "94" + "3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3" + // to
+                    "80" + //value
+                    "80" + //data
+                    "25" + //v
+                    "80" + //r
+                    "80" //s
+        );
+    }
 
     #[test]
     fn should_sign_transaction_for_mainnet() {
