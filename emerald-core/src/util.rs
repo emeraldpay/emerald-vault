@@ -15,10 +15,8 @@ limitations under the License.
 */
 //! # Util functions module
 mod crypto;
-mod rlp;
 
 pub use self::crypto::{keccak256, KECCAK256_BYTES};
-pub use self::rlp::{RLPList, WriteRLP};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use chrono::prelude::Utc;
 use hex::FromHex;

@@ -52,6 +52,7 @@ hyper = { version = "0.12", optional = true }
 clippy = { version = "0.0", optional = true }
 chrono = "0.4"
 hidapi = "0.4"
+rlp = "0.4.4"
 
 [dev-dependencies]
 tempdir = "0.3"
