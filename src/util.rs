@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 //! # Util functions module
-mod rlp;
 #[macro_use]
 pub mod byte_array;
 pub mod optional;
 
-pub use self::rlp::{RLPList, WriteRLP};
 use crate::core::chains::EthereumChainId;
 pub use crate::crypto::util::{keccak256, KECCAK256_BYTES};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
