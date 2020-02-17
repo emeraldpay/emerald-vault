@@ -1,6 +1,6 @@
 [package]
 name = "emerald-vault-core"
-version = "0.26.5"
+version = "0.26.6"
 authors = ["Igor Artamonov <splix@emeraldpay.io>", "Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Ethereum secure account management core libary"
 homepage = "https://emeraldpay.io"
