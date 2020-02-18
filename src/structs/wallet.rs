@@ -274,6 +274,33 @@ mod tests {
     use uuid::Uuid;
 
     #[test]
+    fn sign_erc20_approve() {
+        let account = WalletAccount {
+            id: 0,
+            blockchain: Blockchain::Ethereum,
+            address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
+            key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
+            receive_disabled: false
+        };
+        let tx = Transaction {
+            nonce: 1,
+            gas_price: to_32bytes("04a817c800"),
+            gas_limit: 21000,
+            to: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
+            value: to_32bytes("0de0b6b3a7640000"),
+            data: hex::decode("095ea7b300000000000000000000000036a8ce9b0b86361a02070e4303d5e24d6c63b3f10000000000000000000000000000000000000000033b2e3c9fd0803ce8000000").unwrap(),
+        };
+        let key = PrivateKey::from_str(
+            "0x7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d",
+        ).unwrap();
+        let act = account.sign_tx_by_pk(tx, key).unwrap();
+        assert_eq!(
+            hex::encode(act),
+            "f8b1018504a817c80082520894008aeeda4d805471df9b2a5b0f38a0c3bcba786b880de0b6b3a7640000b844095ea7b300000000000000000000000036a8ce9b0b86361a02070e4303d5e24d6c63b3f10000000000000000000000000000000000000000033b2e3c9fd0803ce800000026a08675b401448f7a82e8738e35fa09fb2e2a2acaa83caaa5d81abadfa99f4d174ca063b2e9d977a4d6c4a41492b72b0d9933d835ddfdaf299fde6327389485db04c1"
+        )
+    }
+
+    #[test]
     fn sign_with_provided_pk() {
         let account = WalletAccount {
             id: 0,
