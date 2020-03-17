@@ -24,6 +24,7 @@ use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 use uuid::Uuid;
 use crate::structs::wallet::ReservedPath;
+use crate::hdwallet::bip32::HDPath;
 
 impl TryFrom<&proto_WalletAccount> for WalletAccount {
     type Error = ConversionError;
@@ -172,12 +173,25 @@ impl TryFrom<Wallet> for Vec<u8> {
         if value.label.is_some() {
             result.set_label(value.label.unwrap());
         }
-        let accounts = value
-            .accounts
-            .iter()
-            .map(|acc| proto_WalletAccount::from(acc))
-            .collect();
-        result.set_accounts(accounts);
+
+        let mut reserved = value.reserved.clone();
+
+        for acc in &value.accounts {
+            //check if wallet has any seed-base accounts that didn't reserve their account_id
+            if let PKType::SeedHd(seed) = &acc.key {
+                if let Ok(account_id) = seed.get_account_id() {
+                    let r = ReservedPath {
+                        seed_id: seed.seed_id.clone(),
+                        account_id,
+                    };
+                    if !reserved.contains(&r) {
+                        //reserve current account
+                        reserved.push(r)
+                    }
+                }
+            }
+            result.accounts.push(proto_WalletAccount::from(acc));
+        }
 
         // Find max unused account_id and remember account seq value
         let max_account_id = value.accounts.iter().map(|a| a.id).max();
@@ -188,7 +202,7 @@ impl TryFrom<Wallet> for Vec<u8> {
             None => value.account_seq,
         };
         result.set_account_seq(account_seq as u32);
-        for r in value.reserved {
+        for r in reserved {
             let mut r_proto = proto_Reserved::new();
             r_proto.set_seed_id(r.seed_id.to_string());
             r_proto.set_account_id(r.account_id);
@@ -293,12 +307,18 @@ mod tests {
                     Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::SeedHd(SeedRef {
-                    seed_id: Uuid::new_v4(),
+                    seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
                     hd_path: "m/44'/60'/0'/0".to_string(),
                 }),
                 receive_disabled: false,
             }],
             account_seq: 1,
+            reserved: vec![
+                ReservedPath {
+                    seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
+                    account_id: 0,
+                }
+            ],
             ..Wallet::default()
         };
 
@@ -320,12 +340,18 @@ mod tests {
                     Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::SeedHd(SeedRef {
-                    seed_id: Uuid::new_v4(),
+                    seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
                     hd_path: "m/44'/60'/0'/0".to_string(),
                 }),
                 receive_disabled: true,
             }],
             account_seq: 1,
+            reserved: vec![
+                ReservedPath {
+                    seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
+                    account_id: 0,
+                }
+            ],
             ..Wallet::default()
         };
 
@@ -353,5 +379,50 @@ mod tests {
         assert_eq!(act.reserved[0].seed_id.to_string(), "126d8ad4-d5a3-4b42-ba31-365cb5c34b5f");
         assert_eq!(act.reserved[0].account_id, 1);
         assert_eq!(act, wallet);
+    }
+
+    #[test]
+    fn reserve_current_seed() {
+        let wallet = Wallet {
+            id: Uuid::new_v4(),
+            reserved: vec![ReservedPath {
+                seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
+                account_id: 0,
+            }],
+            accounts: vec![
+                WalletAccount {
+                    id: 0,
+                    blockchain: Blockchain::Ethereum,
+                    key: PKType::SeedHd(
+                        SeedRef {
+                            seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
+                            hd_path: "m/44'/60'/0'/0/1".to_string(),
+                        }
+                    ),
+                    ..WalletAccount::default()
+                },
+                WalletAccount {
+                    id: 1,
+                    blockchain: Blockchain::Ethereum,
+                    key: PKType::SeedHd(
+                        SeedRef {
+                            seed_id: Uuid::from_str("ad22b0da-12ae-4433-960a-755ad3a2558c").unwrap(),
+                            hd_path: "m/44'/60'/1'/0/1".to_string(),
+                        }
+                    ),
+                    ..WalletAccount::default()
+                }
+            ],
+            ..Wallet::default()
+        };
+
+        let b: Vec<u8> = wallet.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = Wallet::try_from(b).unwrap();
+        assert_eq!(act.reserved.len(), 2);
+        assert_eq!(act.reserved[0].seed_id.to_string(), "126d8ad4-d5a3-4b42-ba31-365cb5c34b5f");
+        assert_eq!(act.reserved[0].account_id, 0);
+        assert_eq!(act.reserved[1].seed_id.to_string(), "ad22b0da-12ae-4433-960a-755ad3a2558c");
+        assert_eq!(act.reserved[1].account_id, 1);
     }
 }

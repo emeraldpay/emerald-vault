@@ -88,7 +88,19 @@ impl Default for Wallet {
             label: None,
             accounts: vec![],
             account_seq: 0,
-            reserved: vec![]
+            reserved: vec![],
+        }
+    }
+}
+
+impl Default for WalletAccount {
+    fn default() -> Self {
+        WalletAccount {
+            id: 0,
+            blockchain: Blockchain::Ethereum,
+            address: None,
+            key: PKType::PrivateKeyRef(Uuid::nil()),
+            receive_disabled: false,
         }
     }
 }

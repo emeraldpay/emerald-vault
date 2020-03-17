@@ -5,6 +5,8 @@ use crate::Address;
 use sha2::Digest;
 use std::convert::TryFrom;
 use uuid::Uuid;
+use crate::hdwallet::bip32::HDPath;
+use bitcoin::util::bip32::ChildNumber;
 
 byte_array_struct!(Bytes256, 32);
 
@@ -63,5 +65,105 @@ impl SeedSource {
     pub fn create_bytes(seed: Vec<u8>, password: &str) -> Result<Self, CryptoError> {
         let value = Encrypted::encrypt(seed, password)?;
         Ok(SeedSource::Bytes(value))
+    }
+}
+
+impl SeedRef {
+    /// parse current HDPath
+    pub fn parsed_hd_path(&self) -> Result<HDPath, ()> {
+        HDPath::try_from(self.hd_path.as_str()).map_err(|_| ())
+    }
+
+    /// extract Account from HDPath if it's structured as BIP-44. (m/purpose'/coin_type'/account'/change/address_index)
+    /// To do so the HDPath must be valid and starts with 3 hardened values (purpose'/coin_type'/account'),
+    /// otherwise the method returns Err
+    pub fn get_account_id(&self) -> Result<u32, ()> {
+        if let Ok(path) = self.parsed_hd_path() {
+            //for BIP44 == m/purpose'/coin_type'/account'/change/address_index
+            if path.len() > 2 && path[0].is_hardened() && path[1].is_hardened() && path[2].is_hardened() {
+                if let ChildNumber::Hardened { index: n } = path[2] {
+                    return Ok(n)
+                }
+            }
+        }
+        Err(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::structs::seed::SeedRef;
+    use crate::hdwallet::bip32::HDPath;
+
+    #[test]
+    fn parse_standard_hdpath() {
+        let seed = SeedRef {
+            seed_id: Default::default(),
+            hd_path: "m/44'/0'/0'/0/0".to_string(),
+        };
+        assert_eq!(Ok(HDPath::try_from("m/44'/0'/0'/0/0").unwrap()), seed.parsed_hd_path());
+    }
+
+    #[test]
+    fn error_for_invalid_hdpath() {
+        let seed = SeedRef {
+            seed_id: Default::default(),
+            hd_path: "m-44H-0H-0H-0-0".to_string(),
+        };
+        assert_eq!(Err(()), seed.parsed_hd_path());
+    }
+
+    #[test]
+    fn account_id_for_standard_hdpath() {
+        let seed = SeedRef {
+            seed_id: Default::default(),
+            hd_path: "m/44'/0'/0'/0/0".to_string(),
+        };
+        assert_eq!(Ok(0), seed.get_account_id());
+
+        let seed = SeedRef {
+            seed_id: Default::default(),
+            hd_path: "m/44'/60'/0'/0/0".to_string(),
+        };
+        assert_eq!(Ok(0), seed.get_account_id());
+
+        let seed = SeedRef {
+            seed_id: Default::default(),
+            hd_path: "m/44'/60'/3'/0/0".to_string(),
+        };
+        assert_eq!(Ok(3), seed.get_account_id());
+
+        let seed = SeedRef {
+            seed_id: Default::default(),
+            hd_path: "m/44'/0'/1234'/0/0".to_string(),
+        };
+        assert_eq!(Ok(1234), seed.get_account_id());
+    }
+
+    #[test]
+    fn no_account_id_for_non_hardened_purpose() {
+        let seed = SeedRef {
+            seed_id: Default::default(),
+            hd_path: "m/44/0'/0'/0/0".to_string(),
+        };
+        assert_eq!(Err(()), seed.get_account_id());
+    }
+
+    #[test]
+    fn no_account_id_for_non_hardened_coin() {
+        let seed = SeedRef {
+            seed_id: Default::default(),
+            hd_path: "m/44'/0/0'/0/0".to_string(),
+        };
+        assert_eq!(Err(()), seed.get_account_id());
+    }
+
+    #[test]
+    fn no_account_id_for_non_hardened_id() {
+        let seed = SeedRef {
+            seed_id: Default::default(),
+            hd_path: "m/44'/0'/0/0/0".to_string(),
+        };
+        assert_eq!(Err(()), seed.get_account_id());
     }
 }
