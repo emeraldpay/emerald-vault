@@ -37,58 +37,13 @@ message WalletAccount {
     uint32 blockchain_id = 2;
     // true if account is disabled for receiving, i.e. only for sending
     bool receive_disabled = 3;
-    Role role = 4;
-
+    // public address for reference
     Address address = 5;
-
+    // reference to PK
     oneof pk_type {
         SeedHD hd_path = 7;
-        BitcoinAddress bitcoin = 8;
-        EthereumAddress ethereum = 9;
-        Address public_address = 10;
+        string pk_id = 8;
     }
-
-    enum Role {
-        UNDEFINED = 0;
-        RECEIVE = 1;
-        CHANGE = 2;
-        COINJOIN = 3;
-        COINJOIN_SECONDARY = 4;
-        COINJOIN_CHANGE = 5;
-    }
-}
-
-message BitcoinAddress {
-    Format format = 1;
-
-    oneof type {
-        BitcoinSingleKey pk = 11;
-        BitcoinMultiKey range = 12;
-    }
-
-    enum Format {
-        UNDEFINED = 0;
-        P2PKH = 1;   //P2PKH - 17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem
-        P2SH = 2;    //P2SH - 3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQX
-        BECH32 = 3;  //bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
-    }
-}
-
-message BitcoinSingleKey {
-    string address = 1;
-    string pk_id = 2;
-}
-
-message BitcoinMultiKey {
-    Bip32Public addresses = 1;
-    string xpriv_id = 2;
-    uint32 last_index = 3;
-}
-
-
-message EthereumAddress {
-    string address = 1;
-    string pk_id = 2;
 }
 
 enum BlockchainId {

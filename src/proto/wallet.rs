@@ -580,7 +580,6 @@ pub struct WalletAccount {
     pub id: u32,
     pub blockchain_id: u32,
     pub receive_disabled: bool,
-    pub role: WalletAccount_Role,
     pub address: ::protobuf::SingularPtrField<super::address::Address>,
     // message oneof groups
     pub pk_type: ::std::option::Option<WalletAccount_oneof_pk_type>,
@@ -598,9 +597,7 @@ impl<'a> ::std::default::Default for &'a WalletAccount {
 #[derive(Clone,PartialEq,Debug)]
 pub enum WalletAccount_oneof_pk_type {
     hd_path(super::seed::SeedHD),
-    bitcoin(BitcoinAddress),
-    ethereum(EthereumAddress),
-    public_address(super::address::Address),
+    pk_id(::std::string::String),
 }
 
 impl WalletAccount {
@@ -651,21 +648,6 @@ impl WalletAccount {
     // Param is passed by value, moved
     pub fn set_receive_disabled(&mut self, v: bool) {
         self.receive_disabled = v;
-    }
-
-    // .emerald.vault.WalletAccount.Role role = 4;
-
-
-    pub fn get_role(&self) -> WalletAccount_Role {
-        self.role
-    }
-    pub fn clear_role(&mut self) {
-        self.role = WalletAccount_Role::UNDEFINED;
-    }
-
-    // Param is passed by value, moved
-    pub fn set_role(&mut self, v: WalletAccount_Role) {
-        self.role = v;
     }
 
     // .emerald.vault.Address address = 5;
@@ -750,150 +732,51 @@ impl WalletAccount {
         }
     }
 
-    // .emerald.vault.BitcoinAddress bitcoin = 8;
+    // string pk_id = 8;
 
 
-    pub fn get_bitcoin(&self) -> &BitcoinAddress {
+    pub fn get_pk_id(&self) -> &str {
         match self.pk_type {
-            ::std::option::Option::Some(WalletAccount_oneof_pk_type::bitcoin(ref v)) => v,
-            _ => BitcoinAddress::default_instance(),
+            ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(ref v)) => v,
+            _ => "",
         }
     }
-    pub fn clear_bitcoin(&mut self) {
+    pub fn clear_pk_id(&mut self) {
         self.pk_type = ::std::option::Option::None;
     }
 
-    pub fn has_bitcoin(&self) -> bool {
+    pub fn has_pk_id(&self) -> bool {
         match self.pk_type {
-            ::std::option::Option::Some(WalletAccount_oneof_pk_type::bitcoin(..)) => true,
+            ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(..)) => true,
             _ => false,
         }
     }
 
     // Param is passed by value, moved
-    pub fn set_bitcoin(&mut self, v: BitcoinAddress) {
-        self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::bitcoin(v))
+    pub fn set_pk_id(&mut self, v: ::std::string::String) {
+        self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(v))
     }
 
     // Mutable pointer to the field.
-    pub fn mut_bitcoin(&mut self) -> &mut BitcoinAddress {
-        if let ::std::option::Option::Some(WalletAccount_oneof_pk_type::bitcoin(_)) = self.pk_type {
-        } else {
-            self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::bitcoin(BitcoinAddress::new()));
+    pub fn mut_pk_id(&mut self) -> &mut ::std::string::String {
+        if let ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(_)) = self.pk_type {} else {
+            self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(::std::string::String::new()));
         }
         match self.pk_type {
-            ::std::option::Option::Some(WalletAccount_oneof_pk_type::bitcoin(ref mut v)) => v,
+            ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(ref mut v)) => v,
             _ => panic!(),
         }
     }
 
     // Take field
-    pub fn take_bitcoin(&mut self) -> BitcoinAddress {
-        if self.has_bitcoin() {
+    pub fn take_pk_id(&mut self) -> ::std::string::String {
+        if self.has_pk_id() {
             match self.pk_type.take() {
-                ::std::option::Option::Some(WalletAccount_oneof_pk_type::bitcoin(v)) => v,
+                ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(v)) => v,
                 _ => panic!(),
             }
         } else {
-            BitcoinAddress::new()
-        }
-    }
-
-    // .emerald.vault.EthereumAddress ethereum = 9;
-
-
-    pub fn get_ethereum(&self) -> &EthereumAddress {
-        match self.pk_type {
-            ::std::option::Option::Some(WalletAccount_oneof_pk_type::ethereum(ref v)) => v,
-            _ => EthereumAddress::default_instance(),
-        }
-    }
-    pub fn clear_ethereum(&mut self) {
-        self.pk_type = ::std::option::Option::None;
-    }
-
-    pub fn has_ethereum(&self) -> bool {
-        match self.pk_type {
-            ::std::option::Option::Some(WalletAccount_oneof_pk_type::ethereum(..)) => true,
-            _ => false,
-        }
-    }
-
-    // Param is passed by value, moved
-    pub fn set_ethereum(&mut self, v: EthereumAddress) {
-        self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::ethereum(v))
-    }
-
-    // Mutable pointer to the field.
-    pub fn mut_ethereum(&mut self) -> &mut EthereumAddress {
-        if let ::std::option::Option::Some(WalletAccount_oneof_pk_type::ethereum(_)) = self.pk_type {
-        } else {
-            self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::ethereum(EthereumAddress::new()));
-        }
-        match self.pk_type {
-            ::std::option::Option::Some(WalletAccount_oneof_pk_type::ethereum(ref mut v)) => v,
-            _ => panic!(),
-        }
-    }
-
-    // Take field
-    pub fn take_ethereum(&mut self) -> EthereumAddress {
-        if self.has_ethereum() {
-            match self.pk_type.take() {
-                ::std::option::Option::Some(WalletAccount_oneof_pk_type::ethereum(v)) => v,
-                _ => panic!(),
-            }
-        } else {
-            EthereumAddress::new()
-        }
-    }
-
-    // .emerald.vault.Address public_address = 10;
-
-
-    pub fn get_public_address(&self) -> &super::address::Address {
-        match self.pk_type {
-            ::std::option::Option::Some(WalletAccount_oneof_pk_type::public_address(ref v)) => v,
-            _ => super::address::Address::default_instance(),
-        }
-    }
-    pub fn clear_public_address(&mut self) {
-        self.pk_type = ::std::option::Option::None;
-    }
-
-    pub fn has_public_address(&self) -> bool {
-        match self.pk_type {
-            ::std::option::Option::Some(WalletAccount_oneof_pk_type::public_address(..)) => true,
-            _ => false,
-        }
-    }
-
-    // Param is passed by value, moved
-    pub fn set_public_address(&mut self, v: super::address::Address) {
-        self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::public_address(v))
-    }
-
-    // Mutable pointer to the field.
-    pub fn mut_public_address(&mut self) -> &mut super::address::Address {
-        if let ::std::option::Option::Some(WalletAccount_oneof_pk_type::public_address(_)) = self.pk_type {
-        } else {
-            self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::public_address(super::address::Address::new()));
-        }
-        match self.pk_type {
-            ::std::option::Option::Some(WalletAccount_oneof_pk_type::public_address(ref mut v)) => v,
-            _ => panic!(),
-        }
-    }
-
-    // Take field
-    pub fn take_public_address(&mut self) -> super::address::Address {
-        if self.has_public_address() {
-            match self.pk_type.take() {
-                ::std::option::Option::Some(WalletAccount_oneof_pk_type::public_address(v)) => v,
-                _ => panic!(),
-            }
-        } else {
-            super::address::Address::new()
+            ::std::string::String::new()
         }
     }
 }
@@ -906,21 +789,6 @@ impl ::protobuf::Message for WalletAccount {
             }
         };
         if let Some(WalletAccount_oneof_pk_type::hd_path(ref v)) = self.pk_type {
-            if !v.is_initialized() {
-                return false;
-            }
-        }
-        if let Some(WalletAccount_oneof_pk_type::bitcoin(ref v)) = self.pk_type {
-            if !v.is_initialized() {
-                return false;
-            }
-        }
-        if let Some(WalletAccount_oneof_pk_type::ethereum(ref v)) = self.pk_type {
-            if !v.is_initialized() {
-                return false;
-            }
-        }
-        if let Some(WalletAccount_oneof_pk_type::public_address(ref v)) = self.pk_type {
             if !v.is_initialized() {
                 return false;
             }
@@ -953,9 +821,6 @@ impl ::protobuf::Message for WalletAccount {
                     let tmp = is.read_bool()?;
                     self.receive_disabled = tmp;
                 },
-                4 => {
-                    ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.role, 4, &mut self.unknown_fields)?
-                },
                 5 => {
                     ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.address)?;
                 },
@@ -969,19 +834,7 @@ impl ::protobuf::Message for WalletAccount {
                     if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
-                    self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::bitcoin(is.read_message()?));
-                },
-                9 => {
-                    if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
-                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
-                    }
-                    self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::ethereum(is.read_message()?));
-                },
-                10 => {
-                    if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
-                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
-                    }
-                    self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::public_address(is.read_message()?));
+                    self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(is.read_string()?));
                 },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
@@ -1004,9 +857,6 @@ impl ::protobuf::Message for WalletAccount {
         if self.receive_disabled != false {
             my_size += 2;
         }
-        if self.role != WalletAccount_Role::UNDEFINED {
-            my_size += ::protobuf::rt::enum_size(4, self.role);
-        }
         if let Some(ref v) = self.address.as_ref() {
             let len = v.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
@@ -1017,17 +867,8 @@ impl ::protobuf::Message for WalletAccount {
                     let len = v.compute_size();
                     my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
                 },
-                &WalletAccount_oneof_pk_type::bitcoin(ref v) => {
-                    let len = v.compute_size();
-                    my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
-                },
-                &WalletAccount_oneof_pk_type::ethereum(ref v) => {
-                    let len = v.compute_size();
-                    my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
-                },
-                &WalletAccount_oneof_pk_type::public_address(ref v) => {
-                    let len = v.compute_size();
-                    my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
+                &WalletAccount_oneof_pk_type::pk_id(ref v) => {
+                    my_size += ::protobuf::rt::string_size(8, &v);
                 },
             };
         }
@@ -1046,9 +887,6 @@ impl ::protobuf::Message for WalletAccount {
         if self.receive_disabled != false {
             os.write_bool(3, self.receive_disabled)?;
         }
-        if self.role != WalletAccount_Role::UNDEFINED {
-            os.write_enum(4, self.role.value())?;
-        }
         if let Some(ref v) = self.address.as_ref() {
             os.write_tag(5, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
@@ -1061,20 +899,8 @@ impl ::protobuf::Message for WalletAccount {
                     os.write_raw_varint32(v.get_cached_size())?;
                     v.write_to_with_cached_sizes(os)?;
                 },
-                &WalletAccount_oneof_pk_type::bitcoin(ref v) => {
-                    os.write_tag(8, ::protobuf::wire_format::WireTypeLengthDelimited)?;
-                    os.write_raw_varint32(v.get_cached_size())?;
-                    v.write_to_with_cached_sizes(os)?;
-                },
-                &WalletAccount_oneof_pk_type::ethereum(ref v) => {
-                    os.write_tag(9, ::protobuf::wire_format::WireTypeLengthDelimited)?;
-                    os.write_raw_varint32(v.get_cached_size())?;
-                    v.write_to_with_cached_sizes(os)?;
-                },
-                &WalletAccount_oneof_pk_type::public_address(ref v) => {
-                    os.write_tag(10, ::protobuf::wire_format::WireTypeLengthDelimited)?;
-                    os.write_raw_varint32(v.get_cached_size())?;
-                    v.write_to_with_cached_sizes(os)?;
+                &WalletAccount_oneof_pk_type::pk_id(ref v) => {
+                    os.write_string(8, v)?;
                 },
             };
         }
@@ -1135,11 +961,6 @@ impl ::protobuf::Message for WalletAccount {
                     |m: &WalletAccount| { &m.receive_disabled },
                     |m: &mut WalletAccount| { &mut m.receive_disabled },
                 ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeEnum<WalletAccount_Role>>(
-                    "role",
-                    |m: &WalletAccount| { &m.role },
-                    |m: &mut WalletAccount| { &mut m.role },
-                ));
                 fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<super::address::Address>>(
                     "address",
                     |m: &WalletAccount| { &m.address },
@@ -1150,25 +971,15 @@ impl ::protobuf::Message for WalletAccount {
                     WalletAccount::has_hd_path,
                     WalletAccount::get_hd_path,
                 ));
-                fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, BitcoinAddress>(
-                    "bitcoin",
-                    WalletAccount::has_bitcoin,
-                    WalletAccount::get_bitcoin,
-                ));
-                fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, EthereumAddress>(
-                    "ethereum",
-                    WalletAccount::has_ethereum,
-                    WalletAccount::get_ethereum,
-                ));
-                fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, super::address::Address>(
-                    "public_address",
-                    WalletAccount::has_public_address,
-                    WalletAccount::get_public_address,
+                fields.push(::protobuf::reflect::accessor::make_singular_string_accessor::<_>(
+                    "pk_id",
+                    WalletAccount::has_pk_id,
+                    WalletAccount::get_pk_id,
                 ));
                 ::protobuf::reflect::MessageDescriptor::new::<WalletAccount>(
                     "WalletAccount",
                     fields,
-                    file_descriptor_proto()
+                    file_descriptor_proto(),
                 )
             })
         }
@@ -1190,10 +1001,7 @@ impl ::protobuf::Clear for WalletAccount {
         self.id = 0;
         self.blockchain_id = 0;
         self.receive_disabled = false;
-        self.role = WalletAccount_Role::UNDEFINED;
         self.address.clear();
-        self.pk_type = ::std::option::Option::None;
-        self.pk_type = ::std::option::Option::None;
         self.pk_type = ::std::option::Option::None;
         self.pk_type = ::std::option::Option::None;
         self.unknown_fields.clear();
@@ -1207,1141 +1015,6 @@ impl ::std::fmt::Debug for WalletAccount {
 }
 
 impl ::protobuf::reflect::ProtobufValue for WalletAccount {
-    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
-        ::protobuf::reflect::ProtobufValueRef::Message(self)
-    }
-}
-
-#[derive(Clone,PartialEq,Eq,Debug,Hash)]
-pub enum WalletAccount_Role {
-    UNDEFINED = 0,
-    RECEIVE = 1,
-    CHANGE = 2,
-    COINJOIN = 3,
-    COINJOIN_SECONDARY = 4,
-    COINJOIN_CHANGE = 5,
-}
-
-impl ::protobuf::ProtobufEnum for WalletAccount_Role {
-    fn value(&self) -> i32 {
-        *self as i32
-    }
-
-    fn from_i32(value: i32) -> ::std::option::Option<WalletAccount_Role> {
-        match value {
-            0 => ::std::option::Option::Some(WalletAccount_Role::UNDEFINED),
-            1 => ::std::option::Option::Some(WalletAccount_Role::RECEIVE),
-            2 => ::std::option::Option::Some(WalletAccount_Role::CHANGE),
-            3 => ::std::option::Option::Some(WalletAccount_Role::COINJOIN),
-            4 => ::std::option::Option::Some(WalletAccount_Role::COINJOIN_SECONDARY),
-            5 => ::std::option::Option::Some(WalletAccount_Role::COINJOIN_CHANGE),
-            _ => ::std::option::Option::None
-        }
-    }
-
-    fn values() -> &'static [Self] {
-        static values: &'static [WalletAccount_Role] = &[
-            WalletAccount_Role::UNDEFINED,
-            WalletAccount_Role::RECEIVE,
-            WalletAccount_Role::CHANGE,
-            WalletAccount_Role::COINJOIN,
-            WalletAccount_Role::COINJOIN_SECONDARY,
-            WalletAccount_Role::COINJOIN_CHANGE,
-        ];
-        values
-    }
-
-    fn enum_descriptor_static() -> &'static ::protobuf::reflect::EnumDescriptor {
-        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::EnumDescriptor> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const ::protobuf::reflect::EnumDescriptor,
-        };
-        unsafe {
-            descriptor.get(|| {
-                ::protobuf::reflect::EnumDescriptor::new("WalletAccount_Role", file_descriptor_proto())
-            })
-        }
-    }
-}
-
-impl ::std::marker::Copy for WalletAccount_Role {
-}
-
-impl ::std::default::Default for WalletAccount_Role {
-    fn default() -> Self {
-        WalletAccount_Role::UNDEFINED
-    }
-}
-
-impl ::protobuf::reflect::ProtobufValue for WalletAccount_Role {
-    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
-        ::protobuf::reflect::ProtobufValueRef::Enum(self.descriptor())
-    }
-}
-
-#[derive(PartialEq,Clone,Default)]
-pub struct BitcoinAddress {
-    // message fields
-    pub format: BitcoinAddress_Format,
-    // message oneof groups
-    pub field_type: ::std::option::Option<BitcoinAddress_oneof_type>,
-    // special fields
-    pub unknown_fields: ::protobuf::UnknownFields,
-    pub cached_size: ::protobuf::CachedSize,
-}
-
-impl<'a> ::std::default::Default for &'a BitcoinAddress {
-    fn default() -> &'a BitcoinAddress {
-        <BitcoinAddress as ::protobuf::Message>::default_instance()
-    }
-}
-
-#[derive(Clone,PartialEq,Debug)]
-pub enum BitcoinAddress_oneof_type {
-    pk(BitcoinSingleKey),
-    range(BitcoinMultiKey),
-}
-
-impl BitcoinAddress {
-    pub fn new() -> BitcoinAddress {
-        ::std::default::Default::default()
-    }
-
-    // .emerald.vault.BitcoinAddress.Format format = 1;
-
-
-    pub fn get_format(&self) -> BitcoinAddress_Format {
-        self.format
-    }
-    pub fn clear_format(&mut self) {
-        self.format = BitcoinAddress_Format::UNDEFINED;
-    }
-
-    // Param is passed by value, moved
-    pub fn set_format(&mut self, v: BitcoinAddress_Format) {
-        self.format = v;
-    }
-
-    // .emerald.vault.BitcoinSingleKey pk = 11;
-
-
-    pub fn get_pk(&self) -> &BitcoinSingleKey {
-        match self.field_type {
-            ::std::option::Option::Some(BitcoinAddress_oneof_type::pk(ref v)) => v,
-            _ => BitcoinSingleKey::default_instance(),
-        }
-    }
-    pub fn clear_pk(&mut self) {
-        self.field_type = ::std::option::Option::None;
-    }
-
-    pub fn has_pk(&self) -> bool {
-        match self.field_type {
-            ::std::option::Option::Some(BitcoinAddress_oneof_type::pk(..)) => true,
-            _ => false,
-        }
-    }
-
-    // Param is passed by value, moved
-    pub fn set_pk(&mut self, v: BitcoinSingleKey) {
-        self.field_type = ::std::option::Option::Some(BitcoinAddress_oneof_type::pk(v))
-    }
-
-    // Mutable pointer to the field.
-    pub fn mut_pk(&mut self) -> &mut BitcoinSingleKey {
-        if let ::std::option::Option::Some(BitcoinAddress_oneof_type::pk(_)) = self.field_type {
-        } else {
-            self.field_type = ::std::option::Option::Some(BitcoinAddress_oneof_type::pk(BitcoinSingleKey::new()));
-        }
-        match self.field_type {
-            ::std::option::Option::Some(BitcoinAddress_oneof_type::pk(ref mut v)) => v,
-            _ => panic!(),
-        }
-    }
-
-    // Take field
-    pub fn take_pk(&mut self) -> BitcoinSingleKey {
-        if self.has_pk() {
-            match self.field_type.take() {
-                ::std::option::Option::Some(BitcoinAddress_oneof_type::pk(v)) => v,
-                _ => panic!(),
-            }
-        } else {
-            BitcoinSingleKey::new()
-        }
-    }
-
-    // .emerald.vault.BitcoinMultiKey range = 12;
-
-
-    pub fn get_range(&self) -> &BitcoinMultiKey {
-        match self.field_type {
-            ::std::option::Option::Some(BitcoinAddress_oneof_type::range(ref v)) => v,
-            _ => BitcoinMultiKey::default_instance(),
-        }
-    }
-    pub fn clear_range(&mut self) {
-        self.field_type = ::std::option::Option::None;
-    }
-
-    pub fn has_range(&self) -> bool {
-        match self.field_type {
-            ::std::option::Option::Some(BitcoinAddress_oneof_type::range(..)) => true,
-            _ => false,
-        }
-    }
-
-    // Param is passed by value, moved
-    pub fn set_range(&mut self, v: BitcoinMultiKey) {
-        self.field_type = ::std::option::Option::Some(BitcoinAddress_oneof_type::range(v))
-    }
-
-    // Mutable pointer to the field.
-    pub fn mut_range(&mut self) -> &mut BitcoinMultiKey {
-        if let ::std::option::Option::Some(BitcoinAddress_oneof_type::range(_)) = self.field_type {
-        } else {
-            self.field_type = ::std::option::Option::Some(BitcoinAddress_oneof_type::range(BitcoinMultiKey::new()));
-        }
-        match self.field_type {
-            ::std::option::Option::Some(BitcoinAddress_oneof_type::range(ref mut v)) => v,
-            _ => panic!(),
-        }
-    }
-
-    // Take field
-    pub fn take_range(&mut self) -> BitcoinMultiKey {
-        if self.has_range() {
-            match self.field_type.take() {
-                ::std::option::Option::Some(BitcoinAddress_oneof_type::range(v)) => v,
-                _ => panic!(),
-            }
-        } else {
-            BitcoinMultiKey::new()
-        }
-    }
-}
-
-impl ::protobuf::Message for BitcoinAddress {
-    fn is_initialized(&self) -> bool {
-        if let Some(BitcoinAddress_oneof_type::pk(ref v)) = self.field_type {
-            if !v.is_initialized() {
-                return false;
-            }
-        }
-        if let Some(BitcoinAddress_oneof_type::range(ref v)) = self.field_type {
-            if !v.is_initialized() {
-                return false;
-            }
-        }
-        true
-    }
-
-    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        while !is.eof()? {
-            let (field_number, wire_type) = is.read_tag_unpack()?;
-            match field_number {
-                1 => {
-                    ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.format, 1, &mut self.unknown_fields)?
-                },
-                11 => {
-                    if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
-                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
-                    }
-                    self.field_type = ::std::option::Option::Some(BitcoinAddress_oneof_type::pk(is.read_message()?));
-                },
-                12 => {
-                    if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
-                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
-                    }
-                    self.field_type = ::std::option::Option::Some(BitcoinAddress_oneof_type::range(is.read_message()?));
-                },
-                _ => {
-                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
-                },
-            };
-        }
-        ::std::result::Result::Ok(())
-    }
-
-    // Compute sizes of nested messages
-    #[allow(unused_variables)]
-    fn compute_size(&self) -> u32 {
-        let mut my_size = 0;
-        if self.format != BitcoinAddress_Format::UNDEFINED {
-            my_size += ::protobuf::rt::enum_size(1, self.format);
-        }
-        if let ::std::option::Option::Some(ref v) = self.field_type {
-            match v {
-                &BitcoinAddress_oneof_type::pk(ref v) => {
-                    let len = v.compute_size();
-                    my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
-                },
-                &BitcoinAddress_oneof_type::range(ref v) => {
-                    let len = v.compute_size();
-                    my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
-                },
-            };
-        }
-        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
-        self.cached_size.set(my_size);
-        my_size
-    }
-
-    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        if self.format != BitcoinAddress_Format::UNDEFINED {
-            os.write_enum(1, self.format.value())?;
-        }
-        if let ::std::option::Option::Some(ref v) = self.field_type {
-            match v {
-                &BitcoinAddress_oneof_type::pk(ref v) => {
-                    os.write_tag(11, ::protobuf::wire_format::WireTypeLengthDelimited)?;
-                    os.write_raw_varint32(v.get_cached_size())?;
-                    v.write_to_with_cached_sizes(os)?;
-                },
-                &BitcoinAddress_oneof_type::range(ref v) => {
-                    os.write_tag(12, ::protobuf::wire_format::WireTypeLengthDelimited)?;
-                    os.write_raw_varint32(v.get_cached_size())?;
-                    v.write_to_with_cached_sizes(os)?;
-                },
-            };
-        }
-        os.write_unknown_fields(self.get_unknown_fields())?;
-        ::std::result::Result::Ok(())
-    }
-
-    fn get_cached_size(&self) -> u32 {
-        self.cached_size.get()
-    }
-
-    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
-        &self.unknown_fields
-    }
-
-    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
-        &mut self.unknown_fields
-    }
-
-    fn as_any(&self) -> &dyn (::std::any::Any) {
-        self as &dyn (::std::any::Any)
-    }
-    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
-        self as &mut dyn (::std::any::Any)
-    }
-    fn into_any(self: Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
-        self
-    }
-
-    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
-        Self::descriptor_static()
-    }
-
-    fn new() -> BitcoinAddress {
-        BitcoinAddress::new()
-    }
-
-    fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
-        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::MessageDescriptor> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const ::protobuf::reflect::MessageDescriptor,
-        };
-        unsafe {
-            descriptor.get(|| {
-                let mut fields = ::std::vec::Vec::new();
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeEnum<BitcoinAddress_Format>>(
-                    "format",
-                    |m: &BitcoinAddress| { &m.format },
-                    |m: &mut BitcoinAddress| { &mut m.format },
-                ));
-                fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, BitcoinSingleKey>(
-                    "pk",
-                    BitcoinAddress::has_pk,
-                    BitcoinAddress::get_pk,
-                ));
-                fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, BitcoinMultiKey>(
-                    "range",
-                    BitcoinAddress::has_range,
-                    BitcoinAddress::get_range,
-                ));
-                ::protobuf::reflect::MessageDescriptor::new::<BitcoinAddress>(
-                    "BitcoinAddress",
-                    fields,
-                    file_descriptor_proto()
-                )
-            })
-        }
-    }
-
-    fn default_instance() -> &'static BitcoinAddress {
-        static mut instance: ::protobuf::lazy::Lazy<BitcoinAddress> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const BitcoinAddress,
-        };
-        unsafe {
-            instance.get(BitcoinAddress::new)
-        }
-    }
-}
-
-impl ::protobuf::Clear for BitcoinAddress {
-    fn clear(&mut self) {
-        self.format = BitcoinAddress_Format::UNDEFINED;
-        self.field_type = ::std::option::Option::None;
-        self.field_type = ::std::option::Option::None;
-        self.unknown_fields.clear();
-    }
-}
-
-impl ::std::fmt::Debug for BitcoinAddress {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        ::protobuf::text_format::fmt(self, f)
-    }
-}
-
-impl ::protobuf::reflect::ProtobufValue for BitcoinAddress {
-    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
-        ::protobuf::reflect::ProtobufValueRef::Message(self)
-    }
-}
-
-#[derive(Clone,PartialEq,Eq,Debug,Hash)]
-pub enum BitcoinAddress_Format {
-    UNDEFINED = 0,
-    P2PKH = 1,
-    P2SH = 2,
-    BECH32 = 3,
-}
-
-impl ::protobuf::ProtobufEnum for BitcoinAddress_Format {
-    fn value(&self) -> i32 {
-        *self as i32
-    }
-
-    fn from_i32(value: i32) -> ::std::option::Option<BitcoinAddress_Format> {
-        match value {
-            0 => ::std::option::Option::Some(BitcoinAddress_Format::UNDEFINED),
-            1 => ::std::option::Option::Some(BitcoinAddress_Format::P2PKH),
-            2 => ::std::option::Option::Some(BitcoinAddress_Format::P2SH),
-            3 => ::std::option::Option::Some(BitcoinAddress_Format::BECH32),
-            _ => ::std::option::Option::None
-        }
-    }
-
-    fn values() -> &'static [Self] {
-        static values: &'static [BitcoinAddress_Format] = &[
-            BitcoinAddress_Format::UNDEFINED,
-            BitcoinAddress_Format::P2PKH,
-            BitcoinAddress_Format::P2SH,
-            BitcoinAddress_Format::BECH32,
-        ];
-        values
-    }
-
-    fn enum_descriptor_static() -> &'static ::protobuf::reflect::EnumDescriptor {
-        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::EnumDescriptor> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const ::protobuf::reflect::EnumDescriptor,
-        };
-        unsafe {
-            descriptor.get(|| {
-                ::protobuf::reflect::EnumDescriptor::new("BitcoinAddress_Format", file_descriptor_proto())
-            })
-        }
-    }
-}
-
-impl ::std::marker::Copy for BitcoinAddress_Format {
-}
-
-impl ::std::default::Default for BitcoinAddress_Format {
-    fn default() -> Self {
-        BitcoinAddress_Format::UNDEFINED
-    }
-}
-
-impl ::protobuf::reflect::ProtobufValue for BitcoinAddress_Format {
-    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
-        ::protobuf::reflect::ProtobufValueRef::Enum(self.descriptor())
-    }
-}
-
-#[derive(PartialEq,Clone,Default)]
-pub struct BitcoinSingleKey {
-    // message fields
-    pub address: ::std::string::String,
-    pub pk_id: ::std::string::String,
-    // special fields
-    pub unknown_fields: ::protobuf::UnknownFields,
-    pub cached_size: ::protobuf::CachedSize,
-}
-
-impl<'a> ::std::default::Default for &'a BitcoinSingleKey {
-    fn default() -> &'a BitcoinSingleKey {
-        <BitcoinSingleKey as ::protobuf::Message>::default_instance()
-    }
-}
-
-impl BitcoinSingleKey {
-    pub fn new() -> BitcoinSingleKey {
-        ::std::default::Default::default()
-    }
-
-    // string address = 1;
-
-
-    pub fn get_address(&self) -> &str {
-        &self.address
-    }
-    pub fn clear_address(&mut self) {
-        self.address.clear();
-    }
-
-    // Param is passed by value, moved
-    pub fn set_address(&mut self, v: ::std::string::String) {
-        self.address = v;
-    }
-
-    // Mutable pointer to the field.
-    // If field is not initialized, it is initialized with default value first.
-    pub fn mut_address(&mut self) -> &mut ::std::string::String {
-        &mut self.address
-    }
-
-    // Take field
-    pub fn take_address(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.address, ::std::string::String::new())
-    }
-
-    // string pk_id = 2;
-
-
-    pub fn get_pk_id(&self) -> &str {
-        &self.pk_id
-    }
-    pub fn clear_pk_id(&mut self) {
-        self.pk_id.clear();
-    }
-
-    // Param is passed by value, moved
-    pub fn set_pk_id(&mut self, v: ::std::string::String) {
-        self.pk_id = v;
-    }
-
-    // Mutable pointer to the field.
-    // If field is not initialized, it is initialized with default value first.
-    pub fn mut_pk_id(&mut self) -> &mut ::std::string::String {
-        &mut self.pk_id
-    }
-
-    // Take field
-    pub fn take_pk_id(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.pk_id, ::std::string::String::new())
-    }
-}
-
-impl ::protobuf::Message for BitcoinSingleKey {
-    fn is_initialized(&self) -> bool {
-        true
-    }
-
-    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        while !is.eof()? {
-            let (field_number, wire_type) = is.read_tag_unpack()?;
-            match field_number {
-                1 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.address)?;
-                },
-                2 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.pk_id)?;
-                },
-                _ => {
-                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
-                },
-            };
-        }
-        ::std::result::Result::Ok(())
-    }
-
-    // Compute sizes of nested messages
-    #[allow(unused_variables)]
-    fn compute_size(&self) -> u32 {
-        let mut my_size = 0;
-        if !self.address.is_empty() {
-            my_size += ::protobuf::rt::string_size(1, &self.address);
-        }
-        if !self.pk_id.is_empty() {
-            my_size += ::protobuf::rt::string_size(2, &self.pk_id);
-        }
-        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
-        self.cached_size.set(my_size);
-        my_size
-    }
-
-    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        if !self.address.is_empty() {
-            os.write_string(1, &self.address)?;
-        }
-        if !self.pk_id.is_empty() {
-            os.write_string(2, &self.pk_id)?;
-        }
-        os.write_unknown_fields(self.get_unknown_fields())?;
-        ::std::result::Result::Ok(())
-    }
-
-    fn get_cached_size(&self) -> u32 {
-        self.cached_size.get()
-    }
-
-    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
-        &self.unknown_fields
-    }
-
-    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
-        &mut self.unknown_fields
-    }
-
-    fn as_any(&self) -> &dyn (::std::any::Any) {
-        self as &dyn (::std::any::Any)
-    }
-    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
-        self as &mut dyn (::std::any::Any)
-    }
-    fn into_any(self: Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
-        self
-    }
-
-    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
-        Self::descriptor_static()
-    }
-
-    fn new() -> BitcoinSingleKey {
-        BitcoinSingleKey::new()
-    }
-
-    fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
-        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::MessageDescriptor> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const ::protobuf::reflect::MessageDescriptor,
-        };
-        unsafe {
-            descriptor.get(|| {
-                let mut fields = ::std::vec::Vec::new();
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
-                    "address",
-                    |m: &BitcoinSingleKey| { &m.address },
-                    |m: &mut BitcoinSingleKey| { &mut m.address },
-                ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
-                    "pk_id",
-                    |m: &BitcoinSingleKey| { &m.pk_id },
-                    |m: &mut BitcoinSingleKey| { &mut m.pk_id },
-                ));
-                ::protobuf::reflect::MessageDescriptor::new::<BitcoinSingleKey>(
-                    "BitcoinSingleKey",
-                    fields,
-                    file_descriptor_proto()
-                )
-            })
-        }
-    }
-
-    fn default_instance() -> &'static BitcoinSingleKey {
-        static mut instance: ::protobuf::lazy::Lazy<BitcoinSingleKey> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const BitcoinSingleKey,
-        };
-        unsafe {
-            instance.get(BitcoinSingleKey::new)
-        }
-    }
-}
-
-impl ::protobuf::Clear for BitcoinSingleKey {
-    fn clear(&mut self) {
-        self.address.clear();
-        self.pk_id.clear();
-        self.unknown_fields.clear();
-    }
-}
-
-impl ::std::fmt::Debug for BitcoinSingleKey {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        ::protobuf::text_format::fmt(self, f)
-    }
-}
-
-impl ::protobuf::reflect::ProtobufValue for BitcoinSingleKey {
-    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
-        ::protobuf::reflect::ProtobufValueRef::Message(self)
-    }
-}
-
-#[derive(PartialEq,Clone,Default)]
-pub struct BitcoinMultiKey {
-    // message fields
-    pub addresses: ::protobuf::SingularPtrField<super::address::Bip32Public>,
-    pub xpriv_id: ::std::string::String,
-    pub last_index: u32,
-    // special fields
-    pub unknown_fields: ::protobuf::UnknownFields,
-    pub cached_size: ::protobuf::CachedSize,
-}
-
-impl<'a> ::std::default::Default for &'a BitcoinMultiKey {
-    fn default() -> &'a BitcoinMultiKey {
-        <BitcoinMultiKey as ::protobuf::Message>::default_instance()
-    }
-}
-
-impl BitcoinMultiKey {
-    pub fn new() -> BitcoinMultiKey {
-        ::std::default::Default::default()
-    }
-
-    // .emerald.vault.Bip32Public addresses = 1;
-
-
-    pub fn get_addresses(&self) -> &super::address::Bip32Public {
-        self.addresses.as_ref().unwrap_or_else(|| super::address::Bip32Public::default_instance())
-    }
-    pub fn clear_addresses(&mut self) {
-        self.addresses.clear();
-    }
-
-    pub fn has_addresses(&self) -> bool {
-        self.addresses.is_some()
-    }
-
-    // Param is passed by value, moved
-    pub fn set_addresses(&mut self, v: super::address::Bip32Public) {
-        self.addresses = ::protobuf::SingularPtrField::some(v);
-    }
-
-    // Mutable pointer to the field.
-    // If field is not initialized, it is initialized with default value first.
-    pub fn mut_addresses(&mut self) -> &mut super::address::Bip32Public {
-        if self.addresses.is_none() {
-            self.addresses.set_default();
-        }
-        self.addresses.as_mut().unwrap()
-    }
-
-    // Take field
-    pub fn take_addresses(&mut self) -> super::address::Bip32Public {
-        self.addresses.take().unwrap_or_else(|| super::address::Bip32Public::new())
-    }
-
-    // string xpriv_id = 2;
-
-
-    pub fn get_xpriv_id(&self) -> &str {
-        &self.xpriv_id
-    }
-    pub fn clear_xpriv_id(&mut self) {
-        self.xpriv_id.clear();
-    }
-
-    // Param is passed by value, moved
-    pub fn set_xpriv_id(&mut self, v: ::std::string::String) {
-        self.xpriv_id = v;
-    }
-
-    // Mutable pointer to the field.
-    // If field is not initialized, it is initialized with default value first.
-    pub fn mut_xpriv_id(&mut self) -> &mut ::std::string::String {
-        &mut self.xpriv_id
-    }
-
-    // Take field
-    pub fn take_xpriv_id(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.xpriv_id, ::std::string::String::new())
-    }
-
-    // uint32 last_index = 3;
-
-
-    pub fn get_last_index(&self) -> u32 {
-        self.last_index
-    }
-    pub fn clear_last_index(&mut self) {
-        self.last_index = 0;
-    }
-
-    // Param is passed by value, moved
-    pub fn set_last_index(&mut self, v: u32) {
-        self.last_index = v;
-    }
-}
-
-impl ::protobuf::Message for BitcoinMultiKey {
-    fn is_initialized(&self) -> bool {
-        for v in &self.addresses {
-            if !v.is_initialized() {
-                return false;
-            }
-        };
-        true
-    }
-
-    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        while !is.eof()? {
-            let (field_number, wire_type) = is.read_tag_unpack()?;
-            match field_number {
-                1 => {
-                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.addresses)?;
-                },
-                2 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.xpriv_id)?;
-                },
-                3 => {
-                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
-                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
-                    }
-                    let tmp = is.read_uint32()?;
-                    self.last_index = tmp;
-                },
-                _ => {
-                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
-                },
-            };
-        }
-        ::std::result::Result::Ok(())
-    }
-
-    // Compute sizes of nested messages
-    #[allow(unused_variables)]
-    fn compute_size(&self) -> u32 {
-        let mut my_size = 0;
-        if let Some(ref v) = self.addresses.as_ref() {
-            let len = v.compute_size();
-            my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
-        }
-        if !self.xpriv_id.is_empty() {
-            my_size += ::protobuf::rt::string_size(2, &self.xpriv_id);
-        }
-        if self.last_index != 0 {
-            my_size += ::protobuf::rt::value_size(3, self.last_index, ::protobuf::wire_format::WireTypeVarint);
-        }
-        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
-        self.cached_size.set(my_size);
-        my_size
-    }
-
-    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        if let Some(ref v) = self.addresses.as_ref() {
-            os.write_tag(1, ::protobuf::wire_format::WireTypeLengthDelimited)?;
-            os.write_raw_varint32(v.get_cached_size())?;
-            v.write_to_with_cached_sizes(os)?;
-        }
-        if !self.xpriv_id.is_empty() {
-            os.write_string(2, &self.xpriv_id)?;
-        }
-        if self.last_index != 0 {
-            os.write_uint32(3, self.last_index)?;
-        }
-        os.write_unknown_fields(self.get_unknown_fields())?;
-        ::std::result::Result::Ok(())
-    }
-
-    fn get_cached_size(&self) -> u32 {
-        self.cached_size.get()
-    }
-
-    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
-        &self.unknown_fields
-    }
-
-    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
-        &mut self.unknown_fields
-    }
-
-    fn as_any(&self) -> &dyn (::std::any::Any) {
-        self as &dyn (::std::any::Any)
-    }
-    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
-        self as &mut dyn (::std::any::Any)
-    }
-    fn into_any(self: Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
-        self
-    }
-
-    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
-        Self::descriptor_static()
-    }
-
-    fn new() -> BitcoinMultiKey {
-        BitcoinMultiKey::new()
-    }
-
-    fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
-        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::MessageDescriptor> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const ::protobuf::reflect::MessageDescriptor,
-        };
-        unsafe {
-            descriptor.get(|| {
-                let mut fields = ::std::vec::Vec::new();
-                fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<super::address::Bip32Public>>(
-                    "addresses",
-                    |m: &BitcoinMultiKey| { &m.addresses },
-                    |m: &mut BitcoinMultiKey| { &mut m.addresses },
-                ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
-                    "xpriv_id",
-                    |m: &BitcoinMultiKey| { &m.xpriv_id },
-                    |m: &mut BitcoinMultiKey| { &mut m.xpriv_id },
-                ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
-                    "last_index",
-                    |m: &BitcoinMultiKey| { &m.last_index },
-                    |m: &mut BitcoinMultiKey| { &mut m.last_index },
-                ));
-                ::protobuf::reflect::MessageDescriptor::new::<BitcoinMultiKey>(
-                    "BitcoinMultiKey",
-                    fields,
-                    file_descriptor_proto()
-                )
-            })
-        }
-    }
-
-    fn default_instance() -> &'static BitcoinMultiKey {
-        static mut instance: ::protobuf::lazy::Lazy<BitcoinMultiKey> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const BitcoinMultiKey,
-        };
-        unsafe {
-            instance.get(BitcoinMultiKey::new)
-        }
-    }
-}
-
-impl ::protobuf::Clear for BitcoinMultiKey {
-    fn clear(&mut self) {
-        self.addresses.clear();
-        self.xpriv_id.clear();
-        self.last_index = 0;
-        self.unknown_fields.clear();
-    }
-}
-
-impl ::std::fmt::Debug for BitcoinMultiKey {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        ::protobuf::text_format::fmt(self, f)
-    }
-}
-
-impl ::protobuf::reflect::ProtobufValue for BitcoinMultiKey {
-    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
-        ::protobuf::reflect::ProtobufValueRef::Message(self)
-    }
-}
-
-#[derive(PartialEq,Clone,Default)]
-pub struct EthereumAddress {
-    // message fields
-    pub address: ::std::string::String,
-    pub pk_id: ::std::string::String,
-    // special fields
-    pub unknown_fields: ::protobuf::UnknownFields,
-    pub cached_size: ::protobuf::CachedSize,
-}
-
-impl<'a> ::std::default::Default for &'a EthereumAddress {
-    fn default() -> &'a EthereumAddress {
-        <EthereumAddress as ::protobuf::Message>::default_instance()
-    }
-}
-
-impl EthereumAddress {
-    pub fn new() -> EthereumAddress {
-        ::std::default::Default::default()
-    }
-
-    // string address = 1;
-
-
-    pub fn get_address(&self) -> &str {
-        &self.address
-    }
-    pub fn clear_address(&mut self) {
-        self.address.clear();
-    }
-
-    // Param is passed by value, moved
-    pub fn set_address(&mut self, v: ::std::string::String) {
-        self.address = v;
-    }
-
-    // Mutable pointer to the field.
-    // If field is not initialized, it is initialized with default value first.
-    pub fn mut_address(&mut self) -> &mut ::std::string::String {
-        &mut self.address
-    }
-
-    // Take field
-    pub fn take_address(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.address, ::std::string::String::new())
-    }
-
-    // string pk_id = 2;
-
-
-    pub fn get_pk_id(&self) -> &str {
-        &self.pk_id
-    }
-    pub fn clear_pk_id(&mut self) {
-        self.pk_id.clear();
-    }
-
-    // Param is passed by value, moved
-    pub fn set_pk_id(&mut self, v: ::std::string::String) {
-        self.pk_id = v;
-    }
-
-    // Mutable pointer to the field.
-    // If field is not initialized, it is initialized with default value first.
-    pub fn mut_pk_id(&mut self) -> &mut ::std::string::String {
-        &mut self.pk_id
-    }
-
-    // Take field
-    pub fn take_pk_id(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.pk_id, ::std::string::String::new())
-    }
-}
-
-impl ::protobuf::Message for EthereumAddress {
-    fn is_initialized(&self) -> bool {
-        true
-    }
-
-    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        while !is.eof()? {
-            let (field_number, wire_type) = is.read_tag_unpack()?;
-            match field_number {
-                1 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.address)?;
-                },
-                2 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.pk_id)?;
-                },
-                _ => {
-                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
-                },
-            };
-        }
-        ::std::result::Result::Ok(())
-    }
-
-    // Compute sizes of nested messages
-    #[allow(unused_variables)]
-    fn compute_size(&self) -> u32 {
-        let mut my_size = 0;
-        if !self.address.is_empty() {
-            my_size += ::protobuf::rt::string_size(1, &self.address);
-        }
-        if !self.pk_id.is_empty() {
-            my_size += ::protobuf::rt::string_size(2, &self.pk_id);
-        }
-        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
-        self.cached_size.set(my_size);
-        my_size
-    }
-
-    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        if !self.address.is_empty() {
-            os.write_string(1, &self.address)?;
-        }
-        if !self.pk_id.is_empty() {
-            os.write_string(2, &self.pk_id)?;
-        }
-        os.write_unknown_fields(self.get_unknown_fields())?;
-        ::std::result::Result::Ok(())
-    }
-
-    fn get_cached_size(&self) -> u32 {
-        self.cached_size.get()
-    }
-
-    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
-        &self.unknown_fields
-    }
-
-    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
-        &mut self.unknown_fields
-    }
-
-    fn as_any(&self) -> &dyn (::std::any::Any) {
-        self as &dyn (::std::any::Any)
-    }
-    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
-        self as &mut dyn (::std::any::Any)
-    }
-    fn into_any(self: Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
-        self
-    }
-
-    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
-        Self::descriptor_static()
-    }
-
-    fn new() -> EthereumAddress {
-        EthereumAddress::new()
-    }
-
-    fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
-        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::MessageDescriptor> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const ::protobuf::reflect::MessageDescriptor,
-        };
-        unsafe {
-            descriptor.get(|| {
-                let mut fields = ::std::vec::Vec::new();
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
-                    "address",
-                    |m: &EthereumAddress| { &m.address },
-                    |m: &mut EthereumAddress| { &mut m.address },
-                ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
-                    "pk_id",
-                    |m: &EthereumAddress| { &m.pk_id },
-                    |m: &mut EthereumAddress| { &mut m.pk_id },
-                ));
-                ::protobuf::reflect::MessageDescriptor::new::<EthereumAddress>(
-                    "EthereumAddress",
-                    fields,
-                    file_descriptor_proto()
-                )
-            })
-        }
-    }
-
-    fn default_instance() -> &'static EthereumAddress {
-        static mut instance: ::protobuf::lazy::Lazy<EthereumAddress> = ::protobuf::lazy::Lazy {
-            lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const EthereumAddress,
-        };
-        unsafe {
-            instance.get(EthereumAddress::new)
-        }
-    }
-}
-
-impl ::protobuf::Clear for EthereumAddress {
-    fn clear(&mut self) {
-        self.address.clear();
-        self.pk_id.clear();
-        self.unknown_fields.clear();
-    }
-}
-
-impl ::std::fmt::Debug for EthereumAddress {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-        ::protobuf::text_format::fmt(self, f)
-    }
-}
-
-impl ::protobuf::reflect::ProtobufValue for EthereumAddress {
     fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
         ::protobuf::reflect::ProtobufValueRef::Message(self)
     }
@@ -2431,184 +1104,99 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     s\x18\x04\x20\x03(\x0b2\x1c.emerald.vault.WalletAccountR\x08accounts\x12\
     \x1f\n\x0baccount_seq\x18\x05\x20\x01(\rR\naccountSeq\"B\n\x08Reserved\
     \x12\x17\n\x07seed_id\x18\x01\x20\x01(\tR\x06seedId\x12\x1d\n\naccount_i\
-    d\x18\x02\x20\x01(\rR\taccountId\"\xba\x04\n\rWalletAccount\x12\x0e\n\
+    d\x18\x02\x20\x01(\rR\taccountId\"\xf5\x01\n\rWalletAccount\x12\x0e\n\
     \x02id\x18\x01\x20\x01(\rR\x02id\x12#\n\rblockchain_id\x18\x02\x20\x01(\
     \rR\x0cblockchainId\x12)\n\x10receive_disabled\x18\x03\x20\x01(\x08R\x0f\
-    receiveDisabled\x125\n\x04role\x18\x04\x20\x01(\x0e2!.emerald.vault.Wall\
-    etAccount.RoleR\x04role\x120\n\x07address\x18\x05\x20\x01(\x0b2\x16.emer\
-    ald.vault.AddressR\x07address\x120\n\x07hd_path\x18\x07\x20\x01(\x0b2\
-    \x15.emerald.vault.SeedHDH\0R\x06hdPath\x129\n\x07bitcoin\x18\x08\x20\
-    \x01(\x0b2\x1d.emerald.vault.BitcoinAddressH\0R\x07bitcoin\x12<\n\x08eth\
-    ereum\x18\t\x20\x01(\x0b2\x1e.emerald.vault.EthereumAddressH\0R\x08ether\
-    eum\x12?\n\x0epublic_address\x18\n\x20\x01(\x0b2\x16.emerald.vault.Addre\
-    ssH\0R\rpublicAddress\"i\n\x04Role\x12\r\n\tUNDEFINED\x10\0\x12\x0b\n\
-    \x07RECEIVE\x10\x01\x12\n\n\x06CHANGE\x10\x02\x12\x0c\n\x08COINJOIN\x10\
-    \x03\x12\x16\n\x12COINJOIN_SECONDARY\x10\x04\x12\x13\n\x0fCOINJOIN_CHANG\
-    E\x10\x05B\t\n\x07pk_type\"\xfb\x01\n\x0eBitcoinAddress\x12<\n\x06format\
-    \x18\x01\x20\x01(\x0e2$.emerald.vault.BitcoinAddress.FormatR\x06format\
-    \x121\n\x02pk\x18\x0b\x20\x01(\x0b2\x1f.emerald.vault.BitcoinSingleKeyH\
-    \0R\x02pk\x126\n\x05range\x18\x0c\x20\x01(\x0b2\x1e.emerald.vault.Bitcoi\
-    nMultiKeyH\0R\x05range\"8\n\x06Format\x12\r\n\tUNDEFINED\x10\0\x12\t\n\
-    \x05P2PKH\x10\x01\x12\x08\n\x04P2SH\x10\x02\x12\n\n\x06BECH32\x10\x03B\
-    \x06\n\x04type\"A\n\x10BitcoinSingleKey\x12\x18\n\x07address\x18\x01\x20\
-    \x01(\tR\x07address\x12\x13\n\x05pk_id\x18\x02\x20\x01(\tR\x04pkId\"\x85\
-    \x01\n\x0fBitcoinMultiKey\x128\n\taddresses\x18\x01\x20\x01(\x0b2\x1a.em\
-    erald.vault.Bip32PublicR\taddresses\x12\x19\n\x08xpriv_id\x18\x02\x20\
-    \x01(\tR\x07xprivId\x12\x1d\n\nlast_index\x18\x03\x20\x01(\rR\tlastIndex\
-    \"@\n\x0fEthereumAddress\x12\x18\n\x07address\x18\x01\x20\x01(\tR\x07add\
-    ress\x12\x13\n\x05pk_id\x18\x02\x20\x01(\tR\x04pkId*\xd0\x01\n\x0cBlockc\
-    hainId\x12\x15\n\x11CHAIN_UNSPECIFIED\x10\0\x12\x11\n\rCHAIN_BITCOIN\x10\
-    \x01\x12\x0e\n\nCHAIN_GRIN\x10\x02\x12\x12\n\x0eCHAIN_ETHEREUM\x10d\x12\
-    \x1a\n\x16CHAIN_ETHEREUM_CLASSIC\x10e\x12\x14\n\x0fCHAIN_LIGHTNING\x10\
-    \xe9\x07\x12\x10\n\x0bCHAIN_KOVAN\x10\x92N\x12\x1a\n\x15CHAIN_TESTNET_BI\
-    TCOIN\x10\x93N\x12\x12\n\rCHAIN_FLOONET\x10\x94NJ\xab\x1c\n\x06\x12\x04\
-    \0\0m\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\
-    \x16\n\t\n\x02\x03\0\x12\x03\x02\0\x17\n\t\n\x02\x03\x01\x12\x03\x03\0\
-    \x14\nG\n\x02\x04\0\x12\x04\x06\0\x15\x01\x1a;\x20Wallet\x20is\x20a\x20u\
-    ser\x20defined\x20group\x20of\x20addresses\x20used\x20together\n\n\n\n\
-    \x03\x04\0\x01\x12\x03\x06\x08\x0e\n\x13\n\x04\x04\0\x02\0\x12\x03\x08\
-    \x04\x12\x1a\x06\x20UUID\n\n\x0c\n\x05\x04\0\x02\0\x05\x12\x03\x08\x04\n\
-    \n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\x08\x0b\r\n\x0c\n\x05\x04\0\x02\0\
-    \x03\x12\x03\x08\x10\x11\n!\n\x04\x04\0\x02\x01\x12\x03\n\x04\x15\x1a\
-    \x14\x20User\x20defined\x20label\n\n\x0c\n\x05\x04\0\x02\x01\x05\x12\x03\
-    \n\x04\n\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\n\x0b\x10\n\x0c\n\x05\x04\
-    \0\x02\x01\x03\x12\x03\n\x13\x14\n\x9c\x01\n\x04\x04\0\x02\x02\x12\x03\
-    \x0e\x04&\x1a\x8e\x01\x20List\x20of\x20HDPath\x20accounts\x20that\x20bel\
-    ongs\x20to\x20the\x20wallet,\x20used\x20to\x20automate\x20finding\x20new\
-    \n\x20addresses\x20and\x20avoiding\x20collision\x20between\x20different\
-    \x20wallets\n\n\x0c\n\x05\x04\0\x02\x02\x04\x12\x03\x0e\x04\x0c\n\x0c\n\
-    \x05\x04\0\x02\x02\x06\x12\x03\x0e\r\x15\n\x0c\n\x05\x04\0\x02\x02\x01\
-    \x12\x03\x0e\x16!\n\x0c\n\x05\x04\0\x02\x02\x03\x12\x03\x0e$%\n,\n\x04\
-    \x04\0\x02\x03\x12\x03\x10\x04(\x1a\x1f\x20Actual\x20accounts\x20in\x20t\
-    he\x20wallet\n\n\x0c\n\x05\x04\0\x02\x03\x04\x12\x03\x10\x04\x0c\n\x0c\n\
-    \x05\x04\0\x02\x03\x06\x12\x03\x10\r\x1a\n\x0c\n\x05\x04\0\x02\x03\x01\
-    \x12\x03\x10\x1b#\n\x0c\n\x05\x04\0\x02\x03\x03\x12\x03\x10&'\n\xd8\x01\
-    \n\x04\x04\0\x02\x04\x12\x03\x14\x04\x1b\x1a\xca\x01\x20Sequence\x20for\
-    \x20account\x20ids\x20in\x20that\x20wallet.\x20Incremented\x20each\x20ti\
-    me\x20a\x20new\x20account\x20added,\x20and\x20used\n\x20as\x20the\x20id\
-    \x20that\x20new\x20account.\x20Using\x20this\x20sequence,\x20if\x20accou\
-    nt\x20gets\x20deleted\x20its\x20id\x20is\x20not\x20going\n\x20to\x20be\
-    \x20reused\n\n\x0c\n\x05\x04\0\x02\x04\x05\x12\x03\x14\x04\n\n\x0c\n\x05\
-    \x04\0\x02\x04\x01\x12\x03\x14\x0b\x16\n\x0c\n\x05\x04\0\x02\x04\x03\x12\
-    \x03\x14\x19\x1a\n=\n\x02\x04\x01\x12\x04\x18\0\x1d\x01\x1a1\x20Reserved\
-    \x20index\x20on\x20a\x20HD\x20path,\x20an\x20x\x20from\x20m/44'/x'\n\n\n\
-    \n\x03\x04\x01\x01\x12\x03\x18\x08\x10\n)\n\x04\x04\x01\x02\0\x12\x03\
-    \x1a\x04\x17\x1a\x1c\x20reference\x20to\x20a\x20source\x20seed\n\n\x0c\n\
-    \x05\x04\x01\x02\0\x05\x12\x03\x1a\x04\n\n\x0c\n\x05\x04\x01\x02\0\x01\
-    \x12\x03\x1a\x0b\x12\n\x0c\n\x05\x04\x01\x02\0\x03\x12\x03\x1a\x15\x16\n\
-    \"\n\x04\x04\x01\x02\x01\x12\x03\x1c\x04\x1a\x1a\x15\x20reserved\x20acco\
-    unt\x20id\n\n\x0c\n\x05\x04\x01\x02\x01\x05\x12\x03\x1c\x04\n\n\x0c\n\
-    \x05\x04\x01\x02\x01\x01\x12\x03\x1c\x0b\x15\n\x0c\n\x05\x04\x01\x02\x01\
-    \x03\x12\x03\x1c\x18\x19\n\x1d\n\x02\x04\x02\x12\x04\x20\0:\x01\x1a\x11\
-    \x20Account\x20details\n\n\n\n\x03\x04\x02\x01\x12\x03\x20\x08\x15\n1\n\
-    \x04\x04\x02\x02\0\x12\x03\"\x04\x12\x1a$\x20id\x20to\x20reference\x20ac\
-    count\x20per\x20wallet\n\n\x0c\n\x05\x04\x02\x02\0\x05\x12\x03\"\x04\n\n\
-    \x0c\n\x05\x04\x02\x02\0\x01\x12\x03\"\x0b\r\n\x0c\n\x05\x04\x02\x02\0\
-    \x03\x12\x03\"\x10\x11\ng\n\x04\x04\x02\x02\x01\x12\x03$\x04\x1d\x1aZ\
-    \x20Associated\x20blockchain;\x20account\x20may\x20have\x20multiple\x20d\
-    ifferent\x20assets\x20on\x20a\x20single\x20blockchain\n\n\x0c\n\x05\x04\
-    \x02\x02\x01\x05\x12\x03$\x04\n\n\x0c\n\x05\x04\x02\x02\x01\x01\x12\x03$\
-    \x0b\x18\n\x0c\n\x05\x04\x02\x02\x01\x03\x12\x03$\x1b\x1c\nO\n\x04\x04\
-    \x02\x02\x02\x12\x03&\x04\x1e\x1aB\x20true\x20if\x20account\x20is\x20dis\
-    abled\x20for\x20receiving,\x20i.e.\x20only\x20for\x20sending\n\n\x0c\n\
-    \x05\x04\x02\x02\x02\x05\x12\x03&\x04\x08\n\x0c\n\x05\x04\x02\x02\x02\
-    \x01\x12\x03&\t\x19\n\x0c\n\x05\x04\x02\x02\x02\x03\x12\x03&\x1c\x1d\n\
-    \x0b\n\x04\x04\x02\x02\x03\x12\x03'\x04\x12\n\x0c\n\x05\x04\x02\x02\x03\
-    \x06\x12\x03'\x04\x08\n\x0c\n\x05\x04\x02\x02\x03\x01\x12\x03'\t\r\n\x0c\
-    \n\x05\x04\x02\x02\x03\x03\x12\x03'\x10\x11\n\x0b\n\x04\x04\x02\x02\x04\
-    \x12\x03)\x04\x18\n\x0c\n\x05\x04\x02\x02\x04\x06\x12\x03)\x04\x0b\n\x0c\
-    \n\x05\x04\x02\x02\x04\x01\x12\x03)\x0c\x13\n\x0c\n\x05\x04\x02\x02\x04\
-    \x03\x12\x03)\x16\x17\n\x0c\n\x04\x04\x02\x08\0\x12\x04+\x040\x05\n\x0c\
-    \n\x05\x04\x02\x08\0\x01\x12\x03+\n\x11\n\x0b\n\x04\x04\x02\x02\x05\x12\
-    \x03,\x08\x1b\n\x0c\n\x05\x04\x02\x02\x05\x06\x12\x03,\x08\x0e\n\x0c\n\
-    \x05\x04\x02\x02\x05\x01\x12\x03,\x0f\x16\n\x0c\n\x05\x04\x02\x02\x05\
-    \x03\x12\x03,\x19\x1a\n\x0b\n\x04\x04\x02\x02\x06\x12\x03-\x08#\n\x0c\n\
-    \x05\x04\x02\x02\x06\x06\x12\x03-\x08\x16\n\x0c\n\x05\x04\x02\x02\x06\
-    \x01\x12\x03-\x17\x1e\n\x0c\n\x05\x04\x02\x02\x06\x03\x12\x03-!\"\n\x0b\
-    \n\x04\x04\x02\x02\x07\x12\x03.\x08%\n\x0c\n\x05\x04\x02\x02\x07\x06\x12\
-    \x03.\x08\x17\n\x0c\n\x05\x04\x02\x02\x07\x01\x12\x03.\x18\x20\n\x0c\n\
-    \x05\x04\x02\x02\x07\x03\x12\x03.#$\n\x0b\n\x04\x04\x02\x02\x08\x12\x03/\
-    \x08$\n\x0c\n\x05\x04\x02\x02\x08\x06\x12\x03/\x08\x0f\n\x0c\n\x05\x04\
-    \x02\x02\x08\x01\x12\x03/\x10\x1e\n\x0c\n\x05\x04\x02\x02\x08\x03\x12\
-    \x03/!#\n\x0c\n\x04\x04\x02\x04\0\x12\x042\x049\x05\n\x0c\n\x05\x04\x02\
-    \x04\0\x01\x12\x032\t\r\n\r\n\x06\x04\x02\x04\0\x02\0\x12\x033\x08\x16\n\
-    \x0e\n\x07\x04\x02\x04\0\x02\0\x01\x12\x033\x08\x11\n\x0e\n\x07\x04\x02\
-    \x04\0\x02\0\x02\x12\x033\x14\x15\n\r\n\x06\x04\x02\x04\0\x02\x01\x12\
-    \x034\x08\x14\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x01\x12\x034\x08\x0f\n\
-    \x0e\n\x07\x04\x02\x04\0\x02\x01\x02\x12\x034\x12\x13\n\r\n\x06\x04\x02\
-    \x04\0\x02\x02\x12\x035\x08\x13\n\x0e\n\x07\x04\x02\x04\0\x02\x02\x01\
-    \x12\x035\x08\x0e\n\x0e\n\x07\x04\x02\x04\0\x02\x02\x02\x12\x035\x11\x12\
-    \n\r\n\x06\x04\x02\x04\0\x02\x03\x12\x036\x08\x15\n\x0e\n\x07\x04\x02\
-    \x04\0\x02\x03\x01\x12\x036\x08\x10\n\x0e\n\x07\x04\x02\x04\0\x02\x03\
-    \x02\x12\x036\x13\x14\n\r\n\x06\x04\x02\x04\0\x02\x04\x12\x037\x08\x1f\n\
-    \x0e\n\x07\x04\x02\x04\0\x02\x04\x01\x12\x037\x08\x1a\n\x0e\n\x07\x04\
-    \x02\x04\0\x02\x04\x02\x12\x037\x1d\x1e\n\r\n\x06\x04\x02\x04\0\x02\x05\
-    \x12\x038\x08\x1c\n\x0e\n\x07\x04\x02\x04\0\x02\x05\x01\x12\x038\x08\x17\
-    \n\x0e\n\x07\x04\x02\x04\0\x02\x05\x02\x12\x038\x1a\x1b\n\n\n\x02\x04\
-    \x03\x12\x04<\0J\x01\n\n\n\x03\x04\x03\x01\x12\x03<\x08\x16\n\x0b\n\x04\
-    \x04\x03\x02\0\x12\x03=\x04\x16\n\x0c\n\x05\x04\x03\x02\0\x06\x12\x03=\
-    \x04\n\n\x0c\n\x05\x04\x03\x02\0\x01\x12\x03=\x0b\x11\n\x0c\n\x05\x04\
-    \x03\x02\0\x03\x12\x03=\x14\x15\n\x0c\n\x04\x04\x03\x08\0\x12\x04?\x04B\
-    \x05\n\x0c\n\x05\x04\x03\x08\0\x01\x12\x03?\n\x0e\n\x0b\n\x04\x04\x03\
-    \x02\x01\x12\x03@\x08!\n\x0c\n\x05\x04\x03\x02\x01\x06\x12\x03@\x08\x18\
-    \n\x0c\n\x05\x04\x03\x02\x01\x01\x12\x03@\x19\x1b\n\x0c\n\x05\x04\x03\
-    \x02\x01\x03\x12\x03@\x1e\x20\n\x0b\n\x04\x04\x03\x02\x02\x12\x03A\x08#\
-    \n\x0c\n\x05\x04\x03\x02\x02\x06\x12\x03A\x08\x17\n\x0c\n\x05\x04\x03\
-    \x02\x02\x01\x12\x03A\x18\x1d\n\x0c\n\x05\x04\x03\x02\x02\x03\x12\x03A\
-    \x20\"\n\x0c\n\x04\x04\x03\x04\0\x12\x04D\x04I\x05\n\x0c\n\x05\x04\x03\
-    \x04\0\x01\x12\x03D\t\x0f\n\r\n\x06\x04\x03\x04\0\x02\0\x12\x03E\x08\x16\
-    \n\x0e\n\x07\x04\x03\x04\0\x02\0\x01\x12\x03E\x08\x11\n\x0e\n\x07\x04\
-    \x03\x04\0\x02\0\x02\x12\x03E\x14\x15\n:\n\x06\x04\x03\x04\0\x02\x01\x12\
-    \x03F\x08\x12\"+P2PKH\x20-\x2017VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem\n\n\x0e\
-    \n\x07\x04\x03\x04\0\x02\x01\x01\x12\x03F\x08\r\n\x0e\n\x07\x04\x03\x04\
-    \0\x02\x01\x02\x12\x03F\x10\x11\n9\n\x06\x04\x03\x04\0\x02\x02\x12\x03G\
-    \x08\x11\"*P2SH\x20-\x203EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQX\n\n\x0e\n\x07\
-    \x04\x03\x04\0\x02\x02\x01\x12\x03G\x08\x0c\n\x0e\n\x07\x04\x03\x04\0\
-    \x02\x02\x02\x12\x03G\x0f\x10\n:\n\x06\x04\x03\x04\0\x02\x03\x12\x03H\
-    \x08\x13\"+bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4\n\n\x0e\n\x07\x04\
-    \x03\x04\0\x02\x03\x01\x12\x03H\x08\x0e\n\x0e\n\x07\x04\x03\x04\0\x02\
-    \x03\x02\x12\x03H\x11\x12\n\n\n\x02\x04\x04\x12\x04L\0O\x01\n\n\n\x03\
-    \x04\x04\x01\x12\x03L\x08\x18\n\x0b\n\x04\x04\x04\x02\0\x12\x03M\x04\x17\
-    \n\x0c\n\x05\x04\x04\x02\0\x05\x12\x03M\x04\n\n\x0c\n\x05\x04\x04\x02\0\
-    \x01\x12\x03M\x0b\x12\n\x0c\n\x05\x04\x04\x02\0\x03\x12\x03M\x15\x16\n\
-    \x0b\n\x04\x04\x04\x02\x01\x12\x03N\x04\x15\n\x0c\n\x05\x04\x04\x02\x01\
-    \x05\x12\x03N\x04\n\n\x0c\n\x05\x04\x04\x02\x01\x01\x12\x03N\x0b\x10\n\
-    \x0c\n\x05\x04\x04\x02\x01\x03\x12\x03N\x13\x14\n\n\n\x02\x04\x05\x12\
-    \x04Q\0U\x01\n\n\n\x03\x04\x05\x01\x12\x03Q\x08\x17\n\x0b\n\x04\x04\x05\
-    \x02\0\x12\x03R\x04\x1e\n\x0c\n\x05\x04\x05\x02\0\x06\x12\x03R\x04\x0f\n\
-    \x0c\n\x05\x04\x05\x02\0\x01\x12\x03R\x10\x19\n\x0c\n\x05\x04\x05\x02\0\
-    \x03\x12\x03R\x1c\x1d\n\x0b\n\x04\x04\x05\x02\x01\x12\x03S\x04\x18\n\x0c\
-    \n\x05\x04\x05\x02\x01\x05\x12\x03S\x04\n\n\x0c\n\x05\x04\x05\x02\x01\
-    \x01\x12\x03S\x0b\x13\n\x0c\n\x05\x04\x05\x02\x01\x03\x12\x03S\x16\x17\n\
-    \x0b\n\x04\x04\x05\x02\x02\x12\x03T\x04\x1a\n\x0c\n\x05\x04\x05\x02\x02\
-    \x05\x12\x03T\x04\n\n\x0c\n\x05\x04\x05\x02\x02\x01\x12\x03T\x0b\x15\n\
-    \x0c\n\x05\x04\x05\x02\x02\x03\x12\x03T\x18\x19\n\n\n\x02\x04\x06\x12\
-    \x04X\0[\x01\n\n\n\x03\x04\x06\x01\x12\x03X\x08\x17\n\x0b\n\x04\x04\x06\
-    \x02\0\x12\x03Y\x04\x17\n\x0c\n\x05\x04\x06\x02\0\x05\x12\x03Y\x04\n\n\
-    \x0c\n\x05\x04\x06\x02\0\x01\x12\x03Y\x0b\x12\n\x0c\n\x05\x04\x06\x02\0\
-    \x03\x12\x03Y\x15\x16\n\x0b\n\x04\x04\x06\x02\x01\x12\x03Z\x04\x15\n\x0c\
-    \n\x05\x04\x06\x02\x01\x05\x12\x03Z\x04\n\n\x0c\n\x05\x04\x06\x02\x01\
-    \x01\x12\x03Z\x0b\x10\n\x0c\n\x05\x04\x06\x02\x01\x03\x12\x03Z\x13\x14\n\
-    \n\n\x02\x05\0\x12\x04]\0m\x01\n\n\n\x03\x05\0\x01\x12\x03]\x05\x11\n\
-    \x0b\n\x04\x05\0\x02\0\x12\x03^\x04\x1a\n\x0c\n\x05\x05\0\x02\0\x01\x12\
-    \x03^\x04\x15\n\x0c\n\x05\x05\0\x02\0\x02\x12\x03^\x18\x19\n\x0b\n\x04\
-    \x05\0\x02\x01\x12\x03`\x04\x16\n\x0c\n\x05\x05\0\x02\x01\x01\x12\x03`\
-    \x04\x11\n\x0c\n\x05\x05\0\x02\x01\x02\x12\x03`\x14\x15\n\x0b\n\x04\x05\
-    \0\x02\x02\x12\x03a\x04\x13\n\x0c\n\x05\x05\0\x02\x02\x01\x12\x03a\x04\
-    \x0e\n\x0c\n\x05\x05\0\x02\x02\x02\x12\x03a\x11\x12\n\x0b\n\x04\x05\0\
-    \x02\x03\x12\x03c\x04\x19\n\x0c\n\x05\x05\0\x02\x03\x01\x12\x03c\x04\x12\
-    \n\x0c\n\x05\x05\0\x02\x03\x02\x12\x03c\x15\x18\n\x0b\n\x04\x05\0\x02\
-    \x04\x12\x03d\x04!\n\x0c\n\x05\x05\0\x02\x04\x01\x12\x03d\x04\x1a\n\x0c\
-    \n\x05\x05\0\x02\x04\x02\x12\x03d\x1d\x20\n,\n\x04\x05\0\x02\x05\x12\x03\
-    g\x04\x1b\x1a\x1f\x20Sidechains\x20and\x20state\x20channels\n\n\x0c\n\
-    \x05\x05\0\x02\x05\x01\x12\x03g\x04\x13\n\x0c\n\x05\x05\0\x02\x05\x02\
-    \x12\x03g\x16\x1a\n\x17\n\x04\x05\0\x02\x06\x12\x03j\x04\x18\x1a\n\x20Te\
-    stnets\n\n\x0c\n\x05\x05\0\x02\x06\x01\x12\x03j\x04\x0f\n\x0c\n\x05\x05\
-    \0\x02\x06\x02\x12\x03j\x12\x17\n\x0b\n\x04\x05\0\x02\x07\x12\x03k\x04\"\
-    \n\x0c\n\x05\x05\0\x02\x07\x01\x12\x03k\x04\x19\n\x0c\n\x05\x05\0\x02\
-    \x07\x02\x12\x03k\x1c!\n\x0b\n\x04\x05\0\x02\x08\x12\x03l\x04\x1a\n\x0c\
-    \n\x05\x05\0\x02\x08\x01\x12\x03l\x04\x11\n\x0c\n\x05\x05\0\x02\x08\x02\
-    \x12\x03l\x14\x19b\x06proto3\
+    receiveDisabled\x120\n\x07address\x18\x05\x20\x01(\x0b2\x16.emerald.vaul\
+    t.AddressR\x07address\x120\n\x07hd_path\x18\x07\x20\x01(\x0b2\x15.emeral\
+    d.vault.SeedHDH\0R\x06hdPath\x12\x15\n\x05pk_id\x18\x08\x20\x01(\tH\0R\
+    \x04pkIdB\t\n\x07pk_type*\xd0\x01\n\x0cBlockchainId\x12\x15\n\x11CHAIN_U\
+    NSPECIFIED\x10\0\x12\x11\n\rCHAIN_BITCOIN\x10\x01\x12\x0e\n\nCHAIN_GRIN\
+    \x10\x02\x12\x12\n\x0eCHAIN_ETHEREUM\x10d\x12\x1a\n\x16CHAIN_ETHEREUM_CL\
+    ASSIC\x10e\x12\x14\n\x0fCHAIN_LIGHTNING\x10\xe9\x07\x12\x10\n\x0bCHAIN_K\
+    OVAN\x10\x92N\x12\x1a\n\x15CHAIN_TESTNET_BITCOIN\x10\x93N\x12\x12\n\rCHA\
+    IN_FLOONET\x10\x94NJ\x83\x11\n\x06\x12\x04\0\0@\x01\n\x08\n\x01\x0c\x12\
+    \x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\t\n\x02\x03\0\x12\x03\
+    \x02\0\x17\n\t\n\x02\x03\x01\x12\x03\x03\0\x14\nG\n\x02\x04\0\x12\x04\
+    \x06\0\x15\x01\x1a;\x20Wallet\x20is\x20a\x20user\x20defined\x20group\x20\
+    of\x20addresses\x20used\x20together\n\n\n\n\x03\x04\0\x01\x12\x03\x06\
+    \x08\x0e\n\x13\n\x04\x04\0\x02\0\x12\x03\x08\x04\x12\x1a\x06\x20UUID\n\n\
+    \x0c\n\x05\x04\0\x02\0\x05\x12\x03\x08\x04\n\n\x0c\n\x05\x04\0\x02\0\x01\
+    \x12\x03\x08\x0b\r\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x08\x10\x11\n!\n\
+    \x04\x04\0\x02\x01\x12\x03\n\x04\x15\x1a\x14\x20User\x20defined\x20label\
+    \n\n\x0c\n\x05\x04\0\x02\x01\x05\x12\x03\n\x04\n\n\x0c\n\x05\x04\0\x02\
+    \x01\x01\x12\x03\n\x0b\x10\n\x0c\n\x05\x04\0\x02\x01\x03\x12\x03\n\x13\
+    \x14\n\x9c\x01\n\x04\x04\0\x02\x02\x12\x03\x0e\x04&\x1a\x8e\x01\x20List\
+    \x20of\x20HDPath\x20accounts\x20that\x20belongs\x20to\x20the\x20wallet,\
+    \x20used\x20to\x20automate\x20finding\x20new\n\x20addresses\x20and\x20av\
+    oiding\x20collision\x20between\x20different\x20wallets\n\n\x0c\n\x05\x04\
+    \0\x02\x02\x04\x12\x03\x0e\x04\x0c\n\x0c\n\x05\x04\0\x02\x02\x06\x12\x03\
+    \x0e\r\x15\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\x0e\x16!\n\x0c\n\x05\
+    \x04\0\x02\x02\x03\x12\x03\x0e$%\n,\n\x04\x04\0\x02\x03\x12\x03\x10\x04(\
+    \x1a\x1f\x20Actual\x20accounts\x20in\x20the\x20wallet\n\n\x0c\n\x05\x04\
+    \0\x02\x03\x04\x12\x03\x10\x04\x0c\n\x0c\n\x05\x04\0\x02\x03\x06\x12\x03\
+    \x10\r\x1a\n\x0c\n\x05\x04\0\x02\x03\x01\x12\x03\x10\x1b#\n\x0c\n\x05\
+    \x04\0\x02\x03\x03\x12\x03\x10&'\n\xd8\x01\n\x04\x04\0\x02\x04\x12\x03\
+    \x14\x04\x1b\x1a\xca\x01\x20Sequence\x20for\x20account\x20ids\x20in\x20t\
+    hat\x20wallet.\x20Incremented\x20each\x20time\x20a\x20new\x20account\x20\
+    added,\x20and\x20used\n\x20as\x20the\x20id\x20that\x20new\x20account.\
+    \x20Using\x20this\x20sequence,\x20if\x20account\x20gets\x20deleted\x20it\
+    s\x20id\x20is\x20not\x20going\n\x20to\x20be\x20reused\n\n\x0c\n\x05\x04\
+    \0\x02\x04\x05\x12\x03\x14\x04\n\n\x0c\n\x05\x04\0\x02\x04\x01\x12\x03\
+    \x14\x0b\x16\n\x0c\n\x05\x04\0\x02\x04\x03\x12\x03\x14\x19\x1a\n=\n\x02\
+    \x04\x01\x12\x04\x18\0\x1d\x01\x1a1\x20Reserved\x20index\x20on\x20a\x20H\
+    D\x20path,\x20an\x20x\x20from\x20m/44'/x'\n\n\n\n\x03\x04\x01\x01\x12\
+    \x03\x18\x08\x10\n)\n\x04\x04\x01\x02\0\x12\x03\x1a\x04\x17\x1a\x1c\x20r\
+    eference\x20to\x20a\x20source\x20seed\n\n\x0c\n\x05\x04\x01\x02\0\x05\
+    \x12\x03\x1a\x04\n\n\x0c\n\x05\x04\x01\x02\0\x01\x12\x03\x1a\x0b\x12\n\
+    \x0c\n\x05\x04\x01\x02\0\x03\x12\x03\x1a\x15\x16\n\"\n\x04\x04\x01\x02\
+    \x01\x12\x03\x1c\x04\x1a\x1a\x15\x20reserved\x20account\x20id\n\n\x0c\n\
+    \x05\x04\x01\x02\x01\x05\x12\x03\x1c\x04\n\n\x0c\n\x05\x04\x01\x02\x01\
+    \x01\x12\x03\x1c\x0b\x15\n\x0c\n\x05\x04\x01\x02\x01\x03\x12\x03\x1c\x18\
+    \x19\n\x1d\n\x02\x04\x02\x12\x04\x20\0.\x01\x1a\x11\x20Account\x20detail\
+    s\n\n\n\n\x03\x04\x02\x01\x12\x03\x20\x08\x15\n1\n\x04\x04\x02\x02\0\x12\
+    \x03\"\x04\x12\x1a$\x20id\x20to\x20reference\x20account\x20per\x20wallet\
+    \n\n\x0c\n\x05\x04\x02\x02\0\x05\x12\x03\"\x04\n\n\x0c\n\x05\x04\x02\x02\
+    \0\x01\x12\x03\"\x0b\r\n\x0c\n\x05\x04\x02\x02\0\x03\x12\x03\"\x10\x11\n\
+    g\n\x04\x04\x02\x02\x01\x12\x03$\x04\x1d\x1aZ\x20Associated\x20blockchai\
+    n;\x20account\x20may\x20have\x20multiple\x20different\x20assets\x20on\
+    \x20a\x20single\x20blockchain\n\n\x0c\n\x05\x04\x02\x02\x01\x05\x12\x03$\
+    \x04\n\n\x0c\n\x05\x04\x02\x02\x01\x01\x12\x03$\x0b\x18\n\x0c\n\x05\x04\
+    \x02\x02\x01\x03\x12\x03$\x1b\x1c\nO\n\x04\x04\x02\x02\x02\x12\x03&\x04\
+    \x1e\x1aB\x20true\x20if\x20account\x20is\x20disabled\x20for\x20receiving\
+    ,\x20i.e.\x20only\x20for\x20sending\n\n\x0c\n\x05\x04\x02\x02\x02\x05\
+    \x12\x03&\x04\x08\n\x0c\n\x05\x04\x02\x02\x02\x01\x12\x03&\t\x19\n\x0c\n\
+    \x05\x04\x02\x02\x02\x03\x12\x03&\x1c\x1d\n+\n\x04\x04\x02\x02\x03\x12\
+    \x03(\x04\x18\x1a\x1e\x20public\x20address\x20for\x20reference\n\n\x0c\n\
+    \x05\x04\x02\x02\x03\x06\x12\x03(\x04\x0b\n\x0c\n\x05\x04\x02\x02\x03\
+    \x01\x12\x03(\x0c\x13\n\x0c\n\x05\x04\x02\x02\x03\x03\x12\x03(\x16\x17\n\
+    \x1f\n\x04\x04\x02\x08\0\x12\x04*\x04-\x05\x1a\x11\x20reference\x20to\
+    \x20PK\n\n\x0c\n\x05\x04\x02\x08\0\x01\x12\x03*\n\x11\n\x0b\n\x04\x04\
+    \x02\x02\x04\x12\x03+\x08\x1b\n\x0c\n\x05\x04\x02\x02\x04\x06\x12\x03+\
+    \x08\x0e\n\x0c\n\x05\x04\x02\x02\x04\x01\x12\x03+\x0f\x16\n\x0c\n\x05\
+    \x04\x02\x02\x04\x03\x12\x03+\x19\x1a\n\x0b\n\x04\x04\x02\x02\x05\x12\
+    \x03,\x08\x19\n\x0c\n\x05\x04\x02\x02\x05\x05\x12\x03,\x08\x0e\n\x0c\n\
+    \x05\x04\x02\x02\x05\x01\x12\x03,\x0f\x14\n\x0c\n\x05\x04\x02\x02\x05\
+    \x03\x12\x03,\x17\x18\n\n\n\x02\x05\0\x12\x040\0@\x01\n\n\n\x03\x05\0\
+    \x01\x12\x030\x05\x11\n\x0b\n\x04\x05\0\x02\0\x12\x031\x04\x1a\n\x0c\n\
+    \x05\x05\0\x02\0\x01\x12\x031\x04\x15\n\x0c\n\x05\x05\0\x02\0\x02\x12\
+    \x031\x18\x19\n\x0b\n\x04\x05\0\x02\x01\x12\x033\x04\x16\n\x0c\n\x05\x05\
+    \0\x02\x01\x01\x12\x033\x04\x11\n\x0c\n\x05\x05\0\x02\x01\x02\x12\x033\
+    \x14\x15\n\x0b\n\x04\x05\0\x02\x02\x12\x034\x04\x13\n\x0c\n\x05\x05\0\
+    \x02\x02\x01\x12\x034\x04\x0e\n\x0c\n\x05\x05\0\x02\x02\x02\x12\x034\x11\
+    \x12\n\x0b\n\x04\x05\0\x02\x03\x12\x036\x04\x19\n\x0c\n\x05\x05\0\x02\
+    \x03\x01\x12\x036\x04\x12\n\x0c\n\x05\x05\0\x02\x03\x02\x12\x036\x15\x18\
+    \n\x0b\n\x04\x05\0\x02\x04\x12\x037\x04!\n\x0c\n\x05\x05\0\x02\x04\x01\
+    \x12\x037\x04\x1a\n\x0c\n\x05\x05\0\x02\x04\x02\x12\x037\x1d\x20\n,\n\
+    \x04\x05\0\x02\x05\x12\x03:\x04\x1b\x1a\x1f\x20Sidechains\x20and\x20stat\
+    e\x20channels\n\n\x0c\n\x05\x05\0\x02\x05\x01\x12\x03:\x04\x13\n\x0c\n\
+    \x05\x05\0\x02\x05\x02\x12\x03:\x16\x1a\n\x17\n\x04\x05\0\x02\x06\x12\
+    \x03=\x04\x18\x1a\n\x20Testnets\n\n\x0c\n\x05\x05\0\x02\x06\x01\x12\x03=\
+    \x04\x0f\n\x0c\n\x05\x05\0\x02\x06\x02\x12\x03=\x12\x17\n\x0b\n\x04\x05\
+    \0\x02\x07\x12\x03>\x04\"\n\x0c\n\x05\x05\0\x02\x07\x01\x12\x03>\x04\x19\
+    \n\x0c\n\x05\x05\0\x02\x07\x02\x12\x03>\x1c!\n\x0b\n\x04\x05\0\x02\x08\
+    \x12\x03?\x04\x1a\n\x0c\n\x05\x05\0\x02\x08\x01\x12\x03?\x04\x11\n\x0c\n\
+    \x05\x05\0\x02\x08\x02\x12\x03?\x14\x19b\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

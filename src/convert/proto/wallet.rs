@@ -5,7 +5,6 @@ use crate::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         seed::SeedHD as proto_SeedHD,
         wallet::{
-            EthereumAddress as proto_EthereumAddress,
             Wallet as proto_Wallet,
             WalletAccount as proto_WalletAccount,
             WalletAccount_oneof_pk_type as proto_WalletAccountPkType,
@@ -54,12 +53,12 @@ impl TryFrom<&proto_WalletAccount> for WalletAccount {
                         seed_id: Uuid::from_str(seed.get_seed_id()).map_err(|_| {
                             ConversionError::InvalidFieldValue("seed_id".to_string())
                         })?,
-                        hd_path: seed.path.clone(),
+                        hd_path: seed.get_path().to_string(),
                     };
                     PKType::SeedHd(seed)
                 }
-                proto_WalletAccountPkType::ethereum(pk) => PKType::PrivateKeyRef(
-                    Uuid::parse_str(pk.get_pk_id())
+                proto_WalletAccountPkType::pk_id(pk_id) => PKType::PrivateKeyRef(
+                    Uuid::parse_str(pk_id)
                         .map_err(|_| ConversionError::InvalidFieldValue("pk_id".to_string()))?,
                 ),
                 _ => return Err(ConversionError::UnsupportedValue("pk_type".to_string())),
@@ -87,13 +86,11 @@ impl From<&WalletAccount> for proto_WalletAccount {
         result.set_blockchain_id(value.blockchain.to_owned() as u32);
         result.set_receive_disabled(value.receive_disabled);
 
-        let mut ethereum = proto_EthereumAddress::default();
         if value.address.is_some() {
             let address_str = value.address.unwrap().to_string();
             let mut address = proto_Address::new();
             address.set_plain_address(address_str.clone());
             result.set_address(address);
-            ethereum.set_address(address_str);
         }
         match &value.key {
             PKType::SeedHd(seed_ref) => {
@@ -103,8 +100,7 @@ impl From<&WalletAccount> for proto_WalletAccount {
                 result.set_hd_path(seed_hd);
             }
             PKType::PrivateKeyRef(addr) => {
-                ethereum.set_pk_id(addr.to_string());
-                result.set_ethereum(ethereum);
+                result.set_pk_id(addr.to_string());
             }
         }
         result

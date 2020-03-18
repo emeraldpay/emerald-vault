@@ -28,5 +28,15 @@ message HDPathFingerprint {
 
 message SeedHD {
     string seed_id = 1;
-    string path = 2;
+    oneof path_type {
+        string path = 2;
+        //m/purpose'/coin'/account'
+        AccountId account = 3;
+    }
+}
+
+message AccountId {
+    uint32 purpose = 1;
+    uint32 coin = 2;
+    uint32 account = 3;
 }

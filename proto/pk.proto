@@ -7,6 +7,7 @@ message PrivateKey {
     oneof pk {
         EthereumPrivateKey ethereum = 2;
         BitcoinPrivateKey bitcoin = 3;
+        Bip32Private xpriv = 4;
     }
 }
 
@@ -17,9 +18,17 @@ message EthereumPrivateKey {
 }
 
 message BitcoinPrivateKey {
+    Format format = 1;
     oneof pk_type {
-        BitcoinRawPK pk = 1;
-        OpenDime open_dime = 2;
+        BitcoinRawPK pk = 2;
+        OpenDime open_dime = 3;
+    }
+
+    enum Format {
+        UNDEFINED = 0;
+        P2PKH = 1; //P2PKH - 17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem
+        P2SH = 2; //P2SH - 3EktnHQD7RiAE6uzMj2ZifT9YgRrkSgzQX
+        BECH32 = 3; //bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
     }
 }
 
@@ -35,11 +44,9 @@ message BitcoinRawPK {
 message OpenDime {
 }
 
-// ----
-
 message Bip32Private {
     uint32 level = 1;
-    uint32 parent_fingerprint = 2;
+    fixed32 parent_fingerprint = 2;
     uint32 child_number = 3;
     bytes chaincode = 4;
 

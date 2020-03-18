@@ -47,6 +47,7 @@ impl<'a> ::std::default::Default for &'a PrivateKey {
 pub enum PrivateKey_oneof_pk {
     ethereum(EthereumPrivateKey),
     bitcoin(BitcoinPrivateKey),
+    xpriv(Bip32Private),
 }
 
 impl PrivateKey {
@@ -177,6 +178,54 @@ impl PrivateKey {
             BitcoinPrivateKey::new()
         }
     }
+
+    // .emerald.vault.Bip32Private xpriv = 4;
+
+
+    pub fn get_xpriv(&self) -> &Bip32Private {
+        match self.pk {
+            ::std::option::Option::Some(PrivateKey_oneof_pk::xpriv(ref v)) => v,
+            _ => Bip32Private::default_instance(),
+        }
+    }
+    pub fn clear_xpriv(&mut self) {
+        self.pk = ::std::option::Option::None;
+    }
+
+    pub fn has_xpriv(&self) -> bool {
+        match self.pk {
+            ::std::option::Option::Some(PrivateKey_oneof_pk::xpriv(..)) => true,
+            _ => false,
+        }
+    }
+
+    // Param is passed by value, moved
+    pub fn set_xpriv(&mut self, v: Bip32Private) {
+        self.pk = ::std::option::Option::Some(PrivateKey_oneof_pk::xpriv(v))
+    }
+
+    // Mutable pointer to the field.
+    pub fn mut_xpriv(&mut self) -> &mut Bip32Private {
+        if let ::std::option::Option::Some(PrivateKey_oneof_pk::xpriv(_)) = self.pk {} else {
+            self.pk = ::std::option::Option::Some(PrivateKey_oneof_pk::xpriv(Bip32Private::new()));
+        }
+        match self.pk {
+            ::std::option::Option::Some(PrivateKey_oneof_pk::xpriv(ref mut v)) => v,
+            _ => panic!(),
+        }
+    }
+
+    // Take field
+    pub fn take_xpriv(&mut self) -> Bip32Private {
+        if self.has_xpriv() {
+            match self.pk.take() {
+                ::std::option::Option::Some(PrivateKey_oneof_pk::xpriv(v)) => v,
+                _ => panic!(),
+            }
+        } else {
+            Bip32Private::new()
+        }
+    }
 }
 
 impl ::protobuf::Message for PrivateKey {
@@ -187,6 +236,11 @@ impl ::protobuf::Message for PrivateKey {
             }
         }
         if let Some(PrivateKey_oneof_pk::bitcoin(ref v)) = self.pk {
+            if !v.is_initialized() {
+                return false;
+            }
+        }
+        if let Some(PrivateKey_oneof_pk::xpriv(ref v)) = self.pk {
             if !v.is_initialized() {
                 return false;
             }
@@ -213,6 +267,12 @@ impl ::protobuf::Message for PrivateKey {
                     }
                     self.pk = ::std::option::Option::Some(PrivateKey_oneof_pk::bitcoin(is.read_message()?));
                 },
+                4 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    self.pk = ::std::option::Option::Some(PrivateKey_oneof_pk::xpriv(is.read_message()?));
+                },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
                 },
@@ -238,6 +298,10 @@ impl ::protobuf::Message for PrivateKey {
                     let len = v.compute_size();
                     my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
                 },
+                &PrivateKey_oneof_pk::xpriv(ref v) => {
+                    let len = v.compute_size();
+                    my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
+                },
             };
         }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
@@ -258,6 +322,11 @@ impl ::protobuf::Message for PrivateKey {
                 },
                 &PrivateKey_oneof_pk::bitcoin(ref v) => {
                     os.write_tag(3, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+                    os.write_raw_varint32(v.get_cached_size())?;
+                    v.write_to_with_cached_sizes(os)?;
+                },
+                &PrivateKey_oneof_pk::xpriv(ref v) => {
+                    os.write_tag(4, ::protobuf::wire_format::WireTypeLengthDelimited)?;
                     os.write_raw_varint32(v.get_cached_size())?;
                     v.write_to_with_cached_sizes(os)?;
                 },
@@ -320,10 +389,15 @@ impl ::protobuf::Message for PrivateKey {
                     PrivateKey::has_bitcoin,
                     PrivateKey::get_bitcoin,
                 ));
+                fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, Bip32Private>(
+                    "xpriv",
+                    PrivateKey::has_xpriv,
+                    PrivateKey::get_xpriv,
+                ));
                 ::protobuf::reflect::MessageDescriptor::new::<PrivateKey>(
                     "PrivateKey",
                     fields,
-                    file_descriptor_proto()
+                    file_descriptor_proto(),
                 )
             })
         }
@@ -343,6 +417,7 @@ impl ::protobuf::Message for PrivateKey {
 impl ::protobuf::Clear for PrivateKey {
     fn clear(&mut self) {
         self.id.clear();
+        self.pk = ::std::option::Option::None;
         self.pk = ::std::option::Option::None;
         self.pk = ::std::option::Option::None;
         self.unknown_fields.clear();
@@ -579,6 +654,8 @@ impl ::protobuf::reflect::ProtobufValue for EthereumPrivateKey {
 
 #[derive(PartialEq,Clone,Default)]
 pub struct BitcoinPrivateKey {
+    // message fields
+    pub format: BitcoinPrivateKey_Format,
     // message oneof groups
     pub pk_type: ::std::option::Option<BitcoinPrivateKey_oneof_pk_type>,
     // special fields
@@ -603,7 +680,22 @@ impl BitcoinPrivateKey {
         ::std::default::Default::default()
     }
 
-    // .emerald.vault.BitcoinRawPK pk = 1;
+    // .emerald.vault.BitcoinPrivateKey.Format format = 1;
+
+
+    pub fn get_format(&self) -> BitcoinPrivateKey_Format {
+        self.format
+    }
+    pub fn clear_format(&mut self) {
+        self.format = BitcoinPrivateKey_Format::UNDEFINED;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_format(&mut self, v: BitcoinPrivateKey_Format) {
+        self.format = v;
+    }
+
+    // .emerald.vault.BitcoinRawPK pk = 2;
 
 
     pub fn get_pk(&self) -> &BitcoinRawPK {
@@ -652,7 +744,7 @@ impl BitcoinPrivateKey {
         }
     }
 
-    // .emerald.vault.OpenDime open_dime = 2;
+    // .emerald.vault.OpenDime open_dime = 3;
 
 
     pub fn get_open_dime(&self) -> &OpenDime {
@@ -722,12 +814,15 @@ impl ::protobuf::Message for BitcoinPrivateKey {
             let (field_number, wire_type) = is.read_tag_unpack()?;
             match field_number {
                 1 => {
+                    ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.format, 1, &mut self.unknown_fields)?
+                },
+                2 => {
                     if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
                     self.pk_type = ::std::option::Option::Some(BitcoinPrivateKey_oneof_pk_type::pk(is.read_message()?));
                 },
-                2 => {
+                3 => {
                     if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
@@ -745,6 +840,9 @@ impl ::protobuf::Message for BitcoinPrivateKey {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
+        if self.format != BitcoinPrivateKey_Format::UNDEFINED {
+            my_size += ::protobuf::rt::enum_size(1, self.format);
+        }
         if let ::std::option::Option::Some(ref v) = self.pk_type {
             match v {
                 &BitcoinPrivateKey_oneof_pk_type::pk(ref v) => {
@@ -763,15 +861,18 @@ impl ::protobuf::Message for BitcoinPrivateKey {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        if self.format != BitcoinPrivateKey_Format::UNDEFINED {
+            os.write_enum(1, self.format.value())?;
+        }
         if let ::std::option::Option::Some(ref v) = self.pk_type {
             match v {
                 &BitcoinPrivateKey_oneof_pk_type::pk(ref v) => {
-                    os.write_tag(1, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+                    os.write_tag(2, ::protobuf::wire_format::WireTypeLengthDelimited)?;
                     os.write_raw_varint32(v.get_cached_size())?;
                     v.write_to_with_cached_sizes(os)?;
                 },
                 &BitcoinPrivateKey_oneof_pk_type::open_dime(ref v) => {
-                    os.write_tag(2, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+                    os.write_tag(3, ::protobuf::wire_format::WireTypeLengthDelimited)?;
                     os.write_raw_varint32(v.get_cached_size())?;
                     v.write_to_with_cached_sizes(os)?;
                 },
@@ -819,6 +920,11 @@ impl ::protobuf::Message for BitcoinPrivateKey {
         unsafe {
             descriptor.get(|| {
                 let mut fields = ::std::vec::Vec::new();
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeEnum<BitcoinPrivateKey_Format>>(
+                    "format",
+                    |m: &BitcoinPrivateKey| { &m.format },
+                    |m: &mut BitcoinPrivateKey| { &mut m.format },
+                ));
                 fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, BitcoinRawPK>(
                     "pk",
                     BitcoinPrivateKey::has_pk,
@@ -851,6 +957,7 @@ impl ::protobuf::Message for BitcoinPrivateKey {
 
 impl ::protobuf::Clear for BitcoinPrivateKey {
     fn clear(&mut self) {
+        self.format = BitcoinPrivateKey_Format::UNDEFINED;
         self.pk_type = ::std::option::Option::None;
         self.pk_type = ::std::option::Option::None;
         self.unknown_fields.clear();
@@ -869,7 +976,67 @@ impl ::protobuf::reflect::ProtobufValue for BitcoinPrivateKey {
     }
 }
 
-#[derive(PartialEq,Clone,Default)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+pub enum BitcoinPrivateKey_Format {
+    UNDEFINED = 0,
+    P2PKH = 1,
+    P2SH = 2,
+    BECH32 = 3,
+}
+
+impl ::protobuf::ProtobufEnum for BitcoinPrivateKey_Format {
+    fn value(&self) -> i32 {
+        *self as i32
+    }
+
+    fn from_i32(value: i32) -> ::std::option::Option<BitcoinPrivateKey_Format> {
+        match value {
+            0 => ::std::option::Option::Some(BitcoinPrivateKey_Format::UNDEFINED),
+            1 => ::std::option::Option::Some(BitcoinPrivateKey_Format::P2PKH),
+            2 => ::std::option::Option::Some(BitcoinPrivateKey_Format::P2SH),
+            3 => ::std::option::Option::Some(BitcoinPrivateKey_Format::BECH32),
+            _ => ::std::option::Option::None
+        }
+    }
+
+    fn values() -> &'static [Self] {
+        static values: &'static [BitcoinPrivateKey_Format] = &[
+            BitcoinPrivateKey_Format::UNDEFINED,
+            BitcoinPrivateKey_Format::P2PKH,
+            BitcoinPrivateKey_Format::P2SH,
+            BitcoinPrivateKey_Format::BECH32,
+        ];
+        values
+    }
+
+    fn enum_descriptor_static() -> &'static ::protobuf::reflect::EnumDescriptor {
+        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::EnumDescriptor> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const ::protobuf::reflect::EnumDescriptor,
+        };
+        unsafe {
+            descriptor.get(|| {
+                ::protobuf::reflect::EnumDescriptor::new("BitcoinPrivateKey_Format", file_descriptor_proto())
+            })
+        }
+    }
+}
+
+impl ::std::marker::Copy for BitcoinPrivateKey_Format {}
+
+impl ::std::default::Default for BitcoinPrivateKey_Format {
+    fn default() -> Self {
+        BitcoinPrivateKey_Format::UNDEFINED
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for BitcoinPrivateKey_Format {
+    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
+        ::protobuf::reflect::ProtobufValueRef::Enum(self.descriptor())
+    }
+}
+
+#[derive(PartialEq, Clone, Default)]
 pub struct EthereumPK3 {
     // message fields
     pub address: ::std::string::String,
@@ -1436,7 +1603,7 @@ impl Bip32Private {
         self.level = v;
     }
 
-    // uint32 parent_fingerprint = 2;
+    // fixed32 parent_fingerprint = 2;
 
 
     pub fn get_parent_fingerprint(&self) -> u32 {
@@ -1613,10 +1780,10 @@ impl ::protobuf::Message for Bip32Private {
                     self.level = tmp;
                 },
                 2 => {
-                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                    if wire_type != ::protobuf::wire_format::WireTypeFixed32 {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
-                    let tmp = is.read_uint32()?;
+                    let tmp = is.read_fixed32()?;
                     self.parent_fingerprint = tmp;
                 },
                 3 => {
@@ -1657,7 +1824,7 @@ impl ::protobuf::Message for Bip32Private {
             my_size += ::protobuf::rt::value_size(1, self.level, ::protobuf::wire_format::WireTypeVarint);
         }
         if self.parent_fingerprint != 0 {
-            my_size += ::protobuf::rt::value_size(2, self.parent_fingerprint, ::protobuf::wire_format::WireTypeVarint);
+            my_size += 5;
         }
         if self.child_number != 0 {
             my_size += ::protobuf::rt::value_size(3, self.child_number, ::protobuf::wire_format::WireTypeVarint);
@@ -1686,7 +1853,7 @@ impl ::protobuf::Message for Bip32Private {
             os.write_uint32(1, self.level)?;
         }
         if self.parent_fingerprint != 0 {
-            os.write_uint32(2, self.parent_fingerprint)?;
+            os.write_fixed32(2, self.parent_fingerprint)?;
         }
         if self.child_number != 0 {
             os.write_uint32(3, self.child_number)?;
@@ -1753,7 +1920,7 @@ impl ::protobuf::Message for Bip32Private {
                     |m: &Bip32Private| { &m.level },
                     |m: &mut Bip32Private| { &mut m.level },
                 ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeFixed32>(
                     "parent_fingerprint",
                     |m: &Bip32Private| { &m.parent_fingerprint },
                     |m: &mut Bip32Private| { &mut m.parent_fingerprint },
@@ -1823,86 +1990,102 @@ impl ::protobuf::reflect::ProtobufValue for Bip32Private {
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\x08pk.proto\x12\remerald.vault\x1a\x0ccrypto.proto\"\xa1\x01\n\nPriva\
+    \n\x08pk.proto\x12\remerald.vault\x1a\x0ccrypto.proto\"\xd6\x01\n\nPriva\
     teKey\x12\x0e\n\x02id\x18\x01\x20\x01(\tR\x02id\x12?\n\x08ethereum\x18\
     \x02\x20\x01(\x0b2!.emerald.vault.EthereumPrivateKeyH\0R\x08ethereum\x12\
     <\n\x07bitcoin\x18\x03\x20\x01(\x0b2\x20.emerald.vault.BitcoinPrivateKey\
-    H\0R\x07bitcoinB\x04\n\x02pk\"M\n\x12EthereumPrivateKey\x12,\n\x02pk\x18\
-    \x01\x20\x01(\x0b2\x1a.emerald.vault.EthereumPK3H\0R\x02pkB\t\n\x07pk_ty\
-    pe\"\x85\x01\n\x11BitcoinPrivateKey\x12-\n\x02pk\x18\x01\x20\x01(\x0b2\
-    \x1b.emerald.vault.BitcoinRawPKH\0R\x02pk\x126\n\topen_dime\x18\x02\x20\
-    \x01(\x0b2\x17.emerald.vault.OpenDimeH\0R\x08openDimeB\t\n\x07pk_type\"W\
-    \n\x0bEthereumPK3\x12\x18\n\x07address\x18\x01\x20\x01(\tR\x07address\
-    \x12.\n\x05value\x18\x02\x20\x01(\x0b2\x18.emerald.vault.EncryptedR\x05v\
-    alue\"$\n\x0cBitcoinRawPK\x12\x14\n\x05value\x18\x01\x20\x01(\x0cR\x05va\
-    lue\"\n\n\x08OpenDime\"\xfe\x01\n\x0cBip32Private\x12\x14\n\x05level\x18\
-    \x01\x20\x01(\rR\x05level\x12-\n\x12parent_fingerprint\x18\x02\x20\x01(\
-    \rR\x11parentFingerprint\x12!\n\x0cchild_number\x18\x03\x20\x01(\rR\x0bc\
-    hildNumber\x12\x1c\n\tchaincode\x18\x04\x20\x01(\x0cR\tchaincode\x12\x1b\
-    \n\x08open_key\x18\x05\x20\x01(\x0cH\0R\x07openKey\x12?\n\rencrypted_key\
-    \x18\x06\x20\x01(\x0b2\x18.emerald.vault.EncryptedH\0R\x0cencryptedKeyB\
-    \n\n\x08key_typeJ\xf8\t\n\x06\x12\x04\0\01\x01\n\x08\n\x01\x0c\x12\x03\0\
-    \0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\t\n\x02\x03\0\x12\x03\x02\0\
-    \x16\n\n\n\x02\x04\0\x12\x04\x04\0\n\x01\n\n\n\x03\x04\0\x01\x12\x03\x04\
-    \x08\x12\n\x0b\n\x04\x04\0\x02\0\x12\x03\x05\x04\x12\n\r\n\x05\x04\0\x02\
-    \0\x04\x12\x04\x05\x04\x04\x14\n\x0c\n\x05\x04\0\x02\0\x05\x12\x03\x05\
-    \x04\n\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\x05\x0b\r\n\x0c\n\x05\x04\0\
-    \x02\0\x03\x12\x03\x05\x10\x11\n\x0c\n\x04\x04\0\x08\0\x12\x04\x06\x04\t\
-    \x05\n\x0c\n\x05\x04\0\x08\0\x01\x12\x03\x06\n\x0c\n\x0b\n\x04\x04\0\x02\
-    \x01\x12\x03\x07\x08(\n\x0c\n\x05\x04\0\x02\x01\x06\x12\x03\x07\x08\x1a\
-    \n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x07\x1b#\n\x0c\n\x05\x04\0\x02\
-    \x01\x03\x12\x03\x07&'\n\x0b\n\x04\x04\0\x02\x02\x12\x03\x08\x08&\n\x0c\
-    \n\x05\x04\0\x02\x02\x06\x12\x03\x08\x08\x19\n\x0c\n\x05\x04\0\x02\x02\
-    \x01\x12\x03\x08\x1a!\n\x0c\n\x05\x04\0\x02\x02\x03\x12\x03\x08$%\n\n\n\
-    \x02\x04\x01\x12\x04\x0c\0\x10\x01\n\n\n\x03\x04\x01\x01\x12\x03\x0c\x08\
-    \x1a\n\x0c\n\x04\x04\x01\x08\0\x12\x04\r\x04\x0f\x05\n\x0c\n\x05\x04\x01\
-    \x08\0\x01\x12\x03\r\n\x11\n\x0b\n\x04\x04\x01\x02\0\x12\x03\x0e\x08\x1b\
-    \n\x0c\n\x05\x04\x01\x02\0\x06\x12\x03\x0e\x08\x13\n\x0c\n\x05\x04\x01\
-    \x02\0\x01\x12\x03\x0e\x14\x16\n\x0c\n\x05\x04\x01\x02\0\x03\x12\x03\x0e\
-    \x19\x1a\n\n\n\x02\x04\x02\x12\x04\x12\0\x17\x01\n\n\n\x03\x04\x02\x01\
-    \x12\x03\x12\x08\x19\n\x0c\n\x04\x04\x02\x08\0\x12\x04\x13\x04\x16\x05\n\
-    \x0c\n\x05\x04\x02\x08\0\x01\x12\x03\x13\n\x11\n\x0b\n\x04\x04\x02\x02\0\
-    \x12\x03\x14\x08\x1c\n\x0c\n\x05\x04\x02\x02\0\x06\x12\x03\x14\x08\x14\n\
-    \x0c\n\x05\x04\x02\x02\0\x01\x12\x03\x14\x15\x17\n\x0c\n\x05\x04\x02\x02\
-    \0\x03\x12\x03\x14\x1a\x1b\n\x0b\n\x04\x04\x02\x02\x01\x12\x03\x15\x08\
-    \x1f\n\x0c\n\x05\x04\x02\x02\x01\x06\x12\x03\x15\x08\x10\n\x0c\n\x05\x04\
-    \x02\x02\x01\x01\x12\x03\x15\x11\x1a\n\x0c\n\x05\x04\x02\x02\x01\x03\x12\
-    \x03\x15\x1d\x1e\n\n\n\x02\x04\x03\x12\x04\x19\0\x1c\x01\n\n\n\x03\x04\
-    \x03\x01\x12\x03\x19\x08\x13\n\x0b\n\x04\x04\x03\x02\0\x12\x03\x1a\x04\
-    \x17\n\r\n\x05\x04\x03\x02\0\x04\x12\x04\x1a\x04\x19\x15\n\x0c\n\x05\x04\
-    \x03\x02\0\x05\x12\x03\x1a\x04\n\n\x0c\n\x05\x04\x03\x02\0\x01\x12\x03\
-    \x1a\x0b\x12\n\x0c\n\x05\x04\x03\x02\0\x03\x12\x03\x1a\x15\x16\n\x0b\n\
-    \x04\x04\x03\x02\x01\x12\x03\x1b\x04\x18\n\r\n\x05\x04\x03\x02\x01\x04\
-    \x12\x04\x1b\x04\x1a\x17\n\x0c\n\x05\x04\x03\x02\x01\x06\x12\x03\x1b\x04\
-    \r\n\x0c\n\x05\x04\x03\x02\x01\x01\x12\x03\x1b\x0e\x13\n\x0c\n\x05\x04\
-    \x03\x02\x01\x03\x12\x03\x1b\x16\x17\n\n\n\x02\x04\x04\x12\x04\x1e\0\x20\
-    \x01\n\n\n\x03\x04\x04\x01\x12\x03\x1e\x08\x14\n\x0b\n\x04\x04\x04\x02\0\
-    \x12\x03\x1f\x04\x14\n\r\n\x05\x04\x04\x02\0\x04\x12\x04\x1f\x04\x1e\x16\
-    \n\x0c\n\x05\x04\x04\x02\0\x05\x12\x03\x1f\x04\t\n\x0c\n\x05\x04\x04\x02\
-    \0\x01\x12\x03\x1f\n\x0f\n\x0c\n\x05\x04\x04\x02\0\x03\x12\x03\x1f\x12\
-    \x13\n\n\n\x02\x04\x05\x12\x04\"\0#\x01\n\n\n\x03\x04\x05\x01\x12\x03\"\
-    \x08\x10\n\x12\n\x02\x04\x06\x12\x04'\01\x012\x06\x20----\n\n\n\n\x03\
-    \x04\x06\x01\x12\x03'\x08\x14\n\x0b\n\x04\x04\x06\x02\0\x12\x03(\x04\x15\
-    \n\r\n\x05\x04\x06\x02\0\x04\x12\x04(\x04'\x16\n\x0c\n\x05\x04\x06\x02\0\
-    \x05\x12\x03(\x04\n\n\x0c\n\x05\x04\x06\x02\0\x01\x12\x03(\x0b\x10\n\x0c\
-    \n\x05\x04\x06\x02\0\x03\x12\x03(\x13\x14\n\x0b\n\x04\x04\x06\x02\x01\
-    \x12\x03)\x04\"\n\r\n\x05\x04\x06\x02\x01\x04\x12\x04)\x04(\x15\n\x0c\n\
-    \x05\x04\x06\x02\x01\x05\x12\x03)\x04\n\n\x0c\n\x05\x04\x06\x02\x01\x01\
-    \x12\x03)\x0b\x1d\n\x0c\n\x05\x04\x06\x02\x01\x03\x12\x03)\x20!\n\x0b\n\
-    \x04\x04\x06\x02\x02\x12\x03*\x04\x1c\n\r\n\x05\x04\x06\x02\x02\x04\x12\
-    \x04*\x04)\"\n\x0c\n\x05\x04\x06\x02\x02\x05\x12\x03*\x04\n\n\x0c\n\x05\
-    \x04\x06\x02\x02\x01\x12\x03*\x0b\x17\n\x0c\n\x05\x04\x06\x02\x02\x03\
-    \x12\x03*\x1a\x1b\n\x0b\n\x04\x04\x06\x02\x03\x12\x03+\x04\x18\n\r\n\x05\
-    \x04\x06\x02\x03\x04\x12\x04+\x04*\x1c\n\x0c\n\x05\x04\x06\x02\x03\x05\
-    \x12\x03+\x04\t\n\x0c\n\x05\x04\x06\x02\x03\x01\x12\x03+\n\x13\n\x0c\n\
-    \x05\x04\x06\x02\x03\x03\x12\x03+\x16\x17\n\x0c\n\x04\x04\x06\x08\0\x12\
-    \x04-\x040\x05\n\x0c\n\x05\x04\x06\x08\0\x01\x12\x03-\n\x12\n\x0b\n\x04\
-    \x04\x06\x02\x04\x12\x03.\x08\x1b\n\x0c\n\x05\x04\x06\x02\x04\x05\x12\
-    \x03.\x08\r\n\x0c\n\x05\x04\x06\x02\x04\x01\x12\x03.\x0e\x16\n\x0c\n\x05\
-    \x04\x06\x02\x04\x03\x12\x03.\x19\x1a\n\x0b\n\x04\x04\x06\x02\x05\x12\
-    \x03/\x08$\n\x0c\n\x05\x04\x06\x02\x05\x06\x12\x03/\x08\x11\n\x0c\n\x05\
-    \x04\x06\x02\x05\x01\x12\x03/\x12\x1f\n\x0c\n\x05\x04\x06\x02\x05\x03\
-    \x12\x03/\"#b\x06proto3\
+    H\0R\x07bitcoin\x123\n\x05xpriv\x18\x04\x20\x01(\x0b2\x1b.emerald.vault.\
+    Bip32PrivateH\0R\x05xprivB\x04\n\x02pk\"M\n\x12EthereumPrivateKey\x12,\n\
+    \x02pk\x18\x01\x20\x01(\x0b2\x1a.emerald.vault.EthereumPK3H\0R\x02pkB\t\
+    \n\x07pk_type\"\x80\x02\n\x11BitcoinPrivateKey\x12?\n\x06format\x18\x01\
+    \x20\x01(\x0e2'.emerald.vault.BitcoinPrivateKey.FormatR\x06format\x12-\n\
+    \x02pk\x18\x02\x20\x01(\x0b2\x1b.emerald.vault.BitcoinRawPKH\0R\x02pk\
+    \x126\n\topen_dime\x18\x03\x20\x01(\x0b2\x17.emerald.vault.OpenDimeH\0R\
+    \x08openDime\"8\n\x06Format\x12\r\n\tUNDEFINED\x10\0\x12\t\n\x05P2PKH\
+    \x10\x01\x12\x08\n\x04P2SH\x10\x02\x12\n\n\x06BECH32\x10\x03B\t\n\x07pk_\
+    type\"W\n\x0bEthereumPK3\x12\x18\n\x07address\x18\x01\x20\x01(\tR\x07add\
+    ress\x12.\n\x05value\x18\x02\x20\x01(\x0b2\x18.emerald.vault.EncryptedR\
+    \x05value\"$\n\x0cBitcoinRawPK\x12\x14\n\x05value\x18\x01\x20\x01(\x0cR\
+    \x05value\"\n\n\x08OpenDime\"\xfe\x01\n\x0cBip32Private\x12\x14\n\x05lev\
+    el\x18\x01\x20\x01(\rR\x05level\x12-\n\x12parent_fingerprint\x18\x02\x20\
+    \x01(\x07R\x11parentFingerprint\x12!\n\x0cchild_number\x18\x03\x20\x01(\
+    \rR\x0bchildNumber\x12\x1c\n\tchaincode\x18\x04\x20\x01(\x0cR\tchaincode\
+    \x12\x1b\n\x08open_key\x18\x05\x20\x01(\x0cH\0R\x07openKey\x12?\n\rencry\
+    pted_key\x18\x06\x20\x01(\x0b2\x18.emerald.vault.EncryptedH\0R\x0cencryp\
+    tedKeyB\n\n\x08key_typeJ\xc4\x0c\n\x06\x12\x04\0\08\x01\n\x08\n\x01\x0c\
+    \x12\x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\t\n\x02\x03\0\x12\
+    \x03\x02\0\x16\n\n\n\x02\x04\0\x12\x04\x04\0\x0b\x01\n\n\n\x03\x04\0\x01\
+    \x12\x03\x04\x08\x12\n\x0b\n\x04\x04\0\x02\0\x12\x03\x05\x04\x12\n\x0c\n\
+    \x05\x04\0\x02\0\x05\x12\x03\x05\x04\n\n\x0c\n\x05\x04\0\x02\0\x01\x12\
+    \x03\x05\x0b\r\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x05\x10\x11\n\x0c\n\
+    \x04\x04\0\x08\0\x12\x04\x06\x04\n\x05\n\x0c\n\x05\x04\0\x08\0\x01\x12\
+    \x03\x06\n\x0c\n\x0b\n\x04\x04\0\x02\x01\x12\x03\x07\x08(\n\x0c\n\x05\
+    \x04\0\x02\x01\x06\x12\x03\x07\x08\x1a\n\x0c\n\x05\x04\0\x02\x01\x01\x12\
+    \x03\x07\x1b#\n\x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x07&'\n\x0b\n\x04\
+    \x04\0\x02\x02\x12\x03\x08\x08&\n\x0c\n\x05\x04\0\x02\x02\x06\x12\x03\
+    \x08\x08\x19\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\x08\x1a!\n\x0c\n\x05\
+    \x04\0\x02\x02\x03\x12\x03\x08$%\n\x0b\n\x04\x04\0\x02\x03\x12\x03\t\x08\
+    \x1f\n\x0c\n\x05\x04\0\x02\x03\x06\x12\x03\t\x08\x14\n\x0c\n\x05\x04\0\
+    \x02\x03\x01\x12\x03\t\x15\x1a\n\x0c\n\x05\x04\0\x02\x03\x03\x12\x03\t\
+    \x1d\x1e\n\n\n\x02\x04\x01\x12\x04\r\0\x11\x01\n\n\n\x03\x04\x01\x01\x12\
+    \x03\r\x08\x1a\n\x0c\n\x04\x04\x01\x08\0\x12\x04\x0e\x04\x10\x05\n\x0c\n\
+    \x05\x04\x01\x08\0\x01\x12\x03\x0e\n\x11\n\x0b\n\x04\x04\x01\x02\0\x12\
+    \x03\x0f\x08\x1b\n\x0c\n\x05\x04\x01\x02\0\x06\x12\x03\x0f\x08\x13\n\x0c\
+    \n\x05\x04\x01\x02\0\x01\x12\x03\x0f\x14\x16\n\x0c\n\x05\x04\x01\x02\0\
+    \x03\x12\x03\x0f\x19\x1a\n\n\n\x02\x04\x02\x12\x04\x13\0\x20\x01\n\n\n\
+    \x03\x04\x02\x01\x12\x03\x13\x08\x19\n\x0b\n\x04\x04\x02\x02\0\x12\x03\
+    \x14\x04\x16\n\x0c\n\x05\x04\x02\x02\0\x06\x12\x03\x14\x04\n\n\x0c\n\x05\
+    \x04\x02\x02\0\x01\x12\x03\x14\x0b\x11\n\x0c\n\x05\x04\x02\x02\0\x03\x12\
+    \x03\x14\x14\x15\n\x0c\n\x04\x04\x02\x08\0\x12\x04\x15\x04\x18\x05\n\x0c\
+    \n\x05\x04\x02\x08\0\x01\x12\x03\x15\n\x11\n\x0b\n\x04\x04\x02\x02\x01\
+    \x12\x03\x16\x08\x1c\n\x0c\n\x05\x04\x02\x02\x01\x06\x12\x03\x16\x08\x14\
+    \n\x0c\n\x05\x04\x02\x02\x01\x01\x12\x03\x16\x15\x17\n\x0c\n\x05\x04\x02\
+    \x02\x01\x03\x12\x03\x16\x1a\x1b\n\x0b\n\x04\x04\x02\x02\x02\x12\x03\x17\
+    \x08\x1f\n\x0c\n\x05\x04\x02\x02\x02\x06\x12\x03\x17\x08\x10\n\x0c\n\x05\
+    \x04\x02\x02\x02\x01\x12\x03\x17\x11\x1a\n\x0c\n\x05\x04\x02\x02\x02\x03\
+    \x12\x03\x17\x1d\x1e\n\x0c\n\x04\x04\x02\x04\0\x12\x04\x1a\x04\x1f\x05\n\
+    \x0c\n\x05\x04\x02\x04\0\x01\x12\x03\x1a\t\x0f\n\r\n\x06\x04\x02\x04\0\
+    \x02\0\x12\x03\x1b\x08\x16\n\x0e\n\x07\x04\x02\x04\0\x02\0\x01\x12\x03\
+    \x1b\x08\x11\n\x0e\n\x07\x04\x02\x04\0\x02\0\x02\x12\x03\x1b\x14\x15\n:\
+    \n\x06\x04\x02\x04\0\x02\x01\x12\x03\x1c\x08\x12\"+P2PKH\x20-\x2017VZNX1\
+    SN5NtKa8UQFxwQbFeFc3iqRYhem\n\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x01\x12\
+    \x03\x1c\x08\r\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x02\x12\x03\x1c\x10\x11\
+    \n9\n\x06\x04\x02\x04\0\x02\x02\x12\x03\x1d\x08\x11\"*P2SH\x20-\x203Ektn\
+    HQD7RiAE6uzMj2ZifT9YgRrkSgzQX\n\n\x0e\n\x07\x04\x02\x04\0\x02\x02\x01\
+    \x12\x03\x1d\x08\x0c\n\x0e\n\x07\x04\x02\x04\0\x02\x02\x02\x12\x03\x1d\
+    \x0f\x10\n:\n\x06\x04\x02\x04\0\x02\x03\x12\x03\x1e\x08\x13\"+bc1qw508d6\
+    qejxtdg4y5r3zarvary0c5xw7kv8f3t4\n\n\x0e\n\x07\x04\x02\x04\0\x02\x03\x01\
+    \x12\x03\x1e\x08\x0e\n\x0e\n\x07\x04\x02\x04\0\x02\x03\x02\x12\x03\x1e\
+    \x11\x12\n\n\n\x02\x04\x03\x12\x04\"\0%\x01\n\n\n\x03\x04\x03\x01\x12\
+    \x03\"\x08\x13\n\x0b\n\x04\x04\x03\x02\0\x12\x03#\x04\x17\n\x0c\n\x05\
+    \x04\x03\x02\0\x05\x12\x03#\x04\n\n\x0c\n\x05\x04\x03\x02\0\x01\x12\x03#\
+    \x0b\x12\n\x0c\n\x05\x04\x03\x02\0\x03\x12\x03#\x15\x16\n\x0b\n\x04\x04\
+    \x03\x02\x01\x12\x03$\x04\x18\n\x0c\n\x05\x04\x03\x02\x01\x06\x12\x03$\
+    \x04\r\n\x0c\n\x05\x04\x03\x02\x01\x01\x12\x03$\x0e\x13\n\x0c\n\x05\x04\
+    \x03\x02\x01\x03\x12\x03$\x16\x17\n\n\n\x02\x04\x04\x12\x04'\0)\x01\n\n\
+    \n\x03\x04\x04\x01\x12\x03'\x08\x14\n\x0b\n\x04\x04\x04\x02\0\x12\x03(\
+    \x04\x14\n\x0c\n\x05\x04\x04\x02\0\x05\x12\x03(\x04\t\n\x0c\n\x05\x04\
+    \x04\x02\0\x01\x12\x03(\n\x0f\n\x0c\n\x05\x04\x04\x02\0\x03\x12\x03(\x12\
+    \x13\n\n\n\x02\x04\x05\x12\x04+\0,\x01\n\n\n\x03\x04\x05\x01\x12\x03+\
+    \x08\x10\n\n\n\x02\x04\x06\x12\x04.\08\x01\n\n\n\x03\x04\x06\x01\x12\x03\
+    .\x08\x14\n\x0b\n\x04\x04\x06\x02\0\x12\x03/\x04\x15\n\x0c\n\x05\x04\x06\
+    \x02\0\x05\x12\x03/\x04\n\n\x0c\n\x05\x04\x06\x02\0\x01\x12\x03/\x0b\x10\
+    \n\x0c\n\x05\x04\x06\x02\0\x03\x12\x03/\x13\x14\n\x0b\n\x04\x04\x06\x02\
+    \x01\x12\x030\x04#\n\x0c\n\x05\x04\x06\x02\x01\x05\x12\x030\x04\x0b\n\
+    \x0c\n\x05\x04\x06\x02\x01\x01\x12\x030\x0c\x1e\n\x0c\n\x05\x04\x06\x02\
+    \x01\x03\x12\x030!\"\n\x0b\n\x04\x04\x06\x02\x02\x12\x031\x04\x1c\n\x0c\
+    \n\x05\x04\x06\x02\x02\x05\x12\x031\x04\n\n\x0c\n\x05\x04\x06\x02\x02\
+    \x01\x12\x031\x0b\x17\n\x0c\n\x05\x04\x06\x02\x02\x03\x12\x031\x1a\x1b\n\
+    \x0b\n\x04\x04\x06\x02\x03\x12\x032\x04\x18\n\x0c\n\x05\x04\x06\x02\x03\
+    \x05\x12\x032\x04\t\n\x0c\n\x05\x04\x06\x02\x03\x01\x12\x032\n\x13\n\x0c\
+    \n\x05\x04\x06\x02\x03\x03\x12\x032\x16\x17\n\x0c\n\x04\x04\x06\x08\0\
+    \x12\x044\x047\x05\n\x0c\n\x05\x04\x06\x08\0\x01\x12\x034\n\x12\n\x0b\n\
+    \x04\x04\x06\x02\x04\x12\x035\x08\x1b\n\x0c\n\x05\x04\x06\x02\x04\x05\
+    \x12\x035\x08\r\n\x0c\n\x05\x04\x06\x02\x04\x01\x12\x035\x0e\x16\n\x0c\n\
+    \x05\x04\x06\x02\x04\x03\x12\x035\x19\x1a\n\x0b\n\x04\x04\x06\x02\x05\
+    \x12\x036\x08$\n\x0c\n\x05\x04\x06\x02\x05\x06\x12\x036\x08\x11\n\x0c\n\
+    \x05\x04\x06\x02\x05\x01\x12\x036\x12\x1f\n\x0c\n\x05\x04\x06\x02\x05\
+    \x03\x12\x036\"#b\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {
