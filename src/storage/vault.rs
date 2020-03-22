@@ -21,6 +21,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 use uuid::Uuid;
+use hdpath::StandardHDPath;
 
 pub struct VaultStorage {
     pub dir: PathBuf,
@@ -372,7 +373,9 @@ impl AddAccount {
             address: Some(address),
             key: PKType::SeedHd(SeedRef {
                 seed_id,
-                hd_path: hd_path.to_string(),
+                hd_path: StandardHDPath::try_from(hd_path.to_string().as_str()).map_err(|_| {
+                    VaultError::ConversionError(ConversionError::InvalidFieldValue("hd_path".to_string()))
+                })?,
             }),
             receive_disabled: false,
         });

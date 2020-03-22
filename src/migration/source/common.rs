@@ -12,6 +12,7 @@ use crate::{
 };
 use std::convert::TryFrom;
 use uuid::Uuid;
+use hdpath::StandardHDPath;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();
@@ -89,7 +90,10 @@ pub fn add_to_vault(
                 None => {
                     let fingerprints = match kf.address {
                         Some(address) => {
-                            let f = HDPathFingerprint::from_address(data.hd_path.clone(), &address);
+                            let f = HDPathFingerprint::from_address(
+                                StandardHDPath::try_from(data.hd_path.clone().as_str()).map_err(|_| "Unsupported HDPath")?,
+                                &address
+                            );
                             vec![f]
                         }
                         None => Vec::new(),
@@ -112,7 +116,7 @@ pub fn add_to_vault(
                 address: kf.address,
                 key: PKType::SeedHd(SeedRef {
                     seed_id,
-                    hd_path: data.hd_path.clone(),
+                    hd_path: StandardHDPath::try_from(data.hd_path.clone().as_str()).map_err(|_| "Unsupported HDPath")?,
                 }),
                 receive_disabled: false,
             }

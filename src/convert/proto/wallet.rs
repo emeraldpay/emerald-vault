@@ -24,6 +24,7 @@ use std::str::FromStr;
 use uuid::Uuid;
 use crate::structs::wallet::ReservedPath;
 use crate::hdwallet::bip32::HDPath;
+use hdpath::StandardHDPath;
 
 impl TryFrom<&proto_WalletAccount> for WalletAccount {
     type Error = ConversionError;
@@ -53,7 +54,9 @@ impl TryFrom<&proto_WalletAccount> for WalletAccount {
                         seed_id: Uuid::from_str(seed.get_seed_id()).map_err(|_| {
                             ConversionError::InvalidFieldValue("seed_id".to_string())
                         })?,
-                        hd_path: seed.get_path().to_string(),
+                        hd_path: StandardHDPath::try_from(seed.get_path()).map_err(|_| {
+                            ConversionError::InvalidFieldValue("hd_path".to_string())
+                        })?,
                     };
                     PKType::SeedHd(seed)
                 }
@@ -96,7 +99,7 @@ impl From<&WalletAccount> for proto_WalletAccount {
             PKType::SeedHd(seed_ref) => {
                 let mut seed_hd = proto_SeedHD::new();
                 seed_hd.set_seed_id(seed_ref.seed_id.to_string());
-                seed_hd.set_path(seed_ref.hd_path.clone());
+                seed_hd.set_path(seed_ref.hd_path.to_string());
                 result.set_hd_path(seed_hd);
             }
             PKType::PrivateKeyRef(addr) => {
@@ -225,6 +228,18 @@ mod tests {
     use std::str::FromStr;
     use uuid::Uuid;
     use crate::structs::wallet::ReservedPath;
+    use hdpath::StandardHDPath;
+    use crate::proto::{
+        wallet::{
+            Wallet as proto_Wallet,
+            WalletAccount as proto_WalletAccount,
+        },
+        seed::{
+            SeedHD as proto_SeedHD
+        }
+    };
+    use protobuf::Message;
+    use crate::convert::error::ConversionError;
 
     #[test]
     fn write_and_read_empty() {
@@ -304,7 +319,7 @@ mod tests {
                 ),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
-                    hd_path: "m/44'/60'/0'/0".to_string(),
+                    hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/0").unwrap(),
                 }),
                 receive_disabled: false,
             }],
@@ -337,7 +352,7 @@ mod tests {
                 ),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
-                    hd_path: "m/44'/60'/0'/0".to_string(),
+                    hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/1").unwrap(),
                 }),
                 receive_disabled: true,
             }],
@@ -392,7 +407,7 @@ mod tests {
                     key: PKType::SeedHd(
                         SeedRef {
                             seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
-                            hd_path: "m/44'/60'/0'/0/1".to_string(),
+                            hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/1").unwrap(),
                         }
                     ),
                     ..WalletAccount::default()
@@ -403,7 +418,7 @@ mod tests {
                     key: PKType::SeedHd(
                         SeedRef {
                             seed_id: Uuid::from_str("ad22b0da-12ae-4433-960a-755ad3a2558c").unwrap(),
-                            hd_path: "m/44'/60'/1'/0/1".to_string(),
+                            hd_path: StandardHDPath::try_from("m/44'/60'/1'/0/1").unwrap(),
                         }
                     ),
                     ..WalletAccount::default()
@@ -421,4 +436,28 @@ mod tests {
         assert_eq!(act.reserved[1].seed_id.to_string(), "ad22b0da-12ae-4433-960a-755ad3a2558c");
         assert_eq!(act.reserved[1].account_id, 1);
     }
+
+    #[test]
+    fn should_not_read_account_with_invalid_hd() {
+        let mut pk = proto_SeedHD::default();
+        pk.set_seed_id(Uuid::new_v4().to_string());
+        pk.set_path("m/44'/60'/1'/2".to_string());
+
+        let mut account = proto_WalletAccount::default();
+        account.set_id(1);
+        account.set_blockchain_id(Blockchain::Ethereum as u32);
+        account.set_hd_path(pk);
+
+        let mut wallet = proto_Wallet::default();
+        wallet.set_id(Uuid::new_v4().to_string());
+        wallet.set_label("test".to_string());
+        wallet.accounts.push(account);
+
+        let bytes = wallet.write_to_bytes().unwrap();
+
+        let wallet_act = Wallet::try_from(bytes);
+
+        assert_eq!(Err(ConversionError::InvalidFieldValue("hd_path".to_string())), wallet_act);
+    }
+
 }

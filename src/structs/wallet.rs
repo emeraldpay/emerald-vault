@@ -14,6 +14,7 @@ use crate::{
 use regex::Regex;
 use std::str::FromStr;
 use uuid::Uuid;
+use hdpath::StandardHDPath;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
@@ -153,9 +154,9 @@ impl WalletAccount {
         &self,
         tx: Transaction,
         seed: Uuid,
-        hd_path: String,
+        hd_path: StandardHDPath,
     ) -> Result<Vec<u8>, VaultError> {
-        let hd_path = HDPath::try_from(hd_path.as_str())
+        let hd_path = HDPath::try_from(hd_path.to_string().as_str())
             .map_err(|_| VaultError::InvalidDataError("HDPath".to_string()))?;
 
         //TODO verify actual device, right now vault just uses a first currently available device
@@ -228,7 +229,7 @@ impl WalletAccount {
                 match seed_details.source {
                     SeedSource::Bytes(bytes) => {
                         let seed_key = bytes.decrypt(password.as_str())?;
-                        let hd_path = HDPath::try_from(seed.hd_path.as_str())?;
+                        let hd_path = HDPath::try_from(seed.hd_path.to_string().as_str())?;
                         generate_key(&hd_path, &seed_key).map_err(|_| VaultError::InvalidPrivateKey)
                     }
                     SeedSource::Ledger(_) => Err(VaultError::PrivateKeyUnavailable),
@@ -257,7 +258,7 @@ impl WalletAccount {
                         }
                         let password = password.unwrap();
                         let seed_key = bytes.decrypt(password.as_str())?;
-                        let hd_path = HDPath::try_from(seed.hd_path.as_str())?;
+                        let hd_path = HDPath::try_from(seed.hd_path.to_string().as_str())?;
                         let key = generate_key(&hd_path, &seed_key)
                             .map_err(|_| VaultError::InvalidPrivateKey)?;
                         EthereumJsonV3File::from_pk(None, key, password)
@@ -284,6 +285,9 @@ mod tests {
     use std::str::FromStr;
     use tempdir::TempDir;
     use uuid::Uuid;
+    use hdpath::StandardHDPath;
+    use std::convert::TryFrom;
+
 
     #[test]
     fn sign_erc20_approve() {
@@ -437,7 +441,7 @@ mod tests {
             address: None, //0xC27fBF02FB577683593b1114180CA6E2c88510A0
             key: PKType::SeedHd(SeedRef {
                 seed_id,
-                hd_path: "m/44'/60'/2'/0/52".to_string(),
+                hd_path: StandardHDPath::try_from("m/44'/60'/2'/0/52").unwrap(),
             }),
             receive_disabled: false
         };
@@ -467,7 +471,7 @@ mod tests {
             address: None,
             key: PKType::SeedHd(SeedRef {
                 seed_id,
-                hd_path: "m/44'/60'/160720'/0'/0".to_string(),
+                hd_path: StandardHDPath::try_from("m/44'/60'/160720'/0/0").unwrap(),
             }),
             receive_disabled: false
         };
@@ -487,7 +491,7 @@ mod tests {
             PKType::SeedHd(x) => x,
             _ => panic!("Not Seed HDPath"),
         };
-        assert_eq!(seed_ref.hd_path, "m/44'/60'/160720'/0'/0".to_string());
+        assert_eq!(seed_ref.hd_path.to_string(), "m/44'/60'/160720'/0/0".to_string());
         assert_eq!(seed_ref.seed_id, seed_id);
 
         let seed_act = vault.seeds().get(seed_id).unwrap();
@@ -535,7 +539,7 @@ mod tests {
             address: None,
             key: PKType::SeedHd(SeedRef {
                 seed_id,
-                hd_path: "m/44'/60'/160720'/0/0".to_string(),
+                hd_path: StandardHDPath::try_from("m/44'/60'/160720'/0/0").unwrap(),
             }),
             receive_disabled: false
         };

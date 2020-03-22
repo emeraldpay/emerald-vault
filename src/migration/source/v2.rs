@@ -421,7 +421,7 @@ mod tests {
             PKType::SeedHd(x) => x,
             _ => panic!("not seed"),
         };
-        assert_eq!(seed.hd_path, "m/44'/60'/0'/0");
+        assert_eq!(seed.hd_path.to_string(), "m/44'/60'/0'/0/0");
         let seed_value = vault.seeds().get(seed.seed_id).unwrap();
         match seed_value.source {
             SeedSource::Ledger(x) => x,

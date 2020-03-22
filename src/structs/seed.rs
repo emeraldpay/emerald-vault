@@ -7,6 +7,7 @@ use std::convert::TryFrom;
 use uuid::Uuid;
 use crate::hdwallet::bip32::HDPath;
 use bitcoin::util::bip32::ChildNumber;
+use hdpath::StandardHDPath;
 
 byte_array_struct!(Bytes256, 32);
 
@@ -29,7 +30,7 @@ pub struct LedgerSource {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct HDPathFingerprint {
-    pub hd_path: String,
+    pub hd_path: StandardHDPath,
     pub value: FingerprintType,
 }
 
@@ -41,11 +42,11 @@ pub enum FingerprintType {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SeedRef {
     pub seed_id: Uuid,
-    pub hd_path: String,
+    pub hd_path: StandardHDPath,
 }
 
 impl HDPathFingerprint {
-    pub fn from_address(hd_path: String, address: &Address) -> HDPathFingerprint {
+    pub fn from_address(hd_path: StandardHDPath, address: &Address) -> HDPathFingerprint {
         let hash = sha2::Sha256::digest(address);
         let f = Bytes256::try_from(hash.as_slice()).unwrap();
         HDPathFingerprint {
@@ -71,7 +72,7 @@ impl SeedSource {
 impl SeedRef {
     /// parse current HDPath
     pub fn parsed_hd_path(&self) -> Result<HDPath, ()> {
-        HDPath::try_from(self.hd_path.as_str()).map_err(|_| ())
+        HDPath::try_from(self.hd_path.to_string().as_str()).map_err(|_| ())
     }
 
     /// extract Account from HDPath if it's structured as BIP-44. (m/purpose'/coin_type'/account'/change/address_index)
@@ -94,76 +95,33 @@ impl SeedRef {
 mod tests {
     use crate::structs::seed::SeedRef;
     use crate::hdwallet::bip32::HDPath;
-
-    #[test]
-    fn parse_standard_hdpath() {
-        let seed = SeedRef {
-            seed_id: Default::default(),
-            hd_path: "m/44'/0'/0'/0/0".to_string(),
-        };
-        assert_eq!(Ok(HDPath::try_from("m/44'/0'/0'/0/0").unwrap()), seed.parsed_hd_path());
-    }
-
-    #[test]
-    fn error_for_invalid_hdpath() {
-        let seed = SeedRef {
-            seed_id: Default::default(),
-            hd_path: "m-44H-0H-0H-0-0".to_string(),
-        };
-        assert_eq!(Err(()), seed.parsed_hd_path());
-    }
+    use hdpath::StandardHDPath;
+    use std::convert::TryFrom;
 
     #[test]
     fn account_id_for_standard_hdpath() {
         let seed = SeedRef {
             seed_id: Default::default(),
-            hd_path: "m/44'/0'/0'/0/0".to_string(),
+            hd_path: StandardHDPath::try_from("m/44'/0'/0'/0/0").unwrap(),
         };
         assert_eq!(Ok(0), seed.get_account_id());
 
         let seed = SeedRef {
             seed_id: Default::default(),
-            hd_path: "m/44'/60'/0'/0/0".to_string(),
+            hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/0").unwrap(),
         };
         assert_eq!(Ok(0), seed.get_account_id());
 
         let seed = SeedRef {
             seed_id: Default::default(),
-            hd_path: "m/44'/60'/3'/0/0".to_string(),
+            hd_path: StandardHDPath::try_from("m/44'/60'/3'/0/0").unwrap(),
         };
         assert_eq!(Ok(3), seed.get_account_id());
 
         let seed = SeedRef {
             seed_id: Default::default(),
-            hd_path: "m/44'/0'/1234'/0/0".to_string(),
+            hd_path: StandardHDPath::try_from("m/44'/0'/1234'/0/0").unwrap(),
         };
         assert_eq!(Ok(1234), seed.get_account_id());
-    }
-
-    #[test]
-    fn no_account_id_for_non_hardened_purpose() {
-        let seed = SeedRef {
-            seed_id: Default::default(),
-            hd_path: "m/44/0'/0'/0/0".to_string(),
-        };
-        assert_eq!(Err(()), seed.get_account_id());
-    }
-
-    #[test]
-    fn no_account_id_for_non_hardened_coin() {
-        let seed = SeedRef {
-            seed_id: Default::default(),
-            hd_path: "m/44'/0/0'/0/0".to_string(),
-        };
-        assert_eq!(Err(()), seed.get_account_id());
-    }
-
-    #[test]
-    fn no_account_id_for_non_hardened_id() {
-        let seed = SeedRef {
-            seed_id: Default::default(),
-            hd_path: "m/44'/0'/0/0/0".to_string(),
-        };
-        assert_eq!(Err(()), seed.get_account_id());
     }
 }

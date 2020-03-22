@@ -16,6 +16,7 @@ use protobuf::{parse_from_bytes, Message};
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 use uuid::Uuid;
+use hdpath::StandardHDPath;
 
 /// Read from Protobuf message
 impl TryFrom<&proto_LedgerSeed> for LedgerSource {
@@ -31,7 +32,8 @@ impl TryFrom<&proto_LedgerSeed> for LedgerSource {
                 let data = Bytes256::try_from(f.get_fingerprint())
                     .map_err(|_| ConversionError::InvalidFieldValue("fingerprint".to_string()))?;
                 let value = HDPathFingerprint {
-                    hd_path: f.get_path().to_string(),
+                    hd_path: StandardHDPath::try_from(f.get_path())
+                        .map_err(|_| ConversionError::InvalidFieldValue("hd_path".to_string()))?,
                     value: FingerprintType::AddressSha256(data),
                 };
                 fingerprints.push(value)
@@ -55,7 +57,7 @@ impl TryFrom<LedgerSource> for proto_LedgerSeed {
                 .iter()
                 .map(|f| {
                     let mut pf = proto_HDFingerprint::new();
-                    pf.set_path(f.hd_path.clone());
+                    pf.set_path(f.hd_path.to_string());
                     match f.value {
                         FingerprintType::AddressSha256(b) => pf.set_fingerprint(b.into()),
                     }
