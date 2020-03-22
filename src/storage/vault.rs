@@ -169,7 +169,9 @@ fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(
     }
     if fs::write(file, new_content).is_err() {
         // FAILURE! Revert back!
-        fs::remove_file(file);
+        if fs::remove_file(file).is_err() {
+            println!("Failed to remove {:?}", file)
+        }
         if fs::rename(&bak_file_name, file).is_err() {
             return Err(VaultError::FilesystemError(
                 "Failed to create update filesystem, and data stuck with backup".to_string(),
@@ -540,15 +542,12 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::archive::ARCHIVE_DIR;
     use crate::tests::read_dir_fully;
     use crate::{
         convert::json::keyfile::EthereumJsonV3File,
         structs::pk::{EthereumPk3, PrivateKeyHolder},
         tests::*,
     };
-    use std::fs::DirEntry;
-    use std::thread;
     use tempdir::TempDir;
 
     #[test]
@@ -865,7 +864,7 @@ mod tests {
         let f = tmp_dir
             .clone()
             .join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
-        fs::write(&f, "test 1");
+        fs::write(&f, "test 1").unwrap();
         assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 1);
         let result = safe_update(&f, "test 2", None);
         assert!(result.is_ok());
@@ -882,12 +881,12 @@ mod tests {
         let f = tmp_dir
             .clone()
             .join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
-        fs::write(&f, "test 1");
+        fs::write(&f, "test 1").unwrap();
 
         let f_bak = tmp_dir
             .clone()
             .join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
-        fs::write(&f_bak, "test 2");
+        fs::write(&f_bak, "test 2").unwrap();
 
         assert_eq!(fs::read_dir(&tmp_dir).unwrap().count(), 2);
 
@@ -908,7 +907,7 @@ mod tests {
         let f = tmp_dir
             .clone()
             .join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
-        fs::write(&f, "test 1");
+        fs::write(&f, "test 1").unwrap();
         let result = safe_update(&f, "test 2", Some(&archive));
         assert!(result.is_ok());
 
@@ -921,7 +920,7 @@ mod tests {
 
     #[test]
     fn safe_update_deletes_if_archive_full() {
-        init_tests();
+        // init_tests();
 
         let tmp_dir = TempDir::new("emerald-vault-test")
             .expect("Dir not created")
@@ -930,12 +929,12 @@ mod tests {
         archive.write(
             "e779c975-6791-47a3-a4d6-d0e976d02820.key.bak",
             "test old backup",
-        );
+        ).unwrap();
 
         let f = tmp_dir
             .clone()
             .join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
-        fs::write(&f, "test orig");
+        fs::write(&f, "test orig").unwrap();
         let result = safe_update(&f, "test updated", Some(&archive));
         assert!(result.is_ok());
         let act = fs::read_to_string(&f).unwrap();
@@ -961,7 +960,7 @@ mod tests {
         let f = tmp_dir
             .clone()
             .join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
-        fs::write(&f, "test 1");
+        fs::write(&f, "test 1").unwrap();
         let vault = VaultStorage::create(tmp_dir.clone()).unwrap();
         let removed = vault
             .keys()
@@ -990,7 +989,7 @@ mod tests {
         let f = tmp_dir
             .clone()
             .join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
-        fs::write(&f, "test 1");
+        fs::write(&f, "test 1").unwrap();
         let vault = VaultStorage::create(tmp_dir.clone()).unwrap();
 
         let act = vault.revert_backups();
@@ -1007,7 +1006,7 @@ mod tests {
         let f = tmp_dir
             .clone()
             .join("e779c975-6791-47a3-a4d6-d0e976d02820.key.bak");
-        fs::write(&f, "test 1");
+        fs::write(&f, "test 1").unwrap();
         let vault = VaultStorage::create(tmp_dir.clone()).unwrap();
 
         let act = vault.revert_backups();
@@ -1033,8 +1032,8 @@ mod tests {
         let f_orig = tmp_dir
             .clone()
             .join("e779c975-6791-47a3-a4d6-d0e976d02820.key");
-        fs::write(&f_bak, "test 1");
-        fs::write(&f_orig, "test 2");
+        fs::write(&f_bak, "test 1").unwrap();
+        fs::write(&f_orig, "test 2").unwrap();
 
         let vault = VaultStorage::create(tmp_dir.clone()).unwrap();
 

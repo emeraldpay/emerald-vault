@@ -134,7 +134,7 @@ mod tests {
         let seed_act = Seed::try_from(buf).unwrap();
 
         assert_eq!(seed_act.id, seed_id);
-        let source = match seed_act.source {
+        match seed_act.source {
             SeedSource::Bytes(e) => e,
             _ => panic!("Not bytes"),
         };
@@ -153,7 +153,7 @@ mod tests {
         let seed_act = Seed::try_from(buf).unwrap();
 
         assert_eq!(seed_act.id, seed_id);
-        let source = match seed_act.source {
+        match seed_act.source {
             SeedSource::Ledger(v) => v,
             _ => panic!("Not ledger"),
         };

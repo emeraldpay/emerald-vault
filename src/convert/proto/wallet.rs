@@ -64,7 +64,6 @@ impl TryFrom<&proto_WalletAccount> for WalletAccount {
                     Uuid::parse_str(pk_id)
                         .map_err(|_| ConversionError::InvalidFieldValue("pk_id".to_string()))?,
                 ),
-                _ => return Err(ConversionError::UnsupportedValue("pk_type".to_string())),
             },
             None => return Err(ConversionError::FieldIsEmpty("pk_type".to_string())),
         };

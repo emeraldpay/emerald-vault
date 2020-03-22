@@ -1,6 +1,4 @@
 use crate::error;
-use crate::storage::error::VaultError;
-use protobuf::ProtobufError;
 use std::fmt::Display;
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Display)]

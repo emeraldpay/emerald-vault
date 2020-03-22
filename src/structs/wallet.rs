@@ -1,4 +1,3 @@
-use crate::hdwallet::bip32::path_to_arr;
 use crate::hdwallet::WManager;
 use crate::{
     convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
@@ -153,7 +152,7 @@ impl WalletAccount {
     fn sign_tx_with_hardware(
         &self,
         tx: Transaction,
-        seed: Uuid,
+        _: Uuid, //not used yet
         hd_path: StandardHDPath,
     ) -> Result<Vec<u8>, VaultError> {
         let hd_path = HDPath::try_from(hd_path.to_string().as_str())
@@ -172,7 +171,7 @@ impl WalletAccount {
         let fd = &manager.devices()[0].1;
         let sign = manager
             .sign_transaction(&fd, &rlp, None)
-            .map_err(|e| VaultError::InvalidPrivateKey)?;
+            .map_err(|_| VaultError::InvalidPrivateKey)?;
         let raw = tx.raw_from_sig(Some(chain_id.as_chainid()), &sign);
         //TODO verify that signature is from account address
         Ok(raw)
@@ -274,7 +273,7 @@ impl WalletAccount {
 #[cfg(test)]
 mod tests {
     use crate::core::chains::Blockchain;
-    use crate::hdwallet::test_commons::{get_ledger_conf, is_ledger_enabled, read_test_txes};
+    use crate::hdwallet::test_commons::{is_ledger_enabled, read_test_txes};
     use crate::storage::vault::VaultStorage;
     use crate::structs::crypto::Encrypted;
     use crate::structs::pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType};
@@ -495,7 +494,7 @@ mod tests {
         assert_eq!(seed_ref.seed_id, seed_id);
 
         let seed_act = vault.seeds().get(seed_id).unwrap();
-        let l = match seed_act.source {
+        match seed_act.source {
             SeedSource::Ledger(x) => x,
             _ => panic!("Not ledger"),
         };

@@ -52,11 +52,6 @@ pub enum MacType {
     Web3(Vec<u8>),
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-enum CryptoError {
-    InvalidData,
-}
-
 impl Encrypted {
     pub fn get_mac(&self) -> &Vec<u8> {
         match &self.cipher {

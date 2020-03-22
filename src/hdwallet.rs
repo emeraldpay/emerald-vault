@@ -542,7 +542,7 @@ mod tests {
 
     #[test]
     pub fn should_get_address_with_ledger() {
-        simple_logger::init_with_level(Level::Trace);
+        simple_logger::init_with_level(Level::Trace).unwrap();
         if !is_ledger_enabled() {
             warn!("Ledger test is disabled");
             return;

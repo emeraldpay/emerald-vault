@@ -89,7 +89,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     pub fn init_tests() {
-        simple_logger::init_with_level(Level::Debug);
+        simple_logger::init_with_level(Level::Debug).unwrap();
     }
 
     pub fn read_dir_fully<P: AsRef<Path>>(path: P) -> Vec<DirEntry> {
