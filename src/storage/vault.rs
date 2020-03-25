@@ -496,11 +496,11 @@ where
         let f = self.get_filename_for(id.clone());
 
         let data = fs::read(f)?;
-        let pk = P::try_from(data).map_err(|_| ConversionError::InvalidProtobuf)?;
-        if !pk.get_id().eq(&id) {
+        let entry = P::try_from(data).map_err(|_| ConversionError::InvalidProtobuf)?;
+        if !entry.get_id().eq(&id) {
             Err(VaultError::IncorrectIdError)
         } else {
-            Ok(pk)
+            Ok(entry)
         }
     }
 

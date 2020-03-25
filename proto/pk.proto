@@ -1,13 +1,15 @@
 syntax = "proto3";
 package emerald.vault;
 import "crypto.proto";
+import "common.proto";
 
 message PrivateKey {
-    string id = 1;
+    FileType file_type = 1;
+    string id = 2;
     oneof pk {
-        EthereumPrivateKey ethereum = 2;
-        BitcoinPrivateKey bitcoin = 3;
-        Bip32Private xpriv = 4;
+        EthereumPrivateKey ethereum = 3;
+        BitcoinPrivateKey bitcoin = 4;
+        Bip32Private xpriv = 5;
     }
 }
 

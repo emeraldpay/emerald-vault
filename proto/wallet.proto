@@ -2,23 +2,25 @@ syntax = "proto3";
 package emerald.vault;
 import "address.proto";
 import "seed.proto";
+import "common.proto";
 
 // Wallet is a user defined group of addresses used together
 message Wallet {
+    FileType file_type = 1;
     // UUID
-    string id = 1;
+    string id = 2;
     // User defined label
-    string label = 2;
+    string label = 3;
 
     // List of HDPath accounts that belongs to the wallet, used to automate finding new
     // addresses and avoiding collision between different wallets
-    repeated Reserved hd_accounts = 3;
+    repeated Reserved hd_accounts = 4;
     // Actual accounts in the wallet
-    repeated WalletAccount accounts = 4;
+    repeated WalletAccount accounts = 5;
     // Sequence for account ids in that wallet. Incremented each time a new account added, and used
     // as the id that new account. Using this sequence, if account gets deleted its id is not going
     // to be reused
-    uint32 account_seq = 5;
+    uint32 account_seq = 6;
 }
 
 // Reserved index on a HD path, an x from m/44'/x'
@@ -46,20 +48,4 @@ message WalletAccount {
     }
 }
 
-enum BlockchainId {
-    CHAIN_UNSPECIFIED = 0;
 
-    CHAIN_BITCOIN = 1;
-    CHAIN_GRIN = 2;
-
-    CHAIN_ETHEREUM = 100;
-    CHAIN_ETHEREUM_CLASSIC = 101;
-
-    // Sidechains and state channels
-    CHAIN_LIGHTNING = 1001;
-
-    // Testnets
-    CHAIN_KOVAN = 10002;
-    CHAIN_TESTNET_BITCOIN = 10003;
-    CHAIN_FLOONET = 10004;
-}

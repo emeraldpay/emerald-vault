@@ -6,6 +6,7 @@ use crate::{
             HDPathFingerprint as proto_HDFingerprint, LedgerSeed as proto_LedgerSeed,
             Seed as proto_Seed, Seed_oneof_seed_source as proto_SeedType,
         },
+        common::FileType as proto_FileType
     },
     structs::{
         crypto::Encrypted,
@@ -107,6 +108,7 @@ impl TryFrom<Seed> for Vec<u8> {
 
     fn try_from(value: Seed) -> Result<Self, Self::Error> {
         let mut m = proto_Seed::new();
+        m.set_file_type(proto_FileType::FILE_SEED);
         m.set_id(value.id.to_string());
         match value.source {
             SeedSource::Bytes(s) => m.set_bytes(proto_Encrypted::try_from(&s)?),
@@ -122,6 +124,24 @@ mod tests {
     use crate::structs::seed::{LedgerSource, Seed, SeedSource};
     use std::convert::{TryFrom, TryInto};
     use uuid::Uuid;
+    use protobuf::{parse_from_bytes, ProtobufEnum};
+    use std::str::FromStr;
+    use crate::proto::seed::Seed as proto_Seed;
+
+    #[test]
+    fn write_as_protobuf() {
+        let seed = Seed {
+            id: Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap(),
+            source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap()),
+        };
+
+        let b: Vec<u8> = seed.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = parse_from_bytes::<proto_Seed>(b.as_slice()).unwrap();
+        assert_eq!(act.get_file_type().value(), 3);
+        assert_eq!(act.get_id(), "18ba0447-81f3-40d7-bab1-e74de07a1001");
+        assert!(act.has_bytes());
+    }
 
     #[test]
     fn write_and_read_bytes() {

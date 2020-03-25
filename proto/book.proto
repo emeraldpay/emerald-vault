@@ -1,10 +1,12 @@
 syntax = "proto3";
 package emerald.vault;
 import "address.proto";
+import "common.proto";
 
 message BookItem {
-    string label = 1;
-    string description = 2;
-    uint32 blockchain = 3;
-    Address address = 4;
+    FileType file_type = 1;
+    string label = 2;
+    string description = 3;
+    uint32 blockchain = 4;
+    Address address = 5;
 }

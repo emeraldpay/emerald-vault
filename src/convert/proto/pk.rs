@@ -7,6 +7,7 @@ use crate::{
             EthereumPK3 as proto_EthereumPK3, EthereumPrivateKey as proto_EthereumPrivateKey,
             PrivateKey as proto_PrivateKey,
         },
+        common::FileType as proto_FileType
     },
     structs::{
         crypto::Encrypted,
@@ -67,11 +68,12 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
 
     fn try_from(value: PrivateKeyHolder) -> Result<Self, Self::Error> {
         let mut result = proto_PrivateKey::default();
+        result.set_file_type(proto_FileType::FILE_PK);
+        result.set_id(value.id.to_string());
         let mut ethereum = proto_EthereumPrivateKey::default();
         match &value.pk {
             PrivateKeyType::EthereumPk(it) => {
                 let mut ethereum_pk3 = proto_EthereumPK3::default();
-                result.set_id(value.id.to_string());
                 match it.address {
                     Some(address) => ethereum_pk3.set_address(address.to_string()),
                     None => {}
@@ -85,4 +87,40 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
             .write_to_bytes()
             .map_err(|e| ConversionError::from(e))
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::structs::pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3};
+    use crate::proto::pk::PrivateKey as proto_PrivateKey;
+    use uuid::Uuid;
+    use std::str::FromStr;
+    use protobuf::{parse_from_bytes, ProtobufEnum};
+    use std::convert::{TryInto, TryFrom};
+
+    #[test]
+    fn write_as_protobuf() {
+        let mut pk = PrivateKeyHolder::generate_ethereum_raw("test").unwrap();
+        pk.id = Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap();
+
+        let b: Vec<u8> = pk.try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = parse_from_bytes::<proto_PrivateKey>(b.as_slice()).unwrap();
+        assert_eq!(act.get_file_type().value(), 2);
+        assert_eq!(act.get_id(), "18ba0447-81f3-40d7-bab1-e74de07a1001");
+        assert!(act.has_ethereum());
+    }
+
+    #[test]
+    fn write_and_read() {
+        let mut pk = PrivateKeyHolder::generate_ethereum_raw("test").unwrap();
+        pk.id = Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap();
+
+        let b: Vec<u8> = pk.try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = PrivateKeyHolder::try_from(b).unwrap();
+        assert_eq!(act.id.to_string(), "18ba0447-81f3-40d7-bab1-e74de07a1001");
+        assert!(act.decrypt("test").is_ok());
+    }
+
 }

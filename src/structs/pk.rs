@@ -1,6 +1,6 @@
 use crate::structs::crypto::Encrypted;
 use crate::structs::types::HasUuid;
-use crate::Address;
+use crate::{Address, PrivateKey};
 use uuid::Uuid;
 
 pub struct PrivateKeyHolder {

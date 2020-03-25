@@ -10,6 +10,7 @@ use crate::{
             WalletAccount_oneof_pk_type as proto_WalletAccountPkType,
             Reserved as proto_Reserved
         },
+        common::FileType as proto_FileType
     },
     structs::{
         seed::SeedRef,
@@ -168,6 +169,7 @@ impl TryFrom<Wallet> for Vec<u8> {
     fn try_from(value: Wallet) -> Result<Self, Self::Error> {
         let mut result = proto_Wallet::default();
         result.set_id(value.id.to_string());
+        result.set_file_type(proto_FileType::FILE_WALLET);
         if value.label.is_some() {
             result.set_label(value.label.unwrap());
         }
@@ -237,7 +239,7 @@ mod tests {
             SeedHD as proto_SeedHD
         }
     };
-    use protobuf::Message;
+    use protobuf::{Message, parse_from_bytes, ProtobufEnum};
     use crate::convert::error::ConversionError;
 
     #[test]
@@ -255,6 +257,26 @@ mod tests {
         assert_eq!(act.label, None);
         assert_eq!(act.accounts.len(), 0);
         assert_eq!(act, wallet);
+    }
+
+    #[test]
+    fn write_as_protobuf() {
+        let wallet = Wallet {
+            id: Uuid::from_str("60eb04b5-1602-4e75-885f-076217ac5d0d").unwrap(),
+            label: None,
+            accounts: vec![],
+            ..Wallet::default()
+        };
+
+        let b: Vec<u8> = wallet.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = parse_from_bytes::<proto_Wallet>(b.as_slice()).unwrap();
+        assert_eq!(act.get_file_type().value(), 1);
+        assert_eq!(act.get_id(), "60eb04b5-1602-4e75-885f-076217ac5d0d");
+        assert_eq!(act.get_label(), "");
+        assert_eq!(act.get_accounts().len(), 0);
+        assert_eq!(act.get_hd_accounts().len(), 0);
+        assert_eq!(act.get_account_seq(), 0);
     }
 
     #[test]

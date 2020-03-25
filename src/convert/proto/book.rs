@@ -4,6 +4,7 @@ use crate::{
     proto::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         book::BookItem as proto_BookItem,
+        common::FileType as proto_FileType
     },
     structs::book::{AddressRef, BookmarkDetails},
     util::optional::none_if_empty,
@@ -65,6 +66,7 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
 
     fn try_from(value: BookmarkDetails) -> Result<Self, Self::Error> {
         let mut m = proto_BookItem::new();
+        m.set_file_type(proto_FileType::FILE_BOOK);
         m.set_blockchain(value.blockchain as u32);
         if value.label.is_some() {
             m.set_label(value.label.unwrap());

@@ -1,0 +1,32 @@
+syntax = "proto3";
+package emerald.vault;
+
+message File {
+    FileType file_type = 1;
+}
+
+enum FileType {
+    FILE_UNKNOWN = 0;
+    FILE_WALLET = 1;
+    FILE_PK = 2;
+    FILE_SEED = 3;
+    FILE_BOOK = 4;
+}
+
+enum BlockchainId {
+    CHAIN_UNSPECIFIED = 0;
+
+    CHAIN_BITCOIN = 1;
+    CHAIN_GRIN = 2;
+
+    CHAIN_ETHEREUM = 100;
+    CHAIN_ETHEREUM_CLASSIC = 101;
+
+    // Sidechains and state channels
+    CHAIN_LIGHTNING = 1001;
+
+    // Testnets
+    CHAIN_KOVAN = 10002;
+    CHAIN_TESTNET_BITCOIN = 10003;
+    CHAIN_FLOONET = 10004;
+}

@@ -29,6 +29,7 @@ const _PROTOBUF_VERSION_CHECK: () = ::protobuf::VERSION_2_8_1;
 #[derive(PartialEq,Clone,Default)]
 pub struct BookItem {
     // message fields
+    pub file_type: super::common::FileType,
     pub label: ::std::string::String,
     pub description: ::std::string::String,
     pub blockchain: u32,
@@ -49,7 +50,22 @@ impl BookItem {
         ::std::default::Default::default()
     }
 
-    // string label = 1;
+    // .emerald.vault.FileType file_type = 1;
+
+
+    pub fn get_file_type(&self) -> super::common::FileType {
+        self.file_type
+    }
+    pub fn clear_file_type(&mut self) {
+        self.file_type = super::common::FileType::FILE_UNKNOWN;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_file_type(&mut self, v: super::common::FileType) {
+        self.file_type = v;
+    }
+
+    // string label = 2;
 
 
     pub fn get_label(&self) -> &str {
@@ -75,7 +91,7 @@ impl BookItem {
         ::std::mem::replace(&mut self.label, ::std::string::String::new())
     }
 
-    // string description = 2;
+    // string description = 3;
 
 
     pub fn get_description(&self) -> &str {
@@ -101,7 +117,7 @@ impl BookItem {
         ::std::mem::replace(&mut self.description, ::std::string::String::new())
     }
 
-    // uint32 blockchain = 3;
+    // uint32 blockchain = 4;
 
 
     pub fn get_blockchain(&self) -> u32 {
@@ -116,7 +132,7 @@ impl BookItem {
         self.blockchain = v;
     }
 
-    // .emerald.vault.Address address = 4;
+    // .emerald.vault.Address address = 5;
 
 
     pub fn get_address(&self) -> &super::address::Address {
@@ -165,19 +181,22 @@ impl ::protobuf::Message for BookItem {
             let (field_number, wire_type) = is.read_tag_unpack()?;
             match field_number {
                 1 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.label)?;
+                    ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.file_type, 1, &mut self.unknown_fields)?
                 },
                 2 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.description)?;
+                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.label)?;
                 },
                 3 => {
+                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.description)?;
+                },
+                4 => {
                     if wire_type != ::protobuf::wire_format::WireTypeVarint {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
                     let tmp = is.read_uint32()?;
                     self.blockchain = tmp;
                 },
-                4 => {
+                5 => {
                     ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.address)?;
                 },
                 _ => {
@@ -192,14 +211,17 @@ impl ::protobuf::Message for BookItem {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
+        if self.file_type != super::common::FileType::FILE_UNKNOWN {
+            my_size += ::protobuf::rt::enum_size(1, self.file_type);
+        }
         if !self.label.is_empty() {
-            my_size += ::protobuf::rt::string_size(1, &self.label);
+            my_size += ::protobuf::rt::string_size(2, &self.label);
         }
         if !self.description.is_empty() {
-            my_size += ::protobuf::rt::string_size(2, &self.description);
+            my_size += ::protobuf::rt::string_size(3, &self.description);
         }
         if self.blockchain != 0 {
-            my_size += ::protobuf::rt::value_size(3, self.blockchain, ::protobuf::wire_format::WireTypeVarint);
+            my_size += ::protobuf::rt::value_size(4, self.blockchain, ::protobuf::wire_format::WireTypeVarint);
         }
         if let Some(ref v) = self.address.as_ref() {
             let len = v.compute_size();
@@ -211,17 +233,20 @@ impl ::protobuf::Message for BookItem {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        if self.file_type != super::common::FileType::FILE_UNKNOWN {
+            os.write_enum(1, self.file_type.value())?;
+        }
         if !self.label.is_empty() {
-            os.write_string(1, &self.label)?;
+            os.write_string(2, &self.label)?;
         }
         if !self.description.is_empty() {
-            os.write_string(2, &self.description)?;
+            os.write_string(3, &self.description)?;
         }
         if self.blockchain != 0 {
-            os.write_uint32(3, self.blockchain)?;
+            os.write_uint32(4, self.blockchain)?;
         }
         if let Some(ref v) = self.address.as_ref() {
-            os.write_tag(4, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_tag(5, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         }
@@ -267,6 +292,11 @@ impl ::protobuf::Message for BookItem {
         unsafe {
             descriptor.get(|| {
                 let mut fields = ::std::vec::Vec::new();
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeEnum<super::common::FileType>>(
+                    "file_type",
+                    |m: &BookItem| { &m.file_type },
+                    |m: &mut BookItem| { &mut m.file_type },
+                ));
                 fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
                     "label",
                     |m: &BookItem| { &m.label },
@@ -309,6 +339,7 @@ impl ::protobuf::Message for BookItem {
 
 impl ::protobuf::Clear for BookItem {
     fn clear(&mut self) {
+        self.file_type = super::common::FileType::FILE_UNKNOWN;
         self.label.clear();
         self.description.clear();
         self.blockchain = 0;
@@ -330,28 +361,29 @@ impl ::protobuf::reflect::ProtobufValue for BookItem {
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\nbook.proto\x12\remerald.vault\x1a\raddress.proto\"\x94\x01\n\x08Book\
-    Item\x12\x14\n\x05label\x18\x01\x20\x01(\tR\x05label\x12\x20\n\x0bdescri\
-    ption\x18\x02\x20\x01(\tR\x0bdescription\x12\x1e\n\nblockchain\x18\x03\
-    \x20\x01(\rR\nblockchain\x120\n\x07address\x18\x04\x20\x01(\x0b2\x16.eme\
-    rald.vault.AddressR\x07addressJ\xd7\x02\n\x06\x12\x04\0\0\t\x01\n\x08\n\
-    \x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\t\n\x02\x03\
-    \0\x12\x03\x02\0\x17\n\n\n\x02\x04\0\x12\x04\x04\0\t\x01\n\n\n\x03\x04\0\
-    \x01\x12\x03\x04\x08\x10\n\x0b\n\x04\x04\0\x02\0\x12\x03\x05\x04\x15\n\r\
-    \n\x05\x04\0\x02\0\x04\x12\x04\x05\x04\x04\x12\n\x0c\n\x05\x04\0\x02\0\
-    \x05\x12\x03\x05\x04\n\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\x05\x0b\x10\n\
-    \x0c\n\x05\x04\0\x02\0\x03\x12\x03\x05\x13\x14\n\x0b\n\x04\x04\0\x02\x01\
-    \x12\x03\x06\x04\x1b\n\r\n\x05\x04\0\x02\x01\x04\x12\x04\x06\x04\x05\x15\
-    \n\x0c\n\x05\x04\0\x02\x01\x05\x12\x03\x06\x04\n\n\x0c\n\x05\x04\0\x02\
-    \x01\x01\x12\x03\x06\x0b\x16\n\x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x06\
-    \x19\x1a\n\x0b\n\x04\x04\0\x02\x02\x12\x03\x07\x04\x1a\n\r\n\x05\x04\0\
-    \x02\x02\x04\x12\x04\x07\x04\x06\x1b\n\x0c\n\x05\x04\0\x02\x02\x05\x12\
-    \x03\x07\x04\n\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\x07\x0b\x15\n\x0c\n\
-    \x05\x04\0\x02\x02\x03\x12\x03\x07\x18\x19\n\x0b\n\x04\x04\0\x02\x03\x12\
-    \x03\x08\x04\x18\n\r\n\x05\x04\0\x02\x03\x04\x12\x04\x08\x04\x07\x1a\n\
-    \x0c\n\x05\x04\0\x02\x03\x06\x12\x03\x08\x04\x0b\n\x0c\n\x05\x04\0\x02\
-    \x03\x01\x12\x03\x08\x0c\x13\n\x0c\n\x05\x04\0\x02\x03\x03\x12\x03\x08\
-    \x16\x17b\x06proto3\
+    \n\nbook.proto\x12\remerald.vault\x1a\raddress.proto\x1a\x0ccommon.proto\
+    \"\xca\x01\n\x08BookItem\x124\n\tfile_type\x18\x01\x20\x01(\x0e2\x17.eme\
+    rald.vault.FileTypeR\x08fileType\x12\x14\n\x05label\x18\x02\x20\x01(\tR\
+    \x05label\x12\x20\n\x0bdescription\x18\x03\x20\x01(\tR\x0bdescription\
+    \x12\x1e\n\nblockchain\x18\x04\x20\x01(\rR\nblockchain\x120\n\x07address\
+    \x18\x05\x20\x01(\x0b2\x16.emerald.vault.AddressR\x07addressJ\xdd\x02\n\
+    \x06\x12\x04\0\0\x0b\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\
+    \x12\x03\x01\0\x16\n\t\n\x02\x03\0\x12\x03\x02\0\x17\n\t\n\x02\x03\x01\
+    \x12\x03\x03\0\x16\n\n\n\x02\x04\0\x12\x04\x05\0\x0b\x01\n\n\n\x03\x04\0\
+    \x01\x12\x03\x05\x08\x10\n\x0b\n\x04\x04\0\x02\0\x12\x03\x06\x04\x1b\n\
+    \x0c\n\x05\x04\0\x02\0\x06\x12\x03\x06\x04\x0c\n\x0c\n\x05\x04\0\x02\0\
+    \x01\x12\x03\x06\r\x16\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x06\x19\x1a\n\
+    \x0b\n\x04\x04\0\x02\x01\x12\x03\x07\x04\x15\n\x0c\n\x05\x04\0\x02\x01\
+    \x05\x12\x03\x07\x04\n\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x07\x0b\x10\
+    \n\x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x07\x13\x14\n\x0b\n\x04\x04\0\x02\
+    \x02\x12\x03\x08\x04\x1b\n\x0c\n\x05\x04\0\x02\x02\x05\x12\x03\x08\x04\n\
+    \n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\x08\x0b\x16\n\x0c\n\x05\x04\0\x02\
+    \x02\x03\x12\x03\x08\x19\x1a\n\x0b\n\x04\x04\0\x02\x03\x12\x03\t\x04\x1a\
+    \n\x0c\n\x05\x04\0\x02\x03\x05\x12\x03\t\x04\n\n\x0c\n\x05\x04\0\x02\x03\
+    \x01\x12\x03\t\x0b\x15\n\x0c\n\x05\x04\0\x02\x03\x03\x12\x03\t\x18\x19\n\
+    \x0b\n\x04\x04\0\x02\x04\x12\x03\n\x04\x18\n\x0c\n\x05\x04\0\x02\x04\x06\
+    \x12\x03\n\x04\x0b\n\x0c\n\x05\x04\0\x02\x04\x01\x12\x03\n\x0c\x13\n\x0c\
+    \n\x05\x04\0\x02\x04\x03\x12\x03\n\x16\x17b\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {
