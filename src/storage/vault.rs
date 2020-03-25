@@ -23,12 +23,16 @@ use std::sync::Arc;
 use uuid::Uuid;
 use hdpath::StandardHDPath;
 
+/// Compound trait for a vault entry which is stored in a separate file each
+pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
+    where P: HasUuid {}
+
 pub struct VaultStorage {
     pub dir: PathBuf,
 
-    keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
-    wallets: Arc<dyn VaultAccess<Wallet>>,
-    seeds: Arc<dyn VaultAccess<Seed>>,
+    keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
+    wallets: Arc<dyn VaultAccessByFile<Wallet>>,
+    seeds: Arc<dyn VaultAccessByFile<Seed>>,
 }
 
 struct StandardVaultFiles {
@@ -38,13 +42,13 @@ struct StandardVaultFiles {
 
 /// Main interface to the Emerald Vault storage
 impl VaultStorage {
-    pub fn keys(&self) -> Arc<dyn VaultAccess<PrivateKeyHolder>> {
+    pub fn keys(&self) -> Arc<dyn VaultAccessByFile<PrivateKeyHolder>> {
         self.keys.clone()
     }
-    pub fn wallets(&self) -> Arc<dyn VaultAccess<Wallet>> {
+    pub fn wallets(&self) -> Arc<dyn VaultAccessByFile<Wallet>> {
         self.wallets.clone()
     }
-    pub fn seeds(&self) -> Arc<dyn VaultAccess<Seed>> {
+    pub fn seeds(&self) -> Arc<dyn VaultAccessByFile<Seed>> {
         self.seeds.clone()
     }
     pub fn create_new(&self) -> CreateWallet {
@@ -128,6 +132,80 @@ impl VaultStorage {
 
         Ok(count)
     }
+
+    /// Get all files related to the wallet. I.e. raw private keys
+    ///
+    /// # Arguments
+    ///
+    /// * `wallet_id` - id of the wallet
+    /// * `exclusive_only` - true if should return only filenames that are _NOT_ used by any other wallet
+    pub fn get_wallet_files(&self, wallet_id: Uuid, exclusive_only: bool) -> Result<Vec<PathBuf>, VaultError> {
+        // helper to get uuids of all individual private keys for a wallet
+        let fn_wallet_accounts = |w: &Wallet| {
+            w.accounts
+                .iter()
+                .filter_map(|acc|
+                    match acc.key {
+                        PKType::PrivateKeyRef(pk_id) => Some(pk_id),
+                        PKType::SeedHd(_) => None
+                    }
+                )
+                .collect::<Vec<Uuid>>()
+        };
+
+        let other_wallets: Vec<Wallet> = self.wallets.list()?
+            .iter()
+            .filter(|id| id.clone().ne(&wallet_id))
+            .map(|id| self.wallets.get(id.clone()))
+            .filter_map(|r| r.ok())
+            .collect();
+
+        // uuids of all other private keys in the vault
+        // TODO need to do only if exclusive_only=true
+        let other_wallet_pks = other_wallets
+            .iter()
+            .flat_map(fn_wallet_accounts)
+            .collect::<Vec<Uuid>>();
+
+        if let Ok(wallet) = self.wallets.get(wallet_id) {
+            let pks: Vec<Uuid> = fn_wallet_accounts(&wallet)
+                .iter()
+                .filter(|pk_id| !exclusive_only || !other_wallet_pks.contains(pk_id))
+                .map(|r| r.clone())
+                .collect();
+            let mut files = pks
+                .iter()
+                .map(|pk| self.keys.get_filename_for(pk.clone()))
+                .collect::<Vec<PathBuf>>();
+
+            files.push(self.wallets.get_filename_for(wallet_id));
+            return Ok(files)
+        }
+        return Ok(vec![])
+    }
+
+    /// Removes a wallet with all related private keys exclusively used by that wallet. Seeds are
+    /// kept untouched.
+    pub fn remove_wallet(&self, id: Uuid) -> Result<bool, VaultError> {
+        let all = self.get_wallet_files(id, true)?;
+        if all.is_empty() {
+            return Ok(false);
+        }
+        let len = all.len();
+        let archive = Archive::create(&self.dir, ArchiveType::Delete);
+        let mut errors = 0;
+        for f in all {
+            if archive.submit(f.clone()).is_err() {
+                errors+=1;
+            }
+        }
+        if errors == len {
+            return Err(VaultError::FilesystemError("Failed to add to archive".to_string()))
+        }
+        archive.finalize();
+        Ok(errors == 0)
+    }
+
 }
 
 /// Safe update of a file, with making a .bak copy of the existing file, writing new content and
@@ -228,12 +306,17 @@ fn try_vault_file(file: &Path, suffix: &str) -> Result<Uuid, ()> {
 }
 
 pub struct CreateWallet {
-    keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
-    wallets: Arc<dyn VaultAccess<Wallet>>,
-    seeds: Arc<dyn VaultAccess<Seed>>,
+    keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
+    wallets: Arc<dyn VaultAccessByFile<Wallet>>,
+    seeds: Arc<dyn VaultAccessByFile<Seed>>,
 }
 
 impl CreateWallet {
+
+    ///Create a new Wallet with the the specified Ethereum JSON Private Key. All fields for the wallet are set
+    ///with default or empty values. The labels is set from JSON name field, if available.
+    ///
+    ///Returns UUID of the newly created wallet
     pub fn ethereum(
         &self,
         json: &EthereumJsonV3File,
@@ -258,6 +341,10 @@ impl CreateWallet {
         Ok(result)
     }
 
+    ///Create a new Wallet with the the specified Private Key. All fields for the wallet are set
+    ///with default or empty values.
+    ///
+    ///Returns UUID of the newly created wallet
     pub fn raw_pk(
         &self,
         pk: Vec<u8>,
@@ -284,9 +371,9 @@ impl CreateWallet {
 }
 
 pub struct AddAccount {
-    keys: Arc<dyn VaultAccess<PrivateKeyHolder>>,
-    seeds: Arc<dyn VaultAccess<Seed>>,
-    wallets: Arc<dyn VaultAccess<Wallet>>,
+    keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
+    seeds: Arc<dyn VaultAccessByFile<Seed>>,
+    wallets: Arc<dyn VaultAccessByFile<Wallet>>,
     wallet_id: Uuid,
 }
 
@@ -416,12 +503,24 @@ impl VaultStorage {
     }
 }
 
-impl StandardVaultFiles {
+/// For entries that are stored in a single separate file
+pub trait SingleFileEntry {
+    /// Get full filename for the entry by id
+    fn get_filename_for(&self, id: Uuid) -> PathBuf;
+}
+
+impl SingleFileEntry for StandardVaultFiles {
+    /// Filename for entry id
     fn get_filename_for(&self, id: Uuid) -> PathBuf {
         let fname = format!("{}.{}", id, self.suffix);
         return self.dir.join(fname);
     }
 }
+
+impl<P> VaultAccessByFile<P> for StandardVaultFiles
+    where
+    P: TryFrom<Vec<u8>> + HasUuid,
+    Vec<u8>: std::convert::TryFrom<P> {}
 
 /// Access to Vault storage
 pub trait VaultAccess<P>
@@ -1050,4 +1149,133 @@ mod tests {
         assert!(f_archived.exists());
         assert_eq!(fs::read_to_string(f_archived).unwrap(), "test 1");
     }
+
+    #[test]
+    fn delete_wallet_with_pk() {
+        let tmp_dir = TempDir::new("emerald-vault-test")
+            .expect("Dir not created")
+            .into_path();
+
+        let vault = VaultStorage::create(tmp_dir).unwrap();
+        let wallet_id = vault.create_new()
+            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .unwrap();
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        let pk_id = match wallet.accounts.first().unwrap().key {
+            PKType::PrivateKeyRef(id) => id,
+            _ => panic!("not PrivateKey Ref")
+        };
+        let pk = vault.keys.get(pk_id);
+        assert!(pk.is_ok());
+
+        let deleted = vault.remove_wallet(wallet_id);
+        assert_eq!(Ok(true), deleted);
+
+        let wallet = vault.wallets.get(wallet_id);
+        assert!(wallet.is_err());
+        let pk = vault.keys.get(pk_id);
+        assert!(pk.is_err());
+    }
+
+    #[test]
+    fn delete_wallet_with_pk_keeps_others() {
+        let tmp_dir = TempDir::new("emerald-vault-test")
+            .expect("Dir not created")
+            .into_path();
+
+        let vault = VaultStorage::create(tmp_dir).unwrap();
+        let wallet_1_id = vault.create_new()
+            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .unwrap();
+        let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
+        let pk_id_1 = match wallet_1.accounts.first().unwrap().key {
+            PKType::PrivateKeyRef(id) => id,
+            _ => panic!("not PrivateKey Ref")
+        };
+
+        let wallet_2_id = vault.create_new()
+            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .unwrap();
+        let wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
+        let pk_id_2 = match wallet_2.accounts.first().unwrap().key {
+            PKType::PrivateKeyRef(id) => id,
+            _ => panic!("not PrivateKey Ref")
+        };
+
+
+        let pk = vault.keys.get(pk_id_1);
+        assert!(pk.is_ok());
+
+        let deleted = vault.remove_wallet(wallet_1_id);
+        assert_eq!(Ok(true), deleted);
+
+        let wallet = vault.wallets.get(wallet_1_id);
+        assert!(wallet.is_err());
+        let pk = vault.keys.get(pk_id_1);
+        assert!(pk.is_err());
+
+        let wallet = vault.wallets.get(wallet_2_id);
+        assert!(wallet.is_ok());
+        assert_eq!(wallet.unwrap().id, wallet_2_id);
+        let pk = vault.keys.get(pk_id_2);
+        assert!(pk.is_ok());
+        assert_eq!(pk.unwrap().id, pk_id_2);
+    }
+
+    #[test]
+    fn delete_wallet_with_pk_keeps_used_twice() {
+        let tmp_dir = TempDir::new("emerald-vault-test")
+            .expect("Dir not created")
+            .into_path();
+
+        let vault = VaultStorage::create(tmp_dir).unwrap();
+        let wallet_1_id = vault.create_new()
+            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .unwrap();
+        let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
+        let pk_id_1 = match wallet_1.accounts.first().unwrap().key {
+            PKType::PrivateKeyRef(id) => id,
+            _ => panic!("not PrivateKey Ref")
+        };
+
+        let wallet_2_id = vault.create_new()
+            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .unwrap();
+        let mut wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
+        let pk_id_2 = match wallet_2.accounts.first().unwrap().key {
+            PKType::PrivateKeyRef(id) => id,
+            _ => panic!("not PrivateKey Ref")
+        };
+        wallet_2.accounts.push(WalletAccount {
+            id: 2,
+            blockchain: Blockchain::Ethereum,
+            address: None,
+            key: PKType::PrivateKeyRef(pk_id_1),
+            receive_disabled: false
+        });
+        vault.wallets.update(wallet_2);
+
+        let pk = vault.keys.get(pk_id_1);
+        assert!(pk.is_ok());
+
+        let deleted = vault.remove_wallet(wallet_1_id);
+        assert_eq!(Ok(true), deleted);
+
+        let wallet = vault.wallets.get(wallet_1_id);
+        assert!(wallet.is_err());
+
+        let pk = vault.keys.get(pk_id_1);
+        //not deleted because used by both wallet_1 and wallet_2
+        assert!(pk.is_ok());
+
+        let wallet = vault.wallets.get(wallet_2_id);
+        assert!(wallet.is_ok());
+        let wallet = wallet.unwrap();
+        assert_eq!(wallet.id, wallet_2_id);
+        assert_eq!(wallet.accounts.len(), 2);
+        let pk = vault.keys.get(pk_id_2);
+        assert!(pk.is_ok());
+        assert_eq!(pk.unwrap().id, pk_id_2);
+    }
+
 }
