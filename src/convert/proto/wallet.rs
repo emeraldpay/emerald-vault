@@ -99,7 +99,7 @@ impl From<&WalletAccount> for proto_WalletAccount {
             PKType::SeedHd(seed_ref) => {
                 let mut seed_hd = proto_SeedHD::new();
                 seed_hd.set_seed_id(seed_ref.seed_id.as_bytes().to_vec());
-                seed_hd.set_path(seed_ref.hd_path.to_string());
+                seed_hd.set_path(seed_ref.hd_path.clone().into());
                 result.set_hd_path(seed_hd);
             }
             PKType::PrivateKeyRef(addr) => {
@@ -236,7 +236,7 @@ mod tests {
             WalletAccount as proto_WalletAccount,
         },
         seed::{
-            SeedHD as proto_SeedHD
+            SeedHD as proto_SeedHD, HDPath as proto_HDPath
         }
     };
     use protobuf::{Message, parse_from_bytes, ProtobufEnum};
@@ -462,7 +462,13 @@ mod tests {
     fn should_not_read_account_with_invalid_hd() {
         let mut pk = proto_SeedHD::default();
         pk.set_seed_id(Uuid::new_v4().as_bytes().to_vec());
-        pk.set_path("m/44'/60'/1'/2".to_string());
+        let mut hdpath = proto_HDPath::new();
+        hdpath.set_purpose(44);
+        hdpath.set_coin(60);
+        hdpath.set_account(1);
+        hdpath.set_change(0);
+        hdpath.set_index(0x80000001); //hardened, it's not allowed
+        pk.set_path(hdpath);
 
         let mut account = proto_WalletAccount::default();
         account.set_id(1);

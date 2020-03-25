@@ -571,7 +571,7 @@ impl ::protobuf::reflect::ProtobufValue for LedgerSeed {
 #[derive(PartialEq,Clone,Default)]
 pub struct HDPathFingerprint {
     // message fields
-    pub path: ::std::string::String,
+    pub path: ::protobuf::SingularPtrField<HDPath>,
     pub field_type: HDPathFingerprint_Type,
     pub fingerprint: ::std::vec::Vec<u8>,
     // special fields
@@ -590,30 +590,37 @@ impl HDPathFingerprint {
         ::std::default::Default::default()
     }
 
-    // string path = 1;
+    // .emerald.vault.HDPath path = 1;
 
 
-    pub fn get_path(&self) -> &str {
-        &self.path
+    pub fn get_path(&self) -> &HDPath {
+        self.path.as_ref().unwrap_or_else(|| HDPath::default_instance())
     }
     pub fn clear_path(&mut self) {
         self.path.clear();
     }
 
+    pub fn has_path(&self) -> bool {
+        self.path.is_some()
+    }
+
     // Param is passed by value, moved
-    pub fn set_path(&mut self, v: ::std::string::String) {
-        self.path = v;
+    pub fn set_path(&mut self, v: HDPath) {
+        self.path = ::protobuf::SingularPtrField::some(v);
     }
 
     // Mutable pointer to the field.
     // If field is not initialized, it is initialized with default value first.
-    pub fn mut_path(&mut self) -> &mut ::std::string::String {
-        &mut self.path
+    pub fn mut_path(&mut self) -> &mut HDPath {
+        if self.path.is_none() {
+            self.path.set_default();
+        }
+        self.path.as_mut().unwrap()
     }
 
     // Take field
-    pub fn take_path(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.path, ::std::string::String::new())
+    pub fn take_path(&mut self) -> HDPath {
+        self.path.take().unwrap_or_else(|| HDPath::new())
     }
 
     // .emerald.vault.HDPathFingerprint.Type type = 2;
@@ -660,6 +667,11 @@ impl HDPathFingerprint {
 
 impl ::protobuf::Message for HDPathFingerprint {
     fn is_initialized(&self) -> bool {
+        for v in &self.path {
+            if !v.is_initialized() {
+                return false;
+            }
+        };
         true
     }
 
@@ -668,7 +680,7 @@ impl ::protobuf::Message for HDPathFingerprint {
             let (field_number, wire_type) = is.read_tag_unpack()?;
             match field_number {
                 1 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.path)?;
+                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.path)?;
                 },
                 2 => {
                     ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.field_type, 2, &mut self.unknown_fields)?
@@ -688,8 +700,9 @@ impl ::protobuf::Message for HDPathFingerprint {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
-        if !self.path.is_empty() {
-            my_size += ::protobuf::rt::string_size(1, &self.path);
+        if let Some(ref v) = self.path.as_ref() {
+            let len = v.compute_size();
+            my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         }
         if self.field_type != HDPathFingerprint_Type::UNKNOWN {
             my_size += ::protobuf::rt::enum_size(2, self.field_type);
@@ -703,8 +716,10 @@ impl ::protobuf::Message for HDPathFingerprint {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
-        if !self.path.is_empty() {
-            os.write_string(1, &self.path)?;
+        if let Some(ref v) = self.path.as_ref() {
+            os.write_tag(1, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_raw_varint32(v.get_cached_size())?;
+            v.write_to_with_cached_sizes(os)?;
         }
         if self.field_type != HDPathFingerprint_Type::UNKNOWN {
             os.write_enum(2, self.field_type.value())?;
@@ -754,7 +769,7 @@ impl ::protobuf::Message for HDPathFingerprint {
         unsafe {
             descriptor.get(|| {
                 let mut fields = ::std::vec::Vec::new();
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<HDPath>>(
                     "path",
                     |m: &HDPathFingerprint| { &m.path },
                     |m: &mut HDPathFingerprint| { &mut m.path },
@@ -884,8 +899,8 @@ impl<'a> ::std::default::Default for &'a SeedHD {
 
 #[derive(Clone,PartialEq,Debug)]
 pub enum SeedHD_oneof_path_type {
-    path(::std::string::String),
-    account(AccountId),
+    path(HDPath),
+    account(HDPath),
 }
 
 impl SeedHD {
@@ -919,13 +934,13 @@ impl SeedHD {
         ::std::mem::replace(&mut self.seed_id, ::std::vec::Vec::new())
     }
 
-    // string path = 2;
+    // .emerald.vault.HDPath path = 2;
 
 
-    pub fn get_path(&self) -> &str {
+    pub fn get_path(&self) -> &HDPath {
         match self.path_type {
             ::std::option::Option::Some(SeedHD_oneof_path_type::path(ref v)) => v,
-            _ => "",
+            _ => HDPath::default_instance(),
         }
     }
     pub fn clear_path(&mut self) {
@@ -940,15 +955,15 @@ impl SeedHD {
     }
 
     // Param is passed by value, moved
-    pub fn set_path(&mut self, v: ::std::string::String) {
+    pub fn set_path(&mut self, v: HDPath) {
         self.path_type = ::std::option::Option::Some(SeedHD_oneof_path_type::path(v))
     }
 
     // Mutable pointer to the field.
-    pub fn mut_path(&mut self) -> &mut ::std::string::String {
+    pub fn mut_path(&mut self) -> &mut HDPath {
         if let ::std::option::Option::Some(SeedHD_oneof_path_type::path(_)) = self.path_type {
         } else {
-            self.path_type = ::std::option::Option::Some(SeedHD_oneof_path_type::path(::std::string::String::new()));
+            self.path_type = ::std::option::Option::Some(SeedHD_oneof_path_type::path(HDPath::new()));
         }
         match self.path_type {
             ::std::option::Option::Some(SeedHD_oneof_path_type::path(ref mut v)) => v,
@@ -957,24 +972,24 @@ impl SeedHD {
     }
 
     // Take field
-    pub fn take_path(&mut self) -> ::std::string::String {
+    pub fn take_path(&mut self) -> HDPath {
         if self.has_path() {
             match self.path_type.take() {
                 ::std::option::Option::Some(SeedHD_oneof_path_type::path(v)) => v,
                 _ => panic!(),
             }
         } else {
-            ::std::string::String::new()
+            HDPath::new()
         }
     }
 
-    // .emerald.vault.AccountId account = 3;
+    // .emerald.vault.HDPath account = 3;
 
 
-    pub fn get_account(&self) -> &AccountId {
+    pub fn get_account(&self) -> &HDPath {
         match self.path_type {
             ::std::option::Option::Some(SeedHD_oneof_path_type::account(ref v)) => v,
-            _ => AccountId::default_instance(),
+            _ => HDPath::default_instance(),
         }
     }
     pub fn clear_account(&mut self) {
@@ -989,15 +1004,15 @@ impl SeedHD {
     }
 
     // Param is passed by value, moved
-    pub fn set_account(&mut self, v: AccountId) {
+    pub fn set_account(&mut self, v: HDPath) {
         self.path_type = ::std::option::Option::Some(SeedHD_oneof_path_type::account(v))
     }
 
     // Mutable pointer to the field.
-    pub fn mut_account(&mut self) -> &mut AccountId {
+    pub fn mut_account(&mut self) -> &mut HDPath {
         if let ::std::option::Option::Some(SeedHD_oneof_path_type::account(_)) = self.path_type {
         } else {
-            self.path_type = ::std::option::Option::Some(SeedHD_oneof_path_type::account(AccountId::new()));
+            self.path_type = ::std::option::Option::Some(SeedHD_oneof_path_type::account(HDPath::new()));
         }
         match self.path_type {
             ::std::option::Option::Some(SeedHD_oneof_path_type::account(ref mut v)) => v,
@@ -1006,20 +1021,25 @@ impl SeedHD {
     }
 
     // Take field
-    pub fn take_account(&mut self) -> AccountId {
+    pub fn take_account(&mut self) -> HDPath {
         if self.has_account() {
             match self.path_type.take() {
                 ::std::option::Option::Some(SeedHD_oneof_path_type::account(v)) => v,
                 _ => panic!(),
             }
         } else {
-            AccountId::new()
+            HDPath::new()
         }
     }
 }
 
 impl ::protobuf::Message for SeedHD {
     fn is_initialized(&self) -> bool {
+        if let Some(SeedHD_oneof_path_type::path(ref v)) = self.path_type {
+            if !v.is_initialized() {
+                return false;
+            }
+        }
         if let Some(SeedHD_oneof_path_type::account(ref v)) = self.path_type {
             if !v.is_initialized() {
                 return false;
@@ -1039,7 +1059,7 @@ impl ::protobuf::Message for SeedHD {
                     if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
-                    self.path_type = ::std::option::Option::Some(SeedHD_oneof_path_type::path(is.read_string()?));
+                    self.path_type = ::std::option::Option::Some(SeedHD_oneof_path_type::path(is.read_message()?));
                 },
                 3 => {
                     if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
@@ -1065,7 +1085,8 @@ impl ::protobuf::Message for SeedHD {
         if let ::std::option::Option::Some(ref v) = self.path_type {
             match v {
                 &SeedHD_oneof_path_type::path(ref v) => {
-                    my_size += ::protobuf::rt::string_size(2, &v);
+                    let len = v.compute_size();
+                    my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
                 },
                 &SeedHD_oneof_path_type::account(ref v) => {
                     let len = v.compute_size();
@@ -1085,7 +1106,9 @@ impl ::protobuf::Message for SeedHD {
         if let ::std::option::Option::Some(ref v) = self.path_type {
             match v {
                 &SeedHD_oneof_path_type::path(ref v) => {
-                    os.write_string(2, v)?;
+                    os.write_tag(2, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+                    os.write_raw_varint32(v.get_cached_size())?;
+                    v.write_to_with_cached_sizes(os)?;
                 },
                 &SeedHD_oneof_path_type::account(ref v) => {
                     os.write_tag(3, ::protobuf::wire_format::WireTypeLengthDelimited)?;
@@ -1141,12 +1164,12 @@ impl ::protobuf::Message for SeedHD {
                     |m: &SeedHD| { &m.seed_id },
                     |m: &mut SeedHD| { &mut m.seed_id },
                 ));
-                fields.push(::protobuf::reflect::accessor::make_singular_string_accessor::<_>(
+                fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, HDPath>(
                     "path",
                     SeedHD::has_path,
                     SeedHD::get_path,
                 ));
-                fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, AccountId>(
+                fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, HDPath>(
                     "account",
                     SeedHD::has_account,
                     SeedHD::get_account,
@@ -1193,24 +1216,26 @@ impl ::protobuf::reflect::ProtobufValue for SeedHD {
 }
 
 #[derive(PartialEq,Clone,Default)]
-pub struct AccountId {
+pub struct HDPath {
     // message fields
     pub purpose: u32,
     pub coin: u32,
     pub account: u32,
+    pub change: u32,
+    pub index: u32,
     // special fields
     pub unknown_fields: ::protobuf::UnknownFields,
     pub cached_size: ::protobuf::CachedSize,
 }
 
-impl<'a> ::std::default::Default for &'a AccountId {
-    fn default() -> &'a AccountId {
-        <AccountId as ::protobuf::Message>::default_instance()
+impl<'a> ::std::default::Default for &'a HDPath {
+    fn default() -> &'a HDPath {
+        <HDPath as ::protobuf::Message>::default_instance()
     }
 }
 
-impl AccountId {
-    pub fn new() -> AccountId {
+impl HDPath {
+    pub fn new() -> HDPath {
         ::std::default::Default::default()
     }
 
@@ -1258,9 +1283,39 @@ impl AccountId {
     pub fn set_account(&mut self, v: u32) {
         self.account = v;
     }
+
+    // uint32 change = 4;
+
+
+    pub fn get_change(&self) -> u32 {
+        self.change
+    }
+    pub fn clear_change(&mut self) {
+        self.change = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_change(&mut self, v: u32) {
+        self.change = v;
+    }
+
+    // uint32 index = 5;
+
+
+    pub fn get_index(&self) -> u32 {
+        self.index
+    }
+    pub fn clear_index(&mut self) {
+        self.index = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_index(&mut self, v: u32) {
+        self.index = v;
+    }
 }
 
-impl ::protobuf::Message for AccountId {
+impl ::protobuf::Message for HDPath {
     fn is_initialized(&self) -> bool {
         true
     }
@@ -1290,6 +1345,20 @@ impl ::protobuf::Message for AccountId {
                     let tmp = is.read_uint32()?;
                     self.account = tmp;
                 },
+                4 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint32()?;
+                    self.change = tmp;
+                },
+                5 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint32()?;
+                    self.index = tmp;
+                },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
                 },
@@ -1311,6 +1380,12 @@ impl ::protobuf::Message for AccountId {
         if self.account != 0 {
             my_size += ::protobuf::rt::value_size(3, self.account, ::protobuf::wire_format::WireTypeVarint);
         }
+        if self.change != 0 {
+            my_size += ::protobuf::rt::value_size(4, self.change, ::protobuf::wire_format::WireTypeVarint);
+        }
+        if self.index != 0 {
+            my_size += ::protobuf::rt::value_size(5, self.index, ::protobuf::wire_format::WireTypeVarint);
+        }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
         self.cached_size.set(my_size);
         my_size
@@ -1325,6 +1400,12 @@ impl ::protobuf::Message for AccountId {
         }
         if self.account != 0 {
             os.write_uint32(3, self.account)?;
+        }
+        if self.change != 0 {
+            os.write_uint32(4, self.change)?;
+        }
+        if self.index != 0 {
+            os.write_uint32(5, self.index)?;
         }
         os.write_unknown_fields(self.get_unknown_fields())?;
         ::std::result::Result::Ok(())
@@ -1356,8 +1437,8 @@ impl ::protobuf::Message for AccountId {
         Self::descriptor_static()
     }
 
-    fn new() -> AccountId {
-        AccountId::new()
+    fn new() -> HDPath {
+        HDPath::new()
     }
 
     fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
@@ -1370,21 +1451,31 @@ impl ::protobuf::Message for AccountId {
                 let mut fields = ::std::vec::Vec::new();
                 fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
                     "purpose",
-                    |m: &AccountId| { &m.purpose },
-                    |m: &mut AccountId| { &mut m.purpose },
+                    |m: &HDPath| { &m.purpose },
+                    |m: &mut HDPath| { &mut m.purpose },
                 ));
                 fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
                     "coin",
-                    |m: &AccountId| { &m.coin },
-                    |m: &mut AccountId| { &mut m.coin },
+                    |m: &HDPath| { &m.coin },
+                    |m: &mut HDPath| { &mut m.coin },
                 ));
                 fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
                     "account",
-                    |m: &AccountId| { &m.account },
-                    |m: &mut AccountId| { &mut m.account },
+                    |m: &HDPath| { &m.account },
+                    |m: &mut HDPath| { &mut m.account },
                 ));
-                ::protobuf::reflect::MessageDescriptor::new::<AccountId>(
-                    "AccountId",
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
+                    "change",
+                    |m: &HDPath| { &m.change },
+                    |m: &mut HDPath| { &mut m.change },
+                ));
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
+                    "index",
+                    |m: &HDPath| { &m.index },
+                    |m: &mut HDPath| { &mut m.index },
+                ));
+                ::protobuf::reflect::MessageDescriptor::new::<HDPath>(
+                    "HDPath",
                     fields,
                     file_descriptor_proto()
                 )
@@ -1392,33 +1483,35 @@ impl ::protobuf::Message for AccountId {
         }
     }
 
-    fn default_instance() -> &'static AccountId {
-        static mut instance: ::protobuf::lazy::Lazy<AccountId> = ::protobuf::lazy::Lazy {
+    fn default_instance() -> &'static HDPath {
+        static mut instance: ::protobuf::lazy::Lazy<HDPath> = ::protobuf::lazy::Lazy {
             lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const AccountId,
+            ptr: 0 as *const HDPath,
         };
         unsafe {
-            instance.get(AccountId::new)
+            instance.get(HDPath::new)
         }
     }
 }
 
-impl ::protobuf::Clear for AccountId {
+impl ::protobuf::Clear for HDPath {
     fn clear(&mut self) {
         self.purpose = 0;
         self.coin = 0;
         self.account = 0;
+        self.change = 0;
+        self.index = 0;
         self.unknown_fields.clear();
     }
 }
 
-impl ::std::fmt::Debug for AccountId {
+impl ::std::fmt::Debug for HDPath {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         ::protobuf::text_format::fmt(self, f)
     }
 }
 
-impl ::protobuf::reflect::ProtobufValue for AccountId {
+impl ::protobuf::reflect::ProtobufValue for HDPath {
     fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
         ::protobuf::reflect::ProtobufValueRef::Message(self)
     }
@@ -1432,72 +1525,80 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x05bytes\x123\n\x06ledger\x18\x04\x20\x01(\x0b2\x19.emerald.vault.Ledge\
     rSeedH\0R\x06ledgerB\r\n\x0bseed_source\"R\n\nLedgerSeed\x12D\n\x0cfinge\
     rprints\x18\x01\x20\x03(\x0b2\x20.emerald.vault.HDPathFingerprintR\x0cfi\
-    ngerprints\"\xad\x01\n\x11HDPathFingerprint\x12\x12\n\x04path\x18\x01\
-    \x20\x01(\tR\x04path\x129\n\x04type\x18\x02\x20\x01(\x0e2%.emerald.vault\
-    .HDPathFingerprint.TypeR\x04type\x12\x20\n\x0bfingerprint\x18\x03\x20\
-    \x01(\x0cR\x0bfingerprint\"'\n\x04Type\x12\x0b\n\x07UNKNOWN\x10\0\x12\
-    \x12\n\x0eADDRESS_SHA256\x10\x01\"z\n\x06SeedHD\x12\x17\n\x07seed_id\x18\
-    \x01\x20\x01(\x0cR\x06seedId\x12\x14\n\x04path\x18\x02\x20\x01(\tH\0R\
-    \x04path\x124\n\x07account\x18\x03\x20\x01(\x0b2\x18.emerald.vault.Accou\
-    ntIdH\0R\x07accountB\x0b\n\tpath_type\"S\n\tAccountId\x12\x18\n\x07purpo\
-    se\x18\x01\x20\x01(\rR\x07purpose\x12\x12\n\x04coin\x18\x02\x20\x01(\rR\
-    \x04coin\x12\x18\n\x07account\x18\x03\x20\x01(\rR\x07accountJ\x88\t\n\
-    \x06\x12\x04\0\0*\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\
-    \x12\x03\x01\0\x16\n\t\n\x02\x03\0\x12\x03\x02\0\x16\n\t\n\x02\x03\x01\
-    \x12\x03\x03\0\x16\n\n\n\x02\x04\0\x12\x04\x05\0\x0c\x01\n\n\n\x03\x04\0\
-    \x01\x12\x03\x05\x08\x0c\n\x0b\n\x04\x04\0\x02\0\x12\x03\x06\x04\x1b\n\
-    \x0c\n\x05\x04\0\x02\0\x06\x12\x03\x06\x04\x0c\n\x0c\n\x05\x04\0\x02\0\
-    \x01\x12\x03\x06\r\x16\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x06\x19\x1a\n\
-    \x0b\n\x04\x04\0\x02\x01\x12\x03\x07\x04\x11\n\x0c\n\x05\x04\0\x02\x01\
-    \x05\x12\x03\x07\x04\t\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x07\n\x0c\n\
-    \x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x07\x0f\x10\n\x0c\n\x04\x04\0\x08\0\
-    \x12\x04\x08\x04\x0b\x05\n\x0c\n\x05\x04\0\x08\0\x01\x12\x03\x08\n\x15\n\
-    \x0b\n\x04\x04\0\x02\x02\x12\x03\t\x08\x1c\n\x0c\n\x05\x04\0\x02\x02\x06\
-    \x12\x03\t\x08\x11\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\t\x12\x17\n\x0c\
-    \n\x05\x04\0\x02\x02\x03\x12\x03\t\x1a\x1b\n\x0b\n\x04\x04\0\x02\x03\x12\
-    \x03\n\x08\x1e\n\x0c\n\x05\x04\0\x02\x03\x06\x12\x03\n\x08\x12\n\x0c\n\
-    \x05\x04\0\x02\x03\x01\x12\x03\n\x13\x19\n\x0c\n\x05\x04\0\x02\x03\x03\
-    \x12\x03\n\x1c\x1d\n\n\n\x02\x04\x01\x12\x04\x0e\0\x10\x01\n\n\n\x03\x04\
-    \x01\x01\x12\x03\x0e\x08\x12\n\x0b\n\x04\x04\x01\x02\0\x12\x03\x0f\x040\
-    \n\x0c\n\x05\x04\x01\x02\0\x04\x12\x03\x0f\x04\x0c\n\x0c\n\x05\x04\x01\
-    \x02\0\x06\x12\x03\x0f\r\x1e\n\x0c\n\x05\x04\x01\x02\0\x01\x12\x03\x0f\
-    \x1f+\n\x0c\n\x05\x04\x01\x02\0\x03\x12\x03\x0f./\n\n\n\x02\x04\x02\x12\
-    \x04\x12\0\x1b\x01\n\n\n\x03\x04\x02\x01\x12\x03\x12\x08\x19\n\x0b\n\x04\
-    \x04\x02\x02\0\x12\x03\x13\x04\x14\n\x0c\n\x05\x04\x02\x02\0\x05\x12\x03\
-    \x13\x04\n\n\x0c\n\x05\x04\x02\x02\0\x01\x12\x03\x13\x0b\x0f\n\x0c\n\x05\
-    \x04\x02\x02\0\x03\x12\x03\x13\x12\x13\n\x0b\n\x04\x04\x02\x02\x01\x12\
-    \x03\x14\x04\x12\n\x0c\n\x05\x04\x02\x02\x01\x06\x12\x03\x14\x04\x08\n\
-    \x0c\n\x05\x04\x02\x02\x01\x01\x12\x03\x14\t\r\n\x0c\n\x05\x04\x02\x02\
-    \x01\x03\x12\x03\x14\x10\x11\n\x0b\n\x04\x04\x02\x02\x02\x12\x03\x15\x04\
-    \x1a\n\x0c\n\x05\x04\x02\x02\x02\x05\x12\x03\x15\x04\t\n\x0c\n\x05\x04\
-    \x02\x02\x02\x01\x12\x03\x15\n\x15\n\x0c\n\x05\x04\x02\x02\x02\x03\x12\
-    \x03\x15\x18\x19\n\x0c\n\x04\x04\x02\x04\0\x12\x04\x17\x04\x1a\x05\n\x0c\
-    \n\x05\x04\x02\x04\0\x01\x12\x03\x17\t\r\n\r\n\x06\x04\x02\x04\0\x02\0\
-    \x12\x03\x18\x08\x14\n\x0e\n\x07\x04\x02\x04\0\x02\0\x01\x12\x03\x18\x08\
-    \x0f\n\x0e\n\x07\x04\x02\x04\0\x02\0\x02\x12\x03\x18\x12\x13\n\r\n\x06\
-    \x04\x02\x04\0\x02\x01\x12\x03\x19\x08\x1b\n\x0e\n\x07\x04\x02\x04\0\x02\
-    \x01\x01\x12\x03\x19\x08\x16\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x02\x12\
-    \x03\x19\x19\x1a\n\n\n\x02\x04\x03\x12\x04\x1d\0$\x01\n\n\n\x03\x04\x03\
-    \x01\x12\x03\x1d\x08\x0e\n\x0b\n\x04\x04\x03\x02\0\x12\x03\x1e\x04\x16\n\
-    \x0c\n\x05\x04\x03\x02\0\x05\x12\x03\x1e\x04\t\n\x0c\n\x05\x04\x03\x02\0\
-    \x01\x12\x03\x1e\n\x11\n\x0c\n\x05\x04\x03\x02\0\x03\x12\x03\x1e\x14\x15\
-    \n\x0c\n\x04\x04\x03\x08\0\x12\x04\x1f\x04#\x05\n\x0c\n\x05\x04\x03\x08\
-    \0\x01\x12\x03\x1f\n\x13\n\x0b\n\x04\x04\x03\x02\x01\x12\x03\x20\x08\x18\
-    \n\x0c\n\x05\x04\x03\x02\x01\x05\x12\x03\x20\x08\x0e\n\x0c\n\x05\x04\x03\
-    \x02\x01\x01\x12\x03\x20\x0f\x13\n\x0c\n\x05\x04\x03\x02\x01\x03\x12\x03\
-    \x20\x16\x17\n'\n\x04\x04\x03\x02\x02\x12\x03\"\x08\x1e\x1a\x1am/purpose\
-    '/coin'/account'\n\n\x0c\n\x05\x04\x03\x02\x02\x06\x12\x03\"\x08\x11\n\
-    \x0c\n\x05\x04\x03\x02\x02\x01\x12\x03\"\x12\x19\n\x0c\n\x05\x04\x03\x02\
-    \x02\x03\x12\x03\"\x1c\x1d\n\n\n\x02\x04\x04\x12\x04&\0*\x01\n\n\n\x03\
-    \x04\x04\x01\x12\x03&\x08\x11\n\x0b\n\x04\x04\x04\x02\0\x12\x03'\x04\x17\
-    \n\x0c\n\x05\x04\x04\x02\0\x05\x12\x03'\x04\n\n\x0c\n\x05\x04\x04\x02\0\
-    \x01\x12\x03'\x0b\x12\n\x0c\n\x05\x04\x04\x02\0\x03\x12\x03'\x15\x16\n\
-    \x0b\n\x04\x04\x04\x02\x01\x12\x03(\x04\x14\n\x0c\n\x05\x04\x04\x02\x01\
-    \x05\x12\x03(\x04\n\n\x0c\n\x05\x04\x04\x02\x01\x01\x12\x03(\x0b\x0f\n\
-    \x0c\n\x05\x04\x04\x02\x01\x03\x12\x03(\x12\x13\n\x0b\n\x04\x04\x04\x02\
-    \x02\x12\x03)\x04\x17\n\x0c\n\x05\x04\x04\x02\x02\x05\x12\x03)\x04\n\n\
-    \x0c\n\x05\x04\x04\x02\x02\x01\x12\x03)\x0b\x12\n\x0c\n\x05\x04\x04\x02\
-    \x02\x03\x12\x03)\x15\x16b\x06proto3\
+    ngerprints\"\xc4\x01\n\x11HDPathFingerprint\x12)\n\x04path\x18\x01\x20\
+    \x01(\x0b2\x15.emerald.vault.HDPathR\x04path\x129\n\x04type\x18\x02\x20\
+    \x01(\x0e2%.emerald.vault.HDPathFingerprint.TypeR\x04type\x12\x20\n\x0bf\
+    ingerprint\x18\x03\x20\x01(\x0cR\x0bfingerprint\"'\n\x04Type\x12\x0b\n\
+    \x07UNKNOWN\x10\0\x12\x12\n\x0eADDRESS_SHA256\x10\x01\"\x8e\x01\n\x06See\
+    dHD\x12\x17\n\x07seed_id\x18\x01\x20\x01(\x0cR\x06seedId\x12+\n\x04path\
+    \x18\x02\x20\x01(\x0b2\x15.emerald.vault.HDPathH\0R\x04path\x121\n\x07ac\
+    count\x18\x03\x20\x01(\x0b2\x15.emerald.vault.HDPathH\0R\x07accountB\x0b\
+    \n\tpath_type\"~\n\x06HDPath\x12\x18\n\x07purpose\x18\x01\x20\x01(\rR\
+    \x07purpose\x12\x12\n\x04coin\x18\x02\x20\x01(\rR\x04coin\x12\x18\n\x07a\
+    ccount\x18\x03\x20\x01(\rR\x07account\x12\x16\n\x06change\x18\x04\x20\
+    \x01(\rR\x06change\x12\x14\n\x05index\x18\x05\x20\x01(\rR\x05indexJ\xb0\
+    \n\n\x06\x12\x04\0\0-\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\
+    \x02\x12\x03\x01\0\x16\n\t\n\x02\x03\0\x12\x03\x02\0\x16\n\t\n\x02\x03\
+    \x01\x12\x03\x03\0\x16\n\n\n\x02\x04\0\x12\x04\x05\0\x0c\x01\n\n\n\x03\
+    \x04\0\x01\x12\x03\x05\x08\x0c\n\x0b\n\x04\x04\0\x02\0\x12\x03\x06\x04\
+    \x1b\n\x0c\n\x05\x04\0\x02\0\x06\x12\x03\x06\x04\x0c\n\x0c\n\x05\x04\0\
+    \x02\0\x01\x12\x03\x06\r\x16\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x06\x19\
+    \x1a\n\x0b\n\x04\x04\0\x02\x01\x12\x03\x07\x04\x11\n\x0c\n\x05\x04\0\x02\
+    \x01\x05\x12\x03\x07\x04\t\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x07\n\
+    \x0c\n\x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x07\x0f\x10\n\x0c\n\x04\x04\0\
+    \x08\0\x12\x04\x08\x04\x0b\x05\n\x0c\n\x05\x04\0\x08\0\x01\x12\x03\x08\n\
+    \x15\n\x0b\n\x04\x04\0\x02\x02\x12\x03\t\x08\x1c\n\x0c\n\x05\x04\0\x02\
+    \x02\x06\x12\x03\t\x08\x11\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\t\x12\
+    \x17\n\x0c\n\x05\x04\0\x02\x02\x03\x12\x03\t\x1a\x1b\n\x0b\n\x04\x04\0\
+    \x02\x03\x12\x03\n\x08\x1e\n\x0c\n\x05\x04\0\x02\x03\x06\x12\x03\n\x08\
+    \x12\n\x0c\n\x05\x04\0\x02\x03\x01\x12\x03\n\x13\x19\n\x0c\n\x05\x04\0\
+    \x02\x03\x03\x12\x03\n\x1c\x1d\n\n\n\x02\x04\x01\x12\x04\x0e\0\x10\x01\n\
+    \n\n\x03\x04\x01\x01\x12\x03\x0e\x08\x12\n\x0b\n\x04\x04\x01\x02\0\x12\
+    \x03\x0f\x040\n\x0c\n\x05\x04\x01\x02\0\x04\x12\x03\x0f\x04\x0c\n\x0c\n\
+    \x05\x04\x01\x02\0\x06\x12\x03\x0f\r\x1e\n\x0c\n\x05\x04\x01\x02\0\x01\
+    \x12\x03\x0f\x1f+\n\x0c\n\x05\x04\x01\x02\0\x03\x12\x03\x0f./\n\n\n\x02\
+    \x04\x02\x12\x04\x12\0\x1b\x01\n\n\n\x03\x04\x02\x01\x12\x03\x12\x08\x19\
+    \n\x0b\n\x04\x04\x02\x02\0\x12\x03\x13\x04\x14\n\x0c\n\x05\x04\x02\x02\0\
+    \x06\x12\x03\x13\x04\n\n\x0c\n\x05\x04\x02\x02\0\x01\x12\x03\x13\x0b\x0f\
+    \n\x0c\n\x05\x04\x02\x02\0\x03\x12\x03\x13\x12\x13\n\x0b\n\x04\x04\x02\
+    \x02\x01\x12\x03\x14\x04\x12\n\x0c\n\x05\x04\x02\x02\x01\x06\x12\x03\x14\
+    \x04\x08\n\x0c\n\x05\x04\x02\x02\x01\x01\x12\x03\x14\t\r\n\x0c\n\x05\x04\
+    \x02\x02\x01\x03\x12\x03\x14\x10\x11\n\x0b\n\x04\x04\x02\x02\x02\x12\x03\
+    \x15\x04\x1a\n\x0c\n\x05\x04\x02\x02\x02\x05\x12\x03\x15\x04\t\n\x0c\n\
+    \x05\x04\x02\x02\x02\x01\x12\x03\x15\n\x15\n\x0c\n\x05\x04\x02\x02\x02\
+    \x03\x12\x03\x15\x18\x19\n\x0c\n\x04\x04\x02\x04\0\x12\x04\x17\x04\x1a\
+    \x05\n\x0c\n\x05\x04\x02\x04\0\x01\x12\x03\x17\t\r\n\r\n\x06\x04\x02\x04\
+    \0\x02\0\x12\x03\x18\x08\x14\n\x0e\n\x07\x04\x02\x04\0\x02\0\x01\x12\x03\
+    \x18\x08\x0f\n\x0e\n\x07\x04\x02\x04\0\x02\0\x02\x12\x03\x18\x12\x13\n\r\
+    \n\x06\x04\x02\x04\0\x02\x01\x12\x03\x19\x08\x1b\n\x0e\n\x07\x04\x02\x04\
+    \0\x02\x01\x01\x12\x03\x19\x08\x16\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x02\
+    \x12\x03\x19\x19\x1a\n\n\n\x02\x04\x03\x12\x04\x1d\0%\x01\n\n\n\x03\x04\
+    \x03\x01\x12\x03\x1d\x08\x0e\n\x0b\n\x04\x04\x03\x02\0\x12\x03\x1e\x04\
+    \x16\n\x0c\n\x05\x04\x03\x02\0\x05\x12\x03\x1e\x04\t\n\x0c\n\x05\x04\x03\
+    \x02\0\x01\x12\x03\x1e\n\x11\n\x0c\n\x05\x04\x03\x02\0\x03\x12\x03\x1e\
+    \x14\x15\n\x0c\n\x04\x04\x03\x08\0\x12\x04\x1f\x04$\x05\n\x0c\n\x05\x04\
+    \x03\x08\0\x01\x12\x03\x1f\n\x13\n9\n\x04\x04\x03\x02\x01\x12\x03!\x08\
+    \x18\x1a,full\x20m/purpose'/coin'/account'/change/index\n\n\x0c\n\x05\
+    \x04\x03\x02\x01\x06\x12\x03!\x08\x0e\n\x0c\n\x05\x04\x03\x02\x01\x01\
+    \x12\x03!\x0f\x13\n\x0c\n\x05\x04\x03\x02\x01\x03\x12\x03!\x16\x17\n3\n\
+    \x04\x04\x03\x02\x02\x12\x03#\x08\x1b\x1a&short,\x20only\x20m/purpose'/c\
+    oin'/account'\n\n\x0c\n\x05\x04\x03\x02\x02\x06\x12\x03#\x08\x0e\n\x0c\n\
+    \x05\x04\x03\x02\x02\x01\x12\x03#\x0f\x16\n\x0c\n\x05\x04\x03\x02\x02\
+    \x03\x12\x03#\x19\x1a\n\n\n\x02\x04\x04\x12\x04'\0-\x01\n\n\n\x03\x04\
+    \x04\x01\x12\x03'\x08\x0e\n\x0b\n\x04\x04\x04\x02\0\x12\x03(\x04\x17\n\
+    \x0c\n\x05\x04\x04\x02\0\x05\x12\x03(\x04\n\n\x0c\n\x05\x04\x04\x02\0\
+    \x01\x12\x03(\x0b\x12\n\x0c\n\x05\x04\x04\x02\0\x03\x12\x03(\x15\x16\n\
+    \x0b\n\x04\x04\x04\x02\x01\x12\x03)\x04\x14\n\x0c\n\x05\x04\x04\x02\x01\
+    \x05\x12\x03)\x04\n\n\x0c\n\x05\x04\x04\x02\x01\x01\x12\x03)\x0b\x0f\n\
+    \x0c\n\x05\x04\x04\x02\x01\x03\x12\x03)\x12\x13\n\x0b\n\x04\x04\x04\x02\
+    \x02\x12\x03*\x04\x17\n\x0c\n\x05\x04\x04\x02\x02\x05\x12\x03*\x04\n\n\
+    \x0c\n\x05\x04\x04\x02\x02\x01\x12\x03*\x0b\x12\n\x0c\n\x05\x04\x04\x02\
+    \x02\x03\x12\x03*\x15\x16\n\x0b\n\x04\x04\x04\x02\x03\x12\x03+\x04\x16\n\
+    \x0c\n\x05\x04\x04\x02\x03\x05\x12\x03+\x04\n\n\x0c\n\x05\x04\x04\x02\
+    \x03\x01\x12\x03+\x0b\x11\n\x0c\n\x05\x04\x04\x02\x03\x03\x12\x03+\x14\
+    \x15\n\x0b\n\x04\x04\x04\x02\x04\x12\x03,\x04\x15\n\x0c\n\x05\x04\x04\
+    \x02\x04\x05\x12\x03,\x04\n\n\x0c\n\x05\x04\x04\x02\x04\x01\x12\x03,\x0b\
+    \x10\n\x0c\n\x05\x04\x04\x02\x04\x03\x12\x03,\x13\x14b\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

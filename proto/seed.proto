@@ -17,7 +17,7 @@ message LedgerSeed {
 }
 
 message HDPathFingerprint {
-    string path = 1;
+    HDPath path = 1;
     Type type = 2;
     bytes fingerprint = 3;
 
@@ -30,14 +30,17 @@ message HDPathFingerprint {
 message SeedHD {
     bytes seed_id = 1;
     oneof path_type {
-        string path = 2;
-        //m/purpose'/coin'/account'
-        AccountId account = 3;
+        //full m/purpose'/coin'/account'/change/index
+        HDPath path = 2;
+        //short, only m/purpose'/coin'/account'
+        HDPath account = 3;
     }
 }
 
-message AccountId {
+message HDPath {
     uint32 purpose = 1;
     uint32 coin = 2;
     uint32 account = 3;
+    uint32 change = 4;
+    uint32 index = 5;
 }

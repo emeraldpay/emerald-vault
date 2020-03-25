@@ -5,6 +5,7 @@ use crate::{
         seed::{
             HDPathFingerprint as proto_HDFingerprint, LedgerSeed as proto_LedgerSeed,
             Seed as proto_Seed, Seed_oneof_seed_source as proto_SeedType,
+            HDPath as proto_HDPath
         },
         common::FileType as proto_FileType
     },
@@ -17,7 +18,32 @@ use protobuf::{parse_from_bytes, Message};
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 use uuid::Uuid;
-use hdpath::StandardHDPath;
+use hdpath::{StandardHDPath, Purpose};
+
+impl TryFrom<&proto_HDPath> for StandardHDPath {
+    type Error = ConversionError;
+    fn try_from(value: &proto_HDPath) -> Result<Self, Self::Error> {
+        let hdpath = StandardHDPath::try_new(
+            Purpose::try_from(value.purpose)
+                .map_err(|_| ConversionError::InvalidFieldValue("hd_path/purpose".to_string()))?,
+            value.coin, value.account,
+            value.change, value.index
+        ).map_err(|e| ConversionError::InvalidFieldValue(format!("hd_path/{}", e.0)))?;
+        Ok(hdpath)
+    }
+}
+
+impl From<StandardHDPath> for proto_HDPath {
+    fn from(hdpath: StandardHDPath) -> Self {
+        let mut m = proto_HDPath::new();
+        m.set_purpose(hdpath.purpose().as_value().as_number());
+        m.set_coin(hdpath.coin_type());
+        m.set_account(hdpath.account());
+        m.set_change(hdpath.change());
+        m.set_index(hdpath.index());
+        m
+    }
+}
 
 /// Read from Protobuf message
 impl TryFrom<&proto_LedgerSeed> for LedgerSource {
@@ -58,7 +84,7 @@ impl TryFrom<LedgerSource> for proto_LedgerSeed {
                 .iter()
                 .map(|f| {
                     let mut pf = proto_HDFingerprint::new();
-                    pf.set_path(f.hd_path.to_string());
+                    pf.set_path(f.hd_path.clone().into());
                     match f.value {
                         FingerprintType::AddressSha256(b) => pf.set_fingerprint(b.into()),
                     }
