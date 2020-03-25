@@ -30,7 +30,7 @@ const _PROTOBUF_VERSION_CHECK: () = ::protobuf::VERSION_2_8_1;
 pub struct PrivateKey {
     // message fields
     pub file_type: super::common::FileType,
-    pub id: ::std::string::String,
+    pub id: ::std::vec::Vec<u8>,
     // message oneof groups
     pub pk: ::std::option::Option<PrivateKey_oneof_pk>,
     // special fields
@@ -71,10 +71,10 @@ impl PrivateKey {
         self.file_type = v;
     }
 
-    // string id = 2;
+    // bytes id = 2;
 
 
-    pub fn get_id(&self) -> &str {
+    pub fn get_id(&self) -> &[u8] {
         &self.id
     }
     pub fn clear_id(&mut self) {
@@ -82,19 +82,19 @@ impl PrivateKey {
     }
 
     // Param is passed by value, moved
-    pub fn set_id(&mut self, v: ::std::string::String) {
+    pub fn set_id(&mut self, v: ::std::vec::Vec<u8>) {
         self.id = v;
     }
 
     // Mutable pointer to the field.
     // If field is not initialized, it is initialized with default value first.
-    pub fn mut_id(&mut self) -> &mut ::std::string::String {
+    pub fn mut_id(&mut self) -> &mut ::std::vec::Vec<u8> {
         &mut self.id
     }
 
     // Take field
-    pub fn take_id(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.id, ::std::string::String::new())
+    pub fn take_id(&mut self) -> ::std::vec::Vec<u8> {
+        ::std::mem::replace(&mut self.id, ::std::vec::Vec::new())
     }
 
     // .emerald.vault.EthereumPrivateKey ethereum = 3;
@@ -273,7 +273,7 @@ impl ::protobuf::Message for PrivateKey {
                     ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.file_type, 1, &mut self.unknown_fields)?
                 },
                 2 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.id)?;
+                    ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.id)?;
                 },
                 3 => {
                     if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
@@ -309,7 +309,7 @@ impl ::protobuf::Message for PrivateKey {
             my_size += ::protobuf::rt::enum_size(1, self.file_type);
         }
         if !self.id.is_empty() {
-            my_size += ::protobuf::rt::string_size(2, &self.id);
+            my_size += ::protobuf::rt::bytes_size(2, &self.id);
         }
         if let ::std::option::Option::Some(ref v) = self.pk {
             match v {
@@ -337,7 +337,7 @@ impl ::protobuf::Message for PrivateKey {
             os.write_enum(1, self.file_type.value())?;
         }
         if !self.id.is_empty() {
-            os.write_string(2, &self.id)?;
+            os.write_bytes(2, &self.id)?;
         }
         if let ::std::option::Option::Some(ref v) = self.pk {
             match v {
@@ -405,7 +405,7 @@ impl ::protobuf::Message for PrivateKey {
                     |m: &PrivateKey| { &m.file_type },
                     |m: &mut PrivateKey| { &mut m.file_type },
                 ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBytes>(
                     "id",
                     |m: &PrivateKey| { &m.id },
                     |m: &mut PrivateKey| { &mut m.id },
@@ -2025,7 +2025,7 @@ impl ::protobuf::reflect::ProtobufValue for Bip32Private {
 static file_descriptor_proto_data: &'static [u8] = b"\
     \n\x08pk.proto\x12\remerald.vault\x1a\x0ccrypto.proto\x1a\x0ccommon.prot\
     o\"\x8c\x02\n\nPrivateKey\x124\n\tfile_type\x18\x01\x20\x01(\x0e2\x17.em\
-    erald.vault.FileTypeR\x08fileType\x12\x0e\n\x02id\x18\x02\x20\x01(\tR\
+    erald.vault.FileTypeR\x08fileType\x12\x0e\n\x02id\x18\x02\x20\x01(\x0cR\
     \x02id\x12?\n\x08ethereum\x18\x03\x20\x01(\x0b2!.emerald.vault.EthereumP\
     rivateKeyH\0R\x08ethereum\x12<\n\x07bitcoin\x18\x04\x20\x01(\x0b2\x20.em\
     erald.vault.BitcoinPrivateKeyH\0R\x07bitcoin\x123\n\x05xpriv\x18\x05\x20\
@@ -2053,9 +2053,9 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \n\x0b\n\x04\x04\0\x02\0\x12\x03\x06\x04\x1b\n\x0c\n\x05\x04\0\x02\0\x06\
     \x12\x03\x06\x04\x0c\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\x06\r\x16\n\x0c\
     \n\x05\x04\0\x02\0\x03\x12\x03\x06\x19\x1a\n\x0b\n\x04\x04\0\x02\x01\x12\
-    \x03\x07\x04\x12\n\x0c\n\x05\x04\0\x02\x01\x05\x12\x03\x07\x04\n\n\x0c\n\
-    \x05\x04\0\x02\x01\x01\x12\x03\x07\x0b\r\n\x0c\n\x05\x04\0\x02\x01\x03\
-    \x12\x03\x07\x10\x11\n\x0c\n\x04\x04\0\x08\0\x12\x04\x08\x04\x0c\x05\n\
+    \x03\x07\x04\x11\n\x0c\n\x05\x04\0\x02\x01\x05\x12\x03\x07\x04\t\n\x0c\n\
+    \x05\x04\0\x02\x01\x01\x12\x03\x07\n\x0c\n\x0c\n\x05\x04\0\x02\x01\x03\
+    \x12\x03\x07\x0f\x10\n\x0c\n\x04\x04\0\x08\0\x12\x04\x08\x04\x0c\x05\n\
     \x0c\n\x05\x04\0\x08\0\x01\x12\x03\x08\n\x0c\n\x0b\n\x04\x04\0\x02\x02\
     \x12\x03\t\x08(\n\x0c\n\x05\x04\0\x02\x02\x06\x12\x03\t\x08\x1a\n\x0c\n\
     \x05\x04\0\x02\x02\x01\x12\x03\t\x1b#\n\x0c\n\x05\x04\0\x02\x02\x03\x12\

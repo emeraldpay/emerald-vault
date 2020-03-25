@@ -30,7 +30,7 @@ const _PROTOBUF_VERSION_CHECK: () = ::protobuf::VERSION_2_8_1;
 pub struct Seed {
     // message fields
     pub file_type: super::common::FileType,
-    pub id: ::std::string::String,
+    pub id: ::std::vec::Vec<u8>,
     // message oneof groups
     pub seed_source: ::std::option::Option<Seed_oneof_seed_source>,
     // special fields
@@ -70,10 +70,10 @@ impl Seed {
         self.file_type = v;
     }
 
-    // string id = 2;
+    // bytes id = 2;
 
 
-    pub fn get_id(&self) -> &str {
+    pub fn get_id(&self) -> &[u8] {
         &self.id
     }
     pub fn clear_id(&mut self) {
@@ -81,19 +81,19 @@ impl Seed {
     }
 
     // Param is passed by value, moved
-    pub fn set_id(&mut self, v: ::std::string::String) {
+    pub fn set_id(&mut self, v: ::std::vec::Vec<u8>) {
         self.id = v;
     }
 
     // Mutable pointer to the field.
     // If field is not initialized, it is initialized with default value first.
-    pub fn mut_id(&mut self) -> &mut ::std::string::String {
+    pub fn mut_id(&mut self) -> &mut ::std::vec::Vec<u8> {
         &mut self.id
     }
 
     // Take field
-    pub fn take_id(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.id, ::std::string::String::new())
+    pub fn take_id(&mut self) -> ::std::vec::Vec<u8> {
+        ::std::mem::replace(&mut self.id, ::std::vec::Vec::new())
     }
 
     // .emerald.vault.Encrypted bytes = 3;
@@ -218,7 +218,7 @@ impl ::protobuf::Message for Seed {
                     ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.file_type, 1, &mut self.unknown_fields)?
                 },
                 2 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.id)?;
+                    ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.id)?;
                 },
                 3 => {
                     if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
@@ -248,7 +248,7 @@ impl ::protobuf::Message for Seed {
             my_size += ::protobuf::rt::enum_size(1, self.file_type);
         }
         if !self.id.is_empty() {
-            my_size += ::protobuf::rt::string_size(2, &self.id);
+            my_size += ::protobuf::rt::bytes_size(2, &self.id);
         }
         if let ::std::option::Option::Some(ref v) = self.seed_source {
             match v {
@@ -272,7 +272,7 @@ impl ::protobuf::Message for Seed {
             os.write_enum(1, self.file_type.value())?;
         }
         if !self.id.is_empty() {
-            os.write_string(2, &self.id)?;
+            os.write_bytes(2, &self.id)?;
         }
         if let ::std::option::Option::Some(ref v) = self.seed_source {
             match v {
@@ -335,7 +335,7 @@ impl ::protobuf::Message for Seed {
                     |m: &Seed| { &m.file_type },
                     |m: &mut Seed| { &mut m.file_type },
                 ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBytes>(
                     "id",
                     |m: &Seed| { &m.id },
                     |m: &mut Seed| { &mut m.id },
@@ -868,7 +868,7 @@ impl ::protobuf::reflect::ProtobufValue for HDPathFingerprint_Type {
 #[derive(PartialEq,Clone,Default)]
 pub struct SeedHD {
     // message fields
-    pub seed_id: ::std::string::String,
+    pub seed_id: ::std::vec::Vec<u8>,
     // message oneof groups
     pub path_type: ::std::option::Option<SeedHD_oneof_path_type>,
     // special fields
@@ -893,10 +893,10 @@ impl SeedHD {
         ::std::default::Default::default()
     }
 
-    // string seed_id = 1;
+    // bytes seed_id = 1;
 
 
-    pub fn get_seed_id(&self) -> &str {
+    pub fn get_seed_id(&self) -> &[u8] {
         &self.seed_id
     }
     pub fn clear_seed_id(&mut self) {
@@ -904,19 +904,19 @@ impl SeedHD {
     }
 
     // Param is passed by value, moved
-    pub fn set_seed_id(&mut self, v: ::std::string::String) {
+    pub fn set_seed_id(&mut self, v: ::std::vec::Vec<u8>) {
         self.seed_id = v;
     }
 
     // Mutable pointer to the field.
     // If field is not initialized, it is initialized with default value first.
-    pub fn mut_seed_id(&mut self) -> &mut ::std::string::String {
+    pub fn mut_seed_id(&mut self) -> &mut ::std::vec::Vec<u8> {
         &mut self.seed_id
     }
 
     // Take field
-    pub fn take_seed_id(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.seed_id, ::std::string::String::new())
+    pub fn take_seed_id(&mut self) -> ::std::vec::Vec<u8> {
+        ::std::mem::replace(&mut self.seed_id, ::std::vec::Vec::new())
     }
 
     // string path = 2;
@@ -1033,7 +1033,7 @@ impl ::protobuf::Message for SeedHD {
             let (field_number, wire_type) = is.read_tag_unpack()?;
             match field_number {
                 1 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.seed_id)?;
+                    ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.seed_id)?;
                 },
                 2 => {
                     if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
@@ -1060,7 +1060,7 @@ impl ::protobuf::Message for SeedHD {
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
         if !self.seed_id.is_empty() {
-            my_size += ::protobuf::rt::string_size(1, &self.seed_id);
+            my_size += ::protobuf::rt::bytes_size(1, &self.seed_id);
         }
         if let ::std::option::Option::Some(ref v) = self.path_type {
             match v {
@@ -1080,7 +1080,7 @@ impl ::protobuf::Message for SeedHD {
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
         if !self.seed_id.is_empty() {
-            os.write_string(1, &self.seed_id)?;
+            os.write_bytes(1, &self.seed_id)?;
         }
         if let ::std::option::Option::Some(ref v) = self.path_type {
             match v {
@@ -1136,7 +1136,7 @@ impl ::protobuf::Message for SeedHD {
         unsafe {
             descriptor.get(|| {
                 let mut fields = ::std::vec::Vec::new();
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBytes>(
                     "seed_id",
                     |m: &SeedHD| { &m.seed_id },
                     |m: &mut SeedHD| { &mut m.seed_id },
@@ -1427,8 +1427,8 @@ impl ::protobuf::reflect::ProtobufValue for AccountId {
 static file_descriptor_proto_data: &'static [u8] = b"\
     \n\nseed.proto\x12\remerald.vault\x1a\x0ccrypto.proto\x1a\x0ccommon.prot\
     o\"\xc2\x01\n\x04Seed\x124\n\tfile_type\x18\x01\x20\x01(\x0e2\x17.emeral\
-    d.vault.FileTypeR\x08fileType\x12\x0e\n\x02id\x18\x02\x20\x01(\tR\x02id\
-    \x120\n\x05bytes\x18\x03\x20\x01(\x0b2\x18.emerald.vault.EncryptedH\0R\
+    d.vault.FileTypeR\x08fileType\x12\x0e\n\x02id\x18\x02\x20\x01(\x0cR\x02i\
+    d\x120\n\x05bytes\x18\x03\x20\x01(\x0b2\x18.emerald.vault.EncryptedH\0R\
     \x05bytes\x123\n\x06ledger\x18\x04\x20\x01(\x0b2\x19.emerald.vault.Ledge\
     rSeedH\0R\x06ledgerB\r\n\x0bseed_source\"R\n\nLedgerSeed\x12D\n\x0cfinge\
     rprints\x18\x01\x20\x03(\x0b2\x20.emerald.vault.HDPathFingerprintR\x0cfi\
@@ -1437,10 +1437,10 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     .HDPathFingerprint.TypeR\x04type\x12\x20\n\x0bfingerprint\x18\x03\x20\
     \x01(\x0cR\x0bfingerprint\"'\n\x04Type\x12\x0b\n\x07UNKNOWN\x10\0\x12\
     \x12\n\x0eADDRESS_SHA256\x10\x01\"z\n\x06SeedHD\x12\x17\n\x07seed_id\x18\
-    \x01\x20\x01(\tR\x06seedId\x12\x14\n\x04path\x18\x02\x20\x01(\tH\0R\x04p\
-    ath\x124\n\x07account\x18\x03\x20\x01(\x0b2\x18.emerald.vault.AccountIdH\
-    \0R\x07accountB\x0b\n\tpath_type\"S\n\tAccountId\x12\x18\n\x07purpose\
-    \x18\x01\x20\x01(\rR\x07purpose\x12\x12\n\x04coin\x18\x02\x20\x01(\rR\
+    \x01\x20\x01(\x0cR\x06seedId\x12\x14\n\x04path\x18\x02\x20\x01(\tH\0R\
+    \x04path\x124\n\x07account\x18\x03\x20\x01(\x0b2\x18.emerald.vault.Accou\
+    ntIdH\0R\x07accountB\x0b\n\tpath_type\"S\n\tAccountId\x12\x18\n\x07purpo\
+    se\x18\x01\x20\x01(\rR\x07purpose\x12\x12\n\x04coin\x18\x02\x20\x01(\rR\
     \x04coin\x12\x18\n\x07account\x18\x03\x20\x01(\rR\x07accountJ\x88\t\n\
     \x06\x12\x04\0\0*\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\
     \x12\x03\x01\0\x16\n\t\n\x02\x03\0\x12\x03\x02\0\x16\n\t\n\x02\x03\x01\
@@ -1448,9 +1448,9 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x01\x12\x03\x05\x08\x0c\n\x0b\n\x04\x04\0\x02\0\x12\x03\x06\x04\x1b\n\
     \x0c\n\x05\x04\0\x02\0\x06\x12\x03\x06\x04\x0c\n\x0c\n\x05\x04\0\x02\0\
     \x01\x12\x03\x06\r\x16\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x06\x19\x1a\n\
-    \x0b\n\x04\x04\0\x02\x01\x12\x03\x07\x04\x12\n\x0c\n\x05\x04\0\x02\x01\
-    \x05\x12\x03\x07\x04\n\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x07\x0b\r\n\
-    \x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x07\x10\x11\n\x0c\n\x04\x04\0\x08\0\
+    \x0b\n\x04\x04\0\x02\x01\x12\x03\x07\x04\x11\n\x0c\n\x05\x04\0\x02\x01\
+    \x05\x12\x03\x07\x04\t\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x07\n\x0c\n\
+    \x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x07\x0f\x10\n\x0c\n\x04\x04\0\x08\0\
     \x12\x04\x08\x04\x0b\x05\n\x0c\n\x05\x04\0\x08\0\x01\x12\x03\x08\n\x15\n\
     \x0b\n\x04\x04\0\x02\x02\x12\x03\t\x08\x1c\n\x0c\n\x05\x04\0\x02\x02\x06\
     \x12\x03\t\x08\x11\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\t\x12\x17\n\x0c\
@@ -1478,26 +1478,26 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x04\x02\x04\0\x02\x01\x12\x03\x19\x08\x1b\n\x0e\n\x07\x04\x02\x04\0\x02\
     \x01\x01\x12\x03\x19\x08\x16\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x02\x12\
     \x03\x19\x19\x1a\n\n\n\x02\x04\x03\x12\x04\x1d\0$\x01\n\n\n\x03\x04\x03\
-    \x01\x12\x03\x1d\x08\x0e\n\x0b\n\x04\x04\x03\x02\0\x12\x03\x1e\x04\x17\n\
-    \x0c\n\x05\x04\x03\x02\0\x05\x12\x03\x1e\x04\n\n\x0c\n\x05\x04\x03\x02\0\
-    \x01\x12\x03\x1e\x0b\x12\n\x0c\n\x05\x04\x03\x02\0\x03\x12\x03\x1e\x15\
-    \x16\n\x0c\n\x04\x04\x03\x08\0\x12\x04\x1f\x04#\x05\n\x0c\n\x05\x04\x03\
-    \x08\0\x01\x12\x03\x1f\n\x13\n\x0b\n\x04\x04\x03\x02\x01\x12\x03\x20\x08\
-    \x18\n\x0c\n\x05\x04\x03\x02\x01\x05\x12\x03\x20\x08\x0e\n\x0c\n\x05\x04\
-    \x03\x02\x01\x01\x12\x03\x20\x0f\x13\n\x0c\n\x05\x04\x03\x02\x01\x03\x12\
-    \x03\x20\x16\x17\n'\n\x04\x04\x03\x02\x02\x12\x03\"\x08\x1e\x1a\x1am/pur\
-    pose'/coin'/account'\n\n\x0c\n\x05\x04\x03\x02\x02\x06\x12\x03\"\x08\x11\
-    \n\x0c\n\x05\x04\x03\x02\x02\x01\x12\x03\"\x12\x19\n\x0c\n\x05\x04\x03\
-    \x02\x02\x03\x12\x03\"\x1c\x1d\n\n\n\x02\x04\x04\x12\x04&\0*\x01\n\n\n\
-    \x03\x04\x04\x01\x12\x03&\x08\x11\n\x0b\n\x04\x04\x04\x02\0\x12\x03'\x04\
-    \x17\n\x0c\n\x05\x04\x04\x02\0\x05\x12\x03'\x04\n\n\x0c\n\x05\x04\x04\
-    \x02\0\x01\x12\x03'\x0b\x12\n\x0c\n\x05\x04\x04\x02\0\x03\x12\x03'\x15\
-    \x16\n\x0b\n\x04\x04\x04\x02\x01\x12\x03(\x04\x14\n\x0c\n\x05\x04\x04\
-    \x02\x01\x05\x12\x03(\x04\n\n\x0c\n\x05\x04\x04\x02\x01\x01\x12\x03(\x0b\
-    \x0f\n\x0c\n\x05\x04\x04\x02\x01\x03\x12\x03(\x12\x13\n\x0b\n\x04\x04\
-    \x04\x02\x02\x12\x03)\x04\x17\n\x0c\n\x05\x04\x04\x02\x02\x05\x12\x03)\
-    \x04\n\n\x0c\n\x05\x04\x04\x02\x02\x01\x12\x03)\x0b\x12\n\x0c\n\x05\x04\
-    \x04\x02\x02\x03\x12\x03)\x15\x16b\x06proto3\
+    \x01\x12\x03\x1d\x08\x0e\n\x0b\n\x04\x04\x03\x02\0\x12\x03\x1e\x04\x16\n\
+    \x0c\n\x05\x04\x03\x02\0\x05\x12\x03\x1e\x04\t\n\x0c\n\x05\x04\x03\x02\0\
+    \x01\x12\x03\x1e\n\x11\n\x0c\n\x05\x04\x03\x02\0\x03\x12\x03\x1e\x14\x15\
+    \n\x0c\n\x04\x04\x03\x08\0\x12\x04\x1f\x04#\x05\n\x0c\n\x05\x04\x03\x08\
+    \0\x01\x12\x03\x1f\n\x13\n\x0b\n\x04\x04\x03\x02\x01\x12\x03\x20\x08\x18\
+    \n\x0c\n\x05\x04\x03\x02\x01\x05\x12\x03\x20\x08\x0e\n\x0c\n\x05\x04\x03\
+    \x02\x01\x01\x12\x03\x20\x0f\x13\n\x0c\n\x05\x04\x03\x02\x01\x03\x12\x03\
+    \x20\x16\x17\n'\n\x04\x04\x03\x02\x02\x12\x03\"\x08\x1e\x1a\x1am/purpose\
+    '/coin'/account'\n\n\x0c\n\x05\x04\x03\x02\x02\x06\x12\x03\"\x08\x11\n\
+    \x0c\n\x05\x04\x03\x02\x02\x01\x12\x03\"\x12\x19\n\x0c\n\x05\x04\x03\x02\
+    \x02\x03\x12\x03\"\x1c\x1d\n\n\n\x02\x04\x04\x12\x04&\0*\x01\n\n\n\x03\
+    \x04\x04\x01\x12\x03&\x08\x11\n\x0b\n\x04\x04\x04\x02\0\x12\x03'\x04\x17\
+    \n\x0c\n\x05\x04\x04\x02\0\x05\x12\x03'\x04\n\n\x0c\n\x05\x04\x04\x02\0\
+    \x01\x12\x03'\x0b\x12\n\x0c\n\x05\x04\x04\x02\0\x03\x12\x03'\x15\x16\n\
+    \x0b\n\x04\x04\x04\x02\x01\x12\x03(\x04\x14\n\x0c\n\x05\x04\x04\x02\x01\
+    \x05\x12\x03(\x04\n\n\x0c\n\x05\x04\x04\x02\x01\x01\x12\x03(\x0b\x0f\n\
+    \x0c\n\x05\x04\x04\x02\x01\x03\x12\x03(\x12\x13\n\x0b\n\x04\x04\x04\x02\
+    \x02\x12\x03)\x04\x17\n\x0c\n\x05\x04\x04\x02\x02\x05\x12\x03)\x04\n\n\
+    \x0c\n\x05\x04\x04\x02\x02\x01\x12\x03)\x0b\x12\n\x0c\n\x05\x04\x04\x02\
+    \x02\x03\x12\x03)\x15\x16b\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

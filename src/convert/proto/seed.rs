@@ -85,7 +85,7 @@ impl TryFrom<&[u8]> for Seed {
             None => return Err(ConversionError::FieldIsEmpty("seed_source".to_string())),
         };
         let result = Seed {
-            id: Uuid::from_str(m.get_id())
+            id: Uuid::from_bytes(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
             source,
         };
@@ -109,7 +109,7 @@ impl TryFrom<Seed> for Vec<u8> {
     fn try_from(value: Seed) -> Result<Self, Self::Error> {
         let mut m = proto_Seed::new();
         m.set_file_type(proto_FileType::FILE_SEED);
-        m.set_id(value.id.to_string());
+        m.set_id(value.id.as_bytes().to_vec());
         match value.source {
             SeedSource::Bytes(s) => m.set_bytes(proto_Encrypted::try_from(&s)?),
             SeedSource::Ledger(s) => m.set_ledger(s.try_into()?),
@@ -139,7 +139,7 @@ mod tests {
         assert!(b.len() > 0);
         let act = parse_from_bytes::<proto_Seed>(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 3);
-        assert_eq!(act.get_id(), "18ba0447-81f3-40d7-bab1-e74de07a1001");
+        assert_eq!(Uuid::from_bytes(act.get_id()).unwrap(), Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap());
         assert!(act.has_bytes());
     }
 

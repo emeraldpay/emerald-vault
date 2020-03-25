@@ -30,7 +30,7 @@ const _PROTOBUF_VERSION_CHECK: () = ::protobuf::VERSION_2_8_1;
 pub struct Wallet {
     // message fields
     pub file_type: super::common::FileType,
-    pub id: ::std::string::String,
+    pub id: ::std::vec::Vec<u8>,
     pub label: ::std::string::String,
     pub hd_accounts: ::protobuf::RepeatedField<Reserved>,
     pub accounts: ::protobuf::RepeatedField<WalletAccount>,
@@ -66,10 +66,10 @@ impl Wallet {
         self.file_type = v;
     }
 
-    // string id = 2;
+    // bytes id = 2;
 
 
-    pub fn get_id(&self) -> &str {
+    pub fn get_id(&self) -> &[u8] {
         &self.id
     }
     pub fn clear_id(&mut self) {
@@ -77,19 +77,19 @@ impl Wallet {
     }
 
     // Param is passed by value, moved
-    pub fn set_id(&mut self, v: ::std::string::String) {
+    pub fn set_id(&mut self, v: ::std::vec::Vec<u8>) {
         self.id = v;
     }
 
     // Mutable pointer to the field.
     // If field is not initialized, it is initialized with default value first.
-    pub fn mut_id(&mut self) -> &mut ::std::string::String {
+    pub fn mut_id(&mut self) -> &mut ::std::vec::Vec<u8> {
         &mut self.id
     }
 
     // Take field
-    pub fn take_id(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.id, ::std::string::String::new())
+    pub fn take_id(&mut self) -> ::std::vec::Vec<u8> {
+        ::std::mem::replace(&mut self.id, ::std::vec::Vec::new())
     }
 
     // string label = 3;
@@ -207,7 +207,7 @@ impl ::protobuf::Message for Wallet {
                     ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.file_type, 1, &mut self.unknown_fields)?
                 },
                 2 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.id)?;
+                    ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.id)?;
                 },
                 3 => {
                     ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.label)?;
@@ -241,7 +241,7 @@ impl ::protobuf::Message for Wallet {
             my_size += ::protobuf::rt::enum_size(1, self.file_type);
         }
         if !self.id.is_empty() {
-            my_size += ::protobuf::rt::string_size(2, &self.id);
+            my_size += ::protobuf::rt::bytes_size(2, &self.id);
         }
         if !self.label.is_empty() {
             my_size += ::protobuf::rt::string_size(3, &self.label);
@@ -267,7 +267,7 @@ impl ::protobuf::Message for Wallet {
             os.write_enum(1, self.file_type.value())?;
         }
         if !self.id.is_empty() {
-            os.write_string(2, &self.id)?;
+            os.write_bytes(2, &self.id)?;
         }
         if !self.label.is_empty() {
             os.write_string(3, &self.label)?;
@@ -332,7 +332,7 @@ impl ::protobuf::Message for Wallet {
                     |m: &Wallet| { &m.file_type },
                     |m: &mut Wallet| { &mut m.file_type },
                 ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBytes>(
                     "id",
                     |m: &Wallet| { &m.id },
                     |m: &mut Wallet| { &mut m.id },
@@ -404,7 +404,7 @@ impl ::protobuf::reflect::ProtobufValue for Wallet {
 #[derive(PartialEq,Clone,Default)]
 pub struct Reserved {
     // message fields
-    pub seed_id: ::std::string::String,
+    pub seed_id: ::std::vec::Vec<u8>,
     pub account_id: u32,
     // special fields
     pub unknown_fields: ::protobuf::UnknownFields,
@@ -422,10 +422,10 @@ impl Reserved {
         ::std::default::Default::default()
     }
 
-    // string seed_id = 1;
+    // bytes seed_id = 1;
 
 
-    pub fn get_seed_id(&self) -> &str {
+    pub fn get_seed_id(&self) -> &[u8] {
         &self.seed_id
     }
     pub fn clear_seed_id(&mut self) {
@@ -433,19 +433,19 @@ impl Reserved {
     }
 
     // Param is passed by value, moved
-    pub fn set_seed_id(&mut self, v: ::std::string::String) {
+    pub fn set_seed_id(&mut self, v: ::std::vec::Vec<u8>) {
         self.seed_id = v;
     }
 
     // Mutable pointer to the field.
     // If field is not initialized, it is initialized with default value first.
-    pub fn mut_seed_id(&mut self) -> &mut ::std::string::String {
+    pub fn mut_seed_id(&mut self) -> &mut ::std::vec::Vec<u8> {
         &mut self.seed_id
     }
 
     // Take field
-    pub fn take_seed_id(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.seed_id, ::std::string::String::new())
+    pub fn take_seed_id(&mut self) -> ::std::vec::Vec<u8> {
+        ::std::mem::replace(&mut self.seed_id, ::std::vec::Vec::new())
     }
 
     // uint32 account_id = 2;
@@ -474,7 +474,7 @@ impl ::protobuf::Message for Reserved {
             let (field_number, wire_type) = is.read_tag_unpack()?;
             match field_number {
                 1 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.seed_id)?;
+                    ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.seed_id)?;
                 },
                 2 => {
                     if wire_type != ::protobuf::wire_format::WireTypeVarint {
@@ -496,7 +496,7 @@ impl ::protobuf::Message for Reserved {
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
         if !self.seed_id.is_empty() {
-            my_size += ::protobuf::rt::string_size(1, &self.seed_id);
+            my_size += ::protobuf::rt::bytes_size(1, &self.seed_id);
         }
         if self.account_id != 0 {
             my_size += ::protobuf::rt::value_size(2, self.account_id, ::protobuf::wire_format::WireTypeVarint);
@@ -508,7 +508,7 @@ impl ::protobuf::Message for Reserved {
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
         if !self.seed_id.is_empty() {
-            os.write_string(1, &self.seed_id)?;
+            os.write_bytes(1, &self.seed_id)?;
         }
         if self.account_id != 0 {
             os.write_uint32(2, self.account_id)?;
@@ -555,7 +555,7 @@ impl ::protobuf::Message for Reserved {
         unsafe {
             descriptor.get(|| {
                 let mut fields = ::std::vec::Vec::new();
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBytes>(
                     "seed_id",
                     |m: &Reserved| { &m.seed_id },
                     |m: &mut Reserved| { &mut m.seed_id },
@@ -628,7 +628,7 @@ impl<'a> ::std::default::Default for &'a WalletAccount {
 #[derive(Clone,PartialEq,Debug)]
 pub enum WalletAccount_oneof_pk_type {
     hd_path(super::seed::SeedHD),
-    pk_id(::std::string::String),
+    pk_id(::std::vec::Vec<u8>),
 }
 
 impl WalletAccount {
@@ -763,13 +763,13 @@ impl WalletAccount {
         }
     }
 
-    // string pk_id = 8;
+    // bytes pk_id = 8;
 
 
-    pub fn get_pk_id(&self) -> &str {
+    pub fn get_pk_id(&self) -> &[u8] {
         match self.pk_type {
             ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(ref v)) => v,
-            _ => "",
+            _ => &[],
         }
     }
     pub fn clear_pk_id(&mut self) {
@@ -784,15 +784,15 @@ impl WalletAccount {
     }
 
     // Param is passed by value, moved
-    pub fn set_pk_id(&mut self, v: ::std::string::String) {
+    pub fn set_pk_id(&mut self, v: ::std::vec::Vec<u8>) {
         self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(v))
     }
 
     // Mutable pointer to the field.
-    pub fn mut_pk_id(&mut self) -> &mut ::std::string::String {
+    pub fn mut_pk_id(&mut self) -> &mut ::std::vec::Vec<u8> {
         if let ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(_)) = self.pk_type {
         } else {
-            self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(::std::string::String::new()));
+            self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(::std::vec::Vec::new()));
         }
         match self.pk_type {
             ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(ref mut v)) => v,
@@ -801,14 +801,14 @@ impl WalletAccount {
     }
 
     // Take field
-    pub fn take_pk_id(&mut self) -> ::std::string::String {
+    pub fn take_pk_id(&mut self) -> ::std::vec::Vec<u8> {
         if self.has_pk_id() {
             match self.pk_type.take() {
                 ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(v)) => v,
                 _ => panic!(),
             }
         } else {
-            ::std::string::String::new()
+            ::std::vec::Vec::new()
         }
     }
 }
@@ -866,7 +866,7 @@ impl ::protobuf::Message for WalletAccount {
                     if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
-                    self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(is.read_string()?));
+                    self.pk_type = ::std::option::Option::Some(WalletAccount_oneof_pk_type::pk_id(is.read_bytes()?));
                 },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
@@ -900,7 +900,7 @@ impl ::protobuf::Message for WalletAccount {
                     my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
                 },
                 &WalletAccount_oneof_pk_type::pk_id(ref v) => {
-                    my_size += ::protobuf::rt::string_size(8, &v);
+                    my_size += ::protobuf::rt::bytes_size(8, &v);
                 },
             };
         }
@@ -932,7 +932,7 @@ impl ::protobuf::Message for WalletAccount {
                     v.write_to_with_cached_sizes(os)?;
                 },
                 &WalletAccount_oneof_pk_type::pk_id(ref v) => {
-                    os.write_string(8, v)?;
+                    os.write_bytes(8, v)?;
                 },
             };
         }
@@ -1003,7 +1003,7 @@ impl ::protobuf::Message for WalletAccount {
                     WalletAccount::has_hd_path,
                     WalletAccount::get_hd_path,
                 ));
-                fields.push(::protobuf::reflect::accessor::make_singular_string_accessor::<_>(
+                fields.push(::protobuf::reflect::accessor::make_singular_bytes_accessor::<_>(
                     "pk_id",
                     WalletAccount::has_pk_id,
                     WalletAccount::get_pk_id,
@@ -1056,84 +1056,84 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \n\x0cwallet.proto\x12\remerald.vault\x1a\raddress.proto\x1a\nseed.proto\
     \x1a\x0ccommon.proto\"\xf9\x01\n\x06Wallet\x124\n\tfile_type\x18\x01\x20\
     \x01(\x0e2\x17.emerald.vault.FileTypeR\x08fileType\x12\x0e\n\x02id\x18\
-    \x02\x20\x01(\tR\x02id\x12\x14\n\x05label\x18\x03\x20\x01(\tR\x05label\
+    \x02\x20\x01(\x0cR\x02id\x12\x14\n\x05label\x18\x03\x20\x01(\tR\x05label\
     \x128\n\x0bhd_accounts\x18\x04\x20\x03(\x0b2\x17.emerald.vault.ReservedR\
     \nhdAccounts\x128\n\x08accounts\x18\x05\x20\x03(\x0b2\x1c.emerald.vault.\
     WalletAccountR\x08accounts\x12\x1f\n\x0baccount_seq\x18\x06\x20\x01(\rR\
-    \naccountSeq\"B\n\x08Reserved\x12\x17\n\x07seed_id\x18\x01\x20\x01(\tR\
+    \naccountSeq\"B\n\x08Reserved\x12\x17\n\x07seed_id\x18\x01\x20\x01(\x0cR\
     \x06seedId\x12\x1d\n\naccount_id\x18\x02\x20\x01(\rR\taccountId\"\xf5\
     \x01\n\rWalletAccount\x12\x0e\n\x02id\x18\x01\x20\x01(\rR\x02id\x12#\n\r\
     blockchain_id\x18\x02\x20\x01(\rR\x0cblockchainId\x12)\n\x10receive_disa\
     bled\x18\x03\x20\x01(\x08R\x0freceiveDisabled\x120\n\x07address\x18\x05\
     \x20\x01(\x0b2\x16.emerald.vault.AddressR\x07address\x120\n\x07hd_path\
     \x18\x07\x20\x01(\x0b2\x15.emerald.vault.SeedHDH\0R\x06hdPath\x12\x15\n\
-    \x05pk_id\x18\x08\x20\x01(\tH\0R\x04pkIdB\t\n\x07pk_typeJ\x8f\x0e\n\x06\
-    \x12\x04\0\00\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\
-    \x03\x01\0\x16\n\t\n\x02\x03\0\x12\x03\x02\0\x17\n\t\n\x02\x03\x01\x12\
-    \x03\x03\0\x14\n\t\n\x02\x03\x02\x12\x03\x04\0\x16\nG\n\x02\x04\0\x12\
-    \x04\x07\0\x17\x01\x1a;\x20Wallet\x20is\x20a\x20user\x20defined\x20group\
-    \x20of\x20addresses\x20used\x20together\n\n\n\n\x03\x04\0\x01\x12\x03\
-    \x07\x08\x0e\n\x0b\n\x04\x04\0\x02\0\x12\x03\x08\x04\x1b\n\x0c\n\x05\x04\
-    \0\x02\0\x06\x12\x03\x08\x04\x0c\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\x08\
-    \r\x16\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x08\x19\x1a\n\x13\n\x04\x04\0\
-    \x02\x01\x12\x03\n\x04\x12\x1a\x06\x20UUID\n\n\x0c\n\x05\x04\0\x02\x01\
-    \x05\x12\x03\n\x04\n\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\n\x0b\r\n\x0c\
-    \n\x05\x04\0\x02\x01\x03\x12\x03\n\x10\x11\n!\n\x04\x04\0\x02\x02\x12\
-    \x03\x0c\x04\x15\x1a\x14\x20User\x20defined\x20label\n\n\x0c\n\x05\x04\0\
-    \x02\x02\x05\x12\x03\x0c\x04\n\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\x0c\
-    \x0b\x10\n\x0c\n\x05\x04\0\x02\x02\x03\x12\x03\x0c\x13\x14\n\x9c\x01\n\
-    \x04\x04\0\x02\x03\x12\x03\x10\x04&\x1a\x8e\x01\x20List\x20of\x20HDPath\
-    \x20accounts\x20that\x20belongs\x20to\x20the\x20wallet,\x20used\x20to\
-    \x20automate\x20finding\x20new\n\x20addresses\x20and\x20avoiding\x20coll\
-    ision\x20between\x20different\x20wallets\n\n\x0c\n\x05\x04\0\x02\x03\x04\
-    \x12\x03\x10\x04\x0c\n\x0c\n\x05\x04\0\x02\x03\x06\x12\x03\x10\r\x15\n\
-    \x0c\n\x05\x04\0\x02\x03\x01\x12\x03\x10\x16!\n\x0c\n\x05\x04\0\x02\x03\
-    \x03\x12\x03\x10$%\n,\n\x04\x04\0\x02\x04\x12\x03\x12\x04(\x1a\x1f\x20Ac\
-    tual\x20accounts\x20in\x20the\x20wallet\n\n\x0c\n\x05\x04\0\x02\x04\x04\
-    \x12\x03\x12\x04\x0c\n\x0c\n\x05\x04\0\x02\x04\x06\x12\x03\x12\r\x1a\n\
-    \x0c\n\x05\x04\0\x02\x04\x01\x12\x03\x12\x1b#\n\x0c\n\x05\x04\0\x02\x04\
-    \x03\x12\x03\x12&'\n\xd8\x01\n\x04\x04\0\x02\x05\x12\x03\x16\x04\x1b\x1a\
-    \xca\x01\x20Sequence\x20for\x20account\x20ids\x20in\x20that\x20wallet.\
-    \x20Incremented\x20each\x20time\x20a\x20new\x20account\x20added,\x20and\
-    \x20used\n\x20as\x20the\x20id\x20that\x20new\x20account.\x20Using\x20thi\
-    s\x20sequence,\x20if\x20account\x20gets\x20deleted\x20its\x20id\x20is\
-    \x20not\x20going\n\x20to\x20be\x20reused\n\n\x0c\n\x05\x04\0\x02\x05\x05\
-    \x12\x03\x16\x04\n\n\x0c\n\x05\x04\0\x02\x05\x01\x12\x03\x16\x0b\x16\n\
-    \x0c\n\x05\x04\0\x02\x05\x03\x12\x03\x16\x19\x1a\n=\n\x02\x04\x01\x12\
-    \x04\x1a\0\x1f\x01\x1a1\x20Reserved\x20index\x20on\x20a\x20HD\x20path,\
-    \x20an\x20x\x20from\x20m/44'/x'\n\n\n\n\x03\x04\x01\x01\x12\x03\x1a\x08\
-    \x10\n)\n\x04\x04\x01\x02\0\x12\x03\x1c\x04\x17\x1a\x1c\x20reference\x20\
-    to\x20a\x20source\x20seed\n\n\x0c\n\x05\x04\x01\x02\0\x05\x12\x03\x1c\
-    \x04\n\n\x0c\n\x05\x04\x01\x02\0\x01\x12\x03\x1c\x0b\x12\n\x0c\n\x05\x04\
-    \x01\x02\0\x03\x12\x03\x1c\x15\x16\n\"\n\x04\x04\x01\x02\x01\x12\x03\x1e\
-    \x04\x1a\x1a\x15\x20reserved\x20account\x20id\n\n\x0c\n\x05\x04\x01\x02\
-    \x01\x05\x12\x03\x1e\x04\n\n\x0c\n\x05\x04\x01\x02\x01\x01\x12\x03\x1e\
-    \x0b\x15\n\x0c\n\x05\x04\x01\x02\x01\x03\x12\x03\x1e\x18\x19\n\x1d\n\x02\
-    \x04\x02\x12\x04\"\00\x01\x1a\x11\x20Account\x20details\n\n\n\n\x03\x04\
-    \x02\x01\x12\x03\"\x08\x15\n1\n\x04\x04\x02\x02\0\x12\x03$\x04\x12\x1a$\
-    \x20id\x20to\x20reference\x20account\x20per\x20wallet\n\n\x0c\n\x05\x04\
-    \x02\x02\0\x05\x12\x03$\x04\n\n\x0c\n\x05\x04\x02\x02\0\x01\x12\x03$\x0b\
-    \r\n\x0c\n\x05\x04\x02\x02\0\x03\x12\x03$\x10\x11\ng\n\x04\x04\x02\x02\
-    \x01\x12\x03&\x04\x1d\x1aZ\x20Associated\x20blockchain;\x20account\x20ma\
-    y\x20have\x20multiple\x20different\x20assets\x20on\x20a\x20single\x20blo\
-    ckchain\n\n\x0c\n\x05\x04\x02\x02\x01\x05\x12\x03&\x04\n\n\x0c\n\x05\x04\
-    \x02\x02\x01\x01\x12\x03&\x0b\x18\n\x0c\n\x05\x04\x02\x02\x01\x03\x12\
-    \x03&\x1b\x1c\nO\n\x04\x04\x02\x02\x02\x12\x03(\x04\x1e\x1aB\x20true\x20\
-    if\x20account\x20is\x20disabled\x20for\x20receiving,\x20i.e.\x20only\x20\
-    for\x20sending\n\n\x0c\n\x05\x04\x02\x02\x02\x05\x12\x03(\x04\x08\n\x0c\
-    \n\x05\x04\x02\x02\x02\x01\x12\x03(\t\x19\n\x0c\n\x05\x04\x02\x02\x02\
-    \x03\x12\x03(\x1c\x1d\n+\n\x04\x04\x02\x02\x03\x12\x03*\x04\x18\x1a\x1e\
-    \x20public\x20address\x20for\x20reference\n\n\x0c\n\x05\x04\x02\x02\x03\
-    \x06\x12\x03*\x04\x0b\n\x0c\n\x05\x04\x02\x02\x03\x01\x12\x03*\x0c\x13\n\
-    \x0c\n\x05\x04\x02\x02\x03\x03\x12\x03*\x16\x17\n\x1f\n\x04\x04\x02\x08\
-    \0\x12\x04,\x04/\x05\x1a\x11\x20reference\x20to\x20PK\n\n\x0c\n\x05\x04\
-    \x02\x08\0\x01\x12\x03,\n\x11\n\x0b\n\x04\x04\x02\x02\x04\x12\x03-\x08\
-    \x1b\n\x0c\n\x05\x04\x02\x02\x04\x06\x12\x03-\x08\x0e\n\x0c\n\x05\x04\
-    \x02\x02\x04\x01\x12\x03-\x0f\x16\n\x0c\n\x05\x04\x02\x02\x04\x03\x12\
-    \x03-\x19\x1a\n\x0b\n\x04\x04\x02\x02\x05\x12\x03.\x08\x19\n\x0c\n\x05\
-    \x04\x02\x02\x05\x05\x12\x03.\x08\x0e\n\x0c\n\x05\x04\x02\x02\x05\x01\
-    \x12\x03.\x0f\x14\n\x0c\n\x05\x04\x02\x02\x05\x03\x12\x03.\x17\x18b\x06p\
-    roto3\
+    \x05pk_id\x18\x08\x20\x01(\x0cH\0R\x04pkIdB\t\n\x07pk_typeJ\x8f\x0e\n\
+    \x06\x12\x04\0\00\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\
+    \x12\x03\x01\0\x16\n\t\n\x02\x03\0\x12\x03\x02\0\x17\n\t\n\x02\x03\x01\
+    \x12\x03\x03\0\x14\n\t\n\x02\x03\x02\x12\x03\x04\0\x16\nG\n\x02\x04\0\
+    \x12\x04\x07\0\x17\x01\x1a;\x20Wallet\x20is\x20a\x20user\x20defined\x20g\
+    roup\x20of\x20addresses\x20used\x20together\n\n\n\n\x03\x04\0\x01\x12\
+    \x03\x07\x08\x0e\n\x0b\n\x04\x04\0\x02\0\x12\x03\x08\x04\x1b\n\x0c\n\x05\
+    \x04\0\x02\0\x06\x12\x03\x08\x04\x0c\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\
+    \x08\r\x16\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x08\x19\x1a\n\x13\n\x04\
+    \x04\0\x02\x01\x12\x03\n\x04\x11\x1a\x06\x20UUID\n\n\x0c\n\x05\x04\0\x02\
+    \x01\x05\x12\x03\n\x04\t\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\n\n\x0c\n\
+    \x0c\n\x05\x04\0\x02\x01\x03\x12\x03\n\x0f\x10\n!\n\x04\x04\0\x02\x02\
+    \x12\x03\x0c\x04\x15\x1a\x14\x20User\x20defined\x20label\n\n\x0c\n\x05\
+    \x04\0\x02\x02\x05\x12\x03\x0c\x04\n\n\x0c\n\x05\x04\0\x02\x02\x01\x12\
+    \x03\x0c\x0b\x10\n\x0c\n\x05\x04\0\x02\x02\x03\x12\x03\x0c\x13\x14\n\x9c\
+    \x01\n\x04\x04\0\x02\x03\x12\x03\x10\x04&\x1a\x8e\x01\x20List\x20of\x20H\
+    DPath\x20accounts\x20that\x20belongs\x20to\x20the\x20wallet,\x20used\x20\
+    to\x20automate\x20finding\x20new\n\x20addresses\x20and\x20avoiding\x20co\
+    llision\x20between\x20different\x20wallets\n\n\x0c\n\x05\x04\0\x02\x03\
+    \x04\x12\x03\x10\x04\x0c\n\x0c\n\x05\x04\0\x02\x03\x06\x12\x03\x10\r\x15\
+    \n\x0c\n\x05\x04\0\x02\x03\x01\x12\x03\x10\x16!\n\x0c\n\x05\x04\0\x02\
+    \x03\x03\x12\x03\x10$%\n,\n\x04\x04\0\x02\x04\x12\x03\x12\x04(\x1a\x1f\
+    \x20Actual\x20accounts\x20in\x20the\x20wallet\n\n\x0c\n\x05\x04\0\x02\
+    \x04\x04\x12\x03\x12\x04\x0c\n\x0c\n\x05\x04\0\x02\x04\x06\x12\x03\x12\r\
+    \x1a\n\x0c\n\x05\x04\0\x02\x04\x01\x12\x03\x12\x1b#\n\x0c\n\x05\x04\0\
+    \x02\x04\x03\x12\x03\x12&'\n\xd8\x01\n\x04\x04\0\x02\x05\x12\x03\x16\x04\
+    \x1b\x1a\xca\x01\x20Sequence\x20for\x20account\x20ids\x20in\x20that\x20w\
+    allet.\x20Incremented\x20each\x20time\x20a\x20new\x20account\x20added,\
+    \x20and\x20used\n\x20as\x20the\x20id\x20that\x20new\x20account.\x20Using\
+    \x20this\x20sequence,\x20if\x20account\x20gets\x20deleted\x20its\x20id\
+    \x20is\x20not\x20going\n\x20to\x20be\x20reused\n\n\x0c\n\x05\x04\0\x02\
+    \x05\x05\x12\x03\x16\x04\n\n\x0c\n\x05\x04\0\x02\x05\x01\x12\x03\x16\x0b\
+    \x16\n\x0c\n\x05\x04\0\x02\x05\x03\x12\x03\x16\x19\x1a\n=\n\x02\x04\x01\
+    \x12\x04\x1a\0\x1f\x01\x1a1\x20Reserved\x20index\x20on\x20a\x20HD\x20pat\
+    h,\x20an\x20x\x20from\x20m/44'/x'\n\n\n\n\x03\x04\x01\x01\x12\x03\x1a\
+    \x08\x10\n)\n\x04\x04\x01\x02\0\x12\x03\x1c\x04\x16\x1a\x1c\x20reference\
+    \x20to\x20a\x20source\x20seed\n\n\x0c\n\x05\x04\x01\x02\0\x05\x12\x03\
+    \x1c\x04\t\n\x0c\n\x05\x04\x01\x02\0\x01\x12\x03\x1c\n\x11\n\x0c\n\x05\
+    \x04\x01\x02\0\x03\x12\x03\x1c\x14\x15\n\"\n\x04\x04\x01\x02\x01\x12\x03\
+    \x1e\x04\x1a\x1a\x15\x20reserved\x20account\x20id\n\n\x0c\n\x05\x04\x01\
+    \x02\x01\x05\x12\x03\x1e\x04\n\n\x0c\n\x05\x04\x01\x02\x01\x01\x12\x03\
+    \x1e\x0b\x15\n\x0c\n\x05\x04\x01\x02\x01\x03\x12\x03\x1e\x18\x19\n\x1d\n\
+    \x02\x04\x02\x12\x04\"\00\x01\x1a\x11\x20Account\x20details\n\n\n\n\x03\
+    \x04\x02\x01\x12\x03\"\x08\x15\n1\n\x04\x04\x02\x02\0\x12\x03$\x04\x12\
+    \x1a$\x20id\x20to\x20reference\x20account\x20per\x20wallet\n\n\x0c\n\x05\
+    \x04\x02\x02\0\x05\x12\x03$\x04\n\n\x0c\n\x05\x04\x02\x02\0\x01\x12\x03$\
+    \x0b\r\n\x0c\n\x05\x04\x02\x02\0\x03\x12\x03$\x10\x11\ng\n\x04\x04\x02\
+    \x02\x01\x12\x03&\x04\x1d\x1aZ\x20Associated\x20blockchain;\x20account\
+    \x20may\x20have\x20multiple\x20different\x20assets\x20on\x20a\x20single\
+    \x20blockchain\n\n\x0c\n\x05\x04\x02\x02\x01\x05\x12\x03&\x04\n\n\x0c\n\
+    \x05\x04\x02\x02\x01\x01\x12\x03&\x0b\x18\n\x0c\n\x05\x04\x02\x02\x01\
+    \x03\x12\x03&\x1b\x1c\nO\n\x04\x04\x02\x02\x02\x12\x03(\x04\x1e\x1aB\x20\
+    true\x20if\x20account\x20is\x20disabled\x20for\x20receiving,\x20i.e.\x20\
+    only\x20for\x20sending\n\n\x0c\n\x05\x04\x02\x02\x02\x05\x12\x03(\x04\
+    \x08\n\x0c\n\x05\x04\x02\x02\x02\x01\x12\x03(\t\x19\n\x0c\n\x05\x04\x02\
+    \x02\x02\x03\x12\x03(\x1c\x1d\n+\n\x04\x04\x02\x02\x03\x12\x03*\x04\x18\
+    \x1a\x1e\x20public\x20address\x20for\x20reference\n\n\x0c\n\x05\x04\x02\
+    \x02\x03\x06\x12\x03*\x04\x0b\n\x0c\n\x05\x04\x02\x02\x03\x01\x12\x03*\
+    \x0c\x13\n\x0c\n\x05\x04\x02\x02\x03\x03\x12\x03*\x16\x17\n\x1f\n\x04\
+    \x04\x02\x08\0\x12\x04,\x04/\x05\x1a\x11\x20reference\x20to\x20PK\n\n\
+    \x0c\n\x05\x04\x02\x08\0\x01\x12\x03,\n\x11\n\x0b\n\x04\x04\x02\x02\x04\
+    \x12\x03-\x08\x1b\n\x0c\n\x05\x04\x02\x02\x04\x06\x12\x03-\x08\x0e\n\x0c\
+    \n\x05\x04\x02\x02\x04\x01\x12\x03-\x0f\x16\n\x0c\n\x05\x04\x02\x02\x04\
+    \x03\x12\x03-\x19\x1a\n\x0b\n\x04\x04\x02\x02\x05\x12\x03.\x08\x18\n\x0c\
+    \n\x05\x04\x02\x02\x05\x05\x12\x03.\x08\r\n\x0c\n\x05\x04\x02\x02\x05\
+    \x01\x12\x03.\x0e\x13\n\x0c\n\x05\x04\x02\x02\x05\x03\x12\x03.\x16\x17b\
+    \x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

@@ -3,6 +3,7 @@ package emerald.vault;
 
 message File {
     FileType file_type = 1;
+    bytes id = 2;
 }
 
 enum FileType {

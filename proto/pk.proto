@@ -5,7 +5,7 @@ import "common.proto";
 
 message PrivateKey {
     FileType file_type = 1;
-    string id = 2;
+    bytes id = 2;
     oneof pk {
         EthereumPrivateKey ethereum = 3;
         BitcoinPrivateKey bitcoin = 4;

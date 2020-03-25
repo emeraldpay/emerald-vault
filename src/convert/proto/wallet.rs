@@ -52,7 +52,7 @@ impl TryFrom<&proto_WalletAccount> for WalletAccount {
             Some(pk_type) => match pk_type {
                 proto_WalletAccountPkType::hd_path(seed) => {
                     let seed = SeedRef {
-                        seed_id: Uuid::from_str(seed.get_seed_id()).map_err(|_| {
+                        seed_id: Uuid::from_bytes(seed.get_seed_id()).map_err(|_| {
                             ConversionError::InvalidFieldValue("seed_id".to_string())
                         })?,
                         hd_path: StandardHDPath::try_from(seed.get_path()).map_err(|_| {
@@ -62,7 +62,7 @@ impl TryFrom<&proto_WalletAccount> for WalletAccount {
                     PKType::SeedHd(seed)
                 }
                 proto_WalletAccountPkType::pk_id(pk_id) => PKType::PrivateKeyRef(
-                    Uuid::parse_str(pk_id)
+                    Uuid::from_bytes(pk_id)
                         .map_err(|_| ConversionError::InvalidFieldValue("pk_id".to_string()))?,
                 ),
             },
@@ -98,12 +98,12 @@ impl From<&WalletAccount> for proto_WalletAccount {
         match &value.key {
             PKType::SeedHd(seed_ref) => {
                 let mut seed_hd = proto_SeedHD::new();
-                seed_hd.set_seed_id(seed_ref.seed_id.to_string());
+                seed_hd.set_seed_id(seed_ref.seed_id.as_bytes().to_vec());
                 seed_hd.set_path(seed_ref.hd_path.to_string());
                 result.set_hd_path(seed_hd);
             }
             PKType::PrivateKeyRef(addr) => {
-                result.set_pk_id(addr.to_string());
+                result.set_pk_id(addr.as_bytes().to_vec());
             }
         }
         result
@@ -116,7 +116,7 @@ impl TryFrom<proto_Wallet> for Vec<ReservedPath> {
     fn try_from(value: proto_Wallet) -> Result<Self, Self::Error> {
         let mut result = Vec::with_capacity(value.hd_accounts.len());
         for r in value.hd_accounts.to_vec() {
-            match Uuid::from_str(r.seed_id.as_str()) {
+            match Uuid::from_bytes(r.seed_id.as_slice()) {
                 Ok(id) => {
                     result.push(ReservedPath {
                         seed_id: id,
@@ -142,7 +142,7 @@ impl TryFrom<&[u8]> for Wallet {
             accounts.push(acc);
         }
         let result = Wallet {
-            id: Uuid::from_str(m.get_id())
+            id: Uuid::from_bytes(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
             label: none_if_empty(m.get_label()),
             accounts,
@@ -168,7 +168,7 @@ impl TryFrom<Wallet> for Vec<u8> {
 
     fn try_from(value: Wallet) -> Result<Self, Self::Error> {
         let mut result = proto_Wallet::default();
-        result.set_id(value.id.to_string());
+        result.set_id(value.id.as_bytes().to_vec());
         result.set_file_type(proto_FileType::FILE_WALLET);
         if value.label.is_some() {
             result.set_label(value.label.unwrap());
@@ -204,7 +204,7 @@ impl TryFrom<Wallet> for Vec<u8> {
         result.set_account_seq(account_seq as u32);
         for r in reserved {
             let mut r_proto = proto_Reserved::new();
-            r_proto.set_seed_id(r.seed_id.to_string());
+            r_proto.set_seed_id(r.seed_id.as_bytes().to_vec());
             r_proto.set_account_id(r.account_id);
             result.hd_accounts.push(r_proto);
         }
@@ -272,7 +272,7 @@ mod tests {
         assert!(b.len() > 0);
         let act = parse_from_bytes::<proto_Wallet>(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 1);
-        assert_eq!(act.get_id(), "60eb04b5-1602-4e75-885f-076217ac5d0d");
+        assert_eq!(Uuid::from_bytes(act.get_id()).unwrap(), Uuid::from_str("60eb04b5-1602-4e75-885f-076217ac5d0d").unwrap());
         assert_eq!(act.get_label(), "");
         assert_eq!(act.get_accounts().len(), 0);
         assert_eq!(act.get_hd_accounts().len(), 0);
@@ -461,7 +461,7 @@ mod tests {
     #[test]
     fn should_not_read_account_with_invalid_hd() {
         let mut pk = proto_SeedHD::default();
-        pk.set_seed_id(Uuid::new_v4().to_string());
+        pk.set_seed_id(Uuid::new_v4().as_bytes().to_vec());
         pk.set_path("m/44'/60'/1'/2".to_string());
 
         let mut account = proto_WalletAccount::default();
@@ -470,7 +470,7 @@ mod tests {
         account.set_hd_path(pk);
 
         let mut wallet = proto_Wallet::default();
-        wallet.set_id(Uuid::new_v4().to_string());
+        wallet.set_id(Uuid::new_v4().as_bytes().to_vec());
         wallet.set_label("test".to_string());
         wallet.accounts.push(account);
 

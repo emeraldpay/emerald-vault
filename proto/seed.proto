@@ -5,7 +5,7 @@ import "common.proto";
 
 message Seed {
     FileType file_type = 1;
-    string id = 2;
+    bytes id = 2;
     oneof seed_source {
         Encrypted bytes = 3;
         LedgerSeed ledger = 4;
@@ -28,7 +28,7 @@ message HDPathFingerprint {
 }
 
 message SeedHD {
-    string seed_id = 1;
+    bytes seed_id = 1;
     oneof path_type {
         string path = 2;
         //m/purpose'/coin'/account'

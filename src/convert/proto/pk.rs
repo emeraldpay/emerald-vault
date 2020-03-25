@@ -39,7 +39,7 @@ impl TryFrom<&[u8]> for PrivateKeyHolder {
                 let result = EthereumPk3 { address, key };
                 let pk = PrivateKeyType::EthereumPk(result);
                 let result = PrivateKeyHolder {
-                    id: Uuid::from_str(m.get_id())
+                    id: Uuid::from_bytes(m.get_id())
                         .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
                     pk,
                 };
@@ -69,7 +69,7 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
     fn try_from(value: PrivateKeyHolder) -> Result<Self, Self::Error> {
         let mut result = proto_PrivateKey::default();
         result.set_file_type(proto_FileType::FILE_PK);
-        result.set_id(value.id.to_string());
+        result.set_id(value.id.as_bytes().to_vec());
         let mut ethereum = proto_EthereumPrivateKey::default();
         match &value.pk {
             PrivateKeyType::EthereumPk(it) => {
@@ -107,7 +107,7 @@ mod tests {
         assert!(b.len() > 0);
         let act = parse_from_bytes::<proto_PrivateKey>(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 2);
-        assert_eq!(act.get_id(), "18ba0447-81f3-40d7-bab1-e74de07a1001");
+        assert_eq!(Uuid::from_bytes(act.get_id()).unwrap(), Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap());
         assert!(act.has_ethereum());
     }
 

@@ -8,7 +8,7 @@ import "common.proto";
 message Wallet {
     FileType file_type = 1;
     // UUID
-    string id = 2;
+    bytes id = 2;
     // User defined label
     string label = 3;
 
@@ -26,7 +26,7 @@ message Wallet {
 // Reserved index on a HD path, an x from m/44'/x'
 message Reserved {
     // reference to a source seed
-    string seed_id = 1;
+    bytes seed_id = 1;
     // reserved account id
     uint32 account_id = 2;
 }
@@ -44,7 +44,7 @@ message WalletAccount {
     // reference to PK
     oneof pk_type {
         SeedHD hd_path = 7;
-        string pk_id = 8;
+        bytes pk_id = 8;
     }
 }
 
