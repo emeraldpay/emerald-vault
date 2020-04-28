@@ -10,7 +10,7 @@ use crate::{
         pk::PrivateKeyHolder,
         seed::Seed,
         types::HasUuid,
-        wallet::{PKType, Wallet, WalletAccount},
+        wallet::{PKType, Wallet, WalletEntry},
     },
     Address,
 };
@@ -61,8 +61,8 @@ impl VaultStorage {
     pub fn addressbook(&self) -> AddressbookStorage {
         AddressbookStorage::from_path(self.dir.clone().join("addressbook.csv"))
     }
-    pub fn add_account(&self, wallet_id: Uuid) -> AddAccount {
-        AddAccount {
+    pub fn add_entry(&self, wallet_id: Uuid) -> AddEntry {
+        AddEntry {
             keys: self.keys().clone(),
             seeds: self.seeds().clone(),
             wallets: self.wallets().clone(),
@@ -141,8 +141,8 @@ impl VaultStorage {
     /// * `exclusive_only` - true if should return only filenames that are _NOT_ used by any other wallet
     pub fn get_wallet_files(&self, wallet_id: Uuid, exclusive_only: bool) -> Result<Vec<PathBuf>, VaultError> {
         // helper to get uuids of all individual private keys for a wallet
-        let fn_wallet_accounts = |w: &Wallet| {
-            w.accounts
+        let fn_wallet_entries = |w: &Wallet| {
+            w.entries
                 .iter()
                 .filter_map(|acc|
                     match acc.key {
@@ -164,11 +164,11 @@ impl VaultStorage {
         // TODO need to do only if exclusive_only=true
         let other_wallet_pks = other_wallets
             .iter()
-            .flat_map(fn_wallet_accounts)
+            .flat_map(fn_wallet_entries)
             .collect::<Vec<Uuid>>();
 
         if let Ok(wallet) = self.wallets.get(wallet_id) {
-            let pks: Vec<Uuid> = fn_wallet_accounts(&wallet)
+            let pks: Vec<Uuid> = fn_wallet_entries(&wallet)
                 .iter()
                 .filter(|pk_id| !exclusive_only || !other_wallet_pks.contains(pk_id))
                 .map(|r| r.clone())
@@ -326,7 +326,7 @@ impl CreateWallet {
         pk.generate_id();
         let wallet = Wallet {
             label: json.name.clone(),
-            accounts: vec![WalletAccount {
+            entries: vec![WalletEntry {
                 id: 0,
                 blockchain,
                 address: json.address,
@@ -354,7 +354,7 @@ impl CreateWallet {
         let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
             .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let wallet = Wallet {
-            accounts: vec![WalletAccount {
+            entries: vec![WalletEntry {
                 id: 0,
                 blockchain,
                 address: pk.get_ethereum_address(),
@@ -370,14 +370,14 @@ impl CreateWallet {
     }
 }
 
-pub struct AddAccount {
+pub struct AddEntry {
     keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
     seeds: Arc<dyn VaultAccessByFile<Seed>>,
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
     wallet_id: Uuid,
 }
 
-impl AddAccount {
+impl AddEntry {
     pub fn ethereum(
         &self,
         json: &EthereumJsonV3File,
@@ -387,15 +387,15 @@ impl AddAccount {
         let mut pk = PrivateKeyHolder::try_from(json)?;
         let pk_id = pk.generate_id();
         self.keys.add(pk)?;
-        let id = wallet.get_account_id();
-        wallet.accounts.push(WalletAccount {
+        let id = wallet.next_entry_id();
+        wallet.entries.push(WalletEntry {
             id,
             blockchain,
             address: json.address,
             key: PKType::PrivateKeyRef(pk_id),
             receive_disabled: false,
         });
-        wallet.account_seq = id + 1;
+        wallet.entry_seq = id + 1;
         self.wallets.update(wallet.clone())?;
         Ok(id)
     }
@@ -411,16 +411,16 @@ impl AddAccount {
             .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let pk_id = pk.get_id();
         let address = pk.get_ethereum_address().clone();
-        let id = wallet.get_account_id();
+        let id = wallet.next_entry_id();
         self.keys.add(pk)?;
-        wallet.accounts.push(WalletAccount {
+        wallet.entries.push(WalletEntry {
             id,
             blockchain,
             address,
             key: PKType::PrivateKeyRef(pk_id),
             receive_disabled: false,
         });
-        wallet.account_seq = id + 1;
+        wallet.entry_seq = id + 1;
         self.wallets.update(wallet.clone())?;
         Ok(id)
     }
@@ -455,8 +455,8 @@ impl AddAccount {
                 "Different address".to_string(),
             ));
         }
-        let id = wallet.get_account_id();
-        wallet.accounts.push(WalletAccount {
+        let id = wallet.next_entry_id();
+        wallet.entries.push(WalletEntry {
             id,
             blockchain,
             address: Some(address),
@@ -468,7 +468,7 @@ impl AddAccount {
             }),
             receive_disabled: false,
         });
-        wallet.account_seq = id + 1;
+        wallet.entry_seq = id + 1;
         self.wallets.update(wallet.clone())?;
         Ok(id)
     }
@@ -826,7 +826,7 @@ mod tests {
     }
 
     #[test]
-    fn uses_different_account_ids() {
+    fn uses_different_entry_ids() {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
@@ -834,10 +834,10 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let wallet = vault.wallets.get(wallet_id.clone()).unwrap();
-        assert_eq!(0, wallet.accounts.len());
+        assert_eq!(0, wallet.entries.len());
 
         let id1 = vault
-            .add_account(wallet_id.clone())
+            .add_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -846,7 +846,7 @@ mod tests {
             )
             .unwrap();
         let id2 = vault
-            .add_account(wallet_id.clone())
+            .add_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -857,9 +857,9 @@ mod tests {
         assert_ne!(id1, id2);
 
         let wallet = vault.wallets.get(wallet_id).unwrap();
-        assert_eq!(2, wallet.accounts.len());
-        assert_eq!(id1, wallet.accounts[0].id);
-        assert_eq!(id2, wallet.accounts[1].id);
+        assert_eq!(2, wallet.entries.len());
+        assert_eq!(id1, wallet.entries[0].id);
+        assert_eq!(id2, wallet.entries[1].id);
 
         //not necessary, but true for the current implementation
         assert_eq!(id1 + 1, id2);
@@ -868,18 +868,18 @@ mod tests {
     }
 
     #[test]
-    fn start_account_id_from_seq() {
+    fn start_entry_id_from_seq() {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
         let wallet = Wallet {
-            account_seq: 1015,
+            entry_seq: 1015,
             ..Wallet::default()
         };
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_account(wallet_id.clone())
+            .add_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -890,12 +890,12 @@ mod tests {
         assert_eq!(1015, id1);
         let wallet = vault.wallets.get(wallet_id).unwrap();
 
-        assert_eq!(1016, wallet.account_seq);
-        assert_eq!(1015, wallet.accounts[0].id);
+        assert_eq!(1016, wallet.entry_seq);
+        assert_eq!(1015, wallet.entries[0].id);
     }
 
     #[test]
-    fn doesnt_reuse_account_id() {
+    fn doesnt_reuse_entry_id() {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
@@ -903,10 +903,10 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let wallet = vault.wallets.get(wallet_id.clone()).unwrap();
-        assert_eq!(0, wallet.accounts.len());
+        assert_eq!(0, wallet.entries.len());
 
         let id1 = vault
-            .add_account(wallet_id.clone())
+            .add_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -915,7 +915,7 @@ mod tests {
             )
             .unwrap();
         let id2 = vault
-            .add_account(wallet_id.clone())
+            .add_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -926,11 +926,11 @@ mod tests {
 
         let mut wallet = vault.wallets.get(wallet_id).unwrap();
 
-        wallet.accounts.remove(1);
+        wallet.entries.remove(1);
         vault.wallets.update(wallet).expect("Not saved");
 
         let id3 = vault
-            .add_account(wallet_id.clone())
+            .add_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -943,9 +943,9 @@ mod tests {
 
         let wallet = vault.wallets.get(wallet_id).unwrap();
 
-        assert_eq!(2, wallet.accounts.len());
-        assert_eq!(id1, wallet.accounts[0].id);
-        assert_eq!(id3, wallet.accounts[1].id);
+        assert_eq!(2, wallet.entries.len());
+        assert_eq!(id1, wallet.entries[0].id);
+        assert_eq!(id3, wallet.entries[1].id);
 
         //not necessary, but true for the current implementation
         assert_eq!(id1 + 1, id2);
@@ -1161,7 +1161,7 @@ mod tests {
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet = vault.wallets.get(wallet_id).unwrap();
-        let pk_id = match wallet.accounts.first().unwrap().key {
+        let pk_id = match wallet.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
             _ => panic!("not PrivateKey Ref")
         };
@@ -1188,7 +1188,7 @@ mod tests {
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
-        let pk_id_1 = match wallet_1.accounts.first().unwrap().key {
+        let pk_id_1 = match wallet_1.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
             _ => panic!("not PrivateKey Ref")
         };
@@ -1197,7 +1197,7 @@ mod tests {
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
-        let pk_id_2 = match wallet_2.accounts.first().unwrap().key {
+        let pk_id_2 = match wallet_2.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
             _ => panic!("not PrivateKey Ref")
         };
@@ -1233,7 +1233,7 @@ mod tests {
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
-        let pk_id_1 = match wallet_1.accounts.first().unwrap().key {
+        let pk_id_1 = match wallet_1.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
             _ => panic!("not PrivateKey Ref")
         };
@@ -1242,16 +1242,16 @@ mod tests {
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let mut wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
-        let pk_id_2 = match wallet_2.accounts.first().unwrap().key {
+        let pk_id_2 = match wallet_2.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
             _ => panic!("not PrivateKey Ref")
         };
-        wallet_2.accounts.push(WalletAccount {
+        wallet_2.entries.push(WalletEntry {
             id: 2,
             blockchain: Blockchain::Ethereum,
             address: None,
             key: PKType::PrivateKeyRef(pk_id_1),
-            receive_disabled: false
+            receive_disabled: false,
         });
         vault.wallets.update(wallet_2);
 
@@ -1272,7 +1272,7 @@ mod tests {
         assert!(wallet.is_ok());
         let wallet = wallet.unwrap();
         assert_eq!(wallet.id, wallet_2_id);
-        assert_eq!(wallet.accounts.len(), 2);
+        assert_eq!(wallet.entries.len(), 2);
         let pk = vault.keys.get(pk_id_2);
         assert!(pk.is_ok());
         assert_eq!(pk.unwrap().id, pk_id_2);

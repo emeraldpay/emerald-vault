@@ -71,11 +71,11 @@ mod test_commons {
     }
     pub fn sort_wallets(wallets: &mut Vec<Wallet>) {
         wallets.sort_by(|a, b| {
-            a.get_account(0)
+            a.get_entry(0)
                 .unwrap()
                 .address
                 .unwrap()
-                .cmp(&b.get_account(0).unwrap().address.unwrap())
+                .cmp(&b.get_entry(0).unwrap().address.unwrap())
         });
     }
 }

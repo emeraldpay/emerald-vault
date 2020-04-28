@@ -19,7 +19,7 @@ byte_array_struct!(Mac, KECCAK256_BYTES);
 byte_array_struct!(Iv, CIPHER_IV_BYTES);
 byte_array_struct!(Salt, KDF_SALT_BYTES);
 
-/// A keystore file (account private core encrypted with a passphrase)
+/// A keystore file (entry private key encrypted with a passphrase)
 #[derive(Deserialize, Debug, Clone)]
 pub struct KeyFileV2 {
     /// Specifies if `Keyfile` is visible

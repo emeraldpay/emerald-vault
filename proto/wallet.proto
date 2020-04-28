@@ -4,7 +4,8 @@ import "address.proto";
 import "seed.proto";
 import "common.proto";
 
-// Wallet is a user defined group of addresses used together
+// Wallet is a group of entries used together. An entry may be a private key for a single address,
+// or a group of addresses specified by HDPath on a Seed
 message Wallet {
     FileType file_type = 1;
     // UUID
@@ -15,31 +16,31 @@ message Wallet {
     // List of HDPath accounts that belongs to the wallet, used to automate finding new
     // addresses and avoiding collision between different wallets
     repeated Reserved hd_accounts = 4;
-    // Actual accounts in the wallet
-    repeated WalletAccount accounts = 5;
-    // Sequence for account ids in that wallet. Incremented each time a new account added, and used
-    // as the id that new account. Using this sequence, if account gets deleted its id is not going
+    // Actual entries in the wallet
+    repeated WalletEntry entries = 5;
+    // Sequence for entry ids in that wallet. Incremented each time a new entry added, and used
+    // as the id that new entry. Using this sequence, if entry gets deleted its id is not going
     // to be reused
-    uint32 account_seq = 6;
+    uint32 entry_seq = 6;
 }
 
 // Reserved index on a HD path, an x from m/44'/x'
 message Reserved {
     // reference to a source seed
     bytes seed_id = 1;
-    // reserved account id
+    // reserved HD Path account id
     uint32 account_id = 2;
 }
 
-// Account details
-message WalletAccount {
-    // id to reference account per wallet
+// Entry details
+message WalletEntry {
+    // id to reference entry per wallet
     uint32 id = 1;
-    // Associated blockchain; account may have multiple different assets on a single blockchain
+    // Associated blockchain; entry may have multiple different assets on a single blockchain
     uint32 blockchain_id = 2;
-    // true if account is disabled for receiving, i.e. only for sending
+    // true if entry is disabled for receiving, i.e. only for sending
     bool receive_disabled = 3;
-    // public address for reference
+    // public address, for reference
     Address address = 5;
     // reference to PK
     oneof pk_type {

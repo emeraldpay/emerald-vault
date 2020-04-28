@@ -191,27 +191,27 @@ mod tests {
 
         let eth_wallets: Vec<&Wallet> = wallets
             .iter()
-            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::Ethereum)
+            .filter(|w| w.get_entry(0).unwrap().blockchain == Blockchain::Ethereum)
             .collect();
         assert_eq!(eth_wallets.len(), 0);
 
         let etc_wallets: Vec<&Wallet> = wallets
             .iter()
-            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::EthereumClassic)
+            .filter(|w| w.get_entry(0).unwrap().blockchain == Blockchain::EthereumClassic)
             .collect();
         assert_eq!(etc_wallets.len(), 2);
         assert_eq!(
-            etc_wallets[0].get_account(0).unwrap().address,
+            etc_wallets[0].get_entry(0).unwrap().address,
             Some(Address::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
         );
         assert_eq!(
-            etc_wallets[1].get_account(0).unwrap().address,
+            etc_wallets[1].get_entry(0).unwrap().address,
             Some(Address::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
         );
 
         let kovan_wallets: Vec<&Wallet> = wallets
             .iter()
-            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::KovanTestnet)
+            .filter(|w| w.get_entry(0).unwrap().blockchain == Blockchain::KovanTestnet)
             .collect();
         assert_eq!(kovan_wallets.len(), 0);
     }

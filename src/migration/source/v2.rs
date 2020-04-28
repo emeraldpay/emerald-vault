@@ -76,8 +76,8 @@ impl V2Storage {
         db
     }
 
-    fn list_accounts(&mut self, db: DB, archive: &Archive) -> Result<Vec<KeyFileV2>, String> {
-        let mut accounts = vec![];
+    fn list_key_files(&mut self, db: DB, archive: &Archive) -> Result<Vec<KeyFileV2>, String> {
+        let mut result = vec![];
 
         for (addr, val) in db.iterator(IteratorMode::Start) {
             let vec = from_utf8(&val).map_err(|_| "Not a string value")?;
@@ -88,7 +88,7 @@ impl V2Storage {
             copy.push_str(".json");
             archive.write(copy.as_str(), json.as_str())?;
             match KeyFileV2::decode(&json) {
-                Ok(kf) => accounts.push(kf),
+                Ok(kf) => result.push(kf),
                 Err(e) => {
                     let data: [u8; 20] = util::to_arr(&*addr);
                     &self.migration.error(format!(
@@ -100,7 +100,7 @@ impl V2Storage {
             }
         }
 
-        Ok(accounts)
+        Ok(result)
     }
 
     fn list_book(&mut self, blockchain: &Blockchain) -> Result<Vec<AddressBookItem>, String> {
@@ -151,17 +151,17 @@ impl V2Storage {
         let path = path.unwrap();
         match self.get_db(path) {
             Some(db) => {
-                let accounts = self.list_accounts(db, &archive).map_err(|e| {
+                let keys = self.list_key_files(db, &archive).map_err(|e| {
                     &self
                         .migration
-                        .error(format!("Failed to read accounts {}", e));
+                        .error(format!("Failed to read keys {}", e));
                 });
-                if accounts.is_ok() {
-                    let accounts = accounts.unwrap();
+                if keys.is_ok() {
+                    let keys = keys.unwrap();
                     &self
                         .migration
-                        .info(format!("Accounts to migrate: {}", accounts.len()));
-                    accounts.iter().for_each(|kf| {
+                        .info(format!("Key Files to migrate: {}", keys.len()));
+                    keys.iter().for_each(|kf| {
                         let address = match kf.address {
                             Some(a) => a.to_string(),
                             None => "UNKNOWN".to_string(),
@@ -278,7 +278,7 @@ impl Migrate for V2Storage {
                     self.migration.warn(format!("Archive unsupported {:?}", blockchain));
                     match self.get_db(path.clone()) {
                         Some(db) => {
-                            match self.list_accounts(db, &archive) {
+                            match self.list_key_files(db, &archive) {
                                 Ok(items) => {
                                     for item in items {
                                         self.migration.warn(
@@ -352,31 +352,31 @@ mod tests {
 
         let eth_wallets: Vec<&Wallet> = wallets
             .iter()
-            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::Ethereum)
+            .filter(|w| w.get_entry(0).unwrap().blockchain == Blockchain::Ethereum)
             .collect();
         assert_eq!(eth_wallets.len(), 2);
         assert_eq!(
-            eth_wallets[0].get_account(0).unwrap().address,
+            eth_wallets[0].get_entry(0).unwrap().address,
             Some(Address::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap())
         );
         assert_eq!(
-            eth_wallets[1].get_account(0).unwrap().address,
+            eth_wallets[1].get_entry(0).unwrap().address,
             Some(Address::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
         );
 
         let etc_wallets: Vec<&Wallet> = wallets
             .iter()
-            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::EthereumClassic)
+            .filter(|w| w.get_entry(0).unwrap().blockchain == Blockchain::EthereumClassic)
             .collect();
         assert_eq!(etc_wallets.len(), 1);
         assert_eq!(
-            etc_wallets[0].get_account(0).unwrap().address,
+            etc_wallets[0].get_entry(0).unwrap().address,
             Some(Address::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
         );
 
         let kovan_wallets: Vec<&Wallet> = wallets
             .iter()
-            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::KovanTestnet)
+            .filter(|w| w.get_entry(0).unwrap().blockchain == Blockchain::KovanTestnet)
             .collect();
         assert_eq!(kovan_wallets.len(), 0);
     }
@@ -400,23 +400,23 @@ mod tests {
 
         let eth_wallets: Vec<&Wallet> = wallets
             .iter()
-            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::Ethereum)
+            .filter(|w| w.get_entry(0).unwrap().blockchain == Blockchain::Ethereum)
             .collect();
         assert_eq!(eth_wallets.len(), 3);
         assert_eq!(
-            eth_wallets[0].get_account(0).unwrap().address,
+            eth_wallets[0].get_entry(0).unwrap().address,
             Some(Address::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap())
         );
         assert_eq!(
-            eth_wallets[1].get_account(0).unwrap().address,
+            eth_wallets[1].get_entry(0).unwrap().address,
             Some(Address::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
         );
         assert_eq!(
-            eth_wallets[2].get_account(0).unwrap().address,
+            eth_wallets[2].get_entry(0).unwrap().address,
             Some(Address::from_str("0xBD5222391BBB9F17484F2565455FB6610D9E145F").unwrap())
         );
 
-        let ledger_acc = eth_wallets[2].get_account(0).unwrap();
+        let ledger_acc = eth_wallets[2].get_entry(0).unwrap();
         let seed = match ledger_acc.key {
             PKType::SeedHd(x) => x,
             _ => panic!("not seed"),
@@ -430,17 +430,17 @@ mod tests {
 
         let etc_wallets: Vec<&Wallet> = wallets
             .iter()
-            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::EthereumClassic)
+            .filter(|w| w.get_entry(0).unwrap().blockchain == Blockchain::EthereumClassic)
             .collect();
         assert_eq!(etc_wallets.len(), 1);
         assert_eq!(
-            etc_wallets[0].get_account(0).unwrap().address,
+            etc_wallets[0].get_entry(0).unwrap().address,
             Some(Address::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
         );
 
         let kovan_wallets: Vec<&Wallet> = wallets
             .iter()
-            .filter(|w| w.get_account(0).unwrap().blockchain == Blockchain::KovanTestnet)
+            .filter(|w| w.get_entry(0).unwrap().blockchain == Blockchain::KovanTestnet)
             .collect();
         assert_eq!(kovan_wallets.len(), 0);
     }

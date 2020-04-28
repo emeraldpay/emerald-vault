@@ -27,12 +27,12 @@ Rust library to access and operate Private Keys, part of https://emeraldwallet.i
 - `130d0800-462c-4c48-8b4a-94cef23351a2.key`
 - `7dc9347a-5ef0-4dc3-bae1-d75d20b1259c.seed`
 * Data encoded with protobuf (see `proto/`)
-* `.wallet` is general container for different types accounts.
+* `.wallet` is general container for different types of addresses (entries).
 Vault can have multiple wallets
-* `.key` is an encrypted Private Key used by an account.
-Can be multiple
+* `.key` is an encrypted Private Key used by a wallet entry.
+Can have multiple
 * `.seed` is a reference to a Hardware Key, or encrypted Seed bytes.
-Can be multiple
+Can have multiple
 
 == Development
 

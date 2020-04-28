@@ -7,7 +7,7 @@ use crate::{
         pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
         seed::{HDPathFingerprint, LedgerSource, Seed, SeedRef, SeedSource},
         types::HasUuid,
-        wallet::{PKType, Wallet, WalletAccount},
+        wallet::{PKType, Wallet, WalletEntry},
     },
 };
 use std::convert::TryFrom;
@@ -49,7 +49,7 @@ pub fn add_to_vault(
     vault: &VaultStorage,
     kf: &KeyFileV2,
 ) -> Result<Uuid, String> {
-    let account = match &kf.crypto {
+    let entry = match &kf.crypto {
         CryptoTypeV2::Core(data) => {
             let pk = PrivateKeyHolder {
                 id: Uuid::new_v4(),
@@ -64,7 +64,7 @@ pub fn add_to_vault(
                 .keys()
                 .add(pk)
                 .map_err(|_| "Failed to add converted Private Key to the Vault")?;
-            WalletAccount {
+            WalletEntry {
                 id: 0,
                 blockchain,
                 address: kf.address,
@@ -110,7 +110,7 @@ pub fn add_to_vault(
                 }
             };
 
-            WalletAccount {
+            WalletEntry {
                 id: 0,
                 blockchain,
                 address: kf.address,
@@ -125,7 +125,7 @@ pub fn add_to_vault(
 
     let wallet = Wallet {
         label: extract_label(kf),
-        accounts: vec![account],
+        entries: vec![entry],
         ..Wallet::default()
     };
     let wallet_id = wallet.get_id();
