@@ -15,21 +15,24 @@ Rust library to access and operate Private Keys, part of https://emeraldwallet.i
 * Supports Ethereum-based keys
 * JSON-based _WEB3 keys_ (Import/Export)
 * Raw private keys (Generate/Import/Export, Export as WEB3 JSON)
-* HDPath on a Seed 
-* Mnemonic based seed (Generate/Import) 
+* HDPath on a Seed
+* Mnemonic based seed (Generate/Import)
 * Ledger Nano based seed
 * Sign transaction
 
 === Architecture
 
 * File based storage, with random UUID identifiers
-  - `b6923a7f-033f-4370-8861-2621871aeeec.wallet`
-  - `130d0800-462c-4c48-8b4a-94cef23351a2.key`
-  - `7dc9347a-5ef0-4dc3-bae1-d75d20b1259c.seed` 
+- `b6923a7f-033f-4370-8861-2621871aeeec.wallet`
+- `130d0800-462c-4c48-8b4a-94cef23351a2.key`
+- `7dc9347a-5ef0-4dc3-bae1-d75d20b1259c.seed`
 * Data encoded with protobuf (see `proto/`)
-* `.wallet` is general container for different types accounts. Vault can have multiple wallets
-* `.key` is an encrypted Private Key used by an account. Can be multiple
-* `.seed` is a reference to a Hardware Key, or encrypted Seed bytes. Can be multiple 
+* `.wallet` is general container for different types accounts.
+Vault can have multiple wallets
+* `.key` is an encrypted Private Key used by an account.
+Can be multiple
+* `.seed` is a reference to a Hardware Key, or encrypted Seed bytes.
+Can be multiple
 
 == Development
 
@@ -51,22 +54,19 @@ cargo build
 
 == Contact
 
-image:https://badges.gitter.im/emeraldpay/community.svg?style=flat-square["Gitter", link="https://gitter.im/emeraldpay/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge"]
+image:https://badges.gitter.im/emeraldpay/community.svg?style=flat-square["Gitter",link="https://gitter.im/emeraldpay/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge"]
 
 Chat with us via https://gitter.im/emeraldpay/community[Gitter]
 
 == License
 
-Copyright 2019 ETCDEV GmbH
+Copyright 2019 EmeraldPay, Inc
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
 http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
