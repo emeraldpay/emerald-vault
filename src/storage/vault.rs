@@ -70,6 +70,15 @@ impl VaultStorage {
         }
     }
 
+    ///Access to functions for updating the entry
+    pub fn update_entry(&self, wallet_id: Uuid, entry_id: usize) -> UpdateEntry {
+        UpdateEntry {
+            wallets: self.wallets().clone(),
+            wallet_id,
+            entry_id
+        }
+    }
+
     ///Remove entry from a wallet.
     ///Returns Ok(true) if entry was found and removed, Ok(false) if entry wasn't found, and Err if an error happened
     pub fn remove_entry(&self, wallet_id: Uuid, entry_id: usize) -> Result<bool, VaultError> {
@@ -489,6 +498,42 @@ impl AddEntry {
         wallet.entry_seq = id + 1;
         self.wallets.update(wallet.clone())?;
         Ok(id)
+    }
+}
+
+pub struct UpdateEntry {
+    wallets: Arc<dyn VaultAccessByFile<Wallet>>,
+    wallet_id: Uuid,
+    entry_id: usize
+}
+
+impl UpdateEntry {
+    fn get_wallet(&self) -> Result<Wallet, VaultError> {
+        self.wallets.get(self.wallet_id)
+    }
+
+    fn update<F>(&self, mut f: F) -> Result<bool, VaultError>
+        where F: FnMut(&mut WalletEntry) -> ()
+    {
+        let mut wallet = self.get_wallet()?;
+        let pos = wallet.entries.iter().position(|e| e.id == self.entry_id);
+        match pos {
+            Some(pos) => {
+                let mut entry = wallet.entries[pos].clone();
+                f(&mut entry);
+                wallet.entries[pos] = entry;
+                let updated = self.wallets.update(wallet)?;
+                Ok(updated)
+            },
+            None => {
+                Ok(false)
+            }
+        }
+    }
+
+    ///Update (set value or set none) of a label for the wallet entry
+    pub fn set_label(&self, label: Option<String>) -> Result<bool, VaultError> {
+        self.update(|e| e.label = label.clone())
     }
 }
 
@@ -1468,4 +1513,70 @@ mod tests {
         assert_eq!(2, wallet.entry_seq);
     }
 
+    #[test]
+    fn set_entry_label() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let wallet = Wallet {
+            ..Wallet::default()
+        };
+        let wallet_id = vault.wallets.add(wallet).unwrap();
+
+        let id1 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+
+        //make sure there is no label
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(None, wallet.entries[0].label);
+
+        let result = vault.update_entry(wallet_id, id1).set_label(Some("New Label".to_string()));
+        assert_eq!(Ok(true), result);
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(Some("New Label".to_string()), wallet.entries[0].label);
+
+        let result = vault.update_entry(wallet_id, id1).set_label(Some("New Label 2".to_string()));
+        assert_eq!(Ok(true), result);
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(Some("New Label 2".to_string()), wallet.entries[0].label);
+
+        let result = vault.update_entry(wallet_id, id1).set_label(None);
+        assert_eq!(Ok(true), result);
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(None, wallet.entries[0].label);
+    }
+
+    #[test]
+    fn doesnt_set_entry_label_for_no_entry() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let wallet = Wallet {
+            ..Wallet::default()
+        };
+        let wallet_id = vault.wallets.add(wallet).unwrap();
+
+        let id1 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+        assert_eq!(0, id1);
+
+        let result = vault.update_entry(wallet_id, 5).set_label(Some("x".to_string()));
+        assert_eq!(Ok(false), result);
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(None, wallet.entries[0].label);
+    }
 }
