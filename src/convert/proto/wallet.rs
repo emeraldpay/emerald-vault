@@ -70,12 +70,14 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
         };
         let id = value.get_id() as usize;
         let receive_disabled = value.get_receive_disabled();
+        let label = none_if_empty(value.get_label());
         let result = WalletEntry {
             id,
             blockchain,
             address,
             key,
             receive_disabled,
+            label
         };
         Ok(result)
     }
@@ -94,6 +96,9 @@ impl From<&WalletEntry> for proto_WalletEntry {
             let mut address = proto_Address::new();
             address.set_plain_address(address_str.clone());
             result.set_address(address);
+        }
+        if let Some(label) = &value.label {
+            result.set_label(label.clone());
         }
         match &value.key {
             PKType::SeedHd(seed_ref) => {
@@ -291,7 +296,7 @@ mod tests {
                     Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
-                receive_disabled: false,
+                ..WalletEntry::default()
             }],
             entry_seq: 1,
             ..Wallet::default()
@@ -315,7 +320,7 @@ mod tests {
                     Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
-                receive_disabled: false,
+                ..WalletEntry::default()
             }],
             entry_seq: 1,
             ..Wallet::default()
@@ -342,7 +347,7 @@ mod tests {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
                     hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/0").unwrap(),
                 }),
-                receive_disabled: false,
+                ..WalletEntry::default()
             }],
             entry_seq: 1,
             reserved: vec![
@@ -376,6 +381,7 @@ mod tests {
                     hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/1").unwrap(),
                 }),
                 receive_disabled: true,
+                ..WalletEntry::default()
             }],
             entry_seq: 1,
             reserved: vec![
@@ -485,6 +491,25 @@ mod tests {
         let wallet_act = Wallet::try_from(bytes);
 
         assert_eq!(Err(ConversionError::InvalidFieldValue("hd_path".to_string())), wallet_act);
+    }
+
+    #[test]
+    fn write_and_read_label() {
+        let wallet = Wallet {
+            id: Uuid::new_v4(),
+            reserved: vec![ReservedPath {
+                seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
+                account_id: 1
+            }],
+            label: Some("Test entry".to_string()),
+            ..Wallet::default()
+        };
+
+        let b: Vec<u8> = wallet.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = Wallet::try_from(b).unwrap();
+        assert_eq!(act.label, Some("Test entry".to_string()));
+        assert_eq!(act, wallet);
     }
 
 }

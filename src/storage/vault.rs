@@ -331,7 +331,7 @@ impl CreateWallet {
                 blockchain,
                 address: json.address,
                 key: PKType::PrivateKeyRef(pk.get_id()),
-                receive_disabled: false,
+                ..WalletEntry::default()
             }],
             ..Wallet::default()
         };
@@ -359,7 +359,7 @@ impl CreateWallet {
                 blockchain,
                 address: pk.get_ethereum_address(),
                 key: PKType::PrivateKeyRef(pk.get_id()),
-                receive_disabled: false,
+                ..WalletEntry::default()
             }],
             ..Wallet::default()
         };
@@ -394,6 +394,7 @@ impl AddEntry {
             address: json.address,
             key: PKType::PrivateKeyRef(pk_id),
             receive_disabled: false,
+            label: json.name.clone(),
         });
         wallet.entry_seq = id + 1;
         self.wallets.update(wallet.clone())?;
@@ -418,7 +419,7 @@ impl AddEntry {
             blockchain,
             address,
             key: PKType::PrivateKeyRef(pk_id),
-            receive_disabled: false,
+            ..WalletEntry::default()
         });
         wallet.entry_seq = id + 1;
         self.wallets.update(wallet.clone())?;
@@ -466,7 +467,7 @@ impl AddEntry {
                     VaultError::ConversionError(ConversionError::InvalidFieldValue("hd_path".to_string()))
                 })?,
             }),
-            receive_disabled: false,
+            ..WalletEntry::default()
         });
         wallet.entry_seq = id + 1;
         self.wallets.update(wallet.clone())?;
@@ -1251,7 +1252,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: None,
             key: PKType::PrivateKeyRef(pk_id_1),
-            receive_disabled: false,
+            ..WalletEntry::default()
         });
         vault.wallets.update(wallet_2);
 

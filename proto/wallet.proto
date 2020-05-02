@@ -10,7 +10,7 @@ message Wallet {
     FileType file_type = 1;
     // UUID
     bytes id = 2;
-    // User defined label
+    // User assigned label
     string label = 3;
 
     // List of HDPath accounts that belongs to the wallet, used to automate finding new
@@ -42,7 +42,9 @@ message WalletEntry {
     bool receive_disabled = 3;
     // public address, for reference
     Address address = 5;
-    // reference to PK
+    // user assigned label
+    string label = 6;
+    // link to actual PK
     oneof pk_type {
         SeedHD hd_path = 7;
         bytes pk_id = 8;

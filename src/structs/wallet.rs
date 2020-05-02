@@ -30,12 +30,25 @@ pub struct ReservedPath {
     pub account_id: u32,
 }
 
+///An entry of a Wallet. Contains actual configuration for an address, including private key.
+///The address in fact maybe a sequence of address, for example on a HD Path. Also note that a
+///single address may have multiple associated assets (for example ERC-20)
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct WalletEntry {
+    ///Internal uniq id, for reference
     pub id: usize,
+    ///Used assigned label
+    pub label: Option<String>,
+    ///Target blockchain
     pub blockchain: Blockchain,
+    ///Public address, used for reference from UI. Actual address depends on the Private Key
+    ///and maybe unavailable without password.
     pub address: Option<Address>,
+    ///Private Kye
     pub key: PKType,
+    ///If true the the entry should be used only for sending.
+    ///It can be used for a legacy address, or for shadow address on opposite blockchain (ETH-ETC)
+    ///to help recover funds mistakenly sent to a wrong chain.
     pub receive_disabled: bool,
 }
 
@@ -101,6 +114,7 @@ impl Default for WalletEntry {
             address: None,
             key: PKType::PrivateKeyRef(Uuid::nil()),
             receive_disabled: false,
+            label: None
         }
     }
 }
@@ -242,10 +256,11 @@ impl WalletEntry {
         password: Option<String>,
         vault: &VaultStorage,
     ) -> Result<EthereumJsonV3File, VaultError> {
+        let label = self.label.clone();
         match &self.key {
             PKType::PrivateKeyRef(pk) => {
                 let key = vault.keys().get(pk.clone())?;
-                EthereumJsonV3File::from_wallet(None, &key)
+                EthereumJsonV3File::from_wallet(label, &key)
                     .map_err(|_| VaultError::InvalidPrivateKey)
             }
             PKType::SeedHd(seed) => {
@@ -260,7 +275,7 @@ impl WalletEntry {
                         let hd_path = HDPath::try_from(seed.hd_path.to_string().as_str())?;
                         let key = generate_key(&hd_path, &seed_key)
                             .map_err(|_| VaultError::InvalidPrivateKey)?;
-                        EthereumJsonV3File::from_pk(None, key, password)
+                        EthereumJsonV3File::from_pk(label, key, password)
                             .map_err(|_| VaultError::InvalidPrivateKey)
                     }
                     SeedSource::Ledger(_) => Err(VaultError::PrivateKeyUnavailable),
@@ -295,7 +310,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
-            receive_disabled: false,
+            ..WalletEntry::default()
         };
         let tx = Transaction {
             nonce: 1,
@@ -322,7 +337,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
-            receive_disabled: false,
+            ..WalletEntry::default()
         };
         let tx = Transaction {
             nonce: 1,
@@ -367,7 +382,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(key_id),
-            receive_disabled: false,
+            ..WalletEntry::default()
         };
         let tx = Transaction {
             nonce: 1,
@@ -410,7 +425,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             address: Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
             key: PKType::PrivateKeyRef(key_id),
-            receive_disabled: false,
+            ..WalletEntry::default()
         };
 
         let pk = entry.export_pk("testtest".to_string(), &vault).unwrap();
@@ -442,7 +457,7 @@ mod tests {
                 seed_id,
                 hd_path: StandardHDPath::try_from("m/44'/60'/2'/0/52").unwrap(),
             }),
-            receive_disabled: false,
+            ..WalletEntry::default()
         };
 
         let pk = entry.export_pk("test1234".to_string(), &vault).unwrap();
@@ -472,7 +487,7 @@ mod tests {
                 seed_id,
                 hd_path: StandardHDPath::try_from("m/44'/60'/160720'/0/0").unwrap(),
             }),
-            receive_disabled: false,
+            ..WalletEntry::default()
         };
 
         let wallet = Wallet {
@@ -540,7 +555,7 @@ mod tests {
                 seed_id,
                 hd_path: StandardHDPath::try_from("m/44'/60'/160720'/0/0").unwrap(),
             }),
-            receive_disabled: false,
+            ..WalletEntry::default()
         };
 
         let tx = Transaction {

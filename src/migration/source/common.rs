@@ -69,7 +69,7 @@ pub fn add_to_vault(
                 blockchain,
                 address: kf.address,
                 key: PKType::PrivateKeyRef(pk_id),
-                receive_disabled: false,
+                ..WalletEntry::default()
             }
         }
         CryptoTypeV2::HdWallet(data) => {
@@ -118,7 +118,7 @@ pub fn add_to_vault(
                     seed_id,
                     hd_path: StandardHDPath::try_from(data.hd_path.clone().as_str()).map_err(|_| "Unsupported HDPath")?,
                 }),
-                receive_disabled: false,
+                ..WalletEntry::default()
             }
         }
     };
