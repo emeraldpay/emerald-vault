@@ -535,6 +535,11 @@ impl UpdateEntry {
     pub fn set_label(&self, label: Option<String>) -> Result<bool, VaultError> {
         self.update(|e| e.label = label.clone())
     }
+
+    ///Enable ot disable receiving flag for the entry
+    pub fn set_receive_disabled(&self, disabled: bool) -> Result<bool, VaultError> {
+        self.update(|e| e.receive_disabled = disabled)
+    }
 }
 
 impl VaultStorage {
@@ -1578,5 +1583,36 @@ mod tests {
         assert_eq!(Ok(false), result);
         let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(None, wallet.entries[0].label);
+    }
+
+    #[test]
+    fn set_entry_receive_flag() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let wallet = Wallet {
+            ..Wallet::default()
+        };
+        let wallet_id = vault.wallets.add(wallet).unwrap();
+
+        let id1 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+
+        let result = vault.update_entry(wallet_id, id1).set_receive_disabled(true);
+        assert_eq!(Ok(true), result);
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(true, wallet.entries[0].receive_disabled);
+
+        let result = vault.update_entry(wallet_id, id1).set_receive_disabled(false);
+        assert_eq!(Ok(true), result);
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(false, wallet.entries[0].receive_disabled);
     }
 }
