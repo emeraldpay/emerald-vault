@@ -70,6 +70,23 @@ impl VaultStorage {
         }
     }
 
+    ///Remove entry from a wallet.
+    ///Returns Ok(true) if entry was found and removed, Ok(false) if entry wasn't found, and Err if an error happened
+    pub fn remove_entry(&self, wallet_id: Uuid, entry_id: usize) -> Result<bool, VaultError> {
+        let mut wallet = self.wallets().get(wallet_id)?;
+        let pos = wallet.entries.iter().position(|e| e.id == entry_id);
+        match pos {
+            Some(pos) => {
+                wallet.entries.remove(pos);
+                let updated = self.wallets.update(wallet)?;
+                Ok(updated)
+            },
+            None => {
+                Ok(false)
+            }
+        }
+    }
+
     /// Check the Vault directory and revert stale backups. I.e., restore from a situation when
     /// file was moved to backup, but update has failed because of some reasons, as a result there is no usable file,
     /// only backup. If both original file and backup exists, then backup file is going to be moved to archive
@@ -1277,6 +1294,178 @@ mod tests {
         let pk = vault.keys.get(pk_id_2);
         assert!(pk.is_ok());
         assert_eq!(pk.unwrap().id, pk_id_2);
+    }
+
+    #[test]
+    fn remove_single_entry() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let wallet = Wallet {
+            ..Wallet::default()
+        };
+        let wallet_id = vault.wallets.add(wallet).unwrap();
+
+        let id1 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+        assert_eq!(0, id1);
+
+        //make sure it actually exists
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(id1, wallet.entries[0].id);
+
+        let removed = vault.remove_entry(wallet_id, id1);
+        assert_eq!(Ok(true), removed);
+
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(0, wallet.entries.len());
+    }
+
+    #[test]
+    fn remove_first_entry() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let wallet = Wallet {
+            ..Wallet::default()
+        };
+        let wallet_id = vault.wallets.add(wallet).unwrap();
+
+        let id1 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+        assert_eq!(0, id1);
+        let id2 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+        assert_eq!(1, id2);
+
+        //make sure it actually exists
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(2, wallet.entries.len());
+        assert_eq!(id1, wallet.entries[0].id);
+        assert_eq!(id2, wallet.entries[1].id);
+
+        let removed = vault.remove_entry(wallet_id, id1);
+        assert_eq!(Ok(true), removed);
+
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(1, wallet.entries.len());
+        assert_eq!(id2, wallet.entries[0].id);
+    }
+
+    #[test]
+    fn remove_second_entry() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let wallet = Wallet {
+            ..Wallet::default()
+        };
+        let wallet_id = vault.wallets.add(wallet).unwrap();
+
+        let id1 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+        assert_eq!(0, id1);
+        let id2 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+        assert_eq!(1, id2);
+
+        //make sure it actually exists
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(2, wallet.entries.len());
+        assert_eq!(id1, wallet.entries[0].id);
+        assert_eq!(id2, wallet.entries[1].id);
+        assert_eq!(2, wallet.entry_seq);
+
+        let removed = vault.remove_entry(wallet_id, id2);
+        assert_eq!(Ok(true), removed);
+
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(1, wallet.entries.len());
+        assert_eq!(id1, wallet.entries[0].id);
+        assert_eq!(2, wallet.entry_seq);
+    }
+
+    #[test]
+    fn remove_non_existing_entry() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let wallet = Wallet {
+            ..Wallet::default()
+        };
+        let wallet_id = vault.wallets.add(wallet).unwrap();
+
+        let id1 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+        assert_eq!(0, id1);
+        let id2 = vault
+            .add_entry(wallet_id.clone())
+            .raw_pk(
+                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                    .unwrap(),
+                "test",
+                Blockchain::Ethereum,
+            )
+            .unwrap();
+        assert_eq!(1, id2);
+
+        //make sure it actually exists
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(2, wallet.entries.len());
+        assert_eq!(id1, wallet.entries[0].id);
+        assert_eq!(id2, wallet.entries[1].id);
+        assert_eq!(2, wallet.entry_seq);
+
+        let removed = vault.remove_entry(wallet_id, 10);
+        assert_eq!(Ok(false), removed);
+
+        let wallet = vault.wallets.get(wallet_id).unwrap();
+        assert_eq!(2, wallet.entries.len());
+        assert_eq!(id1, wallet.entries[0].id);
+        assert_eq!(id2, wallet.entries[1].id);
+        assert_eq!(2, wallet.entry_seq);
     }
 
 }
