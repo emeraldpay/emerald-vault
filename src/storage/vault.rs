@@ -22,6 +22,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use uuid::Uuid;
 use hdpath::StandardHDPath;
+use crate::hdwallet::WManager;
 
 /// Compound trait for a vault entry which is stored in a separate file each
 pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
@@ -480,34 +481,44 @@ impl AddEntry {
         expected_address: Option<Address>,
     ) -> Result<usize, VaultError> {
         let seed = self.seeds.get(seed_id)?;
-        let seed = match seed.source {
+        let address = match seed.source {
             SeedSource::Bytes(seed) => {
                 if password.is_none() {
                     return Err(VaultError::PasswordRequired);
                 }
-                seed.decrypt(password.unwrap().as_str())?
+                let seed = seed.decrypt(password.unwrap().as_str())?;
+                let ephemeral_pk = generate_key(&hd_path, seed.as_slice())?;
+                Some(ephemeral_pk.to_address())
             }
-            _ => {
-                return Err(VaultError::UnsupportedDataError(
-                    "No implemented yet".to_string(),
-                ))
+            SeedSource::Ledger(ledger) => {
+                // try to verify address if Ledger is currently connected
+                let hd_path_bytes = Some(hd_path.to_bytes());
+                let mut manager = WManager::new(hd_path_bytes.clone())?;
+                manager.update(None)?;
+                if manager.devices().is_empty() {
+                    // not connected
+                    None
+                } else {
+                    let fd = &manager.devices()[0].1;
+                    Some(manager.get_address(fd, hd_path_bytes)?)
+                }
             }
         };
-        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
-        let ephemeral_pk = generate_key(&hd_path, seed.as_slice())?;
-        let address = ephemeral_pk.to_address();
-        if expected_address.is_some() && address != expected_address.unwrap() {
+
+        if expected_address.is_some() && address.is_some() && address != expected_address {
             return Err(VaultError::InvalidDataError(
                 "Different address".to_string(),
             ));
         }
+
+        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
         let id = wallet.next_entry_id();
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
-            address: Some(address),
+            address: address.or(expected_address),
             key: PKType::SeedHd(SeedRef {
-                seed_id,
+                seed_id: seed_id.clone(),
                 hd_path: StandardHDPath::try_from(hd_path.to_string().as_str()).map_err(|_| {
                     VaultError::ConversionError(ConversionError::InvalidFieldValue("hd_path".to_string()))
                 })?,
