@@ -29,12 +29,12 @@ use self::apdu::ApduBuilder;
 use self::comm::sendrecv;
 pub use self::error::Error;
 use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
+use crate::hdwallet::comm::ping;
 use bip32::HDPath;
 use hex;
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
 use std::str::{from_utf8, FromStr};
 use std::{thread, time};
-use crate::hdwallet::comm::ping;
 
 const GET_ETH_ADDRESS: u8 = 0x02;
 const SIGN_ETH_TRANSACTION: u8 = 0x04;
@@ -194,7 +194,7 @@ impl WManager {
             .build();
 
         if self.device.is_none() {
-            return Err(Error::HDWalletError("Device not selected".to_string()))
+            return Err(Error::HDWalletError("Device not selected".to_string()));
         }
 
         let handle = self.open()?;
@@ -237,12 +237,19 @@ impl WManager {
         self.hid.refresh_devices();
         debug!("Start searching for devices: {:?}", self.hid.devices());
 
-        let current = self.hid.devices().iter()
-            .find(|hid_info|
-                 hid_info.vendor_id == LEDGER_VID &&
-                    (hid_info.product_id == LEDGER_S_PID_1 || hid_info.product_id == LEDGER_S_PID_2 || hid_info.product_id == LEDGER_S_PID_3
-                        || hid_info.product_id == LEDGER_X_PID_1 || hid_info.product_id == LEDGER_X_PID_2)
-            ).map(|hid_info| {
+        let current = self
+            .hid
+            .devices()
+            .iter()
+            .find(|hid_info| {
+                hid_info.vendor_id == LEDGER_VID
+                    && (hid_info.product_id == LEDGER_S_PID_1
+                        || hid_info.product_id == LEDGER_S_PID_2
+                        || hid_info.product_id == LEDGER_S_PID_3
+                        || hid_info.product_id == LEDGER_X_PID_1
+                        || hid_info.product_id == LEDGER_X_PID_2)
+            })
+            .map(|hid_info| {
                 let mut d = Device::from(hid_info.clone());
                 match self.get_address(&d.fd, Some(hd_path.clone())) {
                     Ok(address) => d.address = address,
@@ -257,21 +264,27 @@ impl WManager {
 
     pub fn open(&self) -> Result<HidDevice, Error> {
         if self.device.is_none() {
-            return Err(Error::HDWalletError("Device not selected".to_string()))
+            return Err(Error::HDWalletError("Device not selected".to_string()));
         }
         let target = match &self.device {
             Some(device) => device,
-            None => panic!("Device not selected")
+            None => panic!("Device not selected"),
         };
         // up to 10 tries, starting from 100ms increasing by 75ms, in total 1450ms max
         let mut retry_delay = 100;
-        for _ in 0..10 { //
+        for _ in 0..10 {
+            //
             //serial number is always 0001
-            if let Ok(h) = self.hid.open(target.hid_info.vendor_id, target.hid_info.product_id) {
+            if let Ok(h) = self
+                .hid
+                .open(target.hid_info.vendor_id, target.hid_info.product_id)
+            {
                 match ping(&h) {
-                    Ok(v) => if v {
-                        return Ok(h)
-                    },
+                    Ok(v) => {
+                        if v {
+                            return Ok(h);
+                        }
+                    }
                     Err(_) => {}
                 }
             }
@@ -281,21 +294,22 @@ impl WManager {
 
         // used by another application
         Err(Error::HDWalletError(format!(
-            "Can't open device: {:?}", target.hid_info
+            "Can't open device: {:?}",
+            target.hid_info
         )))
     }
 }
 
 #[cfg(test)]
 pub mod test_commons {
+    use crate::Address;
     use std::env;
     use std::fs;
-    use crate::Address;
 
     #[derive(Deserialize)]
     pub struct TestAddress {
         pub hdpath: String,
-        pub address: Address
+        pub address: Address,
     }
 
     #[derive(Deserialize)]
@@ -303,9 +317,8 @@ pub mod test_commons {
         pub id: String,
         pub description: Option<String>,
         pub from: Option<String>,
-        pub raw: String
+        pub raw: String,
     }
-
 
     pub fn is_ledger_enabled() -> bool {
         match env::var("EMRLD_TEST_LEDGER") {
@@ -328,13 +341,15 @@ pub mod test_commons {
     }
 
     pub fn read_test_addresses() -> Vec<TestAddress> {
-        let json = fs::read_to_string("./tests/hdwallet/address.json").expect("tests/hdwallet/address.json is not available");
+        let json = fs::read_to_string("./tests/hdwallet/address.json")
+            .expect("tests/hdwallet/address.json is not available");
         let result: Vec<TestAddress> = serde_json::from_str(json.as_str()).expect("Invalid JSON");
         result
     }
 
     pub fn read_test_txes() -> Vec<TestTx> {
-        let json = fs::read_to_string("./tests/hdwallet/tx.json").expect("tests/hdwallet/tx.json is not available");
+        let json = fs::read_to_string("./tests/hdwallet/tx.json")
+            .expect("tests/hdwallet/tx.json is not available");
         let result: Vec<TestTx> = serde_json::from_str(json.as_str()).expect("Invalid JSON");
         result
     }
@@ -343,14 +358,16 @@ pub mod test_commons {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::chains::{Blockchain, EthereumChainId};
     use crate::core::Transaction;
     use crate::hdwallet::bip32::{path_to_arr, to_prefixed_path};
-    use crate::hdwallet::test_commons::{get_ledger_conf, is_ledger_enabled, read_test_addresses, read_test_txes};
+    use crate::hdwallet::test_commons::{
+        get_ledger_conf, is_ledger_enabled, read_test_addresses, read_test_txes,
+    };
     use crate::tests::*;
     use hex;
-    use log::{LevelFilter, Level};
+    use log::{Level, LevelFilter};
     use simple_logger::init_with_level;
-    use crate::core::chains::{Blockchain, EthereumChainId};
 
     pub const ETC_DERIVATION_PATH: [u8; 21] = [
         5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -388,7 +405,9 @@ mod tests {
         let chain: u8 = EthereumChainId::from(Blockchain::Ethereum).as_chainid();
         let rlp = tx.to_rlp(Some(chain));
         let fd = &manager.devices()[0].1;
-        let sign = manager.sign_transaction(&fd, &rlp, Some(from.to_bytes())).unwrap();
+        let sign = manager
+            .sign_transaction(&fd, &rlp, Some(from.to_bytes()))
+            .unwrap();
 
         let signed = hex::encode(tx.raw_from_sig(None, &sign));
 
@@ -423,7 +442,9 @@ mod tests {
         let chain: u8 = EthereumChainId::from(Blockchain::EthereumClassic).as_chainid();
         let rlp = tx.to_rlp(Some(chain));
         let fd = &manager.devices()[0].1;
-        let sign = manager.sign_transaction(&fd, &rlp, Some(from.to_bytes())).unwrap();
+        let sign = manager
+            .sign_transaction(&fd, &rlp, Some(from.to_bytes()))
+            .unwrap();
 
         let signed = hex::encode(tx.raw_from_sig(None, &sign));
         assert_eq!(exp.raw, signed);
@@ -457,7 +478,9 @@ mod tests {
         let chain: u8 = EthereumChainId::from(Blockchain::KovanTestnet).as_chainid();
         let rlp = tx.to_rlp(Some(chain));
         let fd = &manager.devices()[0].1;
-        let sign = manager.sign_transaction(&fd, &rlp, Some(from.to_bytes())).unwrap();
+        let sign = manager
+            .sign_transaction(&fd, &rlp, Some(from.to_bytes()))
+            .unwrap();
 
         let signed = hex::encode(tx.raw_from_sig(None, &sign));
         assert_eq!(exp.raw, signed);
@@ -559,10 +582,7 @@ mod tests {
         for address in addresses {
             let hdpath = HDPath::try_from(address.hdpath.as_str()).expect("Invalid HDPath");
             let act = manager.get_address(fd, Some(hdpath.to_bytes())).unwrap();
-            assert_eq!(
-                act,
-                address.address
-            );
+            assert_eq!(act, address.address);
         }
     }
 

@@ -22,11 +22,11 @@ use super::error::Error;
 use super::to_arr;
 use super::HidDevice;
 use hex;
+use hidapi::HidDeviceInfo;
 use log;
 use std::cmp::min;
 use std::mem::size_of_val;
 use std::slice;
-use hidapi::HidDeviceInfo;
 
 ///
 pub const HID_RPT_SIZE: usize = 64;
@@ -54,23 +54,30 @@ pub const SW_USER_CANCEL: [u8; 2] = [0x6A, 0x85];
 ///
 fn get_hid_header(channel: u16, index: usize) -> [u8; 5] {
     [
-        (channel >> 8) as u8, (channel & 0xff) as u8, //channel
-        0x05, //tag
-        (index >> 8) as u8, (index & 0xff) as u8 //length
+        (channel >> 8) as u8,
+        (channel & 0xff) as u8, //channel
+        0x05,                   //tag
+        (index >> 8) as u8,
+        (index & 0xff) as u8, //length
     ]
 }
 
 ///
 fn check_recv_frame(frame: &[u8], channel: u16, index: usize) -> Result<(), Error> {
     if size_of_val(frame) < 5
-        || frame[0] != (channel >> 8) as u8 || frame[1] != (channel & 0xff) as u8
-        || frame[2] != 0x05 {
+        || frame[0] != (channel >> 8) as u8
+        || frame[1] != (channel & 0xff) as u8
+        || frame[2] != 0x05
+    {
         return Err(Error::CommError("Invalid frame header size".to_string()));
     }
 
     let seq = (frame[3] as usize) << 8 | (frame[4] as usize);
     if seq != index {
-       return Err(Error::CommError(format!("Invalid sequence. {:?} != {:?}", seq, index)));
+        return Err(Error::CommError(format!(
+            "Invalid sequence. {:?} != {:?}",
+            seq, index
+        )));
     }
 
     if index == 0 && size_of_val(frame) < 7 {

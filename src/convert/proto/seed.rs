@@ -1,24 +1,24 @@
 use crate::convert::error::ConversionError;
 use crate::{
     proto::{
+        common::FileType as proto_FileType,
         crypto::Encrypted as proto_Encrypted,
         seed::{
-            HDPathFingerprint as proto_HDFingerprint, LedgerSeed as proto_LedgerSeed,
-            Seed as proto_Seed, Seed_oneof_seed_source as proto_SeedType,
-            HDPath as proto_HDPath
+            HDPath as proto_HDPath, HDPathFingerprint as proto_HDFingerprint,
+            LedgerSeed as proto_LedgerSeed, Seed as proto_Seed,
+            Seed_oneof_seed_source as proto_SeedType,
         },
-        common::FileType as proto_FileType
     },
     structs::{
         crypto::Encrypted,
         seed::{Bytes256, FingerprintType, HDPathFingerprint, LedgerSource, Seed, SeedSource},
     },
 };
+use hdpath::{Purpose, StandardHDPath};
 use protobuf::{parse_from_bytes, Message};
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 use uuid::Uuid;
-use hdpath::{StandardHDPath, Purpose};
 
 impl TryFrom<&proto_HDPath> for StandardHDPath {
     type Error = ConversionError;
@@ -26,9 +26,12 @@ impl TryFrom<&proto_HDPath> for StandardHDPath {
         let hdpath = StandardHDPath::try_new(
             Purpose::try_from(value.purpose)
                 .map_err(|_| ConversionError::InvalidFieldValue("hd_path/purpose".to_string()))?,
-            value.coin, value.account,
-            value.change, value.index
-        ).map_err(|e| ConversionError::InvalidFieldValue(format!("hd_path/{}", e.0)))?;
+            value.coin,
+            value.account,
+            value.change,
+            value.index,
+        )
+        .map_err(|e| ConversionError::InvalidFieldValue(format!("hd_path/{}", e.0)))?;
         Ok(hdpath)
     }
 }
@@ -146,13 +149,13 @@ impl TryFrom<Seed> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
+    use crate::proto::seed::Seed as proto_Seed;
     use crate::structs::crypto::Encrypted;
     use crate::structs::seed::{LedgerSource, Seed, SeedSource};
-    use std::convert::{TryFrom, TryInto};
-    use uuid::Uuid;
     use protobuf::{parse_from_bytes, ProtobufEnum};
+    use std::convert::{TryFrom, TryInto};
     use std::str::FromStr;
-    use crate::proto::seed::Seed as proto_Seed;
+    use uuid::Uuid;
 
     #[test]
     fn write_as_protobuf() {
@@ -165,7 +168,10 @@ mod tests {
         assert!(b.len() > 0);
         let act = parse_from_bytes::<proto_Seed>(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 3);
-        assert_eq!(Uuid::from_bytes(act.get_id()).unwrap(), Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap());
+        assert_eq!(
+            Uuid::from_bytes(act.get_id()).unwrap(),
+            Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap()
+        );
         assert!(act.has_bytes());
     }
 

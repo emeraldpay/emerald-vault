@@ -10,10 +10,10 @@ use crate::{
     },
     Address, PrivateKey, Transaction,
 };
+use hdpath::StandardHDPath;
 use regex::Regex;
 use std::str::FromStr;
 use uuid::Uuid;
-use hdpath::StandardHDPath;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
@@ -114,7 +114,7 @@ impl Default for WalletEntry {
             address: None,
             key: PKType::PrivateKeyRef(Uuid::nil()),
             receive_disabled: false,
-            label: None
+            label: None,
         }
     }
 }
@@ -296,12 +296,11 @@ mod tests {
     use crate::structs::types::HasUuid;
     use crate::structs::wallet::{EntryId, PKType, Wallet, WalletEntry};
     use crate::{to_32bytes, Address, PrivateKey, ToHex, Transaction};
+    use hdpath::StandardHDPath;
+    use std::convert::TryFrom;
     use std::str::FromStr;
     use tempdir::TempDir;
     use uuid::Uuid;
-    use hdpath::StandardHDPath;
-    use std::convert::TryFrom;
-
 
     #[test]
     fn sign_erc20_approve() {
@@ -322,7 +321,8 @@ mod tests {
         };
         let key = PrivateKey::from_str(
             "0x7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d",
-        ).unwrap();
+        )
+        .unwrap();
         let act = entry.sign_tx_by_pk(tx, key).unwrap();
         assert_eq!(
             hex::encode(act),
@@ -350,7 +350,7 @@ mod tests {
         let key = PrivateKey::from_str(
             "0x7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d",
         )
-            .unwrap();
+        .unwrap();
         let act = entry.sign_tx_by_pk(tx, key).unwrap();
         assert_eq!(
             hex::encode(act),
@@ -505,7 +505,10 @@ mod tests {
             PKType::SeedHd(x) => x,
             _ => panic!("Not Seed HDPath"),
         };
-        assert_eq!(seed_ref.hd_path.to_string(), "m/44'/60'/160720'/0/0".to_string());
+        assert_eq!(
+            seed_ref.hd_path.to_string(),
+            "m/44'/60'/160720'/0/0".to_string()
+        );
         assert_eq!(seed_ref.seed_id, seed_id);
 
         let seed_act = vault.seeds().get(seed_id).unwrap();

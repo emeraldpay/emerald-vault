@@ -1,4 +1,5 @@
 use crate::hdwallet::bip32::{generate_key, HDPath};
+use crate::hdwallet::WManager;
 use crate::storage::addressbook::AddressbookStorage;
 use crate::storage::archive::ArchiveType;
 use crate::structs::seed::{SeedRef, SeedSource};
@@ -14,6 +15,7 @@ use crate::{
     },
     Address,
 };
+use hdpath::StandardHDPath;
 use regex::Regex;
 use std::convert::{TryFrom, TryInto};
 use std::fs;
@@ -21,12 +23,13 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 use uuid::Uuid;
-use hdpath::StandardHDPath;
-use crate::hdwallet::WManager;
 
 /// Compound trait for a vault entry which is stored in a separate file each
 pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
-    where P: HasUuid {}
+where
+    P: HasUuid,
+{
+}
 
 pub struct VaultStorage {
     pub dir: PathBuf,
@@ -76,7 +79,7 @@ impl VaultStorage {
         UpdateEntry {
             wallets: self.wallets().clone(),
             wallet_id,
-            entry_id
+            entry_id,
         }
     }
 
@@ -92,27 +95,26 @@ impl VaultStorage {
                 match entry.key {
                     PKType::PrivateKeyRef(uuid) => {
                         //check all other wallets, to make sure it's not referenced from another entry
-                        let used = &self.wallets.list_entries()?.iter()
+                        let used = &self
+                            .wallets
+                            .list_entries()?
+                            .iter()
                             .filter(|w| w.id != wallet_id)
                             .any(|w| {
-                               w.entries.iter().any(|e| {
-                                   match e.key {
-                                       PKType::PrivateKeyRef(x) => x == uuid,
-                                       _ => false
-                                   }
-                               })
+                                w.entries.iter().any(|e| match e.key {
+                                    PKType::PrivateKeyRef(x) => x == uuid,
+                                    _ => false,
+                                })
                             });
                         if !used {
                             self.keys.remove(uuid)?;
                         }
-                    },
+                    }
                     PKType::SeedHd(_) => {}
                 }
                 Ok(updated)
-            },
-            None => {
-                Ok(false)
             }
+            None => Ok(false),
         }
     }
 
@@ -185,21 +187,25 @@ impl VaultStorage {
     ///
     /// * `wallet_id` - id of the wallet
     /// * `exclusive_only` - true if should return only filenames that are _NOT_ used by any other wallet
-    pub fn get_wallet_files(&self, wallet_id: Uuid, exclusive_only: bool) -> Result<Vec<PathBuf>, VaultError> {
+    pub fn get_wallet_files(
+        &self,
+        wallet_id: Uuid,
+        exclusive_only: bool,
+    ) -> Result<Vec<PathBuf>, VaultError> {
         // helper to get uuids of all individual private keys for a wallet
         let fn_wallet_entries = |w: &Wallet| {
             w.entries
                 .iter()
-                .filter_map(|acc|
-                    match acc.key {
-                        PKType::PrivateKeyRef(pk_id) => Some(pk_id),
-                        PKType::SeedHd(_) => None
-                    }
-                )
+                .filter_map(|acc| match acc.key {
+                    PKType::PrivateKeyRef(pk_id) => Some(pk_id),
+                    PKType::SeedHd(_) => None,
+                })
                 .collect::<Vec<Uuid>>()
         };
 
-        let other_wallets: Vec<Wallet> = self.wallets.list()?
+        let other_wallets: Vec<Wallet> = self
+            .wallets
+            .list()?
             .iter()
             .filter(|id| id.clone().ne(&wallet_id))
             .map(|id| self.wallets.get(id.clone()))
@@ -225,9 +231,9 @@ impl VaultStorage {
                 .collect::<Vec<PathBuf>>();
 
             files.push(self.wallets.get_filename_for(wallet_id));
-            return Ok(files)
+            return Ok(files);
         }
-        return Ok(vec![])
+        return Ok(vec![]);
     }
 
     /// Removes a wallet with all related private keys exclusively used by that wallet. Seeds are
@@ -242,16 +248,17 @@ impl VaultStorage {
         let mut errors = 0;
         for f in all {
             if archive.submit(f.clone()).is_err() {
-                errors+=1;
+                errors += 1;
             }
         }
         if errors == len {
-            return Err(VaultError::FilesystemError("Failed to add to archive".to_string()))
+            return Err(VaultError::FilesystemError(
+                "Failed to add to archive".to_string(),
+            ));
         }
         archive.finalize();
         Ok(errors == 0)
     }
-
 }
 
 /// Safe update of a file, with making a .bak copy of the existing file, writing new content and
@@ -358,7 +365,6 @@ pub struct CreateWallet {
 }
 
 impl CreateWallet {
-
     ///Create a new Wallet with the the specified Ethereum JSON Private Key. All fields for the wallet are set
     ///with default or empty values. The labels is set from JSON name field, if available.
     ///
@@ -520,7 +526,9 @@ impl AddEntry {
             key: PKType::SeedHd(SeedRef {
                 seed_id: seed_id.clone(),
                 hd_path: StandardHDPath::try_from(hd_path.to_string().as_str()).map_err(|_| {
-                    VaultError::ConversionError(ConversionError::InvalidFieldValue("hd_path".to_string()))
+                    VaultError::ConversionError(ConversionError::InvalidFieldValue(
+                        "hd_path".to_string(),
+                    ))
                 })?,
             }),
             ..WalletEntry::default()
@@ -534,7 +542,7 @@ impl AddEntry {
 pub struct UpdateEntry {
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
     wallet_id: Uuid,
-    entry_id: usize
+    entry_id: usize,
 }
 
 impl UpdateEntry {
@@ -543,7 +551,8 @@ impl UpdateEntry {
     }
 
     fn update<F>(&self, mut f: F) -> Result<bool, VaultError>
-        where F: FnMut(&mut WalletEntry) -> ()
+    where
+        F: FnMut(&mut WalletEntry) -> (),
     {
         let mut wallet = self.get_wallet()?;
         let pos = wallet.entries.iter().position(|e| e.id == self.entry_id);
@@ -554,10 +563,8 @@ impl UpdateEntry {
                 wallet.entries[pos] = entry;
                 let updated = self.wallets.update(wallet)?;
                 Ok(updated)
-            },
-            None => {
-                Ok(false)
             }
+            None => Ok(false),
         }
     }
 
@@ -616,9 +623,11 @@ impl SingleFileEntry for StandardVaultFiles {
 }
 
 impl<P> VaultAccessByFile<P> for StandardVaultFiles
-    where
+where
     P: TryFrom<Vec<u8>> + HasUuid,
-    Vec<u8>: std::convert::TryFrom<P> {}
+    Vec<u8>: std::convert::TryFrom<P>,
+{
+}
 
 /// Access to Vault storage
 pub trait VaultAccess<P>
@@ -1123,10 +1132,12 @@ mod tests {
             .expect("Dir not created")
             .into_path();
         let archive = Archive::create(tmp_dir.clone(), ArchiveType::Other);
-        archive.write(
-            "e779c975-6791-47a3-a4d6-d0e976d02820.key.bak",
-            "test old backup",
-        ).unwrap();
+        archive
+            .write(
+                "e779c975-6791-47a3-a4d6-d0e976d02820.key.bak",
+                "test old backup",
+            )
+            .unwrap();
 
         let f = tmp_dir
             .clone()
@@ -1255,13 +1266,14 @@ mod tests {
             .into_path();
 
         let vault = VaultStorage::create(tmp_dir).unwrap();
-        let wallet_id = vault.create_new()
+        let wallet_id = vault
+            .create_new()
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet = vault.wallets.get(wallet_id).unwrap();
         let pk_id = match wallet.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
-            _ => panic!("not PrivateKey Ref")
+            _ => panic!("not PrivateKey Ref"),
         };
         let pk = vault.keys.get(pk_id);
         assert!(pk.is_ok());
@@ -1282,24 +1294,25 @@ mod tests {
             .into_path();
 
         let vault = VaultStorage::create(tmp_dir).unwrap();
-        let wallet_1_id = vault.create_new()
+        let wallet_1_id = vault
+            .create_new()
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
         let pk_id_1 = match wallet_1.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
-            _ => panic!("not PrivateKey Ref")
+            _ => panic!("not PrivateKey Ref"),
         };
 
-        let wallet_2_id = vault.create_new()
+        let wallet_2_id = vault
+            .create_new()
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
         let pk_id_2 = match wallet_2.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
-            _ => panic!("not PrivateKey Ref")
+            _ => panic!("not PrivateKey Ref"),
         };
-
 
         let pk = vault.keys.get(pk_id_1);
         assert!(pk.is_ok());
@@ -1327,22 +1340,24 @@ mod tests {
             .into_path();
 
         let vault = VaultStorage::create(tmp_dir).unwrap();
-        let wallet_1_id = vault.create_new()
+        let wallet_1_id = vault
+            .create_new()
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
         let pk_id_1 = match wallet_1.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
-            _ => panic!("not PrivateKey Ref")
+            _ => panic!("not PrivateKey Ref"),
         };
 
-        let wallet_2_id = vault.create_new()
+        let wallet_2_id = vault
+            .create_new()
             .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let mut wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
         let pk_id_2 = match wallet_2.entries.first().unwrap().key {
             PKType::PrivateKeyRef(id) => id,
-            _ => panic!("not PrivateKey Ref")
+            _ => panic!("not PrivateKey Ref"),
         };
         wallet_2.entries.push(WalletEntry {
             id: 2,
@@ -1572,12 +1587,16 @@ mod tests {
         let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(None, wallet.entries[0].label);
 
-        let result = vault.update_entry(wallet_id, id1).set_label(Some("New Label".to_string()));
+        let result = vault
+            .update_entry(wallet_id, id1)
+            .set_label(Some("New Label".to_string()));
         assert_eq!(Ok(true), result);
         let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(Some("New Label".to_string()), wallet.entries[0].label);
 
-        let result = vault.update_entry(wallet_id, id1).set_label(Some("New Label 2".to_string()));
+        let result = vault
+            .update_entry(wallet_id, id1)
+            .set_label(Some("New Label 2".to_string()));
         assert_eq!(Ok(true), result);
         let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(Some("New Label 2".to_string()), wallet.entries[0].label);
@@ -1609,7 +1628,9 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
 
-        let result = vault.update_entry(wallet_id, 5).set_label(Some("x".to_string()));
+        let result = vault
+            .update_entry(wallet_id, 5)
+            .set_label(Some("x".to_string()));
         assert_eq!(Ok(false), result);
         let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(None, wallet.entries[0].label);
@@ -1635,12 +1656,16 @@ mod tests {
             )
             .unwrap();
 
-        let result = vault.update_entry(wallet_id, id1).set_receive_disabled(true);
+        let result = vault
+            .update_entry(wallet_id, id1)
+            .set_receive_disabled(true);
         assert_eq!(Ok(true), result);
         let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(true, wallet.entries[0].receive_disabled);
 
-        let result = vault.update_entry(wallet_id, id1).set_receive_disabled(false);
+        let result = vault
+            .update_entry(wallet_id, id1)
+            .set_receive_disabled(false);
         assert_eq!(Ok(true), result);
         let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(false, wallet.entries[0].receive_disabled);
@@ -1682,22 +1707,30 @@ mod tests {
 
         let pk1 = match wallet.entries[0].key {
             PKType::PrivateKeyRef(uuid) => uuid,
-            _ => panic!("invalid pk")
+            _ => panic!("invalid pk"),
         };
         let pk2 = match wallet.entries[1].key {
             PKType::PrivateKeyRef(uuid) => uuid,
-            _ => panic!("invalid pk")
+            _ => panic!("invalid pk"),
         };
 
         Path::new(tmp_dir.path());
-        assert!(Path::new(tmp_dir.path()).join(format!("{}.key", pk1.to_string())).exists());
-        assert!(Path::new(tmp_dir.path()).join(format!("{}.key", pk2.to_string())).exists());
+        assert!(Path::new(tmp_dir.path())
+            .join(format!("{}.key", pk1.to_string()))
+            .exists());
+        assert!(Path::new(tmp_dir.path())
+            .join(format!("{}.key", pk2.to_string()))
+            .exists());
 
         let removed = vault.remove_entry(wallet_id, id1);
         assert_eq!(Ok(true), removed);
 
-        assert!(!Path::new(tmp_dir.path()).join(format!("{}.key", pk1.to_string())).exists());
-        assert!(Path::new(tmp_dir.path()).join(format!("{}.key", pk2.to_string())).exists());
+        assert!(!Path::new(tmp_dir.path())
+            .join(format!("{}.key", pk1.to_string()))
+            .exists());
+        assert!(Path::new(tmp_dir.path())
+            .join(format!("{}.key", pk2.to_string()))
+            .exists());
     }
 
     #[test]
@@ -1736,16 +1769,20 @@ mod tests {
 
         let pk1 = match wallet.entries[0].key {
             PKType::PrivateKeyRef(uuid) => uuid,
-            _ => panic!("invalid pk")
+            _ => panic!("invalid pk"),
         };
         let pk2 = match wallet.entries[1].key {
             PKType::PrivateKeyRef(uuid) => uuid,
-            _ => panic!("invalid pk")
+            _ => panic!("invalid pk"),
         };
 
         Path::new(tmp_dir.path());
-        assert!(Path::new(tmp_dir.path()).join(format!("{}.key", pk1.to_string())).exists());
-        assert!(Path::new(tmp_dir.path()).join(format!("{}.key", pk2.to_string())).exists());
+        assert!(Path::new(tmp_dir.path())
+            .join(format!("{}.key", pk1.to_string()))
+            .exists());
+        assert!(Path::new(tmp_dir.path())
+            .join(format!("{}.key", pk2.to_string()))
+            .exists());
 
         let mut copy = wallet.clone();
         copy.id = Uuid::new_v4();
@@ -1755,7 +1792,11 @@ mod tests {
         let removed = vault.remove_entry(wallet_id, id1);
         assert_eq!(Ok(true), removed);
 
-        assert!(Path::new(tmp_dir.path()).join(format!("{}.key", pk1.to_string())).exists());
-        assert!(Path::new(tmp_dir.path()).join(format!("{}.key", pk2.to_string())).exists());
+        assert!(Path::new(tmp_dir.path())
+            .join(format!("{}.key", pk1.to_string()))
+            .exists());
+        assert!(Path::new(tmp_dir.path())
+            .join(format!("{}.key", pk2.to_string()))
+            .exists());
     }
 }

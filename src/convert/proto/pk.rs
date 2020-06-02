@@ -2,12 +2,12 @@ use crate::convert::error::ConversionError;
 use crate::{
     core::Address,
     proto::{
+        common::FileType as proto_FileType,
         crypto::Encrypted as proto_Encrypted,
         pk::{
             EthereumPK3 as proto_EthereumPK3, EthereumPrivateKey as proto_EthereumPrivateKey,
             PrivateKey as proto_PrivateKey,
         },
-        common::FileType as proto_FileType
     },
     structs::{
         crypto::Encrypted,
@@ -91,12 +91,12 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::structs::pk::{PrivateKeyHolder, PrivateKeyType, EthereumPk3};
     use crate::proto::pk::PrivateKey as proto_PrivateKey;
-    use uuid::Uuid;
-    use std::str::FromStr;
+    use crate::structs::pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType};
     use protobuf::{parse_from_bytes, ProtobufEnum};
-    use std::convert::{TryInto, TryFrom};
+    use std::convert::{TryFrom, TryInto};
+    use std::str::FromStr;
+    use uuid::Uuid;
 
     #[test]
     fn write_as_protobuf() {
@@ -107,7 +107,10 @@ mod tests {
         assert!(b.len() > 0);
         let act = parse_from_bytes::<proto_PrivateKey>(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 2);
-        assert_eq!(Uuid::from_bytes(act.get_id()).unwrap(), Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap());
+        assert_eq!(
+            Uuid::from_bytes(act.get_id()).unwrap(),
+            Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap()
+        );
         assert!(act.has_ethereum());
     }
 
@@ -122,5 +125,4 @@ mod tests {
         assert_eq!(act.id.to_string(), "18ba0447-81f3-40d7-bab1-e74de07a1001");
         assert!(act.decrypt("test").is_ok());
     }
-
 }

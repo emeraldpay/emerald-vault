@@ -4,7 +4,7 @@ use crate::{
     proto::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         book::BookItem as proto_BookItem,
-        common::FileType as proto_FileType
+        common::FileType as proto_FileType,
     },
     structs::book::{AddressRef, BookmarkDetails},
     util::optional::none_if_empty,

@@ -1,13 +1,13 @@
 use crate::crypto::error::CryptoError;
+use crate::hdwallet::bip32::HDPath;
 use crate::structs::crypto::Encrypted;
 use crate::structs::types::HasUuid;
 use crate::Address;
+use bitcoin::util::bip32::ChildNumber;
+use hdpath::StandardHDPath;
 use sha2::Digest;
 use std::convert::TryFrom;
 use uuid::Uuid;
-use crate::hdwallet::bip32::HDPath;
-use bitcoin::util::bip32::ChildNumber;
-use hdpath::StandardHDPath;
 
 byte_array_struct!(Bytes256, 32);
 
@@ -81,9 +81,13 @@ impl SeedRef {
     pub fn get_account_id(&self) -> Result<u32, ()> {
         if let Ok(path) = self.parsed_hd_path() {
             //for BIP44 == m/purpose'/coin_type'/account'/change/address_index
-            if path.len() > 2 && path[0].is_hardened() && path[1].is_hardened() && path[2].is_hardened() {
+            if path.len() > 2
+                && path[0].is_hardened()
+                && path[1].is_hardened()
+                && path[2].is_hardened()
+            {
                 if let ChildNumber::Hardened { index: n } = path[2] {
-                    return Ok(n)
+                    return Ok(n);
                 }
             }
         }
@@ -93,8 +97,8 @@ impl SeedRef {
 
 #[cfg(test)]
 mod tests {
-    use crate::structs::seed::SeedRef;
     use crate::hdwallet::bip32::HDPath;
+    use crate::structs::seed::SeedRef;
     use hdpath::StandardHDPath;
     use std::convert::TryFrom;
 

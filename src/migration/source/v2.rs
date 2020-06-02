@@ -152,9 +152,7 @@ impl V2Storage {
         match self.get_db(path) {
             Some(db) => {
                 let keys = self.list_key_files(db, &archive).map_err(|e| {
-                    &self
-                        .migration
-                        .error(format!("Failed to read keys {}", e));
+                    &self.migration.error(format!("Failed to read keys {}", e));
                 });
                 if keys.is_ok() {
                     let keys = keys.unwrap();

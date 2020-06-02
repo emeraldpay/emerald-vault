@@ -1,16 +1,16 @@
 use crate::convert::error::ConversionError;
+use crate::hdwallet::bip32::HDPath;
+use crate::structs::wallet::ReservedPath;
 use crate::{
     core::{chains::Blockchain, Address},
     proto::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
+        common::FileType as proto_FileType,
         seed::SeedHD as proto_SeedHD,
         wallet::{
-            Wallet as proto_Wallet,
-            WalletEntry as proto_WalletEntry,
+            Reserved as proto_Reserved, Wallet as proto_Wallet, WalletEntry as proto_WalletEntry,
             WalletEntry_oneof_pk_type as proto_WalletEntryPkType,
-            Reserved as proto_Reserved,
         },
-        common::FileType as proto_FileType
     },
     structs::{
         seed::SeedRef,
@@ -18,14 +18,12 @@ use crate::{
     },
     util::optional::none_if_empty,
 };
+use hdpath::StandardHDPath;
 use protobuf::{parse_from_bytes, Message};
 use std::cmp;
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 use uuid::Uuid;
-use crate::structs::wallet::ReservedPath;
-use crate::hdwallet::bip32::HDPath;
-use hdpath::StandardHDPath;
 
 impl TryFrom<&proto_WalletEntry> for WalletEntry {
     type Error = ConversionError;
@@ -77,7 +75,7 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
             address,
             key,
             receive_disabled,
-            label
+            label,
         };
         Ok(result)
     }
@@ -122,12 +120,10 @@ impl TryFrom<proto_Wallet> for Vec<ReservedPath> {
         let mut result = Vec::with_capacity(value.hd_accounts.len());
         for r in value.hd_accounts.to_vec() {
             match Uuid::from_bytes(r.seed_id.as_slice()) {
-                Ok(id) => {
-                    result.push(ReservedPath {
-                        seed_id: id,
-                        account_id: r.account_id
-                    })
-                },
+                Ok(id) => result.push(ReservedPath {
+                    seed_id: id,
+                    account_id: r.account_id,
+                }),
                 Err(_) => {}
             }
         }
@@ -222,6 +218,12 @@ impl TryFrom<Wallet> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
+    use crate::convert::error::ConversionError;
+    use crate::proto::{
+        seed::{HDPath as proto_HDPath, SeedHD as proto_SeedHD},
+        wallet::{Wallet as proto_Wallet, WalletEntry as proto_WalletEntry},
+    };
+    use crate::structs::wallet::ReservedPath;
     use crate::{
         chains::Blockchain,
         core::Address,
@@ -230,22 +232,11 @@ mod tests {
             wallet::{PKType, Wallet, WalletEntry},
         },
     };
+    use hdpath::StandardHDPath;
+    use protobuf::{parse_from_bytes, Message, ProtobufEnum};
     use std::convert::{TryFrom, TryInto};
     use std::str::FromStr;
     use uuid::Uuid;
-    use crate::structs::wallet::ReservedPath;
-    use hdpath::StandardHDPath;
-    use crate::proto::{
-        wallet::{
-            Wallet as proto_Wallet,
-            WalletEntry as proto_WalletEntry,
-        },
-        seed::{
-            SeedHD as proto_SeedHD, HDPath as proto_HDPath
-        }
-    };
-    use protobuf::{Message, parse_from_bytes, ProtobufEnum};
-    use crate::convert::error::ConversionError;
 
     #[test]
     fn write_and_read_empty() {
@@ -277,7 +268,10 @@ mod tests {
         assert!(b.len() > 0);
         let act = parse_from_bytes::<proto_Wallet>(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 1);
-        assert_eq!(Uuid::from_bytes(act.get_id()).unwrap(), Uuid::from_str("60eb04b5-1602-4e75-885f-076217ac5d0d").unwrap());
+        assert_eq!(
+            Uuid::from_bytes(act.get_id()).unwrap(),
+            Uuid::from_str("60eb04b5-1602-4e75-885f-076217ac5d0d").unwrap()
+        );
         assert_eq!(act.get_label(), "");
         assert_eq!(act.get_entries().len(), 0);
         assert_eq!(act.get_hd_accounts().len(), 0);
@@ -350,12 +344,10 @@ mod tests {
                 ..WalletEntry::default()
             }],
             entry_seq: 1,
-            reserved: vec![
-                ReservedPath {
-                    seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
-                    account_id: 0,
-                }
-            ],
+            reserved: vec![ReservedPath {
+                seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
+                account_id: 0,
+            }],
             ..Wallet::default()
         };
 
@@ -384,12 +376,10 @@ mod tests {
                 ..WalletEntry::default()
             }],
             entry_seq: 1,
-            reserved: vec![
-                ReservedPath {
-                    seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
-                    account_id: 0,
-                }
-            ],
+            reserved: vec![ReservedPath {
+                seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
+                account_id: 0,
+            }],
             ..Wallet::default()
         };
 
@@ -406,7 +396,7 @@ mod tests {
             id: Uuid::new_v4(),
             reserved: vec![ReservedPath {
                 seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
-                account_id: 1
+                account_id: 1,
             }],
             ..Wallet::default()
         };
@@ -414,7 +404,10 @@ mod tests {
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
         assert!(b.len() > 0);
         let act = Wallet::try_from(b).unwrap();
-        assert_eq!(act.reserved[0].seed_id.to_string(), "126d8ad4-d5a3-4b42-ba31-365cb5c34b5f");
+        assert_eq!(
+            act.reserved[0].seed_id.to_string(),
+            "126d8ad4-d5a3-4b42-ba31-365cb5c34b5f"
+        );
         assert_eq!(act.reserved[0].account_id, 1);
         assert_eq!(act, wallet);
     }
@@ -431,25 +424,21 @@ mod tests {
                 WalletEntry {
                     id: 0,
                     blockchain: Blockchain::Ethereum,
-                    key: PKType::SeedHd(
-                        SeedRef {
-                            seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
-                            hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/1").unwrap(),
-                        }
-                    ),
+                    key: PKType::SeedHd(SeedRef {
+                        seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
+                        hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/1").unwrap(),
+                    }),
                     ..WalletEntry::default()
                 },
                 WalletEntry {
                     id: 1,
                     blockchain: Blockchain::Ethereum,
-                    key: PKType::SeedHd(
-                        SeedRef {
-                            seed_id: Uuid::from_str("ad22b0da-12ae-4433-960a-755ad3a2558c").unwrap(),
-                            hd_path: StandardHDPath::try_from("m/44'/60'/1'/0/1").unwrap(),
-                        }
-                    ),
+                    key: PKType::SeedHd(SeedRef {
+                        seed_id: Uuid::from_str("ad22b0da-12ae-4433-960a-755ad3a2558c").unwrap(),
+                        hd_path: StandardHDPath::try_from("m/44'/60'/1'/0/1").unwrap(),
+                    }),
                     ..WalletEntry::default()
-                }
+                },
             ],
             ..Wallet::default()
         };
@@ -458,9 +447,15 @@ mod tests {
         assert!(b.len() > 0);
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(act.reserved.len(), 2);
-        assert_eq!(act.reserved[0].seed_id.to_string(), "126d8ad4-d5a3-4b42-ba31-365cb5c34b5f");
+        assert_eq!(
+            act.reserved[0].seed_id.to_string(),
+            "126d8ad4-d5a3-4b42-ba31-365cb5c34b5f"
+        );
         assert_eq!(act.reserved[0].account_id, 0);
-        assert_eq!(act.reserved[1].seed_id.to_string(), "ad22b0da-12ae-4433-960a-755ad3a2558c");
+        assert_eq!(
+            act.reserved[1].seed_id.to_string(),
+            "ad22b0da-12ae-4433-960a-755ad3a2558c"
+        );
         assert_eq!(act.reserved[1].account_id, 1);
     }
 
@@ -490,7 +485,10 @@ mod tests {
 
         let wallet_act = Wallet::try_from(bytes);
 
-        assert_eq!(Err(ConversionError::InvalidFieldValue("hd_path".to_string())), wallet_act);
+        assert_eq!(
+            Err(ConversionError::InvalidFieldValue("hd_path".to_string())),
+            wallet_act
+        );
     }
 
     #[test]
@@ -499,7 +497,7 @@ mod tests {
             id: Uuid::new_v4(),
             reserved: vec![ReservedPath {
                 seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
-                account_id: 1
+                account_id: 1,
             }],
             label: Some("Test entry".to_string()),
             ..Wallet::default()
@@ -511,5 +509,4 @@ mod tests {
         assert_eq!(act.label, Some("Test entry".to_string()));
         assert_eq!(act, wallet);
     }
-
 }

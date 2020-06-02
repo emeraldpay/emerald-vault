@@ -132,21 +132,24 @@ mod tests {
     fn encode_tx() {
         let tx = Transaction {
             nonce: 1,
-            gas_price:
-            to_32bytes("00000000000000000000000000000000000000000000000000000004e3b29200"),
+            gas_price: to_32bytes(
+                "00000000000000000000000000000000000000000000000000000004e3b29200",
+            ),
             gas_limit: 21000,
-            to: Some("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
-                .parse::<Address>()
-                .unwrap()),
-            value:
-            to_32bytes("00000000000000000000000000000000000000000000000000DE0B6B3A764000"),
+            to: Some(
+                "0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
+                    .parse::<Address>()
+                    .unwrap(),
+            ),
+            value: to_32bytes("00000000000000000000000000000000000000000000000000DE0B6B3A764000"),
             data: Vec::new(),
         };
         let rlp = tx.to_rlp(Some(0x25));
         let hex = hex::encode(rlp);
 
-        assert_eq!(hex,
-                   "".to_owned() +
+        assert_eq!(
+            hex,
+            "".to_owned() +
                        "eb" + //total size = 1 +6 +3 +21 +8 +1 +1 +1 +1 + 0xc0
                        "01" + //nonce
                        "85" + "04e3b29200" + //gasprice
@@ -164,21 +167,24 @@ mod tests {
     fn encode_tx_with_small_gassprice() {
         let tx = Transaction {
             nonce: 0,
-            gas_price:
-            to_32bytes("0000000000000000000000000000000000000000000000000000000000000001"),
+            gas_price: to_32bytes(
+                "0000000000000000000000000000000000000000000000000000000000000001",
+            ),
             gas_limit: 21000,
-            to: Some("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
-                .parse::<Address>()
-                .unwrap()),
-            value:
-            to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
+            to: Some(
+                "0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
+                    .parse::<Address>()
+                    .unwrap(),
+            ),
+            value: to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
             data: Vec::new(),
         };
         let rlp = tx.to_rlp(Some(0x25));
         let hex = hex::encode(rlp);
 
-        assert_eq!(hex,
-                    "".to_owned() +
+        assert_eq!(
+            hex,
+            "".to_owned() +
                     "df" + //total size = 1 +1 +3 +21 +1 +1 +1 +1 +1 + 0xc0
                     "80" + //nonce
                     "01" + //gasprice

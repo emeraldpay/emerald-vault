@@ -10,9 +10,9 @@ use crate::{
         wallet::{PKType, Wallet, WalletEntry},
     },
 };
+use hdpath::StandardHDPath;
 use std::convert::TryFrom;
 use uuid::Uuid;
-use hdpath::StandardHDPath;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();
@@ -91,8 +91,9 @@ pub fn add_to_vault(
                     let fingerprints = match kf.address {
                         Some(address) => {
                             let f = HDPathFingerprint::from_address(
-                                StandardHDPath::try_from(data.hd_path.clone().as_str()).map_err(|_| "Unsupported HDPath")?,
-                                &address
+                                StandardHDPath::try_from(data.hd_path.clone().as_str())
+                                    .map_err(|_| "Unsupported HDPath")?,
+                                &address,
                             );
                             vec![f]
                         }
@@ -116,7 +117,8 @@ pub fn add_to_vault(
                 address: kf.address,
                 key: PKType::SeedHd(SeedRef {
                     seed_id,
-                    hd_path: StandardHDPath::try_from(data.hd_path.clone().as_str()).map_err(|_| "Unsupported HDPath")?,
+                    hd_path: StandardHDPath::try_from(data.hd_path.clone().as_str())
+                        .map_err(|_| "Unsupported HDPath")?,
                 }),
                 ..WalletEntry::default()
             }
