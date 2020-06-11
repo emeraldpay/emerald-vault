@@ -102,6 +102,7 @@ pub fn add_to_vault(
                     let seed = Seed {
                         id: Uuid::new_v4(),
                         source: SeedSource::Ledger(LedgerSource { fingerprints }),
+                        label: None,
                     };
                     let id = seed.id.clone();
                     seeds

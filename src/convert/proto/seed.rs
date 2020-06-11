@@ -113,10 +113,20 @@ impl TryFrom<&[u8]> for Seed {
             },
             None => return Err(ConversionError::FieldIsEmpty("seed_source".to_string())),
         };
+        let label = if let label = m.get_label() {
+            if label.len() > 0 {
+                Some(label.to_string())
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         let result = Seed {
             id: Uuid::from_bytes(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
             source,
+            label,
         };
         Ok(result)
     }
@@ -139,6 +149,9 @@ impl TryFrom<Seed> for Vec<u8> {
         let mut m = proto_Seed::new();
         m.set_file_type(proto_FileType::FILE_SEED);
         m.set_id(value.id.as_bytes().to_vec());
+        if let Some(label) = value.label {
+            m.set_label(label);
+        }
         match value.source {
             SeedSource::Bytes(s) => m.set_bytes(proto_Encrypted::try_from(&s)?),
             SeedSource::Ledger(s) => m.set_ledger(s.try_into()?),
@@ -162,6 +175,7 @@ mod tests {
         let seed = Seed {
             id: Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap(),
             source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap()),
+            label: None
         };
 
         let b: Vec<u8> = seed.clone().try_into().unwrap();
@@ -173,6 +187,7 @@ mod tests {
             Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap()
         );
         assert!(act.has_bytes());
+        assert_eq!(act.label, "".to_string());
     }
 
     #[test]
@@ -180,6 +195,7 @@ mod tests {
         let seed = Seed {
             id: Uuid::new_v4(),
             source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap()),
+            label: None
         };
         let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
@@ -199,6 +215,7 @@ mod tests {
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
             }),
+            label: None
         };
         let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
@@ -209,5 +226,37 @@ mod tests {
             SeedSource::Ledger(v) => v,
             _ => panic!("Not ledger"),
         };
+    }
+
+    #[test]
+    fn write_and_read_label() {
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Ledger(LedgerSource {
+                fingerprints: vec![],
+            }),
+            label: Some("Hello World!".to_string()),
+        };
+        let seed_id = seed.id.clone();
+        let buf: Vec<u8> = seed.try_into().unwrap();
+        let seed_act = Seed::try_from(buf).unwrap();
+
+        assert_eq!(seed_act.label, Some("Hello World!".to_string()));
+    }
+
+    #[test]
+    fn empty_label_is_none() {
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Ledger(LedgerSource {
+                fingerprints: vec![],
+            }),
+            label: Some("".to_string()),
+        };
+        let seed_id = seed.id.clone();
+        let buf: Vec<u8> = seed.try_into().unwrap();
+        let seed_act = Seed::try_from(buf).unwrap();
+
+        assert_eq!(seed_act.label, None);
     }
 }

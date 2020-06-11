@@ -14,6 +14,7 @@ impl Seed {
         let result = Seed {
             id: Uuid::new_v4(),
             source: SeedSource::Bytes(Encrypted::encrypt(seed, save_password).map_err(|_| ())?),
+            label: None,
         };
         Ok(result)
     }

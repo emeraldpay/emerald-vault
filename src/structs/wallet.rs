@@ -444,8 +444,9 @@ mod tests {
             id: Uuid::new_v4(),
             source: SeedSource::create_bytes(
                 hex::decode("0c0727514fe0c87460ddc2bff08075174e1b45283db9d6d34ae23fb877dd12da98d6235f56d9cc4ce3ec245ffe226176338569c59db502ccebfb5c6cd6a264b4").unwrap(),
-                "test1234"
-            ).unwrap()
+                "test1234",
+            ).unwrap(),
+            label: None,
         };
         let seed_id = vault.seeds().add(seed).unwrap();
 
@@ -476,6 +477,7 @@ mod tests {
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
             }),
+            label: None,
         };
         let seed_id = vault.seeds().add(seed).unwrap();
 
@@ -547,6 +549,7 @@ mod tests {
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
             }),
+            label: None,
         };
         let seed_id = vault.seeds().add(seed).unwrap();
 

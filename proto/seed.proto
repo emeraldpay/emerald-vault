@@ -10,6 +10,8 @@ message Seed {
         Encrypted bytes = 3;
         LedgerSeed ledger = 4;
     }
+    // User assigned label (optional)
+    string label = 5;
 }
 
 message LedgerSeed {

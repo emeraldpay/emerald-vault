@@ -15,6 +15,7 @@ byte_array_struct!(Bytes256, 32);
 pub struct Seed {
     pub id: Uuid,
     pub source: SeedSource,
+    pub label: Option<String>
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
