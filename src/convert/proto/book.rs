@@ -13,6 +13,8 @@ use crate::{
 use protobuf::{parse_from_bytes, Message};
 use std::convert::TryFrom;
 use std::str::FromStr;
+use std::time::SystemTime;
+use chrono::{Utc, TimeZone};
 
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for BookmarkDetails {
@@ -39,12 +41,14 @@ impl TryFrom<&[u8]> for BookmarkDetails {
 
         let blockchain = Blockchain::try_from(m.get_blockchain())
             .map_err(|_| ConversionError::InvalidFieldValue("blockchain".to_string()))?;
-
+        let created_at = Utc.timestamp_millis_opt(m.get_created_at() as i64)
+            .single().unwrap_or_else(|| Utc.timestamp_millis(0));
         let result = BookmarkDetails {
             blockchain,
             label: none_if_empty(m.get_label()),
             description: none_if_empty(m.get_description()),
             address: AddressRef::EthereumAddress(address),
+            created_at,
         };
 
         Ok(result)
@@ -81,7 +85,69 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
                 m.set_address(value)
             }
         };
-
+        m.set_created_at(value.created_at.timestamp_millis() as u64);
         m.write_to_bytes().map_err(|e| ConversionError::from(e))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::structs::book::{BookmarkDetails, AddressRef};
+    use crate::chains::Blockchain;
+    use crate::Address;
+    use std::str::FromStr;
+    use chrono::{Utc, TimeZone};
+    use protobuf::{parse_from_bytes, Message};
+    use crate::proto::book::BookItem as proto_BootItem;
+    use crate::proto::address::Address as proto_Address;
+    use std::convert::{TryInto, TryFrom};
+
+    #[test]
+    fn write_as_protobuf() {
+        let item = BookmarkDetails {
+            blockchain: Blockchain::Ethereum,
+            label: Some("Hello".to_string()),
+            description: None,
+            address: AddressRef::EthereumAddress(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
+            created_at: Utc.timestamp_millis(1592624592679),
+        };
+
+        let b: Vec<u8> = item.try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = parse_from_bytes::<proto_BootItem>(b.as_slice()).unwrap();
+        assert_eq!(act.label, "Hello".to_string());
+        assert!(act.has_address());
+        assert_eq!(act.get_address().get_plain_address(), "0x6412c428fc02902d137b60dc0bd0f6cd1255ea99");
+        assert_eq!(act.created_at, 1592624592679);
+    }
+
+    #[test]
+    fn write_and_read() {
+        let item = BookmarkDetails {
+            blockchain: Blockchain::EthereumClassic,
+            label: Some("Hello".to_string()),
+            description: Some("World!".to_string()),
+            address: AddressRef::EthereumAddress(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
+            created_at: Utc.timestamp_millis(1592624592679),
+        };
+
+        let b: Vec<u8> = item.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = BookmarkDetails::try_from(b).unwrap();
+        assert_eq!(act, item);
+    }
+
+    #[test]
+    fn ignore_big_created_at() {
+        let mut m = proto_BootItem::new();
+        m.set_created_at((i64::MAX as u64) + 100);
+        let mut ma = proto_Address::new();
+        ma.set_plain_address("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99".to_string());
+        m.set_address(ma);
+        m.set_blockchain(100);
+
+        let buf = m.write_to_bytes().unwrap();
+        let act = BookmarkDetails::try_from(buf).unwrap();
+        assert_eq!(act.created_at.timestamp_millis(), 0);
     }
 }

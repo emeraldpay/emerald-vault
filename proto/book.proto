@@ -9,4 +9,6 @@ message BookItem {
     string description = 3;
     uint32 blockchain = 4;
     Address address = 5;
+    // creation date of the item, millis since epoch, in UTC
+    uint64 created_at = 6;
 }

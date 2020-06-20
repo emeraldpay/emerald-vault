@@ -22,6 +22,9 @@ message Wallet {
     // as the id that new entry. Using this sequence, if entry gets deleted its id is not going
     // to be reused
     uint32 entry_seq = 6;
+
+    // creation date of the wallet, millis since epoch, in UTC
+    uint64 created_at = 7;
 }
 
 // Reserved index on a HD path, an x from m/44'/x'
@@ -49,6 +52,9 @@ message WalletEntry {
         SeedHD hd_path = 7;
         bytes pk_id = 8;
     }
+
+    // creation date of the entry, millis since epoch, in UTC
+    uint64 created_at = 9;
 }
 
 

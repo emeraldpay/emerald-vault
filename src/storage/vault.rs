@@ -23,6 +23,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 use uuid::Uuid;
+use std::time::SystemTime;
 
 /// Compound trait for a vault entry which is stored in a separate file each
 pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
@@ -447,6 +448,7 @@ impl AddEntry {
             key: PKType::PrivateKeyRef(pk_id),
             receive_disabled: false,
             label: json.name.clone(),
+            created_at: SystemTime::now().into(),
         });
         wallet.entry_seq = id + 1;
         self.wallets.update(wallet.clone())?;
@@ -755,6 +757,7 @@ mod tests {
         tests::*,
     };
     use tempdir::TempDir;
+    use chrono::{Utc, TimeZone};
 
     #[test]
     fn try_vault_file_from_standard() {
@@ -899,7 +902,8 @@ mod tests {
         let all = vault.seeds.list().unwrap();
         assert_eq!(0, all.len());
 
-        let seed = Seed::generate(None, "testtest").unwrap();
+        let mut seed = Seed::generate(None, "testtest").unwrap();
+        seed.created_at = Utc.timestamp_millis(0);
         let id = seed.get_id();
         let added = vault.seeds.add(seed.clone());
         assert!(added.is_ok());
@@ -915,7 +919,8 @@ mod tests {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
-        let seed = Seed::generate(None, "testtest").unwrap();
+        let mut seed = Seed::generate(None, "testtest").unwrap();
+        seed.created_at = Utc.timestamp_millis(0);
         let id = seed.get_id();
         let added = vault.seeds.add(seed.clone());
         assert!(added.is_ok());

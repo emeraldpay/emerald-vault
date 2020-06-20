@@ -24,6 +24,8 @@ use std::cmp;
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 use uuid::Uuid;
+use std::time::SystemTime;
+use chrono::{Local, Utc, TimeZone};
 
 impl TryFrom<&proto_WalletEntry> for WalletEntry {
     type Error = ConversionError;
@@ -69,6 +71,7 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
         let id = value.get_id() as usize;
         let receive_disabled = value.get_receive_disabled();
         let label = none_if_empty(value.get_label());
+        let created_at = Utc.timestamp_millis(value.get_created_at() as i64);
         let result = WalletEntry {
             id,
             blockchain,
@@ -76,6 +79,7 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
             key,
             receive_disabled,
             label,
+            created_at,
         };
         Ok(result)
     }
@@ -109,6 +113,7 @@ impl From<&WalletEntry> for proto_WalletEntry {
                 result.set_pk_id(addr.as_bytes().to_vec());
             }
         }
+        result.set_created_at(value.created_at.timestamp_millis() as u64);
         result
     }
 }
@@ -142,6 +147,8 @@ impl TryFrom<&[u8]> for Wallet {
             let acc = WalletEntry::try_from(m)?;
             entries.push(acc);
         }
+        let created_at = Utc.timestamp_millis_opt(m.get_created_at() as i64)
+            .single().unwrap_or_else(|| Utc.timestamp_millis(0));
         let result = Wallet {
             id: Uuid::from_bytes(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
@@ -149,6 +156,7 @@ impl TryFrom<&[u8]> for Wallet {
             entries,
             entry_seq: m.get_entry_seq() as usize,
             reserved: m.try_into()?,
+            created_at,
         };
         Ok(result)
     }
@@ -209,6 +217,7 @@ impl TryFrom<Wallet> for Vec<u8> {
             r_proto.set_account_id(r.account_id);
             result.hd_accounts.push(r_proto);
         }
+        result.set_created_at(value.created_at.timestamp_millis() as u64);
 
         result
             .write_to_bytes()
@@ -237,6 +246,7 @@ mod tests {
     use std::convert::{TryFrom, TryInto};
     use std::str::FromStr;
     use uuid::Uuid;
+    use chrono::{Utc, TimeZone};
 
     #[test]
     fn write_and_read_empty() {
@@ -244,6 +254,7 @@ mod tests {
             id: Uuid::new_v4(),
             label: None,
             entries: vec![],
+            created_at: Utc.timestamp_millis(0),
             ..Wallet::default()
         };
 
@@ -261,6 +272,7 @@ mod tests {
             id: Uuid::from_str("60eb04b5-1602-4e75-885f-076217ac5d0d").unwrap(),
             label: None,
             entries: vec![],
+            created_at: Utc.timestamp_millis(1592624592679),
             ..Wallet::default()
         };
 
@@ -276,6 +288,7 @@ mod tests {
         assert_eq!(act.get_entries().len(), 0);
         assert_eq!(act.get_hd_accounts().len(), 0);
         assert_eq!(act.get_entry_seq(), 0);
+        assert_eq!(act.get_created_at(), 1592624592679);
     }
 
     #[test]
@@ -290,9 +303,11 @@ mod tests {
                     Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
+                created_at: Utc.timestamp_millis(0),
                 ..WalletEntry::default()
             }],
             entry_seq: 1,
+            created_at: Utc.timestamp_millis(0),
             ..Wallet::default()
         };
 
@@ -314,9 +329,11 @@ mod tests {
                     Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
+                created_at: Utc.timestamp_millis(0),
                 ..WalletEntry::default()
             }],
             entry_seq: 1,
+            created_at: Utc.timestamp_millis(0),
             ..Wallet::default()
         };
 
@@ -341,6 +358,7 @@ mod tests {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
                     hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/0").unwrap(),
                 }),
+                created_at: Utc.timestamp_millis(0),
                 ..WalletEntry::default()
             }],
             entry_seq: 1,
@@ -348,6 +366,7 @@ mod tests {
                 seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
                 account_id: 0,
             }],
+            created_at: Utc.timestamp_millis(0),
             ..Wallet::default()
         };
 
@@ -373,6 +392,7 @@ mod tests {
                     hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/1").unwrap(),
                 }),
                 receive_disabled: true,
+                created_at: Utc.timestamp_millis(0),
                 ..WalletEntry::default()
             }],
             entry_seq: 1,
@@ -380,6 +400,7 @@ mod tests {
                 seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
                 account_id: 0,
             }],
+            created_at: Utc.timestamp_millis(0),
             ..Wallet::default()
         };
 
@@ -398,6 +419,7 @@ mod tests {
                 seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
                 account_id: 1,
             }],
+            created_at: Utc.timestamp_millis(0),
             ..Wallet::default()
         };
 
@@ -428,6 +450,7 @@ mod tests {
                         seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
                         hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/1").unwrap(),
                     }),
+                    created_at: Utc.timestamp_millis(0),
                     ..WalletEntry::default()
                 },
                 WalletEntry {
@@ -437,9 +460,11 @@ mod tests {
                         seed_id: Uuid::from_str("ad22b0da-12ae-4433-960a-755ad3a2558c").unwrap(),
                         hd_path: StandardHDPath::try_from("m/44'/60'/1'/0/1").unwrap(),
                     }),
+                    created_at: Utc.timestamp_millis(0),
                     ..WalletEntry::default()
                 },
             ],
+            created_at: Utc.timestamp_millis(0),
             ..Wallet::default()
         };
 
@@ -500,6 +525,7 @@ mod tests {
                 account_id: 1,
             }],
             label: Some("Test entry".to_string()),
+            created_at: Utc.timestamp_millis(0),
             ..Wallet::default()
         };
 
@@ -508,5 +534,36 @@ mod tests {
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(act.label, Some("Test entry".to_string()));
         assert_eq!(act, wallet);
+    }
+
+    #[test]
+    fn write_and_read_created_at() {
+        let wallet = Wallet {
+            id: Uuid::new_v4(),
+            reserved: vec![ReservedPath {
+                seed_id: Uuid::from_str("126d8ad4-d5a3-4b42-ba31-365cb5c34b5f").unwrap(),
+                account_id: 1,
+            }],
+            label: None,
+            created_at: Utc.timestamp_millis(1592624407736),
+            ..Wallet::default()
+        };
+
+        let b: Vec<u8> = wallet.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = Wallet::try_from(b).unwrap();
+        assert_eq!(act.created_at.timestamp_millis(), 1592624407736);
+        assert_eq!(act.created_at.to_rfc3339(), "2020-06-20T03:40:07.736+00:00");
+    }
+
+    #[test]
+    fn ignore_big_created_at() {
+        let mut m = proto_Wallet::new();
+        m.set_created_at((i64::MAX as u64) + 100);
+        m.set_id(Uuid::new_v4().as_bytes().to_vec());
+
+        let buf = m.write_to_bytes().unwrap();
+        let act = Wallet::try_from(buf).unwrap();
+        assert_eq!(act.created_at.timestamp_millis(), 0);
     }
 }

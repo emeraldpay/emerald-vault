@@ -8,6 +8,7 @@ use hdpath::StandardHDPath;
 use sha2::Digest;
 use std::convert::TryFrom;
 use uuid::Uuid;
+use chrono::{DateTime, Utc};
 
 byte_array_struct!(Bytes256, 32);
 
@@ -15,7 +16,9 @@ byte_array_struct!(Bytes256, 32);
 pub struct Seed {
     pub id: Uuid,
     pub source: SeedSource,
-    pub label: Option<String>
+    pub label: Option<String>,
+    ///creation date of the seed
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

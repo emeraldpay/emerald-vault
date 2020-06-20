@@ -7,12 +7,14 @@ use crate::{
     },
 };
 use uuid::Uuid;
+use chrono::Utc;
 
 impl PrivateKeyHolder {
     pub fn create_ethereum_v3(pk3: EthereumPk3) -> PrivateKeyHolder {
         PrivateKeyHolder {
             id: Uuid::new_v4(),
             pk: PrivateKeyType::EthereumPk(pk3),
+            created_at: Utc::now(),
         }
     }
 

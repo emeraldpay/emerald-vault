@@ -1,5 +1,6 @@
 use crate::core::chains::Blockchain;
 use crate::Address;
+use chrono::{DateTime, Utc};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct BookmarkDetails {
@@ -7,6 +8,8 @@ pub struct BookmarkDetails {
     pub label: Option<String>,
     pub description: Option<String>,
     pub address: AddressRef,
+    ///creation date of the item
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

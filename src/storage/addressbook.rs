@@ -257,6 +257,8 @@ mod tests {
     use std::str::FromStr;
     use tempdir::TempDir;
     use uuid::Uuid;
+    use std::time::SystemTime;
+    use chrono::Utc;
 
     fn extract_address_str(details: &BookmarkDetails) -> Option<String> {
         match details.address {
@@ -265,8 +267,8 @@ mod tests {
     }
 
     fn dump_file<P>(path: P)
-    where
-        P: AsRef<Path>,
+        where
+            P: AsRef<Path>,
     {
         let f = fs::read(path.as_ref()).expect("read csv");
         println!("{}", String::from_utf8(f).expect("Non UTF8 content"));
@@ -344,6 +346,7 @@ mod tests {
                 address: AddressRef::EthereumAddress(
                     Address::from_str("0x085fb4f24031eaedbc2b611aa528f22343eb52db").unwrap(),
                 ),
+                created_at: Utc::now(),
             },
         };
         let act = book.add(item);
@@ -378,6 +381,7 @@ mod tests {
                 address: AddressRef::EthereumAddress(
                     Address::from_str("0x5bee6233f7e2307746266deb0678f22686932c26").unwrap(),
                 ),
+                created_at: Utc::now(),
             },
         };
         let item2 = AddressBookmark {
@@ -389,6 +393,7 @@ mod tests {
                 address: AddressRef::EthereumAddress(
                     Address::from_str("0x732c628300f2da4d54f988b22eeca520356743dc").unwrap(),
                 ),
+                created_at: Utc::now(),
             },
         };
         let item3 = AddressBookmark {
@@ -400,6 +405,7 @@ mod tests {
                 address: AddressRef::EthereumAddress(
                     Address::from_str("0xfac41abcf13f5dcd83d8c20d5ed5e07e1968a348").unwrap(),
                 ),
+                created_at: Utc::now(),
             },
         };
 

@@ -13,6 +13,8 @@ use crate::{
 use hdpath::StandardHDPath;
 use std::convert::TryFrom;
 use uuid::Uuid;
+use std::time::SystemTime;
+use chrono::Utc;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();
@@ -58,6 +60,7 @@ pub fn add_to_vault(
                     key: Encrypted::try_from(data)
                         .map_err(|_| "Failed to convert encrypted Private Key")?,
                 }),
+                created_at: Utc::now(),
             };
             let pk_id = pk.get_id();
             vault
@@ -103,6 +106,7 @@ pub fn add_to_vault(
                         id: Uuid::new_v4(),
                         source: SeedSource::Ledger(LedgerSource { fingerprints }),
                         label: None,
+                        created_at: Utc::now(),
                     };
                     let id = seed.id.clone();
                     seeds

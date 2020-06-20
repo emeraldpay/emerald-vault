@@ -13,6 +13,7 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;
 use uuid::Uuid;
+use chrono::Utc;
 
 /// `PBKDF2` key derivation function name
 pub const PBKDF2_KDF_NAME: &str = "pbkdf2";
@@ -295,7 +296,11 @@ impl TryFrom<&EthereumJsonV3File> for PrivateKeyHolder {
             key: Encrypted::try_from(&value.crypto)?,
         };
         let pk = PrivateKeyType::EthereumPk(pk3);
-        let result = PrivateKeyHolder { id: value.id, pk };
+        let result = PrivateKeyHolder {
+            id: value.id,
+            pk,
+            created_at: Utc::now(),
+        };
         Ok(result)
     }
 }
@@ -467,6 +472,7 @@ mod tests {
     use crate::convert::json::keyfile::{CoreCryptoJson, KdfJson, PrfJson};
     use crate::tests::*;
     use hex;
+    use chrono::Utc;
 
     #[test]
     fn import_pbkdf_default() {
@@ -918,11 +924,12 @@ mod tests {
                         salt: hex::decode(
                             "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
                         )
-                        .unwrap(),
+                            .unwrap(),
                         prf: PrfType::HmacSha256,
                     }),
                 },
             }),
+            created_at: Utc::now(),
         };
 
         let json = EthereumJsonV3File::from_wallet(Some("test".to_string()), &pk).unwrap();

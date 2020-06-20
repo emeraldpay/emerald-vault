@@ -16,6 +16,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::from_utf8;
 use uuid::Uuid;
+use std::time::SystemTime;
+use chrono::Utc;
 
 /// Separator for data in RocksDB
 /// `value = <filename> + SEPARATOR + <keyfile_json>`
@@ -206,6 +208,7 @@ impl V2Storage {
                     label: item.name,
                     description: item.description,
                     address: AddressRef::EthereumAddress(item.address),
+                    created_at: Utc::now(),
                 },
             });
             if added.is_err() {

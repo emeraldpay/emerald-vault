@@ -11,6 +11,8 @@ message PrivateKey {
         BitcoinPrivateKey bitcoin = 4;
         Bip32Private xpriv = 5;
     }
+    // creation date of the pk, millis since epoch, in UTC
+    uint64 created_at = 6;
 }
 
 message EthereumPrivateKey {

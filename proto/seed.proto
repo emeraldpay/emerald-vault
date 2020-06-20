@@ -12,6 +12,8 @@ message Seed {
     }
     // User assigned label (optional)
     string label = 5;
+    // creation date of the seed, millis since epoch, in UTC
+    uint64 created_at = 6;
 }
 
 message LedgerSeed {

@@ -19,6 +19,8 @@ use protobuf::{parse_from_bytes, Message};
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 use uuid::Uuid;
+use std::time::SystemTime;
+use chrono::{Utc, TimeZone};
 
 impl TryFrom<&proto_HDPath> for StandardHDPath {
     type Error = ConversionError;
@@ -122,11 +124,14 @@ impl TryFrom<&[u8]> for Seed {
         } else {
             None
         };
+        let created_at = Utc.timestamp_millis_opt(m.get_created_at() as i64)
+            .single().unwrap_or_else(|| Utc.timestamp_millis(0));
         let result = Seed {
             id: Uuid::from_bytes(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
             source,
             label,
+            created_at,
         };
         Ok(result)
     }
@@ -156,26 +161,32 @@ impl TryFrom<Seed> for Vec<u8> {
             SeedSource::Bytes(s) => m.set_bytes(proto_Encrypted::try_from(&s)?),
             SeedSource::Ledger(s) => m.set_ledger(s.try_into()?),
         }
+        m.set_created_at(value.created_at.timestamp_millis() as u64);
         m.write_to_bytes().map_err(|e| ConversionError::from(e))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::proto::seed::Seed as proto_Seed;
+    use crate::proto::seed::{
+        Seed as proto_Seed,
+        LedgerSeed as proto_LedgerSeed,
+    };
     use crate::structs::crypto::Encrypted;
     use crate::structs::seed::{LedgerSource, Seed, SeedSource};
-    use protobuf::{parse_from_bytes, ProtobufEnum};
+    use protobuf::{parse_from_bytes, ProtobufEnum, Message};
     use std::convert::{TryFrom, TryInto};
     use std::str::FromStr;
     use uuid::Uuid;
+    use chrono::{Utc, TimeZone};
 
     #[test]
     fn write_as_protobuf() {
         let seed = Seed {
             id: Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap(),
             source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap()),
-            label: None
+            label: None,
+            created_at: Utc.timestamp_millis(1592624592679),
         };
 
         let b: Vec<u8> = seed.clone().try_into().unwrap();
@@ -188,6 +199,7 @@ mod tests {
         );
         assert!(act.has_bytes());
         assert_eq!(act.label, "".to_string());
+        assert_eq!(act.created_at, 1592624592679);
     }
 
     #[test]
@@ -195,7 +207,8 @@ mod tests {
         let seed = Seed {
             id: Uuid::new_v4(),
             source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap()),
-            label: None
+            label: None,
+            created_at: Utc::now(),
         };
         let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
@@ -215,7 +228,8 @@ mod tests {
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
             }),
-            label: None
+            label: None,
+            created_at: Utc::now(),
         };
         let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
@@ -236,6 +250,7 @@ mod tests {
                 fingerprints: vec![],
             }),
             label: Some("Hello World!".to_string()),
+            created_at: Utc::now(),
         };
         let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
@@ -252,11 +267,41 @@ mod tests {
                 fingerprints: vec![],
             }),
             label: Some("".to_string()),
+            created_at: Utc::now(),
         };
         let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 
         assert_eq!(seed_act.label, None);
+    }
+
+    #[test]
+    fn write_and_read_timestamp() {
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Ledger(LedgerSource {
+                fingerprints: vec![],
+            }),
+            label: Some("Hello World!".to_string()),
+            created_at: Utc.timestamp_millis(1592624592679),
+        };
+        let seed_id = seed.id.clone();
+        let buf: Vec<u8> = seed.try_into().unwrap();
+        let seed_act = Seed::try_from(buf).unwrap();
+
+        assert_eq!(seed_act.created_at, Utc.timestamp_millis(1592624592679));
+    }
+
+    #[test]
+    fn ignore_big_created_at() {
+        let mut m = proto_Seed::new();
+        m.set_created_at((i64::MAX as u64) + 100);
+        m.set_id(Uuid::new_v4().as_bytes().to_vec());
+        m.set_ledger(proto_LedgerSeed::new());
+
+        let buf = m.write_to_bytes().unwrap();
+        let act = Seed::try_from(buf).unwrap();
+        assert_eq!(act.created_at.timestamp_millis(), 0);
     }
 }

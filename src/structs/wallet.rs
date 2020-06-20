@@ -14,6 +14,8 @@ use hdpath::StandardHDPath;
 use regex::Regex;
 use std::str::FromStr;
 use uuid::Uuid;
+use std::time::SystemTime;
+use chrono::{DateTime, Utc};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
@@ -22,6 +24,8 @@ pub struct Wallet {
     pub entries: Vec<WalletEntry>,
     pub entry_seq: usize,
     pub reserved: Vec<ReservedPath>,
+    ///creation date of the wallet
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -50,6 +54,8 @@ pub struct WalletEntry {
     ///It can be used for a legacy address, or for shadow address on opposite blockchain (ETH-ETC)
     ///to help recover funds mistakenly sent to a wrong chain.
     pub receive_disabled: bool,
+    ///Creation date of the entry
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -102,6 +108,7 @@ impl Default for Wallet {
             entries: vec![],
             entry_seq: 0,
             reserved: vec![],
+            created_at: Utc::now()
         }
     }
 }
@@ -115,6 +122,7 @@ impl Default for WalletEntry {
             key: PKType::PrivateKeyRef(Uuid::nil()),
             receive_disabled: false,
             label: None,
+            created_at: Utc::now()
         }
     }
 }
@@ -301,6 +309,7 @@ mod tests {
     use std::str::FromStr;
     use tempdir::TempDir;
     use uuid::Uuid;
+    use chrono::Utc;
 
     #[test]
     fn sign_erc20_approve() {
@@ -373,6 +382,7 @@ mod tests {
                 ),
                 key: Encrypted::encrypt(raw_pk, "testtest").unwrap(),
             }),
+            created_at: Utc::now(),
         };
         let key_id = key.get_id();
         vault.keys().add(key).expect("Key not added");
@@ -417,6 +427,7 @@ mod tests {
                 ),
                 key: Encrypted::encrypt(raw_pk, "testtest").unwrap(),
             }),
+            created_at: Utc::now(),
         };
         let key_id = vault.keys().add(key).unwrap();
 
@@ -447,6 +458,7 @@ mod tests {
                 "test1234",
             ).unwrap(),
             label: None,
+            created_at: Utc::now(),
         };
         let seed_id = vault.seeds().add(seed).unwrap();
 
@@ -478,6 +490,7 @@ mod tests {
                 fingerprints: vec![],
             }),
             label: None,
+            created_at: Utc::now(),
         };
         let seed_id = vault.seeds().add(seed).unwrap();
 
@@ -550,6 +563,7 @@ mod tests {
                 fingerprints: vec![],
             }),
             label: None,
+            created_at: Utc::now(),
         };
         let seed_id = vault.seeds().add(seed).unwrap();
 
