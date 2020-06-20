@@ -71,11 +71,11 @@ impl PartialEq for Device {
     }
 }
 
-impl From<HidDeviceInfo> for Device {
-    fn from(hid_info: HidDeviceInfo) -> Self {
+impl From<&HidDeviceInfo> for Device {
+    fn from(hid_info: &HidDeviceInfo) -> Self {
         let info = hid_info.clone();
         Device {
-            fd: hid_info.path,
+            fd: info.path.clone(),
             address: Address::default(),
             hid_info: info,
         }
@@ -237,28 +237,43 @@ impl WManager {
         self.hid.refresh_devices();
         debug!("Start searching for devices: {:?}", self.hid.devices());
 
-        let current = self
+        let devices = self
             .hid
-            .devices()
+            .devices();
+        let current = devices
             .iter()
             .find(|hid_info| {
                 hid_info.vendor_id == LEDGER_VID
                     && (hid_info.product_id == LEDGER_S_PID_1
-                        || hid_info.product_id == LEDGER_S_PID_2
-                        || hid_info.product_id == LEDGER_S_PID_3
-                        || hid_info.product_id == LEDGER_X_PID_1
-                        || hid_info.product_id == LEDGER_X_PID_2)
-            })
-            .map(|hid_info| {
-                let mut d = Device::from(hid_info.clone());
-                match self.get_address(&d.fd, Some(hd_path.clone())) {
-                    Ok(address) => d.address = address,
-                    Err(_) => {}
-                }
-                d
+                    || hid_info.product_id == LEDGER_S_PID_2
+                    || hid_info.product_id == LEDGER_S_PID_3
+                    || hid_info.product_id == LEDGER_X_PID_1
+                    || hid_info.product_id == LEDGER_X_PID_2)
             });
 
-        self.device = current;
+        //TODO should verify address before assigning, not after
+        match current {
+            Some(hid_info) => {
+                let mut d = Device::from(hid_info);
+                let fd = d.fd.clone();
+                self.device = Some(d);
+                match self.get_address(&fd, Some(hd_path.clone())) {
+                    Ok(address) => {
+                        self.device = Some(Device {
+                            address,
+                            ..Device::from(hid_info)
+                        });
+                    },
+                    Err(e) => {
+                        self.device = None;
+                    }
+                }
+            },
+            None => {
+                self.device = None;
+            }
+        };
+
         Ok(())
     }
 
