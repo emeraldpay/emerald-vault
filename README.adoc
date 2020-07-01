@@ -1,12 +1,11 @@
-= Emerald Vault (library)
+= Emerald Vault - Key Storage for Emerald Wallet
 
-image:https://travis-ci.org/emeraldpay/emerald-vault.svg?branch=master["Travis CI", link="https://travis-ci.org/emeraldpay/emerald-vault"]
+image:https://travis-ci.org/emeraldpay/emerald-vault.svg?branch=master["Travis CI",link="https://travis-ci.org/emeraldpay/emerald-vault"]
 image:https://coveralls.io/repos/github/emeraldpay/emerald-vault/badge.svg["Coveralls"]
-image:https://img.shields.io/crates/v/emerald-vault-core.svg?style=flat-square["Crates", link="https://crates.io/crates/emerald-vault-core"]
+image:https://img.shields.io/crates/v/emerald-vault.svg?style=flat-square["Crates",link="https://crates.io/crates/emerald-vault"]
 image:https://img.shields.io/badge/License-Apache%202.0-blue.svg["License"]
 
-
-Rust library to access and operate Private Keys, part of https://emeraldwallet.io[Emerald Wallet].
+Rust library to store, access and operate cryptocurrency Private Keys, part of https://emerald.cash[Emerald Wallet].
 
 == Architecture and Features
 
@@ -26,13 +25,19 @@ Rust library to access and operate Private Keys, part of https://emeraldwallet.i
 - `b6923a7f-033f-4370-8861-2621871aeeec.wallet`
 - `130d0800-462c-4c48-8b4a-94cef23351a2.key`
 - `7dc9347a-5ef0-4dc3-bae1-d75d20b1259c.seed`
-* Data encoded with protobuf (see `proto/`)
+* Data is encoded with protobuf (see `proto/`)
 * `.wallet` is general container for different types of addresses (entries).
-Vault can have multiple wallets
+Vault can have multiple wallets.
 * `.key` is an encrypted Private Key used by a wallet entry.
-Can have multiple
+Can have multiple.
 * `.seed` is a reference to a Hardware Key, or encrypted Seed bytes.
-Can have multiple
+Can have multiple.
+* `addressbook.csv` is an Address Book of recipient addresses
+
+.Storage directory:
+* Windows: `%APPDATA%\.emerald`
+* OSX: `~/Library/Emerald`
+* Linux: `~/.emerald`
 
 == Development
 

@@ -2,10 +2,10 @@
 name = "emerald-vault"
 version = "0.27.0"
 authors = ["Igor Artamonov <splix@emeraldpay.io>", "Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
-description = "Ethereum secure account management core libary"
-homepage = "https://emeraldpay.io"
+description = "Emerald Vault - Key Storage for Emerald Wallet"
+homepage = "https://emerald.cash"
 repository = "https://github.com/emeraldpay/emerald-vault"
-documentation = "https://docs.rs/emerald-vault-core"
+documentation = "https://docs.rs/emerald-vault"
 keywords = ["ethereum", "blockchain", "cryptocurrency", "private-key"]
 categories = ["embedded", "external-ffi-bindings"]
 readme = "README.md"
