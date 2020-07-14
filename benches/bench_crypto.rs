@@ -1,19 +1,27 @@
-extern crate emerald_vault_core as emerald;
+extern crate emerald_vault as emerald;
 extern crate rand;
 extern crate tempdir;
 extern crate uuid;
 #[macro_use]
 extern crate bencher;
 
-use crate::emerald::keccak256;
-use crate::emerald::keystore::{os_random, Kdf, KdfDepthLevel, KeyFile};
-use crate::emerald::PrivateKey;
+use crate::{
+    emerald::{
+        structs::{
+            crypto::Encrypted,
+            pk::PrivateKeyHolder,
+        },
+        convert::json::keyfile::{EthereumJsonV3File},
+    }
+};
 
 use bencher::Bencher;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use tempdir::TempDir;
+use std::convert::TryFrom;
+use rand::rngs::OsRng;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 
@@ -49,46 +57,28 @@ pub fn keystore_path() -> PathBuf {
 fn bench_decrypt_scrypt(b: &mut Bencher) {
     let path =
         keyfile_path("UTC--2017-03-17T10-52-08.229Z--0047201aed0b69875b24b614dda0270bcd9f11cc");
+    let keyfile = EthereumJsonV3File::try_from(file_content(path)).unwrap();
+    let pk = PrivateKeyHolder::try_from(&keyfile).unwrap();
 
-    let keyfile = KeyFile::decode(&file_content(path)).unwrap();
-
-    b.iter(|| keyfile.decrypt_key("1234567890"));
+    b.iter(|| pk.decrypt("1234567890"));
 }
 
 fn bench_decrypt_pbkdf2(b: &mut Bencher) {
     let path = keyfile_path("UTC--2017-03-20T17-03-12Z--37e0d14f-7269-7ca0-4419-d7b13abfeea9");
-    let keyfile = KeyFile::decode(&file_content(path)).unwrap();
+    let keyfile = EthereumJsonV3File::try_from(file_content(path)).unwrap();
+    let pk = PrivateKeyHolder::try_from(&keyfile).unwrap();
 
-    b.iter(|| keyfile.decrypt_key("1234567890"));
+    b.iter(|| pk.decrypt("1234567890"));
 }
 
-fn bench_encrypt_scrypt(b: &mut Bencher) {
-    let sec = KdfDepthLevel::Ultra;
-    b.iter(|| KeyFile::new("1234567890", &sec, None, None));
-}
-
-fn bench_encrypt_pbkdf2(b: &mut Bencher) {
-    let mut rng = os_random();
-    let pk = PrivateKey::gen_custom(&mut rng);
-
-    b.iter(|| KeyFile::new_custom(pk, "1234567890", Kdf::from(10240), &mut rng, None, None));
-}
-
-fn bench_small_sha3(b: &mut Bencher) {
-    b.iter(|| keccak256(&[b'-'; 16]));
-}
-
-fn bench_big_sha3(b: &mut Bencher) {
-    b.iter(|| keccak256(&[b'-'; 1024]));
+fn bench_encrypt_message(b: &mut Bencher) {
+    b.iter(|| Encrypted::encrypt("test".as_bytes().to_vec(), "1234567890"));
 }
 
 benchmark_group!(
     benches,
     bench_decrypt_scrypt,
     bench_decrypt_pbkdf2,
-    bench_encrypt_scrypt,
-    bench_encrypt_pbkdf2,
-    bench_small_sha3,
-    bench_big_sha3
+    bench_encrypt_message,
 );
 benchmark_main!(benches);
