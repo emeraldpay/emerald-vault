@@ -12,5 +12,5 @@ indent_size = 4
 [*.{diff, patch, md}]
 trim_trailing_whitespace = false
 
-[*.yaml]
+[*.{yaml, yml}]
 indent_size = 2
