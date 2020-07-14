@@ -34,6 +34,10 @@ jobs:
         run: sudo apt-get install libusb-1.0-0-dev
         if: runner.os == 'Linux'
 
+      - name: Instal LLVM
+        run: choco install -y llvm
+        if: runner.os == 'Windows'
+
       - name: Build
         run: cargo build --all --release
         env:
