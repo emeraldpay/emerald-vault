@@ -1,6 +1,6 @@
 [package]
 name = "emerald-vault"
-version = "0.27.0"
+version = "0.28.0-alpha"
 authors = ["Igor Artamonov <splix@emeraldpay.io>", "Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Emerald Vault - Key Storage for Emerald Wallet"
 homepage = "https://emerald.cash"
