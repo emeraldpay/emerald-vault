@@ -15,10 +15,10 @@ impl KeyDerive for Pbkdf2 {
         let mut key = vec![0u8; self.dklen as usize];
         match self.prf {
             PrfType::HmacSha256 => {
-                pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &self.salt, self.c as usize, &mut key)
+                pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &self.salt, self.c, &mut key)
             }
             PrfType::HmacSha512 => {
-                pbkdf2::<Hmac<Sha512>>(password.as_bytes(), &self.salt, self.c as usize, &mut key)
+                pbkdf2::<Hmac<Sha512>>(password.as_bytes(), &self.salt, self.c, &mut key)
             }
         };
         Ok(key.to_vec())

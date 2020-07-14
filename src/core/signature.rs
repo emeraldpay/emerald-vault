@@ -84,11 +84,11 @@ pub struct PrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
 impl PrivateKey {
     /// Generate a new `PrivateKey` at random (`rand::OsRng`)
     pub fn gen() -> Self {
-        Self::gen_custom(&mut os_random())
+        Self::gen_custom(&mut OsRng::new().expect("Randomness is not ready"))
     }
 
     /// Generate a new `PrivateKey` with given custom random generator
-    pub fn gen_custom<R: Rng>(rng: &mut R) -> Self {
+    pub fn gen_custom<R: Rng + ?Sized>(rng: &mut R) -> Self {
         PrivateKey::from(SecretKey::new(rng))
     }
 
@@ -195,10 +195,6 @@ impl fmt::Display for PrivateKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "0x{}", hex::encode(self.0))
     }
-}
-
-fn os_random() -> OsRng {
-    OsRng::new().expect("Expect OS specific random number generator")
 }
 
 fn message_hash(msg: &str) -> [u8; KECCAK256_BYTES] {

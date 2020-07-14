@@ -31,15 +31,14 @@ use num::bigint::BigUint;
 use num::{FromPrimitive, ToPrimitive};
 use pbkdf2::pbkdf2;
 use rand::distributions::Standard;
-use rand::{rngs::OsRng, thread_rng, Rng, RngCore};
-use sha2::{self, Digest};
-use sha2::{Sha256, Sha512};
+use rand::{rngs::OsRng, thread_rng, RngCore, Rng};
+use sha2::{Sha256, Sha512, Digest};
 use std::ops::{BitAnd, BitOr, Shl, Shr};
 
 /// Count of iterations for `pbkdf2`
-const PBKDF2_ROUNDS: usize = 2048;
+const PBKDF2_ROUNDS: u32 = 2048;
 /// word index size in bits
-const INDEX_BIT_SIZE: usize = 11;
+const INDEX_BIT_SIZE: u32 = 11;
 
 /// Mnemonic phrase
 #[derive(Debug, Clone)]
@@ -298,8 +297,8 @@ pub fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
 /// Calculate checksum for mnemonic
 fn checksum(data: &[u8], size: MnemonicSize) -> u8 {
     let mut hash = sha2::Sha256::new();
-    hash.input(data);
-    let val = hash.result()[0];
+    hash.update(data);
+    let val = hash.finalize()[0];
     size.checksum_bits(val)
 }
 
@@ -347,7 +346,7 @@ fn get_indexes(entropy: &[u8], size: MnemonicSize) -> Result<Vec<usize>, Error> 
     let mut base_mask = BigUint::from_u16(0b11111111111).expect("expect initialize word index");
     let mut out: Vec<usize> = Vec::with_capacity(size.words_count());
     for i in 0..size.words_count() {
-        let pos = (size.words_count() - 1 - i) * INDEX_BIT_SIZE;
+        let pos = (size.words_count() - 1 - i) * (INDEX_BIT_SIZE as usize);
         match data.clone().shr(pos).bitand(&base_mask.clone()).to_usize() {
             Some(v) => out.push(v),
             None => {

@@ -3,7 +3,7 @@ use crate::crypto::kdf::KeyDerive;
 use crate::keccak256;
 use crate::structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, ScryptKdf};
 use aes_ctr::stream_cipher::generic_array::GenericArray;
-use aes_ctr::stream_cipher::{NewFixStreamCipher, StreamCipherCore};
+use aes_ctr::stream_cipher::{NewStreamCipher, StreamCipher, SyncStreamCipher};
 use aes_ctr::Aes128Ctr;
 use rand::prelude::Rng;
 use rand::thread_rng;
