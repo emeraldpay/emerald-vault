@@ -41,14 +41,16 @@ jobs:
       - name: Build
         uses: actions-rs/cargo@v1
         with:
-          command: build --all --release
+          command: build
+          args: --all --release
         env:
           RUST_BACKTRACE: "1"
 
       - name: Test
         uses: actions-rs/cargo@v1
         with:
-          command: test --all --release
+          command: test
+          args: --all --release
         env:
           RUST_BACKTRACE: "1"
 
@@ -58,6 +60,9 @@ jobs:
     steps:
       - name: Checkout the code
         uses: actions/checkout@v2
+
+      - name: Instal system libs
+        run: sudo apt-get install libusb-1.0-0-dev
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
