@@ -1,0 +1,6 @@
+llvm: true
+output-type: lcov
+ignore:
+  - "target/*"
+  - "/usr/share/rust/.cargo/*"
+  - "/.cargo/*"
