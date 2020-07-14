@@ -2,6 +2,7 @@
 
 image:https://github.com/emeraldpay/emerald-vault/workflows/Test/badge.svg["Test"]
 image:https://coveralls.io/repos/github/emeraldpay/emerald-vault/badge.svg["Coveralls"]
+image:https://codecov.io/gh/emeraldpay/emeraldpay/branch/master/graph/badge.svg[Codecov,link=https://codecov.io/gh/emeraldpay/emerald-vault]
 image:https://img.shields.io/crates/v/emerald-vault.svg?style=flat-square["Crates",link="https://crates.io/crates/emerald-vault"]
 image:https://img.shields.io/badge/License-Apache%202.0-blue.svg["License"]
 
