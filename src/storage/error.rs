@@ -96,3 +96,9 @@ impl std::convert::From<HWalletError> for VaultError {
         VaultError::HDKeyFailed(err)
     }
 }
+
+impl std::convert::From<hdpath::Error> for VaultError {
+    fn from(err: hdpath::Error) -> Self {
+        VaultError::UnsupportedDataError(format!("Invalid HDPath: {:?}", err))
+    }
+}

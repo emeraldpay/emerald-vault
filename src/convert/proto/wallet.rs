@@ -1,5 +1,4 @@
 use crate::convert::error::ConversionError;
-use crate::hdwallet::bip32::HDPath;
 use crate::structs::wallet::ReservedPath;
 use crate::{
     core::{chains::Blockchain, Address},

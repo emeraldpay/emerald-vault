@@ -30,7 +30,6 @@ use self::comm::sendrecv;
 pub use self::error::Error;
 use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
 use crate::hdwallet::comm::ping;
-use bip32::HDPath;
 use hex;
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
 use std::str::{from_utf8, FromStr};
@@ -375,7 +374,6 @@ mod tests {
     use super::*;
     use crate::core::chains::{Blockchain, EthereumChainId};
     use crate::core::Transaction;
-    use crate::hdwallet::bip32::{path_to_arr, to_prefixed_path};
     use crate::hdwallet::test_commons::{
         get_ledger_conf, is_ledger_enabled, read_test_addresses, read_test_txes,
     };
@@ -383,6 +381,8 @@ mod tests {
     use hex;
     use log::{Level, LevelFilter};
     use simple_logger::init_with_level;
+    use hdpath::StandardHDPath;
+    use std::convert::TryFrom;
 
     pub const ETC_DERIVATION_PATH: [u8; 21] = [
         5, 0x80, 0, 0, 44, 0x80, 0, 0, 60, 0x80, 0x02, 0x73, 0xd0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -415,7 +415,7 @@ mod tests {
         let test_txes = read_test_txes();
         let exp = &test_txes[2];
         let from = exp.from.as_ref().unwrap();
-        let from = HDPath::try_from(from.as_str()).expect("invalid from");
+        let from = StandardHDPath::try_from(from.as_str()).expect("invalid from");
 
         let chain: u8 = EthereumChainId::from(Blockchain::Ethereum).as_chainid();
         let rlp = tx.to_rlp(Some(chain));
@@ -452,7 +452,7 @@ mod tests {
         let test_txes = read_test_txes();
         let exp = &test_txes[1];
         let from = exp.from.as_ref().unwrap();
-        let from = HDPath::try_from(from.as_str()).expect("invalid from");
+        let from = StandardHDPath::try_from(from.as_str()).expect("invalid from");
 
         let chain: u8 = EthereumChainId::from(Blockchain::EthereumClassic).as_chainid();
         let rlp = tx.to_rlp(Some(chain));
@@ -488,7 +488,7 @@ mod tests {
         let test_txes = read_test_txes();
         let exp = &test_txes[3];
         let from = exp.from.as_ref().unwrap();
-        let from = HDPath::try_from(from.as_str()).expect("invalid from");
+        let from = StandardHDPath::try_from(from.as_str()).expect("invalid from");
 
         let chain: u8 = EthereumChainId::from(Blockchain::KovanTestnet).as_chainid();
         let rlp = tx.to_rlp(Some(chain));
@@ -595,7 +595,7 @@ mod tests {
 
         let addresses = read_test_addresses();
         for address in addresses {
-            let hdpath = HDPath::try_from(address.hdpath.as_str()).expect("Invalid HDPath");
+            let hdpath = StandardHDPath::try_from(address.hdpath.as_str()).expect("Invalid HDPath");
             let act = manager.get_address(fd, Some(hdpath.to_bytes())).unwrap();
             assert_eq!(act, address.address);
         }
@@ -622,30 +622,4 @@ mod tests {
         assert_eq!(manager.pick_hd_path(None).unwrap(), buf1);
     }
 
-    #[test]
-    pub fn should_parse_hd_path() {
-        let path_str = "m/44'/60'/160720'/0/0";
-        assert_eq!(
-            ETC_DERIVATION_PATH[1..].to_vec(),
-            path_to_arr(&path_str).unwrap()
-        );
-    }
-
-    #[test]
-    pub fn should_fail_parse_hd_path() {
-        let mut path_str = "44'/60'/160720'/0/0";
-        assert!(path_to_arr(&path_str).is_err());
-
-        path_str = "44'/60'/16011_11111111111111111zz1111111111111111111111111111111'/0/0";
-        assert!(path_to_arr(&path_str).is_err());
-    }
-
-    #[test]
-    pub fn should_parse_hd_path_into_prefixed() {
-        let path_str = "m/44'/60'/160720'/0/0";
-        assert_eq!(
-            ETC_DERIVATION_PATH.to_vec(),
-            to_prefixed_path(&path_str).unwrap()
-        );
-    }
 }

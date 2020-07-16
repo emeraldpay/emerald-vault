@@ -2,7 +2,7 @@ use crate::hdwallet::WManager;
 use crate::{
     convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
     core::chains::{Blockchain, EthereumChainId},
-    mnemonic::{generate_key, HDPath},
+    mnemonic::{generate_key},
     storage::{error::VaultError, vault::VaultStorage},
     structs::{
         seed::{SeedRef, SeedSource},
@@ -16,6 +16,7 @@ use std::str::FromStr;
 use uuid::Uuid;
 use std::time::SystemTime;
 use chrono::{DateTime, Utc};
+use std::convert::TryFrom;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
@@ -177,7 +178,7 @@ impl WalletEntry {
         _: Uuid, //not used yet
         hd_path: StandardHDPath,
     ) -> Result<Vec<u8>, VaultError> {
-        let hd_path = HDPath::try_from(hd_path.to_string().as_str())
+        let hd_path = StandardHDPath::try_from(hd_path.to_string().as_str())
             .map_err(|_| VaultError::InvalidDataError("HDPath".to_string()))?;
 
         //TODO verify actual device, right now vault just uses a first currently available device
@@ -250,7 +251,7 @@ impl WalletEntry {
                 match seed_details.source {
                     SeedSource::Bytes(bytes) => {
                         let seed_key = bytes.decrypt(password.as_str())?;
-                        let hd_path = HDPath::try_from(seed.hd_path.to_string().as_str())?;
+                        let hd_path = StandardHDPath::try_from(seed.hd_path.to_string().as_str())?;
                         generate_key(&hd_path, &seed_key).map_err(|_| VaultError::InvalidPrivateKey)
                     }
                     SeedSource::Ledger(_) => Err(VaultError::PrivateKeyUnavailable),
@@ -280,7 +281,7 @@ impl WalletEntry {
                         }
                         let password = password.unwrap();
                         let seed_key = bytes.decrypt(password.as_str())?;
-                        let hd_path = HDPath::try_from(seed.hd_path.to_string().as_str())?;
+                        let hd_path = StandardHDPath::try_from(seed.hd_path.to_string().as_str())?;
                         let key = generate_key(&hd_path, &seed_key)
                             .map_err(|_| VaultError::InvalidPrivateKey)?;
                         EthereumJsonV3File::from_pk(label, key, password)

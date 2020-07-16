@@ -24,7 +24,7 @@ mod language;
 
 pub use self::error::Error;
 pub use self::language::{Language, BIP39_ENGLISH_WORDLIST};
-pub use crate::hdwallet::bip32::{generate_key, HDPath};
+pub use crate::hdwallet::bip32::{generate_key};
 use crate::mnemonic::error::Error::MnemonicError;
 use hmac::Hmac;
 use num::bigint::BigUint;

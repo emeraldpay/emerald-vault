@@ -1,4 +1,4 @@
-use crate::hdwallet::bip32::{generate_key, HDPath};
+use crate::hdwallet::bip32::generate_key;
 use crate::hdwallet::WManager;
 use crate::storage::addressbook::AddressbookStorage;
 use crate::storage::archive::ArchiveType;
@@ -483,7 +483,7 @@ impl AddEntry {
     pub fn seed_hd(
         &self,
         seed_id: Uuid,
-        hd_path: HDPath,
+        hd_path: StandardHDPath,
         blockchain: Blockchain,
         password: Option<String>,
         expected_address: Option<Address>,

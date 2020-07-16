@@ -55,6 +55,7 @@ extern crate sha2;
 extern crate sha3;
 extern crate time;
 extern crate uuid;
+extern crate hdpath;
 
 #[macro_use]
 pub mod util;

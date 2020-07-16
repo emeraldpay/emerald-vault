@@ -1,5 +1,4 @@
 use crate::crypto::error::CryptoError;
-use crate::hdwallet::bip32::HDPath;
 use crate::structs::crypto::Encrypted;
 use crate::structs::types::HasUuid;
 use crate::Address;
@@ -74,34 +73,17 @@ impl SeedSource {
 }
 
 impl SeedRef {
-    /// parse current HDPath
-    pub fn parsed_hd_path(&self) -> Result<HDPath, ()> {
-        HDPath::try_from(self.hd_path.to_string().as_str()).map_err(|_| ())
-    }
 
     /// extract Account from HDPath if it's structured as BIP-44. (m/purpose'/coin_type'/account'/change/address_index)
     /// To do so the HDPath must be valid and starts with 3 hardened values (purpose'/coin_type'/account'),
     /// otherwise the method returns Err
     pub fn get_account_id(&self) -> Result<u32, ()> {
-        if let Ok(path) = self.parsed_hd_path() {
-            //for BIP44 == m/purpose'/coin_type'/account'/change/address_index
-            if path.len() > 2
-                && path[0].is_hardened()
-                && path[1].is_hardened()
-                && path[2].is_hardened()
-            {
-                if let ChildNumber::Hardened { index: n } = path[2] {
-                    return Ok(n);
-                }
-            }
-        }
-        Err(())
+        Ok(self.hd_path.account())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::hdwallet::bip32::HDPath;
     use crate::structs::seed::SeedRef;
     use hdpath::StandardHDPath;
     use std::convert::TryFrom;
