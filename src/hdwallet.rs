@@ -28,7 +28,7 @@ mod error;
 use self::apdu::ApduBuilder;
 use self::comm::sendrecv;
 pub use self::error::Error;
-use super::{to_arr, Address, Signature, ECDSA_SIGNATURE_BYTES};
+use super::{to_arr, EthereumAddress, EthereumSignature, ECDSA_SIGNATURE_BYTES};
 use crate::hdwallet::comm::ping;
 use hex;
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
@@ -51,7 +51,7 @@ const DERIVATION_INDEX_SIZE: usize = 4;
 
 /// Type used for device listing,
 /// String corresponds to file descriptor of the device
-pub type DevicesList = Vec<(Address, String)>;
+pub type DevicesList = Vec<(EthereumAddress, String)>;
 
 ///
 #[derive(Debug)]
@@ -59,7 +59,7 @@ struct Device {
     ///
     fd: String,
     ///
-    address: Address,
+    address: EthereumAddress,
     ///
     hid_info: HidDeviceInfo,
 }
@@ -75,7 +75,7 @@ impl From<&HidDeviceInfo> for Device {
         let info = hid_info.clone();
         Device {
             fd: info.path.clone(),
-            address: Address::default(),
+            address: EthereumAddress::default(),
             hid_info: info,
         }
     }
@@ -117,7 +117,7 @@ impl WManager {
     /// fd - file descriptor to corresponding HID device
     /// hd_path - optional HD path, prefixed with count of derivation indexes
     ///
-    pub fn get_address(&self, fd: &str, hd_path: Option<Vec<u8>>) -> Result<Address, Error> {
+    pub fn get_address(&self, fd: &str, hd_path: Option<Vec<u8>>) -> Result<EthereumAddress, Error> {
         let hd_path = self.pick_hd_path(hd_path)?;
 
         let apdu = ApduBuilder::new(GET_ETH_ADDRESS)
@@ -141,7 +141,7 @@ impl WManager {
                     })
             })
             .and_then(|s| {
-                Address::from_str(&s).map_err(|e| {
+                EthereumAddress::from_str(&s).map_err(|e| {
                     Error::HDWalletError(format!("Can't parse address: {}", e.to_string()))
                 })
             })?;
@@ -161,7 +161,7 @@ impl WManager {
         _fd: &str,
         _data: &[u8],
         _hd_path: &Option<Vec<u8>>,
-    ) -> Result<Signature, Error> {
+    ) -> Result<EthereumSignature, Error> {
         Err(Error::HDWalletError("Can't sign data".to_string()))
     }
 
@@ -177,7 +177,7 @@ impl WManager {
         fd: &str,
         tr: &[u8],
         hd_path: Option<Vec<u8>>,
-    ) -> Result<Signature, Error> {
+    ) -> Result<EthereumSignature, Error> {
         let hd_path = self.pick_hd_path(hd_path)?;
 
         let _mock = Vec::new();
@@ -212,7 +212,7 @@ impl WManager {
                 let mut val: [u8; ECDSA_SIGNATURE_BYTES] = [0; ECDSA_SIGNATURE_BYTES];
                 val.copy_from_slice(&res);
 
-                Ok(Signature::from(val))
+                Ok(EthereumSignature::from(val))
             }
             v => Err(Error::HDWalletError(format!(
                 "Invalid signature length. Expected: {}, received: {}",
@@ -316,14 +316,14 @@ impl WManager {
 
 #[cfg(test)]
 pub mod test_commons {
-    use crate::Address;
+    use crate::EthereumAddress;
     use std::env;
     use std::fs;
 
     #[derive(Deserialize)]
     pub struct TestAddress {
         pub hdpath: String,
-        pub address: Address,
+        pub address: EthereumAddress,
     }
 
     #[derive(Deserialize)]
@@ -372,8 +372,8 @@ pub mod test_commons {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::chains::{Blockchain, EthereumChainId};
-    use crate::core::Transaction;
+    use crate::blockchain::chains::{Blockchain, EthereumChainId};
+    use crate::blockchain::EthereumTransaction;
     use crate::hdwallet::test_commons::{
         get_ledger_conf, is_ledger_enabled, read_test_addresses, read_test_txes,
     };
@@ -397,14 +397,14 @@ mod tests {
         let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
         manager.update(None).unwrap();
 
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 0x00,
             gas_price: /* 21000000000 */
             to_32bytes("0000000000000000000000000000000\
                                           0000000000000000000000004e3b29200"),
             gas_limit: 0x5208,
             to: Some("78296F1058dD49C5D6500855F59094F0a2876397"
-                .parse::<Address>()
+                .parse::<EthereumAddress>()
                 .unwrap()),
             value: /* 1 ETC */
             to_32bytes("00000000000000000000000000000000\
@@ -438,14 +438,14 @@ mod tests {
         let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
         manager.update(None).unwrap();
 
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 0x05,
             gas_price: /* 21000000000 */
-                to_32bytes("00000000000000000000000000000000000000000000000000000004e3b29200"),
+            to_32bytes("00000000000000000000000000000000000000000000000000000004e3b29200"),
             gas_limit: 0x5208,
-            to: Some("78296F1058dD49C5D6500855F59094F0a2876397".parse::<Address>().unwrap()),
+            to: Some("78296F1058dD49C5D6500855F59094F0a2876397".parse::<EthereumAddress>().unwrap()),
             value: /* 1 ETC */
-                to_32bytes("0000000000000000000000000000000000000000000000000de0b6b3a7640000"),
+            to_32bytes("0000000000000000000000000000000000000000000000000de0b6b3a7640000"),
             data: Vec::new(),
         };
 
@@ -474,12 +474,12 @@ mod tests {
         let mut manager = WManager::new(Some(ETC_DERIVATION_PATH.to_vec())).unwrap();
         manager.update(None).unwrap();
 
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 0x05,
             gas_price: /* 21000000000 */
             to_32bytes("00000000000000000000000000000000000000000000000000000004e3b29200"),
             gas_limit: 0x5208,
-            to: Some("78296F1058dD49C5D6500855F59094F0a2876397".parse::<Address>().unwrap()),
+            to: Some("78296F1058dD49C5D6500855F59094F0a2876397".parse::<EthereumAddress>().unwrap()),
             value: /* 1 ETC */
             to_32bytes("0000000000000000000000000000000000000000000000000de0b6b3a7640000"),
             data: Vec::new(),
@@ -521,14 +521,14 @@ mod tests {
             data.extend_from_slice(&[0xcc, 0xcc, 0xcc, 0xcc, 0xcc, 0xcc]);
             data.push(0x11);
         }
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 0x01,
             gas_price: /* 21000000000 */
             to_32bytes("0000000000000000000000000000000\
                                           0000000000000000000000004e3b29200"),
             gas_limit: 0x5208,
             to: Some("c0de379b51d582e1600c76dd1efee8ed024b844a"
-                .parse::<Address>()
+                .parse::<EthereumAddress>()
                 .unwrap()),
             value: /* 1 ETC */
             to_32bytes("00000000000000000000000000000000\

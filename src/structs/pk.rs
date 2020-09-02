@@ -1,6 +1,6 @@
 use crate::structs::crypto::Encrypted;
 use crate::structs::types::HasUuid;
-use crate::{Address, PrivateKey};
+use crate::{EthereumAddress, EthereumPrivateKey};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
@@ -16,7 +16,7 @@ pub enum PrivateKeyType {
 }
 
 pub struct EthereumPk3 {
-    pub address: Option<Address>,
+    pub address: Option<EthereumAddress>,
     pub key: Encrypted,
 }
 

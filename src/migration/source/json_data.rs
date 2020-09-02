@@ -3,7 +3,7 @@ use crate::{
     structs::crypto::{
         Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, Pbkdf2, PrfType, ScryptKdf,
     },
-    Address,
+    EthereumAddress,
 };
 use std::convert::TryFrom;
 use uuid::Uuid;
@@ -32,7 +32,7 @@ pub struct KeyFileV2 {
     pub description: Option<String>,
 
     /// Address
-    pub address: Option<Address>,
+    pub address: Option<EthereumAddress>,
 
     /// UUID v4
     pub uuid: Uuid,
@@ -46,7 +46,7 @@ pub struct KeyFileV2 {
 pub struct SerializableKeyFileCoreV2 {
     version: u8,
     id: Uuid,
-    address: Option<Address>,
+    address: Option<EthereumAddress>,
     name: Option<String>,
     description: Option<String>,
     visible: Option<bool>,
@@ -58,7 +58,7 @@ pub struct SerializableKeyFileCoreV2 {
 pub struct SerializableKeyFileHDV2 {
     version: u8,
     id: Uuid,
-    address: Option<Address>,
+    address: Option<EthereumAddress>,
     name: Option<String>,
     description: Option<String>,
     visible: Option<bool>,
@@ -181,7 +181,7 @@ pub struct HdwalletCryptoV2 {
 
 #[derive(Deserialize, Clone, Debug, Eq, PartialEq)]
 pub struct AddressBookItem {
-    pub address: Address,
+    pub address: EthereumAddress,
     pub name: Option<String>,
     pub description: Option<String>,
 }
@@ -286,7 +286,7 @@ impl KeyFileV2 {
 #[cfg(test)]
 mod tests {
     use crate::migration::source::json_data::{AddressBookItem, CryptoTypeV2, KeyFileV2};
-    use crate::Address;
+    use crate::EthereumAddress;
     use std::str::FromStr;
 
     #[test]
@@ -305,9 +305,9 @@ mod tests {
         let act = act.unwrap();
         assert_eq!(
             AddressBookItem {
-                address: Address::from_str("0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2").unwrap(),
+                address: EthereumAddress::from_str("0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2").unwrap(),
                 description: Some("тест".to_string()),
-                name: Some("name 1".to_string())
+                name: Some("name 1".to_string()),
             },
             act
         );

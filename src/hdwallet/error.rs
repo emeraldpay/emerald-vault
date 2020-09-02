@@ -16,7 +16,7 @@ limitations under the License.
 */
 //! # `HDWallet` Keystore files (UTC / JSON) module errors
 
-use crate::core;
+use crate::blockchain;
 use bitcoin::util::bip32;
 use std::{error, fmt, io};
 
@@ -30,8 +30,8 @@ pub enum Error {
     CommError(String),
 }
 
-impl From<core::Error> for Error {
-    fn from(err: core::Error) -> Self {
+impl From<blockchain::Error> for Error {
+    fn from(err: blockchain::Error) -> Self {
         Error::HDWalletError(err.to_string())
     }
 }

@@ -16,9 +16,9 @@ limitations under the License.
 */
 //! # Account ECDSA signatures using the SECG curve secp256k1
 
-use super::util::{keccak256, to_arr, KECCAK256_BYTES};
-use super::Address;
-use super::Error;
+use crate::util::{keccak256, to_arr, KECCAK256_BYTES};
+use super::EthereumAddress;
+use super::super::Error;
 use hex;
 use rand::{rngs::OsRng, Rng};
 use secp256k1::key::{PublicKey, SecretKey};
@@ -37,7 +37,7 @@ lazy_static! {
 
 /// Transaction sign data (see Appendix F. "Signing Transactions" from Yellow Paper)
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Signature {
+pub struct EthereumSignature {
     /// ‘recovery id’, a 1 byte value specifying the sign and finiteness of the curve point
     pub v: u8,
 
@@ -48,9 +48,9 @@ pub struct Signature {
     pub s: [u8; 32],
 }
 
-impl From<[u8; ECDSA_SIGNATURE_BYTES]> for Signature {
+impl From<[u8; ECDSA_SIGNATURE_BYTES]> for EthereumSignature {
     fn from(data: [u8; ECDSA_SIGNATURE_BYTES]) -> Self {
-        let mut sign = Signature::default();
+        let mut sign = EthereumSignature::default();
 
         sign.v = data[0];
         sign.r.copy_from_slice(&data[1..(1 + 32)]);
@@ -60,13 +60,13 @@ impl From<[u8; ECDSA_SIGNATURE_BYTES]> for Signature {
     }
 }
 
-impl Into<(u8, [u8; 32], [u8; 32])> for Signature {
+impl Into<(u8, [u8; 32], [u8; 32])> for EthereumSignature {
     fn into(self) -> (u8, [u8; 32], [u8; 32]) {
         (self.v, self.r, self.s)
     }
 }
 
-impl Into<String> for Signature {
+impl Into<String> for EthereumSignature {
     fn into(self) -> String {
         format!(
             "0x{:X}{}{}",
@@ -79,9 +79,9 @@ impl Into<String> for Signature {
 
 /// Private key used as x in an ECDSA signature
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct PrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
+pub struct EthereumPrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
 
-impl PrivateKey {
+impl EthereumPrivateKey {
     /// Generate a new `PrivateKey` at random (`rand::OsRng`)
     pub fn gen() -> Self {
         Self::gen_custom(&mut OsRng::new().expect("Randomness is not ready"))
@@ -89,7 +89,7 @@ impl PrivateKey {
 
     /// Generate a new `PrivateKey` with given custom random generator
     pub fn gen_custom<R: Rng + ?Sized>(rng: &mut R) -> Self {
-        PrivateKey::from(SecretKey::new(rng))
+        EthereumPrivateKey::from(SecretKey::new(rng))
     }
 
     /// Try to convert a byte slice into `PrivateKey`.
@@ -102,7 +102,7 @@ impl PrivateKey {
     ///
     /// ```
     /// const PKB: usize = emerald_vault::PRIVATE_KEY_BYTES;
-    /// let pk = emerald_vault::PrivateKey::try_from(&[0u8; PKB]).unwrap();
+    /// let pk = emerald_vault::EthereumPrivateKey::try_from(&[0u8; PKB]).unwrap();
     /// assert_eq!(pk.to_string(),
     ///            "0x0000000000000000000000000000000000000000000000000000000000000000");
     /// ```
@@ -111,28 +111,28 @@ impl PrivateKey {
             return Err(Error::InvalidLength(data.len()));
         }
 
-        Ok(PrivateKey(to_arr(data)))
+        Ok(EthereumPrivateKey(to_arr(data)))
     }
 
     /// Extract `Address` from current private key.
-    pub fn to_address(self) -> Address {
+    pub fn to_address(self) -> EthereumAddress {
         let key = PublicKey::from_secret_key(&ECDSA, &self.into());
         let hash = keccak256(&key.serialize_uncompressed()[1..] /* cut '04' */);
-        Address(to_arr(&hash[12..]))
+        EthereumAddress(to_arr(&hash[12..]))
     }
 
     /// Sign message
-    pub fn sign_message(&self, msg: &str) -> Result<Signature, Error> {
+    pub fn sign_message(&self, msg: &str) -> Result<EthereumSignature, Error> {
         self.sign_hash(message_hash(msg))
     }
 
     /// Sign a slice of bytes
-    pub fn sign_bytes(&self, data: &[u8]) -> Result<Signature, Error> {
+    pub fn sign_bytes(&self, data: &[u8]) -> Result<EthereumSignature, Error> {
         self.sign_hash(bytes_hash(data))
     }
 
     /// Sign hash from message (Keccak-256)
-    pub fn sign_hash(&self, hash: [u8; KECCAK256_BYTES]) -> Result<Signature, Error> {
+    pub fn sign_hash(&self, hash: [u8; KECCAK256_BYTES]) -> Result<EthereumSignature, Error> {
         let msg = Message::from_slice(&hash)?;
         let key = SecretKey::from_slice(self)?;
 
@@ -143,11 +143,11 @@ impl PrivateKey {
         buf[0] = (rid.to_i32() + 27) as u8;
         buf[1..65].copy_from_slice(&sig[0..64]);
 
-        Ok(Signature::from(buf))
+        Ok(EthereumSignature::from(buf))
     }
 }
 
-impl ops::Deref for PrivateKey {
+impl ops::Deref for EthereumPrivateKey {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
@@ -155,25 +155,25 @@ impl ops::Deref for PrivateKey {
     }
 }
 
-impl From<[u8; PRIVATE_KEY_BYTES]> for PrivateKey {
+impl From<[u8; PRIVATE_KEY_BYTES]> for EthereumPrivateKey {
     fn from(bytes: [u8; PRIVATE_KEY_BYTES]) -> Self {
-        PrivateKey(bytes)
+        EthereumPrivateKey(bytes)
     }
 }
 
-impl From<SecretKey> for PrivateKey {
+impl From<SecretKey> for EthereumPrivateKey {
     fn from(key: SecretKey) -> Self {
-        PrivateKey(to_arr(&key[0..PRIVATE_KEY_BYTES]))
+        EthereumPrivateKey(to_arr(&key[0..PRIVATE_KEY_BYTES]))
     }
 }
 
-impl Into<SecretKey> for PrivateKey {
+impl Into<SecretKey> for EthereumPrivateKey {
     fn into(self) -> SecretKey {
         SecretKey::from_slice(&self).expect("Expect secret key")
     }
 }
 
-impl str::FromStr for PrivateKey {
+impl str::FromStr for EthereumPrivateKey {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -187,11 +187,11 @@ impl str::FromStr for PrivateKey {
             s
         };
 
-        PrivateKey::try_from(hex::decode(&value)?.as_slice())
+        EthereumPrivateKey::try_from(hex::decode(&value)?.as_slice())
     }
 }
 
-impl fmt::Display for PrivateKey {
+impl fmt::Display for EthereumPrivateKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "0x{}", hex::encode(self.0))
     }
@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn should_convert_into_address() {
-        let key = PrivateKey(to_32bytes(
+        let key = EthereumPrivateKey(to_32bytes(
             "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf",
         ));
 
@@ -231,7 +231,7 @@ mod tests {
 
     #[test]
     fn should_sign_hash() {
-        let key = PrivateKey(to_32bytes(
+        let key = EthereumPrivateKey(to_32bytes(
             "3c9229289a6125f7fdf1885a77bb12c37a8d3b4962d936f7e3084dece32a3ca1",
         ));
 

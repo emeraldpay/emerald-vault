@@ -1,7 +1,7 @@
 use crate::migration::source::json_data::SerializableKeyFileCoreV2;
 use crate::storage::archive::{Archive, ArchiveType};
 use crate::{
-    core::chains::{Blockchain, EthereumChainId},
+    blockchain::chains::{Blockchain, EthereumChainId},
     migration::source::common::add_to_vault,
     migration::types::MigrationResult,
     migration::types::{Migrate, MigrationError},
@@ -156,13 +156,13 @@ impl Migrate for V1Storage {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::chains::Blockchain;
+    use crate::blockchain::chains::Blockchain;
     use crate::migration::source::v1::V1Storage;
     use crate::migration::test_commons::{show_dir, sort_wallets, unzip};
     use crate::migration::types::Migrate;
     use crate::storage::vault::VaultStorage;
     use crate::structs::wallet::Wallet;
-    use crate::Address;
+    use crate::EthereumAddress;
     use std::str::FromStr;
     use tempdir::TempDir;
 
@@ -202,11 +202,11 @@ mod tests {
         assert_eq!(etc_wallets.len(), 2);
         assert_eq!(
             etc_wallets[0].get_entry(0).unwrap().address,
-            Some(Address::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
+            Some(EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
         );
         assert_eq!(
             etc_wallets[1].get_entry(0).unwrap().address,
-            Some(Address::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
+            Some(EthereumAddress::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
         );
 
         let kovan_wallets: Vec<&Wallet> = wallets

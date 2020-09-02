@@ -247,10 +247,10 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
 mod tests {
     use crate::storage::addressbook::AddressbookStorage;
     use crate::{
-        core::chains::Blockchain,
+        blockchain::chains::Blockchain,
         storage::{addressbook::AddressBookmark, vault::VaultAccess},
         structs::book::{AddressRef, BookmarkDetails},
-        Address,
+        EthereumAddress,
     };
     use std::fs;
     use std::path::Path;
@@ -344,7 +344,7 @@ mod tests {
                 label: Some("Hello World!".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(
-                    Address::from_str("0x085fb4f24031eaedbc2b611aa528f22343eb52db").unwrap(),
+                    EthereumAddress::from_str("0x085fb4f24031eaedbc2b611aa528f22343eb52db").unwrap(),
                 ),
                 created_at: Utc::now(),
             },
@@ -379,7 +379,7 @@ mod tests {
                 label: Some("Hello World 1".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(
-                    Address::from_str("0x5bee6233f7e2307746266deb0678f22686932c26").unwrap(),
+                    EthereumAddress::from_str("0x5bee6233f7e2307746266deb0678f22686932c26").unwrap(),
                 ),
                 created_at: Utc::now(),
             },
@@ -391,7 +391,7 @@ mod tests {
                 label: Some("Hello World 2".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(
-                    Address::from_str("0x732c628300f2da4d54f988b22eeca520356743dc").unwrap(),
+                    EthereumAddress::from_str("0x732c628300f2da4d54f988b22eeca520356743dc").unwrap(),
                 ),
                 created_at: Utc::now(),
             },
@@ -403,7 +403,7 @@ mod tests {
                 label: Some("Hello World 3".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(
-                    Address::from_str("0xfac41abcf13f5dcd83d8c20d5ed5e07e1968a348").unwrap(),
+                    EthereumAddress::from_str("0xfac41abcf13f5dcd83d8c20d5ed5e07e1968a348").unwrap(),
                 ),
                 created_at: Utc::now(),
             },

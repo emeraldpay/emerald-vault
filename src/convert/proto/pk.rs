@@ -1,6 +1,6 @@
 use crate::convert::error::ConversionError;
 use crate::{
-    core::Address,
+    blockchain::EthereumAddress,
     proto::{
         common::FileType as proto_FileType,
         crypto::Encrypted as proto_Encrypted,
@@ -34,7 +34,7 @@ impl TryFrom<&[u8]> for PrivateKeyHolder {
                     Some(v) => Encrypted::try_from(v),
                     None => Err(ConversionError::FieldIsEmpty("encrypted".to_string())),
                 }?;
-                let address = match Address::from_str(pk.get_address()) {
+                let address = match EthereumAddress::from_str(pk.get_address()) {
                     Ok(a) => Some(a),
                     Err(_) => None,
                 };

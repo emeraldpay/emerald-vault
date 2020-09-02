@@ -60,7 +60,7 @@ extern crate hdpath;
 #[macro_use]
 pub mod util;
 pub mod convert;
-pub mod core;
+pub mod blockchain;
 pub mod crypto;
 pub mod hdwallet;
 pub mod migration;
@@ -69,7 +69,7 @@ pub mod proto;
 pub mod storage;
 pub mod structs;
 
-pub use self::core::*;
+pub use self::blockchain::*;
 pub use self::util::*;
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");

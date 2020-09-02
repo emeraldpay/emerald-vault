@@ -16,20 +16,20 @@ limitations under the License.
 */
 //! # Account address (20 bytes)
 
-use super::util::to_arr;
-use super::Error;
+use crate::util::to_arr;
+use super::super::Error;
 use hex;
 use std::str::FromStr;
 use std::{fmt, ops};
 
 /// Fixed bytes number to represent `Address`
-pub const ADDRESS_BYTES: usize = 20;
+pub const ETHEREUM_ADDRESS_BYTES: usize = 20;
 
 /// Account address (20 bytes)
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Address(pub [u8; ADDRESS_BYTES]);
+pub struct EthereumAddress(pub [u8; ETHEREUM_ADDRESS_BYTES]);
 
-impl Address {
+impl EthereumAddress {
     /// Try to convert a byte vector to `Address`.
     ///
     /// # Arguments
@@ -39,19 +39,19 @@ impl Address {
     /// # Example
     ///
     /// ```
-    /// let addr = emerald_vault::core::Address::try_from(&[0u8; emerald_vault::core::ADDRESS_BYTES]).unwrap();
+    /// let addr = emerald_vault::blockchain::EthereumAddress::try_from(&[0u8; emerald_vault::blockchain::ETHEREUM_ADDRESS_BYTES]).unwrap();
     /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
     /// ```
     pub fn try_from(data: &[u8]) -> Result<Self, Error> {
-        if data.len() != ADDRESS_BYTES {
+        if data.len() != ETHEREUM_ADDRESS_BYTES {
             return Err(Error::InvalidLength(data.len()));
         }
 
-        Ok(Address(to_arr(data)))
+        Ok(EthereumAddress(to_arr(data)))
     }
 }
 
-impl ops::Deref for Address {
+impl ops::Deref for EthereumAddress {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
@@ -59,23 +59,23 @@ impl ops::Deref for Address {
     }
 }
 
-impl From<[u8; ADDRESS_BYTES]> for Address {
-    fn from(bytes: [u8; ADDRESS_BYTES]) -> Self {
-        Address(bytes)
+impl From<[u8; ETHEREUM_ADDRESS_BYTES]> for EthereumAddress {
+    fn from(bytes: [u8; ETHEREUM_ADDRESS_BYTES]) -> Self {
+        EthereumAddress(bytes)
     }
 }
 
-impl AsRef<[u8]> for Address {
+impl AsRef<[u8]> for EthereumAddress {
     fn as_ref(&self) -> &[u8] {
         &self.0
     }
 }
 
-impl FromStr for Address {
+impl FromStr for EthereumAddress {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() != ADDRESS_BYTES * 2 && !s.starts_with("0x") {
+        if s.len() != ETHEREUM_ADDRESS_BYTES * 2 && !s.starts_with("0x") {
             return Err(Error::InvalidHexLength(s.to_string()));
         }
 
@@ -85,17 +85,17 @@ impl FromStr for Address {
             s
         };
 
-        Address::try_from(hex::decode(&value)?.as_slice())
+        EthereumAddress::try_from(hex::decode(&value)?.as_slice())
     }
 }
 
-impl fmt::Display for Address {
+impl fmt::Display for EthereumAddress {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "0x{}", hex::encode(self.0))
     }
 }
 
-impl fmt::Debug for Address {
+impl fmt::Debug for EthereumAddress {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "0x{}", hex::encode(self.0))
     }
@@ -108,14 +108,14 @@ mod tests {
     #[test]
     fn should_display_zero_address() {
         assert_eq!(
-            Address::default().to_string(),
+            EthereumAddress::default().to_string(),
             "0x0000000000000000000000000000000000000000"
         );
     }
 
     #[test]
     fn should_display_real_address() {
-        let addr = Address([
+        let addr = EthereumAddress([
             0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04, 0x73, 0x80, 0x89,
             0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4,
         ]);
@@ -128,14 +128,14 @@ mod tests {
 
     #[test]
     fn should_parse_real_address() {
-        let addr = Address([
+        let addr = EthereumAddress([
             0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04, 0x73, 0x80, 0x89,
             0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4,
         ]);
 
         assert_eq!(
             "0x0e7c045110b8dbf29765047380898919c5cb56f4"
-                .parse::<Address>()
+                .parse::<EthereumAddress>()
                 .unwrap(),
             addr
         );
@@ -143,14 +143,14 @@ mod tests {
 
     #[test]
     fn should_parse_real_address_without_prefix() {
-        let addr = Address([
+        let addr = EthereumAddress([
             0x0e, 0x7c, 0x04, 0x51, 0x10, 0xb8, 0xdb, 0xf2, 0x97, 0x65, 0x04, 0x73, 0x80, 0x89,
             0x89, 0x19, 0xc5, 0xcb, 0x56, 0xf4,
         ]);
 
         assert_eq!(
             "0e7c045110b8dbf29765047380898919c5cb56f4"
-                .parse::<Address>()
+                .parse::<EthereumAddress>()
                 .unwrap(),
             addr
         );
@@ -159,38 +159,38 @@ mod tests {
     #[test]
     fn should_catch_wrong_address_encoding() {
         assert!("0x___c045110b8dbf29765047380898919c5cb56f4"
-            .parse::<Address>()
+            .parse::<EthereumAddress>()
             .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_insufficient_length() {
         assert!("0x0e7c045110b8dbf297650473808989"
-            .parse::<Address>()
+            .parse::<EthereumAddress>()
             .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_excess_length() {
         assert!("0x0e7c045110b8dbf29765047380898919c5cb56f400000000"
-            .parse::<Address>()
+            .parse::<EthereumAddress>()
             .is_err());
     }
 
     #[test]
     fn should_catch_wrong_address_prefix() {
         assert!("0_0e7c045110b8dbf29765047380898919c5cb56f4"
-            .parse::<Address>()
+            .parse::<EthereumAddress>()
             .is_err());
     }
 
     #[test]
     fn should_catch_missing_address_prefix() {
-        assert!("_".parse::<Address>().is_err());
+        assert!("_".parse::<EthereumAddress>().is_err());
     }
 
     #[test]
     fn should_catch_empty_address_string() {
-        assert!("".parse::<Address>().is_err());
+        assert!("".parse::<EthereumAddress>().is_err());
     }
 }

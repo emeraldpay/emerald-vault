@@ -1,5 +1,5 @@
 use crate::{
-    core::chains::Blockchain,
+    blockchain::chains::Blockchain,
     migration::source::json_data::{CryptoTypeV2, KeyFileV2},
     storage::vault::VaultStorage,
     structs::{

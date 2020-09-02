@@ -1,7 +1,7 @@
 use crate::crypto::error::CryptoError;
 use crate::structs::crypto::Encrypted;
 use crate::structs::types::HasUuid;
-use crate::Address;
+use crate::EthereumAddress;
 use bitcoin::util::bip32::ChildNumber;
 use hdpath::StandardHDPath;
 use sha2::Digest;
@@ -49,7 +49,7 @@ pub struct SeedRef {
 }
 
 impl HDPathFingerprint {
-    pub fn from_address(hd_path: StandardHDPath, address: &Address) -> HDPathFingerprint {
+    pub fn from_address(hd_path: StandardHDPath, address: &EthereumAddress) -> HDPathFingerprint {
         let hash = sha2::Sha256::digest(address);
         let f = Bytes256::try_from(hash.as_slice()).unwrap();
         HDPathFingerprint {

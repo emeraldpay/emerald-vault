@@ -16,14 +16,15 @@ limitations under the License.
 */
 //! # Account transaction
 
-use super::util::{keccak256, trim_bytes, KECCAK256_BYTES};
-use super::{Address, Error, PrivateKey, Signature};
-use crate::core::chains::EthereumChainId;
+use crate::util::{keccak256, trim_bytes, KECCAK256_BYTES};
+use super::{EthereumAddress, EthereumPrivateKey, EthereumSignature};
+use super::super::error::Error;
+use crate::blockchain::chains::EthereumChainId;
 use rlp::RlpStream;
 
 /// Transaction data
 #[derive(Clone, Debug, Default)]
-pub struct Transaction {
+pub struct EthereumTransaction {
     /// Nonce
     pub nonce: u64,
 
@@ -34,7 +35,7 @@ pub struct Transaction {
     pub gas_limit: u64,
 
     /// Target address, or None to create contract
-    pub to: Option<Address>,
+    pub to: Option<EthereumAddress>,
 
     /// Value transferred with transaction
     pub value: [u8; 32], //TODO why 32??? why slice?
@@ -43,16 +44,16 @@ pub struct Transaction {
     pub data: Vec<u8>,
 }
 
-impl Transaction {
+impl EthereumTransaction {
     /// Sign transaction data with provided private key
-    pub fn to_signed_raw(&self, pk: PrivateKey, chain: EthereumChainId) -> Result<Vec<u8>, Error> {
+    pub fn to_signed_raw(&self, pk: EthereumPrivateKey, chain: EthereumChainId) -> Result<Vec<u8>, Error> {
         let sig = pk.sign_hash(self.hash(chain.as_chainid()))?;
         Ok(self.raw_from_sig(Some(chain.as_chainid()), &sig))
     }
 
     /// RLP packed signed transaction from provided `Signature`
     /// chain MUST NOT be specified for transactions signed by Ledger
-    pub fn raw_from_sig(&self, chain: Option<u8>, sig: &Signature) -> Vec<u8> {
+    pub fn raw_from_sig(&self, chain: Option<u8>, sig: &EthereumSignature) -> Vec<u8> {
         let mut rlp = self.to_rlp_raw(None);
 
         let mut v = u16::from(sig.v);
@@ -127,10 +128,11 @@ impl Transaction {
 mod tests {
     use super::*;
     use crate::tests::*;
+    use crate::blockchain::ethereum::EthereumAddress;
 
     #[test]
     fn encode_tx() {
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 1,
             gas_price: to_32bytes(
                 "00000000000000000000000000000000000000000000000000000004e3b29200",
@@ -138,7 +140,7 @@ mod tests {
             gas_limit: 21000,
             to: Some(
                 "0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
-                    .parse::<Address>()
+                    .parse::<EthereumAddress>()
                     .unwrap(),
             ),
             value: to_32bytes("00000000000000000000000000000000000000000000000000DE0B6B3A764000"),
@@ -165,7 +167,7 @@ mod tests {
 
     #[test]
     fn encode_tx_with_small_gassprice() {
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 0,
             gas_price: to_32bytes(
                 "0000000000000000000000000000000000000000000000000000000000000001",
@@ -173,7 +175,7 @@ mod tests {
             gas_limit: 21000,
             to: Some(
                 "0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
-                    .parse::<Address>()
+                    .parse::<EthereumAddress>()
                     .unwrap(),
             ),
             value: to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
@@ -200,17 +202,17 @@ mod tests {
 
     #[test]
     fn should_sign_transaction_for_mainnet() {
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 0,
             gas_price: /* 21000000000 */
-                to_32bytes("0000000000000000000000000000000\
+            to_32bytes("0000000000000000000000000000000\
                               0000000000000000000000004e3b29200"),
             gas_limit: 21000,
             to: Some("0x3f4E0668C20E100d7C2A27D4b177Ac65B2875D26"
-                    .parse::<Address>()
-                    .unwrap()),
+                .parse::<EthereumAddress>()
+                .unwrap()),
             value: /* 1 ETC */
-                to_32bytes("00000000000000000000000000000000\
+            to_32bytes("00000000000000000000000000000000\
                               00000000000000000de0b6b3a7640000"),
             data: Vec::new(),
         };
@@ -227,7 +229,7 @@ mod tests {
         }
         */
 
-        let pk = PrivateKey(to_32bytes(
+        let pk = EthereumPrivateKey(to_32bytes(
             "00b413b37c71bfb92719d16e28d7329dea5befa0d0b8190742f89e55617991cf",
         ));
 
@@ -255,14 +257,14 @@ mod tests {
 
     #[test]
     fn should_sign_transaction_for_testnet() {
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 1048585,
             gas_price: /* 20000000000 */
             to_32bytes("00000000000000000000000000000\
                         000000000000000000000000004a817c800"),
             gas_limit: 21000,
             to: Some("0x163b454d1ccdd0a12e88341b12afb2c98044c599"
-                .parse::<Address>()
+                .parse::<EthereumAddress>()
                 .unwrap()),
             value: /* 1 ETC */
             to_32bytes("000000000000000000000000000000\
@@ -285,7 +287,7 @@ mod tests {
          }'
          */
 
-        let pk = PrivateKey(to_32bytes(
+        let pk = EthereumPrivateKey(to_32bytes(
             "28b469dc4b039ff63fcd4cb708c668545e644cb25f21df6920aac20e4bc743f7",
         ));
 
@@ -312,21 +314,21 @@ mod tests {
 
     #[test]
     fn should_sign_transaction_eip155() {
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 9,
             gas_price: /* 20,000,000,000 */
             to_32bytes("00000000000000000000000000000\
                         000000000000000000000000004a817c800"),
             gas_limit: 21000,
             to: Some("0x3535353535353535353535353535353535353535"
-                .parse::<Address>()
+                .parse::<EthereumAddress>()
                 .unwrap()),
             value: to_32bytes("000000000000000000000000000000\
                 0000000000000000000de0b6b3a7640000"),
             data: Vec::new(),
         };
 
-        let pk = PrivateKey(to_32bytes(
+        let pk = EthereumPrivateKey(to_32bytes(
             "4646464646464646464646464646464646464646464646464646464646464646",
         ));
 
@@ -350,20 +352,20 @@ mod tests {
     #[test]
     fn rs_should_be_quantity_1() {
         // ref https://github.com/ethereum/web3.js/issues/1170
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 0,
             gas_price: /* 234,567,897,654,321 */
             to_32bytes("0000000000000000000000000000000000000000000000000000D55698372431"),
             gas_limit: 2000000,
             to: Some("0xF0109fC8DF283027b6285cc889F5aA624EaC1F55"
-                .parse::<Address>()
+                .parse::<EthereumAddress>()
                 .unwrap()),
             value:
             to_32bytes("000000000000000000000000000000000000000000000000000000003B9ACA00"),
             data: Vec::new(),
         };
 
-        let pk = PrivateKey(to_32bytes(
+        let pk = EthereumPrivateKey(to_32bytes(
             "4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318",
         ));
 
@@ -378,20 +380,20 @@ mod tests {
     #[test]
     fn rs_should_be_quantity_2() {
         // ref https://github.com/ethereum/web3.js/issues/1170
-        let tx = Transaction {
+        let tx = EthereumTransaction {
             nonce: 0,
             gas_price: /* 234,567,897,654,321 */
             to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
             gas_limit: 31853,
             to: Some("0xF0109fC8DF283027b6285cc889F5aA624EaC1F55"
-                .parse::<Address>()
+                .parse::<EthereumAddress>()
                 .unwrap()),
             value:
             to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
             data: Vec::new(),
         };
 
-        let pk = PrivateKey(to_32bytes(
+        let pk = EthereumPrivateKey(to_32bytes(
             "4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318",
         ));
 

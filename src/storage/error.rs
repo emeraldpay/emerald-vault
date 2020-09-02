@@ -1,5 +1,5 @@
 use crate::convert::error::ConversionError;
-use crate::core;
+use crate::blockchain;
 use crate::crypto::error::CryptoError;
 use crate::hdwallet::Error as HWalletError;
 use std::fmt::Display;
@@ -50,10 +50,10 @@ impl std::convert::From<String> for VaultError {
     }
 }
 
-impl std::convert::From<core::error::Error> for VaultError {
-    fn from(err: core::error::Error) -> Self {
+impl std::convert::From<blockchain::error::Error> for VaultError {
+    fn from(err: blockchain::error::Error) -> Self {
         match err {
-            core::error::Error::InvalidHexLength(_) => {
+            blockchain::error::Error::InvalidHexLength(_) => {
                 VaultError::InvalidDataError("Invalid input length".to_string())
             }
             _ => VaultError::InvalidDataError("Invalid data".to_string()),

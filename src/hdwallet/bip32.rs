@@ -19,7 +19,7 @@ limitations under the License.
 //!
 
 use super::error::Error;
-use crate::core::{PrivateKey, PRIVATE_KEY_BYTES};
+use crate::blockchain::{EthereumPrivateKey, PRIVATE_KEY_BYTES};
 use crate::hdwallet::DERIVATION_INDEX_SIZE;
 use crate::util::to_bytes;
 use bitcoin::{
@@ -40,11 +40,11 @@ use hdpath::StandardHDPath;
 ///  * path - key derivation path
 ///  * seed - seed data for master node
 ///
-pub fn generate_key(path: &StandardHDPath, seed: &[u8]) -> Result<PrivateKey, Error> {
+pub fn generate_key(path: &StandardHDPath, seed: &[u8]) -> Result<EthereumPrivateKey, Error> {
     let secp = Secp256k1::new();
     let sk = ExtendedPrivKey::new_master(Network::Bitcoin, seed)
         .and_then(|k| k.derive_priv(&secp, &DerivationPath::from(path)))?;
-    let key = PrivateKey::try_from(&sk.private_key.key[0..PRIVATE_KEY_BYTES])?;
+    let key = EthereumPrivateKey::try_from(&sk.private_key.key[0..PRIVATE_KEY_BYTES])?;
 
     Ok(key)
 }
@@ -52,7 +52,7 @@ pub fn generate_key(path: &StandardHDPath, seed: &[u8]) -> Result<PrivateKey, Er
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::core::Address;
+    use crate::blockchain::EthereumAddress;
     use hex::FromHex;
     use std::str::FromStr;
     use hdpath::Purpose;
@@ -73,7 +73,7 @@ mod test {
 
         assert_eq!(
             priv_key.to_address(),
-            Address::from_str("0x1DD9cBeFBbC3284e9C3228793a560B4F0841Db6f").unwrap()
+            EthereumAddress::from_str("0x1DD9cBeFBbC3284e9C3228793a560B4F0841Db6f").unwrap()
         );
     }
 
@@ -90,7 +90,7 @@ mod test {
         let priv_key = generate_key(&path, &seed).unwrap();
         assert_eq!(
             priv_key.to_address(),
-            Address::from_str("0x5d383cDB23983578131aD57f3F36Ab19ca6E6854").unwrap()
+            EthereumAddress::from_str("0x5d383cDB23983578131aD57f3F36Ab19ca6E6854").unwrap()
         );
     }
 }

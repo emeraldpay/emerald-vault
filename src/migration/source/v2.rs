@@ -3,8 +3,8 @@ use crate::migration::source::json_data::{AddressBookItem, KeyFileV2};
 use crate::migration::types::{Migrate, MigrationError, MigrationResult};
 use crate::storage::archive::ArchiveType;
 use crate::{
-    address::Address,
-    core::chains::{Blockchain, EthereumChainId},
+    ethereum::EthereumAddress,
+    blockchain::chains::{Blockchain, EthereumChainId},
     storage::{
         addressbook::AddressBookmark, archive::Archive, vault::VaultAccess, vault::VaultStorage,
     },
@@ -95,7 +95,7 @@ impl V2Storage {
                     let data: [u8; 20] = util::to_arr(&*addr);
                     &self.migration.error(format!(
                         "Invalid keystore file format for address: {}. Message: {}",
-                        Address::from(data),
+                        EthereumAddress::from(data),
                         e
                     ));
                 }
@@ -323,14 +323,14 @@ impl Migrate for V2Storage {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::chains::Blockchain;
+    use crate::blockchain::chains::Blockchain;
     use crate::migration::source::v2::V2Storage;
     use crate::migration::test_commons::{sort_wallets, unzip};
     use crate::migration::types::Migrate;
     use crate::storage::vault::VaultStorage;
     use crate::structs::seed::SeedSource;
     use crate::structs::wallet::{PKType, Wallet};
-    use crate::Address;
+    use crate::EthereumAddress;
     use std::str::FromStr;
     use tempdir::TempDir;
 
@@ -358,11 +358,11 @@ mod tests {
         assert_eq!(eth_wallets.len(), 2);
         assert_eq!(
             eth_wallets[0].get_entry(0).unwrap().address,
-            Some(Address::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap())
+            Some(EthereumAddress::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap())
         );
         assert_eq!(
             eth_wallets[1].get_entry(0).unwrap().address,
-            Some(Address::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
+            Some(EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
         );
 
         let etc_wallets: Vec<&Wallet> = wallets
@@ -372,7 +372,7 @@ mod tests {
         assert_eq!(etc_wallets.len(), 1);
         assert_eq!(
             etc_wallets[0].get_entry(0).unwrap().address,
-            Some(Address::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
+            Some(EthereumAddress::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
         );
 
         let kovan_wallets: Vec<&Wallet> = wallets
@@ -406,15 +406,15 @@ mod tests {
         assert_eq!(eth_wallets.len(), 3);
         assert_eq!(
             eth_wallets[0].get_entry(0).unwrap().address,
-            Some(Address::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap())
+            Some(EthereumAddress::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap())
         );
         assert_eq!(
             eth_wallets[1].get_entry(0).unwrap().address,
-            Some(Address::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
+            Some(EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
         );
         assert_eq!(
             eth_wallets[2].get_entry(0).unwrap().address,
-            Some(Address::from_str("0xBD5222391BBB9F17484F2565455FB6610D9E145F").unwrap())
+            Some(EthereumAddress::from_str("0xBD5222391BBB9F17484F2565455FB6610D9E145F").unwrap())
         );
 
         let ledger_acc = eth_wallets[2].get_entry(0).unwrap();
@@ -436,7 +436,7 @@ mod tests {
         assert_eq!(etc_wallets.len(), 1);
         assert_eq!(
             etc_wallets[0].get_entry(0).unwrap().address,
-            Some(Address::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
+            Some(EthereumAddress::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
         );
 
         let kovan_wallets: Vec<&Wallet> = wallets

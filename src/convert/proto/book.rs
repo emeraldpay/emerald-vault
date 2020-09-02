@@ -1,6 +1,6 @@
 use crate::convert::error::ConversionError;
 use crate::{
-    core::chains::Blockchain,
+    blockchain::chains::Blockchain,
     proto::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         book::BookItem as proto_BookItem,
@@ -8,7 +8,7 @@ use crate::{
     },
     structs::book::{AddressRef, BookmarkDetails},
     util::optional::none_if_empty,
-    Address,
+    EthereumAddress,
 };
 use protobuf::{parse_from_bytes, Message};
 use std::convert::TryFrom;
@@ -25,7 +25,7 @@ impl TryFrom<&[u8]> for BookmarkDetails {
 
         let address = match &m.get_address().address_type {
             Some(t) => match t {
-                proto_AddressType::plain_address(s) => Address::from_str(s.as_str()),
+                proto_AddressType::plain_address(s) => EthereumAddress::from_str(s.as_str()),
                 _ => {
                     return Err(ConversionError::InvalidFieldValue(
                         "address_type".to_string(),
@@ -94,7 +94,7 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
 mod tests {
     use crate::structs::book::{BookmarkDetails, AddressRef};
     use crate::chains::Blockchain;
-    use crate::Address;
+    use crate::EthereumAddress;
     use std::str::FromStr;
     use chrono::{Utc, TimeZone};
     use protobuf::{parse_from_bytes, Message};
@@ -108,7 +108,7 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             label: Some("Hello".to_string()),
             description: None,
-            address: AddressRef::EthereumAddress(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
+            address: AddressRef::EthereumAddress(EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
             created_at: Utc.timestamp_millis(1592624592679),
         };
 
@@ -127,7 +127,7 @@ mod tests {
             blockchain: Blockchain::EthereumClassic,
             label: Some("Hello".to_string()),
             description: Some("World!".to_string()),
-            address: AddressRef::EthereumAddress(Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
+            address: AddressRef::EthereumAddress(EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
             created_at: Utc.timestamp_millis(1592624592679),
         };
 

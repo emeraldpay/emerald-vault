@@ -31,10 +31,27 @@ pub enum EthereumChainId {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum BlockchainType {
+    Bitcoin,
+    Ethereum,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Blockchain {
+    Bitcoin = 1,
+    BitcoinTestnet = 10003,
     Ethereum = 100,
     EthereumClassic = 101,
     KovanTestnet = 10002,
+}
+
+impl Blockchain {
+    fn get_type(self) -> BlockchainType {
+        match self {
+            Blockchain::BitcoinTestnet | Blockchain::Bitcoin => BlockchainType::Bitcoin,
+            Blockchain::Ethereum | Blockchain::EthereumClassic | Blockchain::KovanTestnet => BlockchainType::Ethereum
+        }
+    }
 }
 
 impl From<Blockchain> for EthereumChainId {
@@ -43,6 +60,7 @@ impl From<Blockchain> for EthereumChainId {
             Blockchain::Ethereum => EthereumChainId::Ethereum,
             Blockchain::EthereumClassic => EthereumChainId::EthereumClassic,
             Blockchain::KovanTestnet => EthereumChainId::Kovan,
+            _ => panic!("not an ethereum blockchain")
         }
     }
 }
@@ -65,6 +83,8 @@ impl TryFrom<u32> for Blockchain {
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
+            1 => Ok(Blockchain::Bitcoin),
+            10003 => Ok(Blockchain::BitcoinTestnet),
             100 => Ok(Blockchain::Ethereum),
             101 => Ok(Blockchain::EthereumClassic),
             10002 => Ok(Blockchain::KovanTestnet),

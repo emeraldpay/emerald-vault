@@ -19,7 +19,7 @@ limitations under the License.
 pub mod byte_array;
 pub mod optional;
 
-use crate::core::chains::EthereumChainId;
+use crate::blockchain::chains::EthereumChainId;
 pub use crate::crypto::util::{keccak256, KECCAK256_BYTES};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use chrono::prelude::Utc;

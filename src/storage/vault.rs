@@ -13,7 +13,7 @@ use crate::{
         types::HasUuid,
         wallet::{PKType, Wallet, WalletEntry},
     },
-    Address,
+    EthereumAddress,
 };
 use hdpath::StandardHDPath;
 use regex::Regex;
@@ -486,7 +486,7 @@ impl AddEntry {
         hd_path: StandardHDPath,
         blockchain: Blockchain,
         password: Option<String>,
-        expected_address: Option<Address>,
+        expected_address: Option<EthereumAddress>,
     ) -> Result<usize, VaultError> {
         let seed = self.seeds.get(seed_id)?;
         let address = match seed.source {
@@ -1273,7 +1273,7 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir).unwrap();
         let wallet_id = vault
             .create_new()
-            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet = vault.wallets.get(wallet_id).unwrap();
         let pk_id = match wallet.entries.first().unwrap().key {
@@ -1301,7 +1301,7 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir).unwrap();
         let wallet_1_id = vault
             .create_new()
-            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
         let pk_id_1 = match wallet_1.entries.first().unwrap().key {
@@ -1311,7 +1311,7 @@ mod tests {
 
         let wallet_2_id = vault
             .create_new()
-            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
         let pk_id_2 = match wallet_2.entries.first().unwrap().key {
@@ -1347,7 +1347,7 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir).unwrap();
         let wallet_1_id = vault
             .create_new()
-            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
         let pk_id_1 = match wallet_1.entries.first().unwrap().key {
@@ -1357,7 +1357,7 @@ mod tests {
 
         let wallet_2_id = vault
             .create_new()
-            .raw_pk(PrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
             .unwrap();
         let mut wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
         let pk_id_2 = match wallet_2.entries.first().unwrap().key {

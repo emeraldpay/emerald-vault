@@ -1,7 +1,7 @@
 use crate::convert::error::ConversionError;
 use crate::structs::wallet::ReservedPath;
 use crate::{
-    core::{chains::Blockchain, Address},
+    blockchain::{chains::Blockchain, EthereumAddress},
     proto::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         common::FileType as proto_FileType,
@@ -36,7 +36,7 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
         let address = match &address {
             Some(a) => match &a.address_type {
                 Some(address_type) => match address_type {
-                    proto_AddressType::plain_address(a) => Some(Address::from_str(a.as_str())?),
+                    proto_AddressType::plain_address(a) => Some(EthereumAddress::from_str(a.as_str())?),
                     _ => {
                         return Err(ConversionError::UnsupportedValue(
                             "address_type".to_string(),
@@ -234,7 +234,7 @@ mod tests {
     use crate::structs::wallet::ReservedPath;
     use crate::{
         chains::Blockchain,
-        core::Address,
+        blockchain::EthereumAddress,
         structs::{
             seed::SeedRef,
             wallet::{PKType, Wallet, WalletEntry},
@@ -299,7 +299,7 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
                 created_at: Utc.timestamp_millis(0),
@@ -325,7 +325,7 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
                 created_at: Utc.timestamp_millis(0),
@@ -351,7 +351,7 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
@@ -384,7 +384,7 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    Address::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
                 ),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),

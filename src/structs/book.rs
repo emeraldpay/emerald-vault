@@ -1,5 +1,5 @@
-use crate::core::chains::Blockchain;
-use crate::Address;
+use crate::blockchain::chains::Blockchain;
+use crate::{EthereumAddress};
 use chrono::{DateTime, Utc};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -14,5 +14,5 @@ pub struct BookmarkDetails {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum AddressRef {
-    EthereumAddress(Address),
+    EthereumAddress(EthereumAddress),
 }

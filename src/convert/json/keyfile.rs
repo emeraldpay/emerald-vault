@@ -1,12 +1,11 @@
 use crate::{
     convert::error::ConversionError,
-    core::Address,
     crypto::error::CryptoError,
     structs::{
         crypto::{Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, Pbkdf2, PrfType, ScryptKdf},
         pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
     },
-    PrivateKey,
+    EthereumPrivateKey,
 };
 use serde::{Deserialize, Deserializer};
 use std::convert::TryFrom;
@@ -14,6 +13,7 @@ use std::fmt;
 use std::str::FromStr;
 use uuid::Uuid;
 use chrono::Utc;
+use crate::blockchain::ethereum::EthereumAddress;
 
 /// `PBKDF2` key derivation function name
 pub const PBKDF2_KDF_NAME: &str = "pbkdf2";
@@ -35,9 +35,10 @@ type HexString = String;
 // https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct EthereumJsonV3File {
-    pub id: Uuid, // maybe just any string
+    pub id: Uuid,
+    // maybe just any string
     pub version: u32,
-    pub address: Option<Address>,
+    pub address: Option<EthereumAddress>,
     pub crypto: CoreCryptoJson,
     pub name: Option<String>,
     pub description: Option<String>,
@@ -357,7 +358,7 @@ impl EthereumJsonV3File {
 
     pub fn from_pk(
         label: Option<String>,
-        pk: PrivateKey,
+        pk: EthereumPrivateKey,
         password: String,
     ) -> Result<EthereumJsonV3File, CryptoError> {
         let encrypted = Encrypted::encrypt(pk.to_vec(), password.as_str())?;
@@ -966,18 +967,18 @@ mod tests {
 
     #[test]
     fn export_json_from_raw_pk() {
-        let pk = PrivateKey::try_from(
+        let pk = EthereumPrivateKey::try_from(
             hex::decode("7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d")
                 .unwrap()
                 .as_slice(),
         )
-        .unwrap();
+            .unwrap();
         let json =
             EthereumJsonV3File::from_pk(Some("Test".to_string()), pk, "testpassword".to_string())
                 .unwrap();
         assert_eq!(
             json.address,
-            Some(Address::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap())
+            Some(EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap())
         );
         assert_eq!(json.version, 3);
         assert_eq!(json.description, None);

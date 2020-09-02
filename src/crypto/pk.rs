@@ -1,5 +1,5 @@
 use crate::{
-    core::{Address, PrivateKey as core_PK},
+    blockchain::{EthereumAddress, EthereumPrivateKey as core_PK},
     crypto::error::CryptoError,
     structs::{
         crypto::Encrypted,
@@ -35,7 +35,7 @@ impl PrivateKeyHolder {
         Ok(PrivateKeyHolder::create_ethereum_v3(encrypted))
     }
 
-    pub fn get_ethereum_address(&self) -> Option<Address> {
+    pub fn get_ethereum_address(&self) -> Option<EthereumAddress> {
         match &self.pk {
             PrivateKeyType::EthereumPk(e) => e.address,
         }
