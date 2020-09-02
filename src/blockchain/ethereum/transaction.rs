@@ -266,26 +266,11 @@ mod tests {
             to: Some("0x163b454d1ccdd0a12e88341b12afb2c98044c599"
                 .parse::<EthereumAddress>()
                 .unwrap()),
-            value: /* 1 ETC */
+            value: /* 562 ETC */
             to_32bytes("000000000000000000000000000000\
                         00000000000000001e7751166579880000"),
             data: Vec::new(),
         };
-
-        /*
-        {
-            "jsonrpc":"2.0","method":"emerald_signTransaction",
-            "params":[{"from":"0xc0de379b51d582e1600c76dd1efee8ed024b844a",
-            "passphrase":"1234567890",
-            "to":"0x163b454d1ccdd0a12e88341b12afb2c98044c599",
-            "gas":"0x5208",
-            "gasPrice":"0x04a817c800",
-            "value":"0x1e7751166579880000",
-            "nonce":"0x100009"},
-            {"chain":"morden"}],
-            "id":11
-         }'
-         */
 
         let pk = EthereumPrivateKey(to_32bytes(
             "28b469dc4b039ff63fcd4cb708c668545e644cb25f21df6920aac20e4bc743f7",
@@ -293,10 +278,11 @@ mod tests {
 
         assert_eq!(
             hex::encode(
-                tx.to_signed_raw(pk, EthereumChainId::MordenClassic)
+                tx.to_signed_raw(pk, EthereumChainId::Kovan)
                     .unwrap()
             ),
-            "f871\
+            // verified with MEW
+            "f870\
              83\
              100009\
              85\
@@ -307,8 +293,8 @@ mod tests {
              163b454d1ccdd0a12e88341b12afb2c98044c599\
              89\
              1e7751166579880000\
-             80819fa0cc6cd05d41bbbeb71913bf403a09db118f22e4ed7ebf707fcfb483dd1cded\
-             890a03c0a3985771bc0f10cf9fe85e3ea3c17132e3f09551eaedb8d2ae97cec3ad9f7"
+             8078a0bc2a17e673bcd60b621f02a2c2d6546a9e1f0c1a67d0e0a0acfcd3fd171a38\
+             30a0443b722a14da921f67a0b5aad9dd321483355b32d1fd3f01fb615be055416a58"
         );
     }
 

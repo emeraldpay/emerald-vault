@@ -24,4 +24,3 @@ pub use self::ethereum::address::{EthereumAddress, ETHEREUM_ADDRESS_BYTES};
 pub use self::error::Error;
 pub use self::ethereum::signature::{EthereumPrivateKey, EthereumSignature, ECDSA_SIGNATURE_BYTES, PRIVATE_KEY_BYTES};
 pub use self::ethereum::transaction::EthereumTransaction;
-use super::util;

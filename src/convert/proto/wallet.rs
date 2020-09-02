@@ -23,8 +23,7 @@ use std::cmp;
 use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 use uuid::Uuid;
-use std::time::SystemTime;
-use chrono::{Local, Utc, TimeZone};
+use chrono::{Utc, TimeZone};
 
 impl TryFrom<&proto_WalletEntry> for WalletEntry {
     type Error = ConversionError;

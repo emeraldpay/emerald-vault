@@ -20,16 +20,11 @@ limitations under the License.
 
 use super::error::Error;
 use crate::blockchain::{EthereumPrivateKey, PRIVATE_KEY_BYTES};
-use crate::hdwallet::DERIVATION_INDEX_SIZE;
-use crate::util::to_bytes;
 use bitcoin::{
     network::constants::Network,
-    util::bip32::{ChildNumber, ExtendedPrivKey, DerivationPath},
+    util::bip32::{ExtendedPrivKey, DerivationPath},
 };
-use regex::Regex;
 use secp256k1::Secp256k1;
-use std::ops;
-use std::string::ToString;
 use hdpath::StandardHDPath;
 
 
@@ -56,7 +51,6 @@ mod test {
     use hex::FromHex;
     use std::str::FromStr;
     use hdpath::Purpose;
-    use std::convert::TryFrom;
 
     #[test]
     fn test_key_generation() {

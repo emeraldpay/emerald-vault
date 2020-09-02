@@ -2,14 +2,15 @@ use crate::crypto::error::CryptoError;
 use crate::structs::crypto::Encrypted;
 use crate::structs::types::HasUuid;
 use crate::EthereumAddress;
-use bitcoin::util::bip32::ChildNumber;
 use hdpath::StandardHDPath;
 use sha2::Digest;
 use std::convert::TryFrom;
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
-byte_array_struct!(Bytes256, 32);
+byte_array_struct!(
+    pub struct Bytes256(32);
+);
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Seed {

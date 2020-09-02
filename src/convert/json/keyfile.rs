@@ -7,7 +7,7 @@ use crate::{
     },
     EthereumPrivateKey,
 };
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize};
 use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;

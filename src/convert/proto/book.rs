@@ -13,7 +13,6 @@ use crate::{
 use protobuf::{parse_from_bytes, Message};
 use std::convert::TryFrom;
 use std::str::FromStr;
-use std::time::SystemTime;
 use chrono::{Utc, TimeZone};
 
 /// Read from Protobuf bytes

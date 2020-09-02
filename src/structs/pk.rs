@@ -1,6 +1,6 @@
 use crate::structs::crypto::Encrypted;
 use crate::structs::types::HasUuid;
-use crate::{EthereumAddress, EthereumPrivateKey};
+use crate::{EthereumAddress};
 use uuid::Uuid;
 use chrono::{DateTime, Utc};
 

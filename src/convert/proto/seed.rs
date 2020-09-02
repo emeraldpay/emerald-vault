@@ -17,10 +17,9 @@ use crate::{
 use hdpath::{Purpose, StandardHDPath};
 use protobuf::{parse_from_bytes, Message};
 use std::convert::{TryFrom, TryInto};
-use std::str::FromStr;
 use uuid::Uuid;
-use std::time::SystemTime;
 use chrono::{Utc, TimeZone};
+use crate::util::optional::none_if_empty;
 
 impl TryFrom<&proto_HDPath> for StandardHDPath {
     type Error = ConversionError;
@@ -115,15 +114,8 @@ impl TryFrom<&[u8]> for Seed {
             },
             None => return Err(ConversionError::FieldIsEmpty("seed_source".to_string())),
         };
-        let label = if let label = m.get_label() {
-            if label.len() > 0 {
-                Some(label.to_string())
-            } else {
-                None
-            }
-        } else {
-            None
-        };
+
+        let label = none_if_empty(m.get_label());
         let created_at = Utc.timestamp_millis_opt(m.get_created_at() as i64)
             .single().unwrap_or_else(|| Utc.timestamp_millis(0));
         let result = Seed {

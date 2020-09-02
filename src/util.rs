@@ -15,71 +15,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 //! # Util functions module
-#[macro_use]
-pub mod byte_array;
 pub mod optional;
 
-use crate::blockchain::chains::EthereumChainId;
 pub use crate::crypto::util::{keccak256, KECCAK256_BYTES};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use chrono::prelude::Utc;
 use hex::FromHex;
 use std::io::Cursor;
-use std::mem::transmute;
-
-static HEX_CHARS: &'static [u8] = b"0123456789abcdef";
-
-/// Convert `self` into hex string
-pub trait ToHex {
-    /// converts to hex
-    fn to_hex(&self) -> String;
-}
-
-impl ToHex for [u8] {
-    fn to_hex(&self) -> String {
-        let mut v = Vec::with_capacity(self.len() * 2);
-        for &byte in self.iter() {
-            v.push(HEX_CHARS[(byte >> 4) as usize]);
-            v.push(HEX_CHARS[(byte & 0xf) as usize]);
-        }
-
-        unsafe { String::from_utf8_unchecked(v) }
-    }
-}
-
-impl ToHex for u64 {
-    fn to_hex(&self) -> String {
-        let bytes: [u8; 8] = unsafe { transmute(self.to_be()) };
-        bytes.to_hex()
-    }
-}
-
-/// Get chain name by chain id
-///
-/// # Arguments:
-/// * `id` - target chain id
-///
-pub fn to_chain_name(id: u8) -> Option<String> {
-    match EthereumChainId::from_chainid(id) {
-        Ok(chain) => {
-            let s = chain.get_code();
-            Some(s)
-        }
-        Err(_) => None,
-    }
-}
-
-/// Get chain id by chain name
-///
-/// # Arguments:
-/// * `name` - target chain name
-///
-pub fn to_chain_id(name: &str) -> Option<u8> {
-    match EthereumChainId::from_str(name) {
-        Ok(chain) => Some(chain.as_chainid()),
-        Err(_) => None,
-    }
-}
 
 /// Convert byte array into `u64`
 ///
@@ -241,7 +183,6 @@ pub fn to_32bytes(hex: &str) -> [u8; 32] {
 
 #[cfg(test)]
 pub use self::tests::*;
-use std::str::FromStr;
 
 #[cfg(test)]
 mod tests {
@@ -410,35 +351,4 @@ mod tests {
         assert!(re.is_match(&timestamp()));
     }
 
-    #[test]
-    fn should_convert_to_chain_id() {
-        assert_eq!(to_chain_id("eth"), Some(1));
-        assert_eq!(to_chain_id("morden"), Some(2));
-        assert_eq!(to_chain_id("ropsten"), Some(3));
-        assert_eq!(to_chain_id("rinkeby"), Some(4));
-        assert_eq!(to_chain_id("rootstock-main"), Some(30));
-        assert_eq!(to_chain_id("rootstock-test"), Some(31));
-        assert_eq!(to_chain_id("kovan"), Some(42));
-        assert_eq!(to_chain_id("etc"), Some(61));
-        assert_eq!(to_chain_id("mainnet"), Some(61));
-        assert_eq!(to_chain_id("etc-morden"), Some(62));
-
-        assert_eq!(to_chain_id("eTc"), Some(61));
-        assert_eq!(to_chain_id("ecccc"), None);
-    }
-
-    #[test]
-    fn should_convert_to_chain_name() {
-        assert_eq!(to_chain_name(1), Some("eth".to_string()));
-        assert_eq!(to_chain_name(2), Some("morden".to_string()));
-        assert_eq!(to_chain_name(3), Some("ropsten".to_string()));
-        assert_eq!(to_chain_name(4), Some("rinkeby".to_string()));
-        assert_eq!(to_chain_name(30), Some("rootstock-main".to_string()));
-        assert_eq!(to_chain_name(31), Some("rootstock-test".to_string()));
-        assert_eq!(to_chain_name(42), Some("kovan".to_string()));
-        assert_eq!(to_chain_name(61), Some("etc".to_string()));
-        assert_eq!(to_chain_name(62), Some("morden".to_string()));
-
-        assert_eq!(to_chain_name(100), None);
-    }
 }

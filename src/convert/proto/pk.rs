@@ -18,7 +18,6 @@ use protobuf::{parse_from_bytes, Message};
 use std::convert::TryFrom;
 use std::str::FromStr;
 use uuid::Uuid;
-use std::time::SystemTime;
 use chrono::{Utc, TimeZone};
 
 /// Read from Protobuf bytes
@@ -99,13 +98,8 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
 mod tests {
     use crate::proto::pk::{
         PrivateKey as proto_PrivateKey,
-        EthereumPrivateKey as proto_EthereumPrivateKey,
-        EthereumPK3 as proto_EthereumPK3,
     };
-    use crate::proto::crypto::{
-        Encrypted as proto_Encrypted,
-    };
-    use crate::structs::pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType};
+    use crate::structs::pk::{PrivateKeyHolder};
     use protobuf::{parse_from_bytes, ProtobufEnum, Message};
     use std::convert::{TryFrom, TryInto};
     use std::str::FromStr;
@@ -146,7 +140,7 @@ mod tests {
 
     #[test]
     fn ignore_big_created_at() {
-        let mut pk = PrivateKeyHolder::generate_ethereum_raw("test").unwrap();
+        let pk = PrivateKeyHolder::generate_ethereum_raw("test").unwrap();
         let tmp: Vec<u8> = pk.try_into().unwrap();
         let mut m = parse_from_bytes::<proto_PrivateKey>(tmp.as_slice()).unwrap();
         m.set_created_at((i64::MAX as u64) + 100);

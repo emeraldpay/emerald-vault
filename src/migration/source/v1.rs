@@ -1,7 +1,7 @@
 use crate::migration::source::json_data::SerializableKeyFileCoreV2;
 use crate::storage::archive::{Archive, ArchiveType};
 use crate::{
-    blockchain::chains::{Blockchain, EthereumChainId},
+    blockchain::chains::{Blockchain},
     migration::source::common::add_to_vault,
     migration::types::MigrationResult,
     migration::types::{Migrate, MigrationError},
@@ -29,12 +29,19 @@ impl V1Storage {
     }
 
     fn blockchain_path(&self, blockchain: &Blockchain) -> Option<PathBuf> {
-        let chain_id = EthereumChainId::from(blockchain.clone());
-        self.ethereum_path(&chain_id)
+        let name = match blockchain {
+            Blockchain::Ethereum => "eth",
+            Blockchain::EthereumClassic => "mainnet",
+            Blockchain::KovanTestnet => "kovan",
+            _ => {
+                return None
+            }
+        };
+        self.ethereum_path(name)
     }
 
-    fn ethereum_path(&self, chain_id: &EthereumChainId) -> Option<PathBuf> {
-        let base = self.dir.join(chain_id.get_path_element());
+    fn ethereum_path(&self, name: &str) -> Option<PathBuf> {
+        let base = self.dir.join(name);
         if base.exists() && base.is_dir() {
             Some(base)
         } else {

@@ -56,6 +56,8 @@ extern crate sha3;
 extern crate time;
 extern crate uuid;
 extern crate hdpath;
+#[macro_use]
+extern crate byte_array_struct;
 
 #[macro_use]
 pub mod util;
@@ -90,6 +92,7 @@ mod tests {
     use std::fs::DirEntry;
     use std::path::{Path, PathBuf};
 
+    #[allow(dead_code)]
     pub fn init_tests() {
         simple_logger::init_with_level(Level::Debug).unwrap();
     }

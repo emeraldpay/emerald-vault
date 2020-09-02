@@ -47,8 +47,6 @@ const LEDGER_S_PID_3: u16 = 0x1015; // for Nano S model with Ethereum or Ethereu
 const LEDGER_X_PID_1: u16 = 0x4011; // for Nano X model (official)
 const LEDGER_X_PID_2: u16 = 0x0004; // for Nano X model (in the wild)
 
-const DERIVATION_INDEX_SIZE: usize = 4;
-
 /// Type used for device listing,
 /// String corresponds to file descriptor of the device
 pub type DevicesList = Vec<(EthereumAddress, String)>;
@@ -174,7 +172,7 @@ impl WManager {
     ///
     pub fn sign_transaction(
         &self,
-        fd: &str,
+        _fd: &str,
         tr: &[u8],
         hd_path: Option<Vec<u8>>,
     ) -> Result<EthereumSignature, Error> {
@@ -253,7 +251,7 @@ impl WManager {
         //TODO should verify address before assigning, not after
         match current {
             Some(hid_info) => {
-                let mut d = Device::from(hid_info);
+                let d = Device::from(hid_info);
                 let fd = d.fd.clone();
                 self.device = Some(d);
                 match self.get_address(&fd, Some(hd_path.clone())) {
@@ -263,7 +261,7 @@ impl WManager {
                             ..Device::from(hid_info)
                         });
                     },
-                    Err(e) => {
+                    Err(_) => {
                         self.device = None;
                     }
                 }

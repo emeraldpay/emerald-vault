@@ -362,6 +362,7 @@ fn try_vault_file(file: &Path, suffix: &str) -> Result<Uuid, ()> {
 pub struct CreateWallet {
     keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
+    #[allow(dead_code)]
     seeds: Arc<dyn VaultAccessByFile<Seed>>,
 }
 
@@ -498,7 +499,7 @@ impl AddEntry {
                 let ephemeral_pk = generate_key(&hd_path, seed.as_slice())?;
                 Some(ephemeral_pk.to_address())
             }
-            SeedSource::Ledger(ledger) => {
+            SeedSource::Ledger(_) => {
                 // try to verify address if Ledger is currently connected
                 let hd_path_bytes = Some(hd_path.to_bytes());
                 let mut manager = WManager::new(hd_path_bytes.clone())?;
@@ -1371,7 +1372,7 @@ mod tests {
             key: PKType::PrivateKeyRef(pk_id_1),
             ..WalletEntry::default()
         });
-        vault.wallets.update(wallet_2);
+        vault.wallets.update(wallet_2).expect("not updated");
 
         let pk = vault.keys.get(pk_id_1);
         assert!(pk.is_ok());
@@ -1792,7 +1793,7 @@ mod tests {
         let mut copy = wallet.clone();
         copy.id = Uuid::new_v4();
 
-        vault.wallets().add(copy);
+        vault.wallets().add(copy).expect("not added");
 
         let removed = vault.remove_entry(wallet_id, id1);
         assert_eq!(Ok(true), removed);

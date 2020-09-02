@@ -14,7 +14,6 @@ use hdpath::StandardHDPath;
 use regex::Regex;
 use std::str::FromStr;
 use uuid::Uuid;
-use std::time::SystemTime;
 use chrono::{DateTime, Utc};
 use std::convert::TryFrom;
 
@@ -304,7 +303,7 @@ mod tests {
     use crate::structs::seed::{LedgerSource, Seed, SeedRef, SeedSource};
     use crate::structs::types::HasUuid;
     use crate::structs::wallet::{EntryId, PKType, Wallet, WalletEntry};
-    use crate::{to_32bytes, EthereumAddress, EthereumPrivateKey, ToHex, EthereumTransaction};
+    use crate::{to_32bytes, EthereumAddress, EthereumPrivateKey, EthereumTransaction};
     use hdpath::StandardHDPath;
     use std::convert::TryFrom;
     use std::str::FromStr;
@@ -442,7 +441,7 @@ mod tests {
 
         let pk = entry.export_ethereum_pk("testtest".to_string(), &vault).unwrap();
         assert_eq!(
-            pk.to_hex(),
+            hex::encode(pk.0),
             "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
         )
     }
@@ -476,7 +475,7 @@ mod tests {
 
         let pk = entry.export_ethereum_pk("test1234".to_string(), &vault).unwrap();
         assert_eq!(
-            pk.to_hex(),
+            hex::encode(pk.0),
             "62a54ec79949cf6eb3bec6d67a3cd5fab835899f80c99785b73e8cd2ae9cfadb"
         )
     }

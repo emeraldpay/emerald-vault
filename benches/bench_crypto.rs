@@ -21,7 +21,6 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use tempdir::TempDir;
 use std::convert::TryFrom;
-use rand::rngs::OsRng;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 

@@ -13,7 +13,6 @@ use crate::{
 use hdpath::StandardHDPath;
 use std::convert::TryFrom;
 use uuid::Uuid;
-use std::time::SystemTime;
 use chrono::Utc;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {

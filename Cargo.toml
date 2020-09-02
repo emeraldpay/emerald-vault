@@ -59,6 +59,7 @@ csv = "1.1.3"
 base64 = "0.12.3"
 rlp = "0.4.5"
 hdpath = { version = "0.2.0", features = ["with-bitcoin"] }
+byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
 
 [dev-dependencies]
 tempdir = "0.3.7"

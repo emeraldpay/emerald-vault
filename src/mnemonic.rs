@@ -25,15 +25,14 @@ mod language;
 pub use self::error::Error;
 pub use self::language::{Language, BIP39_ENGLISH_WORDLIST};
 pub use crate::hdwallet::bip32::{generate_key};
-use crate::mnemonic::error::Error::MnemonicError;
 use hmac::Hmac;
 use num::bigint::BigUint;
 use num::{FromPrimitive, ToPrimitive};
 use pbkdf2::pbkdf2;
 use rand::distributions::Standard;
-use rand::{rngs::OsRng, thread_rng, RngCore, Rng};
-use sha2::{Sha256, Sha512, Digest};
-use std::ops::{BitAnd, BitOr, Shl, Shr};
+use rand::{rngs::OsRng, Rng};
+use sha2::{Sha512, Digest};
+use std::ops::{BitAnd, Shr};
 
 /// Count of iterations for `pbkdf2`
 const PBKDF2_ROUNDS: u32 = 2048;
@@ -167,7 +166,7 @@ impl MnemonicSize {
             full
         } else {
             let mut mask: u8 = 0;
-            for i in 0..self.checksum_length {
+            for _i in 0..self.checksum_length {
                 mask |= 1;
                 mask = mask << 1;
             }
@@ -240,7 +239,7 @@ impl Mnemonic {
         };
 
         let mut result = vec![0u8; 64];
-        let kdf = pbkdf2::<Hmac<Sha512>>(
+        pbkdf2::<Hmac<Sha512>>(
             // password
             &self.sentence().as_str().as_bytes(),
             // salt
@@ -341,9 +340,9 @@ fn get_indexes(entropy: &[u8], size: MnemonicSize) -> Result<Vec<usize>, Error> 
         )));
     }
 
-    let mut data = BigUint::from_bytes_be(entropy);
+    let data = BigUint::from_bytes_be(entropy);
     // 11 bit for each word
-    let mut base_mask = BigUint::from_u16(0b11111111111).expect("expect initialize word index");
+    let base_mask = BigUint::from_u16(0b11111111111).expect("expect initialize word index");
     let mut out: Vec<usize> = Vec::with_capacity(size.words_count());
     for i in 0..size.words_count() {
         let pos = (size.words_count() - 1 - i) * (INDEX_BIT_SIZE as usize);
@@ -363,32 +362,31 @@ fn get_indexes(entropy: &[u8], size: MnemonicSize) -> Result<Vec<usize>, Error> 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ToHex;
     use hex::FromHex;
 
     #[test]
     fn keeps_zeroes_with_checksum() {
         let zeroes = vec![0; 2]; //0x0000
         let act = with_checksum(zeroes.as_slice(), 15, StandardMnemonic::size12());
-        assert_eq!(act.to_hex(), "000000000000000000000000000000000f");
+        assert_eq!(hex::encode(act), "000000000000000000000000000000000f");
 
         let zeroes =
             Vec::from_hex("00000000000000000000000000000000000000000000000000000000000000")
                 .unwrap();
         let act = with_checksum(zeroes.as_slice(), 15, StandardMnemonic::size24());
         assert_eq!(
-            act.to_hex(),
+            hex::encode(act),
             "000000000000000000000000000000000000000000000000000000000000000f"
         );
 
         let zeroes = Vec::from_hex("000100").unwrap();
         let act = with_checksum(zeroes.as_slice(), 15, StandardMnemonic::size12());
-        assert_eq!(act.to_hex(), "000000000000000000000000000000100f");
+        assert_eq!(hex::encode(act), "000000000000000000000000000000100f");
 
         let zeroes = Vec::from_hex("000000000000000000000000000000000000000000000000").unwrap();
         let act = with_checksum(zeroes.as_slice(), 0b100111, StandardMnemonic::size18());
         assert_eq!(
-            act.to_hex(),
+            hex::encode(act),
             "00000000000000000000000000000000000000000000000027"
         );
     }
@@ -605,7 +603,7 @@ mod tests {
 
     #[test]
     fn get_index_18() {
-        let mut entropy =
+        let entropy =
             Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffd1").unwrap();
         let res = get_indexes(entropy.as_slice(), StandardMnemonic::size18()).unwrap();
         let exp: Vec<usize> = vec![
@@ -776,7 +774,7 @@ mod tests {
                 .collect();
 
         assert_eq!(mnemonic.words, words);
-        assert_eq!(mnemonic.seed(None).to_hex(),
+        assert_eq!(hex::encode(mnemonic.seed(None)),
                    "d2911131a6dda23ac4441d1b66e2113ec6324354523acfa20899a2dcb3087849264e91f8ec5d75355f0f617be15369ffa13c3d18c8156b97cd2618ac693f759f"
         );
     }
@@ -791,7 +789,7 @@ mod tests {
             .collect();
 
         assert_eq!(mnemonic.words, words);
-        assert_eq!(mnemonic.seed(None).to_hex(),
+        assert_eq!(hex::encode(mnemonic.seed(None)),
                    "4975bb3d1faf5308c86a30893ee903a976296609db223fd717e227da5a813a34dc1428b71c84a787fc51f3b9f9dc28e9459f48c08bd9578e9d1b170f2d7ea506"
         );
 
@@ -803,7 +801,7 @@ mod tests {
             .collect();
 
         assert_eq!(mnemonic.words, words);
-        assert_eq!(mnemonic.seed(None).to_hex(),
+        assert_eq!(hex::encode(mnemonic.seed(None)),
                    "b059400ce0f55498a5527667e77048bb482ff6daa16c37b4b9e8af70c85b3f4df588004f19812a1a027c9a51e5e94259a560268e91cd10e206451a129826e740"
         );
 
@@ -815,7 +813,7 @@ mod tests {
             .collect();
 
         assert_eq!(mnemonic.words, words);
-        assert_eq!(mnemonic.seed(None).to_hex(),
+        assert_eq!(hex::encode(mnemonic.seed(None)),
                    "04d5f77103510c41d610f7f5fb3f0badc77c377090815cee808ea5d2f264fdfabf7c7ded4be6d4c6d7cdb021ba4c777b0b7e57ca8aa6de15aeb9905dba674d66"
         );
 
@@ -828,7 +826,7 @@ mod tests {
                 .collect();
 
         assert_eq!(mnemonic.words, words);
-        assert_eq!(mnemonic.seed(None).to_hex(),
+        assert_eq!(hex::encode(mnemonic.seed(None)),
                    "d2911131a6dda23ac4441d1b66e2113ec6324354523acfa20899a2dcb3087849264e91f8ec5d75355f0f617be15369ffa13c3d18c8156b97cd2618ac693f759f"
         );
     }
@@ -845,7 +843,7 @@ mod tests {
             .collect();
 
         assert_eq!(mnemonic.words, words);
-        assert_eq!(mnemonic.seed(None).to_hex(),
+        assert_eq!(hex::encode(mnemonic.seed(None)),
                    "761914478ebf6fe16185749372e91549361af22b386de46322cf8b1ba7e92e80c4af05196f742be1e63aab603899842ddadf4e7248d8e43870a4b6ff9bf16324"
         );
     }

@@ -67,7 +67,7 @@ impl error::Error for Error {
         "Mnemonic generation error"
     }
 
-    fn cause(&self) -> Option<&error::Error> {
+    fn cause(&self) -> Option<&dyn error::Error> {
         match *self {
             _ => None,
         }

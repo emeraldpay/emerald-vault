@@ -15,9 +15,16 @@ const KDF_SALT_BYTES: usize = 32;
 /// Cipher initialization vector length in bytes
 const CIPHER_IV_BYTES: usize = 16;
 
-byte_array_struct!(Mac, KECCAK256_BYTES);
-byte_array_struct!(Iv, CIPHER_IV_BYTES);
-byte_array_struct!(Salt, KDF_SALT_BYTES);
+byte_array_struct!(
+    pub struct Mac(KECCAK256_BYTES);
+);
+byte_array_struct!(
+    pub struct Iv(CIPHER_IV_BYTES);
+);
+byte_array_struct!(
+    pub struct Salt(KDF_SALT_BYTES);
+);
+
 
 /// A keystore file (entry private key encrypted with a passphrase)
 #[derive(Deserialize, Debug, Clone)]

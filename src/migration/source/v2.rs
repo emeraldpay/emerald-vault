@@ -16,7 +16,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::str::from_utf8;
 use uuid::Uuid;
-use std::time::SystemTime;
 use chrono::Utc;
 
 /// Separator for data in RocksDB
@@ -49,12 +48,19 @@ impl V2Storage {
     }
 
     fn blockchain_path(&self, blockchain: &Blockchain) -> Option<PathBuf> {
-        let chain_id = EthereumChainId::from(blockchain.clone());
-        self.ethereum_path(&chain_id)
+        let name = match blockchain {
+            Blockchain::Ethereum => "eth",
+            Blockchain::EthereumClassic => "mainnet",
+            Blockchain::KovanTestnet => "kovan",
+            _ => {
+                return None
+            }
+        };
+        self.ethereum_path(name)
     }
 
-    fn ethereum_path(&self, chain_id: &EthereumChainId) -> Option<PathBuf> {
-        let base = self.dir.join(chain_id.get_path_element());
+    fn ethereum_path(&self, name: &str) -> Option<PathBuf> {
+        let base = self.dir.join(name);
         let path = base.join("keystore/.db");
         if path.exists() && path.is_dir() {
             Some(base)
@@ -267,10 +273,10 @@ impl Migrate for V2Storage {
         });
 
         let unsupported_blockchains = vec![
-            EthereumChainId::Rinkeby,
-            EthereumChainId::Rootstock,
-            EthereumChainId::RootstockTestnet,
-            EthereumChainId::Ropsten,
+            "rinkeby",
+            "rootstock-main",
+            "rootstock-test",
+            "ropsten",
         ];
 
         unsupported_blockchains.iter().for_each(|blockchain| {
