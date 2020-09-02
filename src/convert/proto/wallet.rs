@@ -55,7 +55,7 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
             Some(pk_type) => match pk_type {
                 proto_WalletEntryPkType::hd_path(seed) => {
                     let seed = SeedRef {
-                        seed_id: Uuid::from_bytes(seed.get_seed_id()).map_err(|_| {
+                        seed_id: Uuid::from_slice(seed.get_seed_id()).map_err(|_| {
                             ConversionError::InvalidFieldValue("seed_id".to_string())
                         })?,
                         hd_path: StandardHDPath::try_from(seed.get_path()).map_err(|_| {
@@ -65,7 +65,7 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
                     PKType::SeedHd(seed)
                 }
                 proto_WalletEntryPkType::pk_id(pk_id) => PKType::PrivateKeyRef(
-                    Uuid::from_bytes(pk_id)
+                    Uuid::from_slice(pk_id)
                         .map_err(|_| ConversionError::InvalidFieldValue("pk_id".to_string()))?,
                 ),
             },
@@ -127,7 +127,7 @@ impl TryFrom<proto_Wallet> for Vec<ReservedPath> {
     fn try_from(value: proto_Wallet) -> Result<Self, Self::Error> {
         let mut result = Vec::with_capacity(value.hd_accounts.len());
         for r in value.hd_accounts.to_vec() {
-            match Uuid::from_bytes(r.seed_id.as_slice()) {
+            match Uuid::from_slice(r.seed_id.as_slice()) {
                 Ok(id) => result.push(ReservedPath {
                     seed_id: id,
                     account_id: r.account_id,
@@ -155,7 +155,7 @@ impl TryFrom<&[u8]> for Wallet {
             .single()
             .unwrap_or_else(|| Utc.timestamp_millis(0));
         let result = Wallet {
-            id: Uuid::from_bytes(m.get_id())
+            id: Uuid::from_slice(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
             label: none_if_empty(m.get_label()),
             entries,
@@ -287,7 +287,7 @@ mod tests {
         let act = parse_from_bytes::<proto_Wallet>(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 1);
         assert_eq!(
-            Uuid::from_bytes(act.get_id()).unwrap(),
+            Uuid::from_slice(act.get_id()).unwrap(),
             Uuid::from_str("60eb04b5-1602-4e75-885f-076217ac5d0d").unwrap()
         );
         assert_eq!(act.get_label(), "");

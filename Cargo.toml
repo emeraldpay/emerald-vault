@@ -13,10 +13,6 @@ license = "Apache-2.0"
 edition = "2018"
 autobenches = false
 
-[badges]
-travis-ci = { repository = "emeraldpay/emerald-vault" }
-appveyor = { repository = "emeraldpay/emerald-vault" }
-
 [lib]
 name = "emerald_vault"
 path = "src/lib.rs"
@@ -33,18 +29,20 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 glob = "0.3.0"
-uuid = { version = "0.6", features = ["serde", "v4"] }
-secp256k1 = { version = "0.15", features = ["rand", "recovery"] }
+uuid = { version = "0.8.1", features = ["serde", "v4"] }
+secp256k1 = { version = "0.17.1", features = ["rand", "recovery"] }
+# used by secp
 rand = "0.6.5"
-byteorder= "1.3.4"
+getrandom = "0.1.14"
+byteorder = "1.3.4"
 ethabi = "2.0.0"
 num = "0.3.0"
-bitcoin = "0.21.0"
+bitcoin = "0.23.0"
 aes-ctr = "0.4.0"
 sha2 = "0.9.1"
 sha3 = "0.9.1"
 pbkdf2 = "0.4.0"
-scrypt = "0.3.1"
+scrypt = "0.4.1"
 hmac = "0.8.1"
 # rocksdb 0.12.2 is the last one which compiles on macOS with -C target-feature=+crt-static
 rocksdb = { version = "= 0.12.2", default-features = false, features = ["snappy"] }
@@ -58,7 +56,7 @@ fs_extra = "1.1.0"
 csv = "1.1.3"
 base64 = "0.12.3"
 rlp = "0.4.5"
-hdpath = { version = "0.2.0", features = ["with-bitcoin"] }
+hdpath = { version = "0.2.1", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
 
 [dev-dependencies]

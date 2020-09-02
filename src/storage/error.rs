@@ -40,8 +40,8 @@ impl std::convert::From<protobuf::ProtobufError> for VaultError {
     }
 }
 
-impl std::convert::From<uuid::ParseError> for VaultError {
-    fn from(_: uuid::ParseError) -> Self {
+impl std::convert::From<uuid::Error> for VaultError {
+    fn from(_: uuid::Error) -> Self {
         VaultError::IncorrectIdError
     }
 }

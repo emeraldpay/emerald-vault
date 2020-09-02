@@ -123,7 +123,7 @@ impl TryFrom<&[u8]> for Seed {
             .single()
             .unwrap_or_else(|| Utc.timestamp_millis(0));
         let result = Seed {
-            id: Uuid::from_bytes(m.get_id())
+            id: Uuid::from_slice(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
             source,
             label,
@@ -193,7 +193,7 @@ mod tests {
         let act = parse_from_bytes::<proto_Seed>(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 3);
         assert_eq!(
-            Uuid::from_bytes(act.get_id()).unwrap(),
+            Uuid::from_slice(act.get_id()).unwrap(),
             Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap()
         );
         assert!(act.has_bytes());
