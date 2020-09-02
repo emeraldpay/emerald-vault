@@ -16,11 +16,20 @@ limitations under the License.
 */
 //! # Core domain logic module
 
-pub mod ethereum;
 pub mod chains;
 pub mod error;
+pub mod ethereum;
 
-pub use self::ethereum::address::{EthereumAddress, ETHEREUM_ADDRESS_BYTES};
-pub use self::error::Error;
-pub use self::ethereum::signature::{EthereumPrivateKey, EthereumSignature, ECDSA_SIGNATURE_BYTES, PRIVATE_KEY_BYTES};
-pub use self::ethereum::transaction::EthereumTransaction;
+pub use self::{
+    error::Error,
+    ethereum::{
+        address::{EthereumAddress, ETHEREUM_ADDRESS_BYTES},
+        signature::{
+            EthereumPrivateKey,
+            EthereumSignature,
+            ECDSA_SIGNATURE_BYTES,
+            PRIVATE_KEY_BYTES,
+        },
+        transaction::EthereumTransaction,
+    },
+};

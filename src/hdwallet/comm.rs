@@ -17,16 +17,11 @@ limitations under the License.
 //! # Module providing commnication using HID API
 //!
 
-use super::apdu::APDU;
-use super::error::Error;
-use super::to_arr;
-use super::HidDevice;
+use super::{apdu::APDU, error::Error, to_arr, HidDevice};
 use hex;
 use hidapi::HidDeviceInfo;
 use log;
-use std::cmp::min;
-use std::mem::size_of_val;
-use std::slice;
+use std::{cmp::min, mem::size_of_val, slice};
 
 ///
 pub const HID_RPT_SIZE: usize = 64;

@@ -1,22 +1,29 @@
-use crate::migration::source::common::add_to_vault;
-use crate::migration::source::json_data::{AddressBookItem, KeyFileV2};
-use crate::migration::types::{Migrate, MigrationError, MigrationResult};
-use crate::storage::archive::ArchiveType;
 use crate::{
-    ethereum::EthereumAddress,
     blockchain::chains::{Blockchain, EthereumChainId},
+    ethereum::EthereumAddress,
+    migration::{
+        source::{
+            common::add_to_vault,
+            json_data::{AddressBookItem, KeyFileV2},
+        },
+        types::{Migrate, MigrationError, MigrationResult},
+    },
     storage::{
-        addressbook::AddressBookmark, archive::Archive, vault::VaultAccess, vault::VaultStorage,
+        addressbook::AddressBookmark,
+        archive::{Archive, ArchiveType},
+        vault::{VaultAccess, VaultStorage},
     },
     structs::book::{AddressRef, BookmarkDetails},
     util,
 };
-use rocksdb::{IteratorMode, Options, DB};
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::str::from_utf8;
-use uuid::Uuid;
 use chrono::Utc;
+use rocksdb::{IteratorMode, Options, DB};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    str::from_utf8,
+};
+use uuid::Uuid;
 
 /// Separator for data in RocksDB
 /// `value = <filename> + SEPARATOR + <keyfile_json>`
@@ -52,9 +59,7 @@ impl V2Storage {
             Blockchain::Ethereum => "eth",
             Blockchain::EthereumClassic => "mainnet",
             Blockchain::KovanTestnet => "kovan",
-            _ => {
-                return None
-            }
+            _ => return None,
         };
         self.ethereum_path(name)
     }
@@ -272,12 +277,8 @@ impl Migrate for V2Storage {
             }
         });
 
-        let unsupported_blockchains = vec![
-            "rinkeby",
-            "rootstock-main",
-            "rootstock-test",
-            "ropsten",
-        ];
+        let unsupported_blockchains =
+            vec!["rinkeby", "rootstock-main", "rootstock-test", "ropsten"];
 
         unsupported_blockchains.iter().for_each(|blockchain| {
             match self.ethereum_path(blockchain) {
@@ -329,14 +330,20 @@ impl Migrate for V2Storage {
 
 #[cfg(test)]
 mod tests {
-    use crate::blockchain::chains::Blockchain;
-    use crate::migration::source::v2::V2Storage;
-    use crate::migration::test_commons::{sort_wallets, unzip};
-    use crate::migration::types::Migrate;
-    use crate::storage::vault::VaultStorage;
-    use crate::structs::seed::SeedSource;
-    use crate::structs::wallet::{PKType, Wallet};
-    use crate::EthereumAddress;
+    use crate::{
+        blockchain::chains::Blockchain,
+        migration::{
+            source::v2::V2Storage,
+            test_commons::{sort_wallets, unzip},
+            types::Migrate,
+        },
+        storage::vault::VaultStorage,
+        structs::{
+            seed::SeedSource,
+            wallet::{PKType, Wallet},
+        },
+        EthereumAddress,
+    };
     use std::str::FromStr;
     use tempdir::TempDir;
 

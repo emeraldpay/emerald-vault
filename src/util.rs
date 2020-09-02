@@ -350,5 +350,4 @@ mod tests {
 
         assert!(re.is_match(&timestamp()));
     }
-
 }

@@ -22,10 +22,10 @@ use super::error::Error;
 use crate::blockchain::{EthereumPrivateKey, PRIVATE_KEY_BYTES};
 use bitcoin::{
     network::constants::Network,
-    util::bip32::{ExtendedPrivKey, DerivationPath},
+    util::bip32::{DerivationPath, ExtendedPrivKey},
 };
-use secp256k1::Secp256k1;
 use hdpath::StandardHDPath;
+use secp256k1::Secp256k1;
 
 
 /// Generate `PrivateKey` using BIP32
@@ -48,9 +48,9 @@ pub fn generate_key(path: &StandardHDPath, seed: &[u8]) -> Result<EthereumPrivat
 mod test {
     use super::*;
     use crate::blockchain::EthereumAddress;
+    use hdpath::Purpose;
     use hex::FromHex;
     use std::str::FromStr;
-    use hdpath::Purpose;
 
     #[test]
     fn test_key_generation() {

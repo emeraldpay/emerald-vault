@@ -1,29 +1,32 @@
-use crate::convert::error::ConversionError;
-use crate::structs::wallet::ReservedPath;
 use crate::{
     blockchain::{chains::Blockchain, EthereumAddress},
+    convert::error::ConversionError,
     proto::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         common::FileType as proto_FileType,
         seed::SeedHD as proto_SeedHD,
         wallet::{
-            Reserved as proto_Reserved, Wallet as proto_Wallet, WalletEntry as proto_WalletEntry,
+            Reserved as proto_Reserved,
+            Wallet as proto_Wallet,
+            WalletEntry as proto_WalletEntry,
             WalletEntry_oneof_pk_type as proto_WalletEntryPkType,
         },
     },
     structs::{
         seed::SeedRef,
-        wallet::{PKType, Wallet, WalletEntry},
+        wallet::{PKType, ReservedPath, Wallet, WalletEntry},
     },
     util::optional::none_if_empty,
 };
+use chrono::{TimeZone, Utc};
 use hdpath::StandardHDPath;
 use protobuf::{parse_from_bytes, Message};
-use std::cmp;
-use std::convert::{TryFrom, TryInto};
-use std::str::FromStr;
+use std::{
+    cmp,
+    convert::{TryFrom, TryInto},
+    str::FromStr,
+};
 use uuid::Uuid;
-use chrono::{Utc, TimeZone};
 
 impl TryFrom<&proto_WalletEntry> for WalletEntry {
     type Error = ConversionError;
@@ -35,7 +38,9 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
         let address = match &address {
             Some(a) => match &a.address_type {
                 Some(address_type) => match address_type {
-                    proto_AddressType::plain_address(a) => Some(EthereumAddress::from_str(a.as_str())?),
+                    proto_AddressType::plain_address(a) => {
+                        Some(EthereumAddress::from_str(a.as_str())?)
+                    }
                     _ => {
                         return Err(ConversionError::UnsupportedValue(
                             "address_type".to_string(),
@@ -145,8 +150,10 @@ impl TryFrom<&[u8]> for Wallet {
             let acc = WalletEntry::try_from(m)?;
             entries.push(acc);
         }
-        let created_at = Utc.timestamp_millis_opt(m.get_created_at() as i64)
-            .single().unwrap_or_else(|| Utc.timestamp_millis(0));
+        let created_at = Utc
+            .timestamp_millis_opt(m.get_created_at() as i64)
+            .single()
+            .unwrap_or_else(|| Utc.timestamp_millis(0));
         let result = Wallet {
             id: Uuid::from_bytes(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
@@ -225,26 +232,27 @@ impl TryFrom<Wallet> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::convert::error::ConversionError;
-    use crate::proto::{
-        seed::{HDPath as proto_HDPath, SeedHD as proto_SeedHD},
-        wallet::{Wallet as proto_Wallet, WalletEntry as proto_WalletEntry},
-    };
-    use crate::structs::wallet::ReservedPath;
     use crate::{
-        chains::Blockchain,
         blockchain::EthereumAddress,
+        chains::Blockchain,
+        convert::error::ConversionError,
+        proto::{
+            seed::{HDPath as proto_HDPath, SeedHD as proto_SeedHD},
+            wallet::{Wallet as proto_Wallet, WalletEntry as proto_WalletEntry},
+        },
         structs::{
             seed::SeedRef,
-            wallet::{PKType, Wallet, WalletEntry},
+            wallet::{PKType, ReservedPath, Wallet, WalletEntry},
         },
     };
+    use chrono::{TimeZone, Utc};
     use hdpath::StandardHDPath;
     use protobuf::{parse_from_bytes, Message, ProtobufEnum};
-    use std::convert::{TryFrom, TryInto};
-    use std::str::FromStr;
+    use std::{
+        convert::{TryFrom, TryInto},
+        str::FromStr,
+    };
     use uuid::Uuid;
-    use chrono::{Utc, TimeZone};
 
     #[test]
     fn write_and_read_empty() {
@@ -298,7 +306,8 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                        .unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
                 created_at: Utc.timestamp_millis(0),
@@ -324,7 +333,8 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                        .unwrap(),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
                 created_at: Utc.timestamp_millis(0),
@@ -350,7 +360,8 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                        .unwrap(),
                 ),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
@@ -383,7 +394,8 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                        .unwrap(),
                 ),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),

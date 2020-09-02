@@ -1,7 +1,6 @@
-use serde::de;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::str::FromStr;
 use crate::blockchain::ethereum::EthereumAddress;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use std::str::FromStr;
 
 impl<'de> Deserialize<'de> for EthereumAddress {
     fn deserialize<D>(deserializer: D) -> Result<EthereumAddress, D::Error>
@@ -31,8 +30,7 @@ impl Serialize for EthereumAddress {
 
 #[cfg(test)]
 mod tests {
-    use crate::tests::*;
-    use crate::blockchain::ethereum::EthereumAddress;
+    use crate::{blockchain::ethereum::EthereumAddress, tests::*};
 
     #[test]
     fn should_encode_default_address() {
@@ -80,10 +78,10 @@ mod tests {
 
     #[test]
     fn should_not_decode_wrong_address() {
-        assert!(
-            serde_json::from_str::<EthereumAddress>("\"__7c045110b8dbf29765047380898919c5cb56f4\"")
-                .is_err()
-        );
+        assert!(serde_json::from_str::<EthereumAddress>(
+            "\"__7c045110b8dbf29765047380898919c5cb56f4\""
+        )
+            .is_err());
     }
 
     #[test]

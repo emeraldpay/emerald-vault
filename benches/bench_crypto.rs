@@ -5,22 +5,19 @@ extern crate uuid;
 #[macro_use]
 extern crate bencher;
 
-use crate::{
-    emerald::{
-        structs::{
-            crypto::Encrypted,
-            pk::PrivateKeyHolder,
-        },
-        convert::json::keyfile::{EthereumJsonV3File},
-    }
+use crate::emerald::{
+    convert::json::keyfile::EthereumJsonV3File,
+    structs::{crypto::Encrypted, pk::PrivateKeyHolder},
 };
 
 use bencher::Bencher;
-use std::fs::File;
-use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::{
+    convert::TryFrom,
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 use tempdir::TempDir;
-use std::convert::TryFrom;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 

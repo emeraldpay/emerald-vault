@@ -1,12 +1,13 @@
-use crate::crypto::error::CryptoError;
-use crate::structs::crypto::Encrypted;
-use crate::structs::types::HasUuid;
-use crate::EthereumAddress;
+use crate::{
+    crypto::error::CryptoError,
+    structs::{crypto::Encrypted, types::HasUuid},
+    EthereumAddress,
+};
+use chrono::{DateTime, Utc};
 use hdpath::StandardHDPath;
 use sha2::Digest;
 use std::convert::TryFrom;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 byte_array_struct!(
     pub struct Bytes256(32);
@@ -74,7 +75,6 @@ impl SeedSource {
 }
 
 impl SeedRef {
-
     /// extract Account from HDPath if it's structured as BIP-44. (m/purpose'/coin_type'/account'/change/address_index)
     /// To do so the HDPath must be valid and starts with 3 hardened values (purpose'/coin_type'/account'),
     /// otherwise the method returns Err

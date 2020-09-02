@@ -22,16 +22,16 @@ limitations under the License.
 mod error;
 mod language;
 
-pub use self::error::Error;
-pub use self::language::{Language, BIP39_ENGLISH_WORDLIST};
-pub use crate::hdwallet::bip32::{generate_key};
+pub use self::{
+    error::Error,
+    language::{Language, BIP39_ENGLISH_WORDLIST},
+};
+pub use crate::hdwallet::bip32::generate_key;
 use hmac::Hmac;
-use num::bigint::BigUint;
-use num::{FromPrimitive, ToPrimitive};
+use num::{bigint::BigUint, FromPrimitive, ToPrimitive};
 use pbkdf2::pbkdf2;
-use rand::distributions::Standard;
-use rand::{rngs::OsRng, Rng};
-use sha2::{Sha512, Digest};
+use rand::{distributions::Standard, rngs::OsRng, Rng};
+use sha2::{Digest, Sha512};
 use std::ops::{BitAnd, Shr};
 
 /// Count of iterations for `pbkdf2`
@@ -603,8 +603,7 @@ mod tests {
 
     #[test]
     fn get_index_18() {
-        let entropy =
-            Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffd1").unwrap();
+        let entropy = Vec::from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffd1").unwrap();
         let res = get_indexes(entropy.as_slice(), StandardMnemonic::size18()).unwrap();
         let exp: Vec<usize> = vec![
             2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047, 2047,

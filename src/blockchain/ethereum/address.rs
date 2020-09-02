@@ -16,11 +16,10 @@ limitations under the License.
 */
 //! # Account address (20 bytes)
 
-use crate::util::to_arr;
 use super::super::Error;
+use crate::util::to_arr;
 use hex;
-use std::str::FromStr;
-use std::{fmt, ops};
+use std::{fmt, ops, str::FromStr};
 
 /// Fixed bytes number to represent `Address`
 pub const ETHEREUM_ADDRESS_BYTES: usize = 20;

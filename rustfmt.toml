@@ -1,8 +1,8 @@
 # [config.rs](https://github.com/rust-lang-nursery/rustfmt/blob/master/src/config.rs)
 # [rustfmt-configs-guide](https://rust-lang.github.io/rustfmt/)
 newline_style = "Unix"
+blank_lines_upper_bound = 3
+
 reorder_imports = true
-# unstable
-# merge_imports = true
-# report_todo = "Always"
-# report_fixme = "Always"
+imports_layout = "HorizontalVertical"
+merge_imports = true

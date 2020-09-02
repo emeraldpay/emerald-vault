@@ -1,11 +1,13 @@
-use crate::convert::error::ConversionError;
 use crate::{
+    convert::error::ConversionError,
     proto::{
         common::FileType as proto_FileType,
         crypto::Encrypted as proto_Encrypted,
         seed::{
-            HDPath as proto_HDPath, HDPathFingerprint as proto_HDFingerprint,
-            LedgerSeed as proto_LedgerSeed, Seed as proto_Seed,
+            HDPath as proto_HDPath,
+            HDPathFingerprint as proto_HDFingerprint,
+            LedgerSeed as proto_LedgerSeed,
+            Seed as proto_Seed,
             Seed_oneof_seed_source as proto_SeedType,
         },
     },
@@ -13,13 +15,13 @@ use crate::{
         crypto::Encrypted,
         seed::{Bytes256, FingerprintType, HDPathFingerprint, LedgerSource, Seed, SeedSource},
     },
+    util::optional::none_if_empty,
 };
+use chrono::{TimeZone, Utc};
 use hdpath::{Purpose, StandardHDPath};
 use protobuf::{parse_from_bytes, Message};
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
-use chrono::{Utc, TimeZone};
-use crate::util::optional::none_if_empty;
 
 impl TryFrom<&proto_HDPath> for StandardHDPath {
     type Error = ConversionError;
@@ -116,8 +118,10 @@ impl TryFrom<&[u8]> for Seed {
         };
 
         let label = none_if_empty(m.get_label());
-        let created_at = Utc.timestamp_millis_opt(m.get_created_at() as i64)
-            .single().unwrap_or_else(|| Utc.timestamp_millis(0));
+        let created_at = Utc
+            .timestamp_millis_opt(m.get_created_at() as i64)
+            .single()
+            .unwrap_or_else(|| Utc.timestamp_millis(0));
         let result = Seed {
             id: Uuid::from_bytes(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
@@ -160,17 +164,20 @@ impl TryFrom<Seed> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::proto::seed::{
-        Seed as proto_Seed,
-        LedgerSeed as proto_LedgerSeed,
+    use crate::{
+        proto::seed::{LedgerSeed as proto_LedgerSeed, Seed as proto_Seed},
+        structs::{
+            crypto::Encrypted,
+            seed::{LedgerSource, Seed, SeedSource},
+        },
     };
-    use crate::structs::crypto::Encrypted;
-    use crate::structs::seed::{LedgerSource, Seed, SeedSource};
-    use protobuf::{parse_from_bytes, ProtobufEnum, Message};
-    use std::convert::{TryFrom, TryInto};
-    use std::str::FromStr;
+    use chrono::{TimeZone, Utc};
+    use protobuf::{parse_from_bytes, Message, ProtobufEnum};
+    use std::{
+        convert::{TryFrom, TryInto},
+        str::FromStr,
+    };
     use uuid::Uuid;
-    use chrono::{Utc, TimeZone};
 
     #[test]
     fn write_as_protobuf() {

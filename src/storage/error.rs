@@ -1,7 +1,9 @@
-use crate::convert::error::ConversionError;
-use crate::blockchain;
-use crate::crypto::error::CryptoError;
-use crate::hdwallet::Error as HWalletError;
+use crate::{
+    blockchain,
+    convert::error::ConversionError,
+    crypto::error::CryptoError,
+    hdwallet::Error as HWalletError,
+};
 use std::fmt::Display;
 
 #[derive(Debug, Display, Clone, PartialEq)]

@@ -1,12 +1,13 @@
-use crate::crypto::error::CryptoError;
-use crate::crypto::kdf::KeyDerive;
-use crate::keccak256;
-use crate::structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, ScryptKdf};
-use aes_ctr::stream_cipher::generic_array::GenericArray;
-use aes_ctr::stream_cipher::{NewStreamCipher, SyncStreamCipher};
-use aes_ctr::Aes128Ctr;
-use rand::prelude::Rng;
-use rand::thread_rng;
+use crate::{
+    crypto::{error::CryptoError, kdf::KeyDerive},
+    keccak256,
+    structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, ScryptKdf},
+};
+use aes_ctr::{
+    stream_cipher::{generic_array::GenericArray, NewStreamCipher, SyncStreamCipher},
+    Aes128Ctr,
+};
+use rand::{prelude::Rng, thread_rng};
 use std::convert::TryFrom;
 
 /// Encrypt given text with provided key and initial vector
@@ -141,9 +142,13 @@ impl MacType {
 
 #[cfg(test)]
 mod tests {
-    use crate::crypto::encrypted::{decrypt_aes128, encrypt_aes128, Web3Key};
-    use crate::crypto::error::CryptoError;
-    use crate::structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, MacType};
+    use crate::{
+        crypto::{
+            encrypted::{decrypt_aes128, encrypt_aes128, Web3Key},
+            error::CryptoError,
+        },
+        structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, MacType},
+    };
     use std::convert::TryFrom;
 
     #[test]

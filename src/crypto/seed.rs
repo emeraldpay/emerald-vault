@@ -5,8 +5,8 @@ use crate::{
         seed::{Seed, SeedSource},
     },
 };
-use uuid::Uuid;
 use chrono::Utc;
+use uuid::Uuid;
 
 impl Seed {
     pub fn generate(seed_password: Option<&str>, save_password: &str) -> Result<Seed, ()> {

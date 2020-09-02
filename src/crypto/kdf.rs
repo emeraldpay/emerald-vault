@@ -1,5 +1,7 @@
-use crate::crypto::error::CryptoError;
-use crate::structs::crypto::{Kdf, Pbkdf2, PrfType, ScryptKdf};
+use crate::{
+    crypto::error::CryptoError,
+    structs::crypto::{Kdf, Pbkdf2, PrfType, ScryptKdf},
+};
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
 use scrypt::{scrypt, ScryptParams};

@@ -16,10 +16,11 @@ limitations under the License.
 */
 //! # Account transaction
 
-use crate::util::{keccak256, trim_bytes, KECCAK256_BYTES};
-use super::{EthereumAddress, EthereumPrivateKey, EthereumSignature};
-use super::super::error::Error;
-use crate::blockchain::chains::EthereumChainId;
+use super::{super::error::Error, EthereumAddress, EthereumPrivateKey, EthereumSignature};
+use crate::{
+    blockchain::chains::EthereumChainId,
+    util::{keccak256, trim_bytes, KECCAK256_BYTES},
+};
 use rlp::RlpStream;
 
 /// Transaction data
@@ -46,7 +47,11 @@ pub struct EthereumTransaction {
 
 impl EthereumTransaction {
     /// Sign transaction data with provided private key
-    pub fn to_signed_raw(&self, pk: EthereumPrivateKey, chain: EthereumChainId) -> Result<Vec<u8>, Error> {
+    pub fn to_signed_raw(
+        &self,
+        pk: EthereumPrivateKey,
+        chain: EthereumChainId,
+    ) -> Result<Vec<u8>, Error> {
         let sig = pk.sign_hash(self.hash(chain.as_chainid()))?;
         Ok(self.raw_from_sig(Some(chain.as_chainid()), &sig))
     }
@@ -127,8 +132,7 @@ impl EthereumTransaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::*;
-    use crate::blockchain::ethereum::EthereumAddress;
+    use crate::{blockchain::ethereum::EthereumAddress, tests::*};
 
     #[test]
     fn encode_tx() {
@@ -277,10 +281,7 @@ mod tests {
         ));
 
         assert_eq!(
-            hex::encode(
-                tx.to_signed_raw(pk, EthereumChainId::Kovan)
-                    .unwrap()
-            ),
+            hex::encode(tx.to_signed_raw(pk, EthereumChainId::Kovan).unwrap()),
             // verified with MEW
             "f870\
              83\

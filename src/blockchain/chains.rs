@@ -1,5 +1,4 @@
-use std::convert::TryFrom;
-use std::str::FromStr;
+use std::{convert::TryFrom, str::FromStr};
 
 /// Ethereum Chain Id Reference
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -31,7 +30,9 @@ impl Blockchain {
     fn get_type(self) -> BlockchainType {
         match self {
             Blockchain::BitcoinTestnet | Blockchain::Bitcoin => BlockchainType::Bitcoin,
-            Blockchain::Ethereum | Blockchain::EthereumClassic | Blockchain::KovanTestnet => BlockchainType::Ethereum
+            Blockchain::Ethereum | Blockchain::EthereumClassic | Blockchain::KovanTestnet => {
+                BlockchainType::Ethereum
+            }
         }
     }
 }
@@ -42,7 +43,7 @@ impl From<Blockchain> for EthereumChainId {
             Blockchain::Ethereum => EthereumChainId::Ethereum,
             Blockchain::EthereumClassic => EthereumChainId::EthereumClassic,
             Blockchain::KovanTestnet => EthereumChainId::Kovan,
-            _ => panic!("not an ethereum blockchain")
+            _ => panic!("not an ethereum blockchain"),
         }
     }
 }
@@ -91,7 +92,6 @@ impl FromStr for EthereumChainId {
 }
 
 impl EthereumChainId {
-
     /// chain_id for current Chain
     pub fn as_chainid(&self) -> u8 {
         match self {
@@ -100,5 +100,4 @@ impl EthereumChainId {
             EthereumChainId::EthereumClassic => 61,
         }
     }
-
 }

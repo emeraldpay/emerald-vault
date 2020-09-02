@@ -22,11 +22,12 @@ use crate::{
     structs::{book::BookmarkDetails, types::HasUuid},
 };
 use csv::{StringRecord, Writer};
-use std::convert::{TryFrom, TryInto};
-use std::fs;
-use std::fs::File;
-use std::fs::OpenOptions;
-use std::path::{Path, PathBuf};
+use std::{
+    convert::{TryFrom, TryInto},
+    fs,
+    fs::{File, OpenOptions},
+    path::{Path, PathBuf},
+};
 use uuid::Uuid;
 
 const FORMAT: &str = "bookmark/base64";
@@ -245,20 +246,19 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::addressbook::AddressbookStorage;
     use crate::{
         blockchain::chains::Blockchain,
-        storage::{addressbook::AddressBookmark, vault::VaultAccess},
+        storage::{
+            addressbook::{AddressBookmark, AddressbookStorage},
+            vault::VaultAccess,
+        },
         structs::book::{AddressRef, BookmarkDetails},
         EthereumAddress,
     };
-    use std::fs;
-    use std::path::Path;
-    use std::str::FromStr;
+    use chrono::Utc;
+    use std::{fs, path::Path, str::FromStr, time::SystemTime};
     use tempdir::TempDir;
     use uuid::Uuid;
-    use std::time::SystemTime;
-    use chrono::Utc;
 
     fn extract_address_str(details: &BookmarkDetails) -> Option<String> {
         match details.address {
@@ -344,7 +344,8 @@ mod tests {
                 label: Some("Hello World!".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(
-                    EthereumAddress::from_str("0x085fb4f24031eaedbc2b611aa528f22343eb52db").unwrap(),
+                    EthereumAddress::from_str("0x085fb4f24031eaedbc2b611aa528f22343eb52db")
+                        .unwrap(),
                 ),
                 created_at: Utc::now(),
             },
@@ -379,7 +380,8 @@ mod tests {
                 label: Some("Hello World 1".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(
-                    EthereumAddress::from_str("0x5bee6233f7e2307746266deb0678f22686932c26").unwrap(),
+                    EthereumAddress::from_str("0x5bee6233f7e2307746266deb0678f22686932c26")
+                        .unwrap(),
                 ),
                 created_at: Utc::now(),
             },
@@ -391,7 +393,8 @@ mod tests {
                 label: Some("Hello World 2".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(
-                    EthereumAddress::from_str("0x732c628300f2da4d54f988b22eeca520356743dc").unwrap(),
+                    EthereumAddress::from_str("0x732c628300f2da4d54f988b22eeca520356743dc")
+                        .unwrap(),
                 ),
                 created_at: Utc::now(),
             },
@@ -403,7 +406,8 @@ mod tests {
                 label: Some("Hello World 3".to_string()),
                 description: None,
                 address: AddressRef::EthereumAddress(
-                    EthereumAddress::from_str("0xfac41abcf13f5dcd83d8c20d5ed5e07e1968a348").unwrap(),
+                    EthereumAddress::from_str("0xfac41abcf13f5dcd83d8c20d5ed5e07e1968a348")
+                        .unwrap(),
                 ),
                 created_at: Utc::now(),
             },

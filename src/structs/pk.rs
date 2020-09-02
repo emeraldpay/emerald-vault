@@ -1,8 +1,9 @@
-use crate::structs::crypto::Encrypted;
-use crate::structs::types::HasUuid;
-use crate::{EthereumAddress};
-use uuid::Uuid;
+use crate::{
+    structs::{crypto::Encrypted, types::HasUuid},
+    EthereumAddress,
+};
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 pub struct PrivateKeyHolder {
     pub id: Uuid,

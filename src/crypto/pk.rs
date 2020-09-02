@@ -6,8 +6,8 @@ use crate::{
         pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
     },
 };
-use uuid::Uuid;
 use chrono::Utc;
+use uuid::Uuid;
 
 impl PrivateKeyHolder {
     pub fn create_ethereum_v3(pk3: EthereumPk3) -> PrivateKeyHolder {

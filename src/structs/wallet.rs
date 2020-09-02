@@ -1,21 +1,22 @@
-use crate::hdwallet::WManager;
 use crate::{
-    convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
     blockchain::chains::{Blockchain, EthereumChainId},
-    mnemonic::{generate_key},
+    convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
+    hdwallet::WManager,
+    mnemonic::generate_key,
     storage::{error::VaultError, vault::VaultStorage},
     structs::{
         seed::{SeedRef, SeedSource},
         types::HasUuid,
     },
-    EthereumAddress, EthereumPrivateKey, EthereumTransaction,
+    EthereumAddress,
+    EthereumPrivateKey,
+    EthereumTransaction,
 };
+use chrono::{DateTime, Utc};
 use hdpath::StandardHDPath;
 use regex::Regex;
-use std::str::FromStr;
+use std::{convert::TryFrom, str::FromStr};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
-use std::convert::TryFrom;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
@@ -108,7 +109,7 @@ impl Default for Wallet {
             entries: vec![],
             entry_seq: 0,
             reserved: vec![],
-            created_at: Utc::now()
+            created_at: Utc::now(),
         }
     }
 }
@@ -122,7 +123,7 @@ impl Default for WalletEntry {
             key: PKType::PrivateKeyRef(Uuid::nil()),
             receive_disabled: false,
             label: None,
-            created_at: Utc::now()
+            created_at: Utc::now(),
         }
     }
 }
@@ -165,7 +166,11 @@ impl WalletEntry {
         EntryId::from(wallet, self)
     }
 
-    fn sign_tx_by_pk(&self, tx: EthereumTransaction, key: EthereumPrivateKey) -> Result<Vec<u8>, VaultError> {
+    fn sign_tx_by_pk(
+        &self,
+        tx: EthereumTransaction,
+        key: EthereumPrivateKey,
+    ) -> Result<Vec<u8>, VaultError> {
         let chain_id = EthereumChainId::from(self.blockchain);
         tx.to_signed_raw(key, chain_id)
             .map_err(|_| VaultError::InvalidPrivateKey)
@@ -243,7 +248,8 @@ impl WalletEntry {
             PKType::PrivateKeyRef(pk) => {
                 let key = vault.keys().get(pk.clone())?;
                 let key = key.decrypt(password.as_str())?;
-                EthereumPrivateKey::try_from(key.as_slice()).map_err(|_| VaultError::InvalidPrivateKey)
+                EthereumPrivateKey::try_from(key.as_slice())
+                    .map_err(|_| VaultError::InvalidPrivateKey)
             }
             PKType::SeedHd(seed) => {
                 let seed_details = vault.seeds().get(seed.seed_id.clone())?;
@@ -295,28 +301,36 @@ impl WalletEntry {
 
 #[cfg(test)]
 mod tests {
-    use crate::blockchain::chains::Blockchain;
-    use crate::hdwallet::test_commons::{is_ledger_enabled, read_test_txes};
-    use crate::storage::vault::VaultStorage;
-    use crate::structs::crypto::Encrypted;
-    use crate::structs::pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType};
-    use crate::structs::seed::{LedgerSource, Seed, SeedRef, SeedSource};
-    use crate::structs::types::HasUuid;
-    use crate::structs::wallet::{EntryId, PKType, Wallet, WalletEntry};
-    use crate::{to_32bytes, EthereumAddress, EthereumPrivateKey, EthereumTransaction};
+    use crate::{
+        blockchain::chains::Blockchain,
+        hdwallet::test_commons::{is_ledger_enabled, read_test_txes},
+        storage::vault::VaultStorage,
+        structs::{
+            crypto::Encrypted,
+            pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
+            seed::{LedgerSource, Seed, SeedRef, SeedSource},
+            types::HasUuid,
+            wallet::{EntryId, PKType, Wallet, WalletEntry},
+        },
+        to_32bytes,
+        EthereumAddress,
+        EthereumPrivateKey,
+        EthereumTransaction,
+    };
+    use chrono::Utc;
     use hdpath::StandardHDPath;
-    use std::convert::TryFrom;
-    use std::str::FromStr;
+    use std::{convert::TryFrom, str::FromStr};
     use tempdir::TempDir;
     use uuid::Uuid;
-    use chrono::Utc;
 
     #[test]
     fn sign_erc20_approve() {
         let entry = WalletEntry {
             id: 0,
             blockchain: Blockchain::Ethereum,
-            address: Some(EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
+            address: Some(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            ),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
             ..WalletEntry::default()
         };
@@ -344,7 +358,9 @@ mod tests {
         let entry = WalletEntry {
             id: 0,
             blockchain: Blockchain::Ethereum,
-            address: Some(EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
+            address: Some(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            ),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
             ..WalletEntry::default()
         };
@@ -352,7 +368,9 @@ mod tests {
             nonce: 1,
             gas_price: to_32bytes("04a817c800"),
             gas_limit: 21000,
-            to: Some(EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
+            to: Some(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            ),
             value: to_32bytes("0de0b6b3a7640000"),
             data: vec![],
         };
@@ -378,7 +396,8 @@ mod tests {
             id: Uuid::new_v4(),
             pk: PrivateKeyType::EthereumPk(EthereumPk3 {
                 address: Some(
-                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b")
+                        .unwrap(),
                 ),
                 key: Encrypted::encrypt(raw_pk, "testtest").unwrap(),
             }),
@@ -390,7 +409,9 @@ mod tests {
         let entry = WalletEntry {
             id: 0,
             blockchain: Blockchain::Ethereum,
-            address: Some(EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
+            address: Some(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            ),
             key: PKType::PrivateKeyRef(key_id),
             ..WalletEntry::default()
         };
@@ -398,7 +419,9 @@ mod tests {
             nonce: 1,
             gas_price: to_32bytes("04a817c800"),
             gas_limit: 21000,
-            to: Some(EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
+            to: Some(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            ),
             value: to_32bytes("0de0b6b3a7640000"),
             data: vec![],
         };
@@ -423,7 +446,8 @@ mod tests {
             id: Uuid::new_v4(),
             pk: PrivateKeyType::EthereumPk(EthereumPk3 {
                 address: Some(
-                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b")
+                        .unwrap(),
                 ),
                 key: Encrypted::encrypt(raw_pk, "testtest").unwrap(),
             }),
@@ -434,12 +458,16 @@ mod tests {
         let entry = WalletEntry {
             id: 0,
             blockchain: Blockchain::Ethereum,
-            address: Some(EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
+            address: Some(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            ),
             key: PKType::PrivateKeyRef(key_id),
             ..WalletEntry::default()
         };
 
-        let pk = entry.export_ethereum_pk("testtest".to_string(), &vault).unwrap();
+        let pk = entry
+            .export_ethereum_pk("testtest".to_string(), &vault)
+            .unwrap();
         assert_eq!(
             hex::encode(pk.0),
             "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
@@ -473,7 +501,9 @@ mod tests {
             ..WalletEntry::default()
         };
 
-        let pk = entry.export_ethereum_pk("test1234".to_string(), &vault).unwrap();
+        let pk = entry
+            .export_ethereum_pk("test1234".to_string(), &vault)
+            .unwrap();
         assert_eq!(
             hex::encode(pk.0),
             "62a54ec79949cf6eb3bec6d67a3cd5fab835899f80c99785b73e8cd2ae9cfadb"
@@ -582,7 +612,9 @@ mod tests {
             nonce: 0,
             gas_price: to_32bytes("04e3b29200"),
             gas_limit: 21000,
-            to: Some(EthereumAddress::from_str("0x78296F1058dD49C5D6500855F59094F0a2876397").unwrap()),
+            to: Some(
+                EthereumAddress::from_str("0x78296F1058dD49C5D6500855F59094F0a2876397").unwrap(),
+            ),
             value: to_32bytes("0de0b6b3a7640000"),
             data: vec![],
         };

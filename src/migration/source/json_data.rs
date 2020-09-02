@@ -1,7 +1,14 @@
 use crate::{
     convert::error::ConversionError,
     structs::crypto::{
-        Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, Pbkdf2, PrfType, ScryptKdf,
+        Aes128CtrCipher,
+        Cipher,
+        Encrypted,
+        Kdf,
+        MacType,
+        Pbkdf2,
+        PrfType,
+        ScryptKdf,
     },
     EthereumAddress,
 };
@@ -292,8 +299,10 @@ impl KeyFileV2 {
 
 #[cfg(test)]
 mod tests {
-    use crate::migration::source::json_data::{AddressBookItem, CryptoTypeV2, KeyFileV2};
-    use crate::EthereumAddress;
+    use crate::{
+        migration::source::json_data::{AddressBookItem, CryptoTypeV2, KeyFileV2},
+        EthereumAddress,
+    };
     use std::str::FromStr;
 
     #[test]
@@ -312,7 +321,8 @@ mod tests {
         let act = act.unwrap();
         assert_eq!(
             AddressBookItem {
-                address: EthereumAddress::from_str("0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2").unwrap(),
+                address: EthereumAddress::from_str("0xB3c9A2f3F96ffBC4b7DEd2D92C83175698147Ae2")
+                    .unwrap(),
                 description: Some("тест".to_string()),
                 name: Some("name 1".to_string()),
             },

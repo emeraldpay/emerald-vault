@@ -16,7 +16,7 @@ limitations under the License.
 */
 //! # Crypto util functions
 
-use sha3::{Keccak256, Digest};
+use sha3::{Digest, Keccak256};
 /// Keccak-256 crypto hash length in bytes
 pub const KECCAK256_BYTES: usize = 32;
 

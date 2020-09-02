@@ -1,6 +1,6 @@
-use crate::convert::error::ConversionError;
 use crate::{
     blockchain::chains::Blockchain,
+    convert::error::ConversionError,
     proto::{
         address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         book::BookItem as proto_BookItem,
@@ -10,10 +10,9 @@ use crate::{
     util::optional::none_if_empty,
     EthereumAddress,
 };
+use chrono::{TimeZone, Utc};
 use protobuf::{parse_from_bytes, Message};
-use std::convert::TryFrom;
-use std::str::FromStr;
-use chrono::{Utc, TimeZone};
+use std::{convert::TryFrom, str::FromStr};
 
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for BookmarkDetails {
@@ -40,8 +39,10 @@ impl TryFrom<&[u8]> for BookmarkDetails {
 
         let blockchain = Blockchain::try_from(m.get_blockchain())
             .map_err(|_| ConversionError::InvalidFieldValue("blockchain".to_string()))?;
-        let created_at = Utc.timestamp_millis_opt(m.get_created_at() as i64)
-            .single().unwrap_or_else(|| Utc.timestamp_millis(0));
+        let created_at = Utc
+            .timestamp_millis_opt(m.get_created_at() as i64)
+            .single()
+            .unwrap_or_else(|| Utc.timestamp_millis(0));
         let result = BookmarkDetails {
             blockchain,
             label: none_if_empty(m.get_label()),
@@ -91,15 +92,18 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::structs::book::{BookmarkDetails, AddressRef};
-    use crate::chains::Blockchain;
-    use crate::EthereumAddress;
-    use std::str::FromStr;
-    use chrono::{Utc, TimeZone};
+    use crate::{
+        chains::Blockchain,
+        proto::{address::Address as proto_Address, book::BookItem as proto_BootItem},
+        structs::book::{AddressRef, BookmarkDetails},
+        EthereumAddress,
+    };
+    use chrono::{TimeZone, Utc};
     use protobuf::{parse_from_bytes, Message};
-    use crate::proto::book::BookItem as proto_BootItem;
-    use crate::proto::address::Address as proto_Address;
-    use std::convert::{TryInto, TryFrom};
+    use std::{
+        convert::{TryFrom, TryInto},
+        str::FromStr,
+    };
 
     #[test]
     fn write_as_protobuf() {
@@ -107,7 +111,9 @@ mod tests {
             blockchain: Blockchain::Ethereum,
             label: Some("Hello".to_string()),
             description: None,
-            address: AddressRef::EthereumAddress(EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
+            address: AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+            ),
             created_at: Utc.timestamp_millis(1592624592679),
         };
 
@@ -116,7 +122,10 @@ mod tests {
         let act = parse_from_bytes::<proto_BootItem>(b.as_slice()).unwrap();
         assert_eq!(act.label, "Hello".to_string());
         assert!(act.has_address());
-        assert_eq!(act.get_address().get_plain_address(), "0x6412c428fc02902d137b60dc0bd0f6cd1255ea99");
+        assert_eq!(
+            act.get_address().get_plain_address(),
+            "0x6412c428fc02902d137b60dc0bd0f6cd1255ea99"
+        );
         assert_eq!(act.created_at, 1592624592679);
     }
 
@@ -126,7 +135,9 @@ mod tests {
             blockchain: Blockchain::EthereumClassic,
             label: Some("Hello".to_string()),
             description: Some("World!".to_string()),
-            address: AddressRef::EthereumAddress(EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap()),
+            address: AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+            ),
             created_at: Utc.timestamp_millis(1592624592679),
         };
 

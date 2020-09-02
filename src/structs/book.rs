@@ -1,5 +1,4 @@
-use crate::blockchain::chains::Blockchain;
-use crate::{EthereumAddress};
+use crate::{blockchain::chains::Blockchain, EthereumAddress};
 use chrono::{DateTime, Utc};
 
 #[derive(Clone, PartialEq, Eq, Debug)]

@@ -1,9 +1,11 @@
 use chrono::{SecondsFormat, Utc};
 use fs_extra::{dir, move_items};
-use std::fs;
-use std::fs::File;
-use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    fs::File,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 pub struct Archive {
     dir: PathBuf,
@@ -171,14 +173,22 @@ impl ToString for ArchiveDescription {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::archive::{
-        Archive, ArchiveDescription, ArchiveType, DescriptionBlock, ARCHIVE_DIR,
+    use crate::{
+        storage::archive::{
+            Archive,
+            ArchiveDescription,
+            ArchiveType,
+            DescriptionBlock,
+            ARCHIVE_DIR,
+        },
+        tests::read_dir_fully,
     };
-    use crate::tests::read_dir_fully;
     use fs_extra::file::write_all;
-    use std::fs;
-    use std::fs::DirEntry;
-    use std::path::{Path, PathBuf};
+    use std::{
+        fs,
+        fs::DirEntry,
+        path::{Path, PathBuf},
+    };
     use tempdir::TempDir;
 
     fn read_archives<P: AsRef<Path>>(dir: P) -> Result<Vec<DirEntry>, String> {

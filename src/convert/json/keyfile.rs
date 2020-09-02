@@ -1,4 +1,5 @@
 use crate::{
+    blockchain::ethereum::EthereumAddress,
     convert::error::ConversionError,
     crypto::error::CryptoError,
     structs::{
@@ -7,13 +8,10 @@ use crate::{
     },
     EthereumPrivateKey,
 };
-use serde::{Deserialize};
-use std::convert::TryFrom;
-use std::fmt;
-use std::str::FromStr;
-use uuid::Uuid;
 use chrono::Utc;
-use crate::blockchain::ethereum::EthereumAddress;
+use serde::Deserialize;
+use std::{convert::TryFrom, fmt, str::FromStr};
+use uuid::Uuid;
 
 /// `PBKDF2` key derivation function name
 pub const PBKDF2_KDF_NAME: &str = "pbkdf2";
@@ -470,10 +468,12 @@ impl TryFrom<&EthereumJsonV3File> for EthereumPk3 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::convert::json::keyfile::{CoreCryptoJson, KdfJson, PrfJson};
-    use crate::tests::*;
-    use hex;
+    use crate::{
+        convert::json::keyfile::{CoreCryptoJson, KdfJson, PrfJson},
+        tests::*,
+    };
     use chrono::Utc;
+    use hex;
 
     #[test]
     fn import_pbkdf_default() {

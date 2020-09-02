@@ -38,6 +38,7 @@ extern crate chrono;
 extern crate csv;
 extern crate ethabi;
 extern crate glob;
+extern crate hdpath;
 extern crate hex;
 extern crate hidapi;
 extern crate hmac;
@@ -55,14 +56,13 @@ extern crate sha2;
 extern crate sha3;
 extern crate time;
 extern crate uuid;
-extern crate hdpath;
 #[macro_use]
 extern crate byte_array_struct;
 
 #[macro_use]
 pub mod util;
-pub mod convert;
 pub mod blockchain;
+pub mod convert;
 pub mod crypto;
 pub mod hdwallet;
 pub mod migration;
@@ -71,8 +71,7 @@ pub mod proto;
 pub mod storage;
 pub mod structs;
 
-pub use self::blockchain::*;
-pub use self::util::*;
+pub use self::{blockchain::*, util::*};
 
 const VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
 
@@ -88,9 +87,11 @@ mod tests {
     pub use hex::{FromHex, ToHex};
     use log::Level;
     pub use regex::Regex;
-    use std::fs;
-    use std::fs::DirEntry;
-    use std::path::{Path, PathBuf};
+    use std::{
+        fs,
+        fs::DirEntry,
+        path::{Path, PathBuf},
+    };
 
     #[allow(dead_code)]
     pub fn init_tests() {

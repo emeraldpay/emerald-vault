@@ -25,15 +25,17 @@ pub mod bip32;
 mod comm;
 mod error;
 
-use self::apdu::ApduBuilder;
-use self::comm::sendrecv;
 pub use self::error::Error;
+use self::{apdu::ApduBuilder, comm::sendrecv};
 use super::{to_arr, EthereumAddress, EthereumSignature, ECDSA_SIGNATURE_BYTES};
 use crate::hdwallet::comm::ping;
 use hex;
 use hidapi::{HidApi, HidDevice, HidDeviceInfo};
-use std::str::{from_utf8, FromStr};
-use std::{thread, time};
+use std::{
+    str::{from_utf8, FromStr},
+    thread,
+    time,
+};
 
 const GET_ETH_ADDRESS: u8 = 0x02;
 const SIGN_ETH_TRANSACTION: u8 = 0x04;
@@ -115,7 +117,11 @@ impl WManager {
     /// fd - file descriptor to corresponding HID device
     /// hd_path - optional HD path, prefixed with count of derivation indexes
     ///
-    pub fn get_address(&self, fd: &str, hd_path: Option<Vec<u8>>) -> Result<EthereumAddress, Error> {
+    pub fn get_address(
+        &self,
+        fd: &str,
+        hd_path: Option<Vec<u8>>,
+    ) -> Result<EthereumAddress, Error> {
         let hd_path = self.pick_hd_path(hd_path)?;
 
         let apdu = ApduBuilder::new(GET_ETH_ADDRESS)
@@ -234,19 +240,15 @@ impl WManager {
         self.hid.refresh_devices();
         debug!("Start searching for devices: {:?}", self.hid.devices());
 
-        let devices = self
-            .hid
-            .devices();
-        let current = devices
-            .iter()
-            .find(|hid_info| {
-                hid_info.vendor_id == LEDGER_VID
-                    && (hid_info.product_id == LEDGER_S_PID_1
-                    || hid_info.product_id == LEDGER_S_PID_2
-                    || hid_info.product_id == LEDGER_S_PID_3
-                    || hid_info.product_id == LEDGER_X_PID_1
-                    || hid_info.product_id == LEDGER_X_PID_2)
-            });
+        let devices = self.hid.devices();
+        let current = devices.iter().find(|hid_info| {
+            hid_info.vendor_id == LEDGER_VID
+                && (hid_info.product_id == LEDGER_S_PID_1
+                || hid_info.product_id == LEDGER_S_PID_2
+                || hid_info.product_id == LEDGER_S_PID_3
+                || hid_info.product_id == LEDGER_X_PID_1
+                || hid_info.product_id == LEDGER_X_PID_2)
+        });
 
         //TODO should verify address before assigning, not after
         match current {
@@ -260,12 +262,12 @@ impl WManager {
                             address,
                             ..Device::from(hid_info)
                         });
-                    },
+                    }
                     Err(_) => {
                         self.device = None;
                     }
                 }
-            },
+            }
             None => {
                 self.device = None;
             }
@@ -315,8 +317,7 @@ impl WManager {
 #[cfg(test)]
 pub mod test_commons {
     use crate::EthereumAddress;
-    use std::env;
-    use std::fs;
+    use std::{env, fs};
 
     #[derive(Deserialize)]
     pub struct TestAddress {
@@ -370,16 +371,23 @@ pub mod test_commons {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::blockchain::chains::{Blockchain, EthereumChainId};
-    use crate::blockchain::EthereumTransaction;
-    use crate::hdwallet::test_commons::{
-        get_ledger_conf, is_ledger_enabled, read_test_addresses, read_test_txes,
+    use crate::{
+        blockchain::{
+            chains::{Blockchain, EthereumChainId},
+            EthereumTransaction,
+        },
+        hdwallet::test_commons::{
+            get_ledger_conf,
+            is_ledger_enabled,
+            read_test_addresses,
+            read_test_txes,
+        },
+        tests::*,
     };
-    use crate::tests::*;
+    use hdpath::StandardHDPath;
     use hex;
     use log::{Level, LevelFilter};
     use simple_logger::init_with_level;
-    use hdpath::StandardHDPath;
     use std::convert::TryFrom;
 
     pub const ETC_DERIVATION_PATH: [u8; 21] = [
@@ -619,5 +627,4 @@ mod tests {
         manager.hd_path = Some(buf1.clone());
         assert_eq!(manager.pick_hd_path(None).unwrap(), buf1);
     }
-
 }

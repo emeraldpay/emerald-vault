@@ -1,14 +1,18 @@
-use crate::migration::source::json_data::SerializableKeyFileCoreV2;
-use crate::storage::archive::{Archive, ArchiveType};
 use crate::{
-    blockchain::chains::{Blockchain},
-    migration::source::common::add_to_vault,
-    migration::types::MigrationResult,
-    migration::types::{Migrate, MigrationError},
-    storage::vault::VaultStorage,
+    blockchain::chains::Blockchain,
+    migration::{
+        source::{common::add_to_vault, json_data::SerializableKeyFileCoreV2},
+        types::{Migrate, MigrationError, MigrationResult},
+    },
+    storage::{
+        archive::{Archive, ArchiveType},
+        vault::VaultStorage,
+    },
 };
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 use uuid::Uuid;
 
 pub struct V1Storage {
@@ -33,9 +37,7 @@ impl V1Storage {
             Blockchain::Ethereum => "eth",
             Blockchain::EthereumClassic => "mainnet",
             Blockchain::KovanTestnet => "kovan",
-            _ => {
-                return None
-            }
+            _ => return None,
         };
         self.ethereum_path(name)
     }
@@ -163,13 +165,17 @@ impl Migrate for V1Storage {
 
 #[cfg(test)]
 mod tests {
-    use crate::blockchain::chains::Blockchain;
-    use crate::migration::source::v1::V1Storage;
-    use crate::migration::test_commons::{show_dir, sort_wallets, unzip};
-    use crate::migration::types::Migrate;
-    use crate::storage::vault::VaultStorage;
-    use crate::structs::wallet::Wallet;
-    use crate::EthereumAddress;
+    use crate::{
+        blockchain::chains::Blockchain,
+        migration::{
+            source::v1::V1Storage,
+            test_commons::{show_dir, sort_wallets, unzip},
+            types::Migrate,
+        },
+        storage::vault::VaultStorage,
+        structs::wallet::Wallet,
+        EthereumAddress,
+    };
     use std::str::FromStr;
     use tempdir::TempDir;
 

@@ -1,11 +1,12 @@
-use crate::convert::error::ConversionError;
 use crate::{
     blockchain::EthereumAddress,
+    convert::error::ConversionError,
     proto::{
         common::FileType as proto_FileType,
         crypto::Encrypted as proto_Encrypted,
         pk::{
-            EthereumPK3 as proto_EthereumPK3, EthereumPrivateKey as proto_EthereumPrivateKey,
+            EthereumPK3 as proto_EthereumPK3,
+            EthereumPrivateKey as proto_EthereumPrivateKey,
             PrivateKey as proto_PrivateKey,
         },
     },
@@ -14,11 +15,10 @@ use crate::{
         pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
     },
 };
+use chrono::{TimeZone, Utc};
 use protobuf::{parse_from_bytes, Message};
-use std::convert::TryFrom;
-use std::str::FromStr;
+use std::{convert::TryFrom, str::FromStr};
 use uuid::Uuid;
-use chrono::{Utc, TimeZone};
 
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for PrivateKeyHolder {
@@ -39,8 +39,10 @@ impl TryFrom<&[u8]> for PrivateKeyHolder {
                 };
                 let result = EthereumPk3 { address, key };
                 let pk = PrivateKeyType::EthereumPk(result);
-                let created_at = Utc.timestamp_millis_opt(m.get_created_at() as i64)
-                    .single().unwrap_or_else(|| Utc.timestamp_millis(0));
+                let created_at = Utc
+                    .timestamp_millis_opt(m.get_created_at() as i64)
+                    .single()
+                    .unwrap_or_else(|| Utc.timestamp_millis(0));
                 let result = PrivateKeyHolder {
                     id: Uuid::from_bytes(m.get_id())
                         .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
@@ -96,15 +98,14 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::proto::pk::{
-        PrivateKey as proto_PrivateKey,
+    use crate::{proto::pk::PrivateKey as proto_PrivateKey, structs::pk::PrivateKeyHolder};
+    use chrono::{TimeZone, Utc};
+    use protobuf::{parse_from_bytes, Message, ProtobufEnum};
+    use std::{
+        convert::{TryFrom, TryInto},
+        str::FromStr,
     };
-    use crate::structs::pk::{PrivateKeyHolder};
-    use protobuf::{parse_from_bytes, ProtobufEnum, Message};
-    use std::convert::{TryFrom, TryInto};
-    use std::str::FromStr;
     use uuid::Uuid;
-    use chrono::{Utc, TimeZone};
 
     #[test]
     fn write_as_protobuf() {

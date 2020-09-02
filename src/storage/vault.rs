@@ -1,15 +1,15 @@
-use crate::hdwallet::bip32::generate_key;
-use crate::hdwallet::WManager;
-use crate::storage::addressbook::AddressbookStorage;
-use crate::storage::archive::ArchiveType;
-use crate::structs::seed::{SeedRef, SeedSource};
 use crate::{
     chains::Blockchain,
     convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
-    storage::{archive::Archive, error::VaultError},
+    hdwallet::{bip32::generate_key, WManager},
+    storage::{
+        addressbook::AddressbookStorage,
+        archive::{Archive, ArchiveType},
+        error::VaultError,
+    },
     structs::{
         pk::PrivateKeyHolder,
-        seed::Seed,
+        seed::{Seed, SeedRef, SeedSource},
         types::HasUuid,
         wallet::{PKType, Wallet, WalletEntry},
     },
@@ -17,13 +17,15 @@ use crate::{
 };
 use hdpath::StandardHDPath;
 use regex::Regex;
-use std::convert::{TryFrom, TryInto};
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{
+    convert::{TryFrom, TryInto},
+    fs,
+    path::{Path, PathBuf},
+    str::FromStr,
+    sync::Arc,
+    time::SystemTime,
+};
 use uuid::Uuid;
-use std::time::SystemTime;
 
 /// Compound trait for a vault entry which is stored in a separate file each
 pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
@@ -751,14 +753,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tests::read_dir_fully;
     use crate::{
         convert::json::keyfile::EthereumJsonV3File,
         structs::pk::{EthereumPk3, PrivateKeyHolder},
-        tests::*,
+        tests::{read_dir_fully, *},
     };
+    use chrono::{TimeZone, Utc};
     use tempdir::TempDir;
-    use chrono::{Utc, TimeZone};
 
     #[test]
     fn try_vault_file_from_standard() {
@@ -1274,7 +1275,11 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir).unwrap();
         let wallet_id = vault
             .create_new()
-            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(
+                EthereumPrivateKey::gen().to_vec(),
+                "test",
+                Blockchain::Ethereum,
+            )
             .unwrap();
         let wallet = vault.wallets.get(wallet_id).unwrap();
         let pk_id = match wallet.entries.first().unwrap().key {
@@ -1302,7 +1307,11 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir).unwrap();
         let wallet_1_id = vault
             .create_new()
-            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(
+                EthereumPrivateKey::gen().to_vec(),
+                "test",
+                Blockchain::Ethereum,
+            )
             .unwrap();
         let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
         let pk_id_1 = match wallet_1.entries.first().unwrap().key {
@@ -1312,7 +1321,11 @@ mod tests {
 
         let wallet_2_id = vault
             .create_new()
-            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(
+                EthereumPrivateKey::gen().to_vec(),
+                "test",
+                Blockchain::Ethereum,
+            )
             .unwrap();
         let wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
         let pk_id_2 = match wallet_2.entries.first().unwrap().key {
@@ -1348,7 +1361,11 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir).unwrap();
         let wallet_1_id = vault
             .create_new()
-            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(
+                EthereumPrivateKey::gen().to_vec(),
+                "test",
+                Blockchain::Ethereum,
+            )
             .unwrap();
         let wallet_1 = vault.wallets.get(wallet_1_id).unwrap();
         let pk_id_1 = match wallet_1.entries.first().unwrap().key {
@@ -1358,7 +1375,11 @@ mod tests {
 
         let wallet_2_id = vault
             .create_new()
-            .raw_pk(EthereumPrivateKey::gen().to_vec(), "test", Blockchain::Ethereum)
+            .raw_pk(
+                EthereumPrivateKey::gen().to_vec(),
+                "test",
+                Blockchain::Ethereum,
+            )
             .unwrap();
         let mut wallet_2 = vault.wallets.get(wallet_2_id).unwrap();
         let pk_id_2 = match wallet_2.entries.first().unwrap().key {

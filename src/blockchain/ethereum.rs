@@ -14,9 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 pub mod address;
-pub mod transaction;
 pub mod signature;
+pub mod transaction;
 
-pub use self::address::{EthereumAddress};
-pub use self::transaction::{EthereumTransaction};
-pub use self::signature::{EthereumSignature, EthereumPrivateKey};
+pub use self::{
+    address::EthereumAddress,
+    signature::{EthereumPrivateKey, EthereumSignature},
+    transaction::EthereumTransaction,
+};

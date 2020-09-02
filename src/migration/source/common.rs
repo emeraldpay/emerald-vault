@@ -10,10 +10,10 @@ use crate::{
         wallet::{PKType, Wallet, WalletEntry},
     },
 };
+use chrono::Utc;
 use hdpath::StandardHDPath;
 use std::convert::TryFrom;
 use uuid::Uuid;
-use chrono::Utc;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();

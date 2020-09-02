@@ -1,9 +1,13 @@
-use crate::convert::error::ConversionError;
 use crate::{
+    convert::error::ConversionError,
     proto::crypto::{
-        Encrypted as proto_Encrypted, Encrypted_CipherType as proto_CipherType,
-        Encrypted_oneof_kdf_type as proto_Encrypted_oneof_kdf_type, Mac as proto_Mac,
-        Mac_MacType as proto_MacType, Pbkdf2 as proto_Pbkdf2, PrfType as proto_PrfType,
+        Encrypted as proto_Encrypted,
+        Encrypted_CipherType as proto_CipherType,
+        Encrypted_oneof_kdf_type as proto_Encrypted_oneof_kdf_type,
+        Mac as proto_Mac,
+        Mac_MacType as proto_MacType,
+        Pbkdf2 as proto_Pbkdf2,
+        PrfType as proto_PrfType,
         ScryptKdf as proto_ScryptKdf,
     },
     structs::{

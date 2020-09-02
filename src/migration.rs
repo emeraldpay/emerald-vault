@@ -1,9 +1,10 @@
 pub mod source;
 pub mod types;
 
-use crate::migration::source::v1::V1Storage;
-use crate::migration::source::v2::V2Storage;
-use crate::migration::types::Migrate;
+use crate::migration::{
+    source::{v1::V1Storage, v2::V2Storage},
+    types::Migrate,
+};
 use std::path::{Path, PathBuf};
 
 pub fn auto_migrate<P>(dir: P)
@@ -28,10 +29,12 @@ where
 #[cfg(test)]
 mod test_commons {
     use crate::structs::wallet::Wallet;
-    use std::fs;
-    use std::fs::File;
-    use std::io::{Read, Write};
-    use std::path::{Path, PathBuf};
+    use std::{
+        fs,
+        fs::File,
+        io::{Read, Write},
+        path::{Path, PathBuf},
+    };
 
     pub fn unzip<P: AsRef<Path>>(src: P, target: PathBuf) {
         let file = File::open(src).unwrap();
