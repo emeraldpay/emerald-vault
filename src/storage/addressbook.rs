@@ -29,6 +29,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use uuid::Uuid;
+use std::cmp::Ordering;
 
 const FORMAT: &str = "bookmark/base64";
 
@@ -54,6 +55,18 @@ pub struct AddressBookmark {
 impl HasUuid for AddressBookmark {
     fn get_id(&self) -> Uuid {
         self.id
+    }
+}
+
+impl Ord for AddressBookmark {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.id.cmp(&other.id)
+    }
+}
+
+impl PartialOrd for AddressBookmark {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 

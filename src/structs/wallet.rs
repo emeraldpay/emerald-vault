@@ -114,6 +114,8 @@ impl Default for Wallet {
     }
 }
 
+ord_by_date_id!(Wallet);
+
 impl Default for WalletEntry {
     fn default() -> Self {
         WalletEntry {

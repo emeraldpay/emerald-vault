@@ -83,6 +83,8 @@ impl SeedRef {
     }
 }
 
+ord_by_date_id!(Seed);
+
 #[cfg(test)]
 mod tests {
     use crate::structs::seed::SeedRef;

@@ -5,6 +5,7 @@ use crate::{
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
+#[derive(PartialEq, Eq)]
 pub struct PrivateKeyHolder {
     pub id: Uuid,
     pub pk: PrivateKeyType,
@@ -12,10 +13,12 @@ pub struct PrivateKeyHolder {
     pub created_at: DateTime<Utc>,
 }
 
+#[derive(PartialEq, Eq)]
 pub enum PrivateKeyType {
     EthereumPk(EthereumPk3),
 }
 
+#[derive(PartialEq, Eq)]
 pub struct EthereumPk3 {
     pub address: Option<EthereumAddress>,
     pub key: Encrypted,
@@ -33,3 +36,5 @@ impl PrivateKeyHolder {
         self.id.clone()
     }
 }
+
+ord_by_date_id!(PrivateKeyHolder);

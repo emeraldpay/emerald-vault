@@ -30,7 +30,7 @@ use uuid::Uuid;
 /// Compound trait for a vault entry which is stored in a separate file each
 pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
 where
-    P: HasUuid,
+    P: HasUuid + Ord,
 {
 }
 
@@ -628,16 +628,16 @@ impl SingleFileEntry for StandardVaultFiles {
 }
 
 impl<P> VaultAccessByFile<P> for StandardVaultFiles
-where
-    P: TryFrom<Vec<u8>> + HasUuid,
-    Vec<u8>: std::convert::TryFrom<P>,
+    where
+        P: TryFrom<Vec<u8>> + HasUuid + Ord,
+        Vec<u8>: std::convert::TryFrom<P>,
 {
 }
 
 /// Access to Vault storage
 pub trait VaultAccess<P>
-where
-    P: HasUuid,
+    where
+        P: HasUuid + Ord,
 {
     /// List ids of all items in the storage
     fn list(&self) -> Result<Vec<Uuid>, VaultError>;
@@ -652,21 +652,22 @@ where
 
     /// Read all entries in the storage
     fn list_entries(&self) -> Result<Vec<P>, VaultError> {
-        let all = self
+        let mut all: Vec<P> = self
             .list()?
             .iter()
             .map(|id| self.get(*id))
             .filter(|it| it.is_ok())
             .map(|it| it.unwrap())
             .collect();
+        all.sort();
         Ok(all)
     }
 }
 
 impl<P> VaultAccess<P> for StandardVaultFiles
-where
-    P: TryFrom<Vec<u8>> + HasUuid,
-    Vec<u8>: std::convert::TryFrom<P>,
+    where
+        P: TryFrom<Vec<u8>> + HasUuid + Ord,
+        Vec<u8>: std::convert::TryFrom<P>,
 {
     fn update(&self, entry: P) -> Result<bool, VaultError> {
         let id = entry.get_id();
@@ -700,6 +701,7 @@ where
                 }
             }
         }
+        result.sort();
         Ok(result)
     }
 
@@ -937,6 +939,93 @@ mod tests {
 
         let all = vault.seeds.list().unwrap();
         assert_eq!(0, all.len());
+    }
+
+    #[test]
+    fn order_seeds_by_date_and_id() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let mut seed = Seed::generate(None, "testtest").unwrap();
+        seed.id = Uuid::parse_str("13052693-c51c-4e8b-91b3-564d3cb78fb4").unwrap();
+        // 2 jan 2020
+        seed.created_at = Utc.timestamp_millis(1577962800000);
+        vault.seeds.add(seed.clone()).unwrap();
+
+        let mut seed = Seed::generate(None, "testtest").unwrap();
+        seed.id = Uuid::parse_str("5e47360d-3dc2-4b39-b399-75fbdd4ac020").unwrap();
+        seed.created_at = Utc.timestamp_millis(0);
+        vault.seeds.add(seed.clone()).unwrap();
+
+        let mut seed = Seed::generate(None, "testtest").unwrap();
+        seed.id = Uuid::parse_str("36805dff-a6e0-434d-be7d-5ef7931522d0").unwrap();
+        // 1 jan 2020
+        seed.created_at = Utc.timestamp_millis(1577876400000);
+        vault.seeds.add(seed.clone()).unwrap();
+
+        let mut seed = Seed::generate(None, "testtest").unwrap();
+        seed.id = Uuid::parse_str("067e14c4-85de-421e-9957-48a1cdef42ae").unwrap();
+        seed.created_at = Utc.timestamp_millis(0);
+        vault.seeds.add(seed.clone()).unwrap();
+
+        //first comes items without date
+        //#4 -> #2
+        //then ordered date
+        //#3 -> #1
+
+        let seeds = vault.seeds.list_entries().unwrap();
+        assert_eq!(seeds.get(0).unwrap().id.to_string(),
+                   "067e14c4-85de-421e-9957-48a1cdef42ae".to_string());
+        assert_eq!(seeds.get(1).unwrap().id.to_string(),
+                   "5e47360d-3dc2-4b39-b399-75fbdd4ac020".to_string());
+        assert_eq!(seeds.get(2).unwrap().id.to_string(),
+                   "36805dff-a6e0-434d-be7d-5ef7931522d0".to_string());
+        assert_eq!(seeds.get(3).unwrap().id.to_string(),
+                   "13052693-c51c-4e8b-91b3-564d3cb78fb4".to_string());
+    }
+
+    #[test]
+    fn order_wallets_by_date_and_id() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        vault.wallets.add(Wallet {
+            id: Uuid::parse_str("13052693-c51c-4e8b-91b3-564d3cb78fb4").unwrap(),
+            // 2 jan 2020
+            created_at: Utc.timestamp_millis(1577962800000),
+            ..Wallet::default()
+        }).unwrap();
+        vault.wallets.add(Wallet {
+            id: Uuid::parse_str("5e47360d-3dc2-4b39-b399-75fbdd4ac020").unwrap(),
+            created_at: Utc.timestamp_millis(0),
+            ..Wallet::default()
+        }).unwrap();
+        vault.wallets.add(Wallet {
+            id: Uuid::parse_str("36805dff-a6e0-434d-be7d-5ef7931522d0").unwrap(),
+            // 1 jan 2020
+            created_at: Utc.timestamp_millis(1577876400000),
+            ..Wallet::default()
+        }).unwrap();
+        vault.wallets.add(Wallet {
+            id: Uuid::parse_str("067e14c4-85de-421e-9957-48a1cdef42ae").unwrap(),
+            created_at: Utc.timestamp_millis(0),
+            ..Wallet::default()
+        }).unwrap();
+
+        //first comes items without date
+        //#4 -> #2
+        //then ordered date
+        //#3 -> #1
+
+        let seeds = vault.wallets.list_entries().unwrap();
+        assert_eq!(seeds.get(0).unwrap().id.to_string(),
+                   "067e14c4-85de-421e-9957-48a1cdef42ae".to_string());
+        assert_eq!(seeds.get(1).unwrap().id.to_string(),
+                   "5e47360d-3dc2-4b39-b399-75fbdd4ac020".to_string());
+        assert_eq!(seeds.get(2).unwrap().id.to_string(),
+                   "36805dff-a6e0-434d-be7d-5ef7931522d0".to_string());
+        assert_eq!(seeds.get(3).unwrap().id.to_string(),
+                   "13052693-c51c-4e8b-91b3-564d3cb78fb4".to_string());
     }
 
     #[test]
