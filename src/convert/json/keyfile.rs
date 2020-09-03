@@ -925,7 +925,7 @@ mod tests {
                         salt: hex::decode(
                             "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
                         )
-                            .unwrap(),
+                        .unwrap(),
                         prf: PrfType::HmacSha256,
                     }),
                 },
@@ -972,7 +972,7 @@ mod tests {
                 .unwrap()
                 .as_slice(),
         )
-            .unwrap();
+        .unwrap();
         let json =
             EthereumJsonV3File::from_pk(Some("Test".to_string()), pk, "testpassword".to_string())
                 .unwrap();

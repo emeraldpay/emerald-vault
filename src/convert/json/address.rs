@@ -4,8 +4,8 @@ use std::str::FromStr;
 
 impl<'de> Deserialize<'de> for EthereumAddress {
     fn deserialize<D>(deserializer: D) -> Result<EthereumAddress, D::Error>
-        where
-            D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
     {
         String::deserialize(deserializer)
             .map(|s| {
@@ -21,8 +21,8 @@ impl<'de> Deserialize<'de> for EthereumAddress {
 
 impl Serialize for EthereumAddress {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&self.to_string()[2..]) /* cut '0x' prefix */
     }
@@ -81,7 +81,7 @@ mod tests {
         assert!(serde_json::from_str::<EthereumAddress>(
             "\"__7c045110b8dbf29765047380898919c5cb56f4\""
         )
-            .is_err());
+        .is_err());
     }
 
     #[test]

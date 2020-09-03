@@ -7,7 +7,7 @@ use crate::{
         common::FileType as proto_FileType,
     },
     structs::book::{AddressRef, BookmarkDetails},
-    util::optional::none_if_empty,
+    util::none_if_empty,
     EthereumAddress,
 };
 use chrono::{TimeZone, Utc};

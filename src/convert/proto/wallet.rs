@@ -16,7 +16,7 @@ use crate::{
         seed::SeedRef,
         wallet::{PKType, ReservedPath, Wallet, WalletEntry},
     },
-    util::optional::none_if_empty,
+    util::none_if_empty,
 };
 use chrono::{TimeZone, Utc};
 use hdpath::StandardHDPath;

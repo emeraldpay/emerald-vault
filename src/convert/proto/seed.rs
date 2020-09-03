@@ -15,7 +15,7 @@ use crate::{
         crypto::Encrypted,
         seed::{Bytes256, FingerprintType, HDPathFingerprint, LedgerSource, Seed, SeedSource},
     },
-    util::optional::none_if_empty,
+    util::none_if_empty,
 };
 use chrono::{TimeZone, Utc};
 use hdpath::{Purpose, StandardHDPath};

@@ -267,8 +267,8 @@ mod tests {
     }
 
     fn dump_file<P>(path: P)
-        where
-            P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
     {
         let f = fs::read(path.as_ref()).expect("read csv");
         println!("{}", String::from_utf8(f).expect("Non UTF8 content"));

@@ -14,14 +14,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-//! # Util functions module
-pub mod optional;
-
 pub use crate::crypto::util::{keccak256, KECCAK256_BYTES};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use chrono::prelude::Utc;
 use hex::FromHex;
 use std::io::Cursor;
+
+pub fn none_if_empty(s: &str) -> Option<String> {
+    if s.is_empty() {
+        None
+    } else {
+        Some(s.to_string())
+    }
+}
 
 /// Convert byte array into `u64`
 ///

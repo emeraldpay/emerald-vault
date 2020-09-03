@@ -70,6 +70,7 @@ pub mod mnemonic;
 pub mod proto;
 pub mod storage;
 pub mod structs;
+pub mod sign;
 
 pub use self::{blockchain::*, util::*};
 
