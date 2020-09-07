@@ -1,7 +1,7 @@
 use crate::{
     chains::Blockchain,
     convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
-    hdwallet::{bip32::generate_key, WManager},
+    hdwallet::{WManager},
     storage::{
         addressbook::AddressbookStorage,
         archive::{Archive, ArchiveType},
@@ -13,7 +13,7 @@ use crate::{
         types::HasUuid,
         wallet::{PKType, Wallet, WalletEntry},
     },
-    EthereumAddress,
+    EthereumAddress, EthereumPrivateKey,
 };
 use hdpath::StandardHDPath;
 use regex::Regex;
@@ -26,13 +26,14 @@ use std::{
     time::SystemTime,
 };
 use uuid::Uuid;
+use crate::sign::bip32::generate_key;
+use crate::structs::book::AddressRef;
 
 /// Compound trait for a vault entry which is stored in a separate file each
 pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
-where
-    P: HasUuid + Ord,
-{
-}
+    where
+        P: HasUuid + Ord,
+{}
 
 pub struct VaultStorage {
     pub dir: PathBuf,
@@ -385,7 +386,7 @@ impl CreateWallet {
             entries: vec![WalletEntry {
                 id: 0,
                 blockchain,
-                address: json.address,
+                address: json.address.map(|a| AddressRef::EthereumAddress(a)),
                 key: PKType::PrivateKeyRef(pk.get_id()),
                 ..WalletEntry::default()
             }],
@@ -413,7 +414,7 @@ impl CreateWallet {
             entries: vec![WalletEntry {
                 id: 0,
                 blockchain,
-                address: pk.get_ethereum_address(),
+                address: pk.get_ethereum_address().map(|a| AddressRef::EthereumAddress(a)),
                 key: PKType::PrivateKeyRef(pk.get_id()),
                 ..WalletEntry::default()
             }],
@@ -447,7 +448,7 @@ impl AddEntry {
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
-            address: json.address,
+            address: json.address.map(|a| AddressRef::EthereumAddress(a)),
             key: PKType::PrivateKeyRef(pk_id),
             receive_disabled: false,
             label: json.name.clone(),
@@ -468,7 +469,8 @@ impl AddEntry {
         let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
             .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let pk_id = pk.get_id();
-        let address = pk.get_ethereum_address().clone();
+        let address = pk.get_ethereum_address().clone()
+            .map(|a| AddressRef::EthereumAddress(a));
         let id = wallet.next_entry_id();
         self.keys.add(pk)?;
         wallet.entries.push(WalletEntry {
@@ -498,7 +500,8 @@ impl AddEntry {
                     return Err(VaultError::PasswordRequired);
                 }
                 let seed = seed.decrypt(password.unwrap().as_str())?;
-                let ephemeral_pk = generate_key(&hd_path, seed.as_slice())?;
+                let key = generate_key(&hd_path, seed.as_slice())?;
+                let ephemeral_pk = EthereumPrivateKey::try_from(key)?;
                 Some(ephemeral_pk.to_address())
             }
             SeedSource::Ledger(_) => {
@@ -527,7 +530,8 @@ impl AddEntry {
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
-            address: address.or(expected_address),
+            address: address.or(expected_address)
+                .map(|a| AddressRef::EthereumAddress(a)),
             key: PKType::SeedHd(SeedRef {
                 seed_id: seed_id.clone(),
                 hd_path: StandardHDPath::try_from(hd_path.to_string().as_str()).map_err(|_| {

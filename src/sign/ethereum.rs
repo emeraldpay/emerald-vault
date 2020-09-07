@@ -2,7 +2,6 @@ use crate::{
     blockchain::chains::EthereumChainId,
     convert::json::keyfile::EthereumJsonV3File,
     hdwallet::WManager,
-    mnemonic::generate_key,
     storage::{error::VaultError, vault::VaultStorage},
     structs::{
         seed::SeedSource,
@@ -12,8 +11,9 @@ use crate::{
     EthereumTransaction,
 };
 use hdpath::StandardHDPath;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
+use crate::sign::bip32::{generate_key};
 
 impl WalletEntry {
 
@@ -55,19 +55,6 @@ impl WalletEntry {
         Ok(raw)
     }
 
-    fn is_hardware(&self, vault: &VaultStorage) -> Result<bool, VaultError> {
-        match &self.key {
-            PKType::SeedHd(seed) => {
-                let seed_details = vault.seeds().get(seed.seed_id)?;
-                match seed_details.source {
-                    SeedSource::Ledger(_) => Ok(true),
-                    SeedSource::Bytes(_) => Ok(false),
-                }
-            }
-            PKType::PrivateKeyRef(_) => Ok(false),
-        }
-    }
-
     pub fn sign_tx(
         &self,
         tx: EthereumTransaction,
@@ -86,7 +73,7 @@ impl WalletEntry {
         if password.is_none() {
             return Err(VaultError::PasswordRequired);
         }
-        let key = self.export_ethereum_pk(password.unwrap(), vault)?;
+        let key = self.key.get_ethereum_pk(&vault, password.clone())?;
         self.sign_tx_by_pk(tx, key)
     }
 
@@ -95,25 +82,7 @@ impl WalletEntry {
         password: String,
         vault: &VaultStorage,
     ) -> Result<EthereumPrivateKey, VaultError> {
-        match &self.key {
-            PKType::PrivateKeyRef(pk) => {
-                let key = vault.keys().get(pk.clone())?;
-                let key = key.decrypt(password.as_str())?;
-                EthereumPrivateKey::try_from(key.as_slice())
-                    .map_err(|_| VaultError::InvalidPrivateKey)
-            }
-            PKType::SeedHd(seed) => {
-                let seed_details = vault.seeds().get(seed.seed_id.clone())?;
-                match seed_details.source {
-                    SeedSource::Bytes(bytes) => {
-                        let seed_key = bytes.decrypt(password.as_str())?;
-                        let hd_path = StandardHDPath::try_from(seed.hd_path.to_string().as_str())?;
-                        generate_key(&hd_path, &seed_key).map_err(|_| VaultError::InvalidPrivateKey)
-                    }
-                    SeedSource::Ledger(_) => Err(VaultError::PrivateKeyUnavailable),
-                }
-            }
-        }
+        self.key.get_ethereum_pk(&vault, Some(password))
     }
 
     pub fn export_ethereum_web3(
@@ -129,22 +98,9 @@ impl WalletEntry {
                     .map_err(|_| VaultError::InvalidPrivateKey)
             }
             PKType::SeedHd(seed) => {
-                let seed_details = vault.seeds().get(seed.seed_id.clone())?;
-                match seed_details.source {
-                    SeedSource::Bytes(bytes) => {
-                        if password.is_none() {
-                            return Err(VaultError::PasswordRequired);
-                        }
-                        let password = password.unwrap();
-                        let seed_key = bytes.decrypt(password.as_str())?;
-                        let hd_path = StandardHDPath::try_from(seed.hd_path.to_string().as_str())?;
-                        let key = generate_key(&hd_path, &seed_key)
-                            .map_err(|_| VaultError::InvalidPrivateKey)?;
-                        EthereumJsonV3File::from_pk(label, key, password)
-                            .map_err(|_| VaultError::InvalidPrivateKey)
-                    }
-                    SeedSource::Ledger(_) => Err(VaultError::PrivateKeyUnavailable),
-                }
+                let key = self.key.get_ethereum_pk(&vault, password.clone())?;
+                EthereumJsonV3File::from_pk(label, key, password.expect("Password is not set"))
+                    .map_err(|_| VaultError::InvalidPrivateKey)
             }
         }
     }
@@ -173,6 +129,7 @@ mod tests {
     use std::{convert::TryFrom, str::FromStr};
     use tempdir::TempDir;
     use uuid::Uuid;
+    use crate::structs::book::AddressRef;
 
     #[test]
     fn sign_erc20_approve() {
@@ -180,7 +137,9 @@ mod tests {
             id: 0,
             blockchain: Blockchain::Ethereum,
             address: Some(
-                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+                AddressRef::EthereumAddress(
+                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()
+                ),
             ),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
             ..WalletEntry::default()
@@ -210,7 +169,9 @@ mod tests {
             id: 0,
             blockchain: Blockchain::Ethereum,
             address: Some(
-                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+                AddressRef::EthereumAddress(
+                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()
+                ),
             ),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
             ..WalletEntry::default()
@@ -261,7 +222,9 @@ mod tests {
             id: 0,
             blockchain: Blockchain::Ethereum,
             address: Some(
-                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+                AddressRef::EthereumAddress(
+                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()
+                ),
             ),
             key: PKType::PrivateKeyRef(key_id),
             ..WalletEntry::default()
@@ -310,7 +273,9 @@ mod tests {
             id: 0,
             blockchain: Blockchain::Ethereum,
             address: Some(
-                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+                AddressRef::EthereumAddress(
+                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()
+                ),
             ),
             key: PKType::PrivateKeyRef(key_id),
             ..WalletEntry::default()

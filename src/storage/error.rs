@@ -18,6 +18,7 @@ pub enum VaultError {
     DataNotFound,
     InvalidPrivateKey,
     PrivateKeyUnavailable,
+    PublicKeyUnavailable,
     CryptoFailed(CryptoError),
     HDKeyFailed(HWalletError),
 }
@@ -83,7 +84,7 @@ impl std::convert::From<csv::Error> for VaultError {
 
 impl std::convert::From<hex::FromHexError> for VaultError {
     fn from(_: hex::FromHexError) -> Self {
-        VaultError::ConversionError(ConversionError::NotHex)
+        VaultError::ConversionError(ConversionError::InvalidHex)
     }
 }
 

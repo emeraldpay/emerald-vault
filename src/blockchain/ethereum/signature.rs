@@ -27,6 +27,9 @@ use secp256k1::{
     SignOnly,
 };
 use std::{fmt, ops, str};
+use std::convert::TryFrom;
+use crate::storage::error::VaultError;
+use crate::convert::error::ConversionError;
 
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;
@@ -95,28 +98,6 @@ impl EthereumPrivateKey {
         EthereumPrivateKey::from(SecretKey::new(rng))
     }
 
-    /// Try to convert a byte slice into `PrivateKey`.
-    ///
-    /// # Arguments
-    ///
-    /// * `data` - A byte slice with `PRIVATE_KEY_BYTES` length
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// const PKB: usize = emerald_vault::PRIVATE_KEY_BYTES;
-    /// let pk = emerald_vault::EthereumPrivateKey::try_from(&[0u8; PKB]).unwrap();
-    /// assert_eq!(pk.to_string(),
-    ///            "0x0000000000000000000000000000000000000000000000000000000000000000");
-    /// ```
-    pub fn try_from(data: &[u8]) -> Result<Self, Error> {
-        if data.len() != PRIVATE_KEY_BYTES {
-            return Err(Error::InvalidLength(data.len()));
-        }
-
-        Ok(EthereumPrivateKey(to_arr(data)))
-    }
-
     /// Extract `Address` from current private key.
     pub fn to_address(self) -> EthereumAddress {
         let key = PublicKey::from_secret_key(&ECDSA, &self.into());
@@ -176,12 +157,24 @@ impl Into<SecretKey> for EthereumPrivateKey {
     }
 }
 
+impl TryFrom<&[u8]> for EthereumPrivateKey {
+    type Error = VaultError;
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        if value.len() != PRIVATE_KEY_BYTES {
+            return Err(VaultError::InvalidPrivateKey);
+        }
+
+        Ok(EthereumPrivateKey(to_arr(value)))
+    }
+}
+
 impl str::FromStr for EthereumPrivateKey {
-    type Err = Error;
+    type Err = VaultError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() != PRIVATE_KEY_BYTES * 2 && !s.starts_with("0x") {
-            return Err(Error::InvalidHexLength(s.to_string()));
+            return Err(VaultError::ConversionError(ConversionError::InvalidLength));
         }
 
         let value = if s.starts_with("0x") {

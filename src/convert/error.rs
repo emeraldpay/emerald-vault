@@ -4,6 +4,7 @@ use std::fmt::Display;
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Display)]
 pub enum ConversionError {
     InvalidArgument,
+    InvalidLength,
     InvalidJson,
     /// Value is the field name
     InvalidFieldValue(String),
@@ -11,8 +12,9 @@ pub enum ConversionError {
     FieldIsEmpty(String),
     /// value  is the field name
     UnsupportedValue(String),
-    UnsuportedVersion,
-    NotHex,
+    UnsupportedVersion,
+    InvalidHex,
+    InvalidBase58,
     CSVError,
     InvalidProtobuf,
     IOError,
@@ -27,7 +29,7 @@ impl From<serde_json::Error> for ConversionError {
 
 impl From<hex::FromHexError> for ConversionError {
     fn from(_: hex::FromHexError) -> Self {
-        ConversionError::NotHex
+        ConversionError::InvalidHex
     }
 }
 

@@ -8,6 +8,7 @@ use crate::{
 };
 use chrono::Utc;
 use uuid::Uuid;
+use std::convert::TryFrom;
 
 impl PrivateKeyHolder {
     pub fn create_ethereum_v3(pk3: EthereumPk3) -> PrivateKeyHolder {
@@ -27,7 +28,8 @@ impl PrivateKeyHolder {
         pk: Vec<u8>,
         password: &str,
     ) -> Result<PrivateKeyHolder, CryptoError> {
-        let parsed = core_PK::try_from(&pk).map_err(|_| CryptoError::InvalidKey)?;
+        let parsed = core_PK::try_from(pk.as_slice())
+            .map_err(|_| CryptoError::InvalidKey)?;
         let encrypted = EthereumPk3 {
             address: Some(parsed.to_address()),
             key: Encrypted::encrypt(pk, password)?,

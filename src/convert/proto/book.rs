@@ -84,6 +84,9 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
                 value.set_plain_address(address.to_string());
                 m.set_address(value)
             }
+            AddressRef::ExtendedPub(_) => {
+                panic!("Cannot save Extended Pub. TODO")
+            }
         };
         m.set_created_at(value.created_at.timestamp_millis() as u64);
         m.write_to_bytes().map_err(|e| ConversionError::from(e))

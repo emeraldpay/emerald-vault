@@ -21,7 +21,6 @@ limitations under the License.
 //! [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
 
 mod apdu;
-pub mod bip32;
 mod comm;
 mod error;
 

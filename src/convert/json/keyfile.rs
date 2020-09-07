@@ -263,7 +263,7 @@ impl TryFrom<String> for EthereumJsonV3File {
     fn try_from(value: String) -> Result<Self, Self::Error> {
         let parsed: EthereumJsonV3File = serde_json::from_str(value.as_str())?;
         if parsed.version != 3 {
-            return Err(ConversionError::UnsuportedVersion);
+            return Err(ConversionError::UnsupportedVersion);
         }
         Ok(parsed)
     }

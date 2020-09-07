@@ -27,6 +27,7 @@ use std::{
     str::FromStr,
 };
 use uuid::Uuid;
+use crate::structs::book::AddressRef;
 
 impl TryFrom<&proto_WalletEntry> for WalletEntry {
     type Error = ConversionError;
@@ -39,7 +40,7 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
             Some(a) => match &a.address_type {
                 Some(address_type) => match address_type {
                     proto_AddressType::plain_address(a) => {
-                        Some(EthereumAddress::from_str(a.as_str())?)
+                        Some(AddressRef::EthereumAddress(EthereumAddress::from_str(a.as_str())?))
                     }
                     _ => {
                         return Err(ConversionError::UnsupportedValue(
@@ -96,11 +97,20 @@ impl From<&WalletEntry> for proto_WalletEntry {
         result.set_blockchain_id(value.blockchain.to_owned() as u32);
         result.set_receive_disabled(value.receive_disabled);
 
-        if value.address.is_some() {
-            let address_str = value.address.unwrap().to_string();
-            let mut address = proto_Address::new();
-            address.set_plain_address(address_str.clone());
-            result.set_address(address);
+        match &value.address {
+            Some(address_ref) => {
+                match address_ref {
+                    AddressRef::EthereumAddress(value) => {
+                        let mut address = proto_Address::new();
+                        address.set_plain_address(value.to_string());
+                        result.set_address(address);
+                    },
+                    _ => {
+                        panic!("unsupported address type to serialize Wallet Entry")
+                    }
+                }
+            },
+            None => {}
         }
         if let Some(label) = &value.label {
             result.set_label(label.clone());
@@ -253,6 +263,7 @@ mod tests {
         str::FromStr,
     };
     use uuid::Uuid;
+    use crate::structs::book::AddressRef;
 
     #[test]
     fn write_and_read_empty() {
@@ -306,8 +317,10 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
-                        .unwrap(),
+                    AddressRef::EthereumAddress(
+                        EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                            .unwrap()
+                    ),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
                 created_at: Utc.timestamp_millis(0),
@@ -333,8 +346,10 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
-                        .unwrap(),
+                    AddressRef::EthereumAddress(
+                        EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                            .unwrap()
+                    ),
                 ),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
                 created_at: Utc.timestamp_millis(0),
@@ -360,8 +375,10 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
-                        .unwrap(),
+                    AddressRef::EthereumAddress(
+                        EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                            .unwrap()
+                    ),
                 ),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
@@ -394,8 +411,10 @@ mod tests {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
                 address: Some(
-                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
-                        .unwrap(),
+                    AddressRef::EthereumAddress(
+                        EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                            .unwrap()
+                    ),
                 ),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),

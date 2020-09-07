@@ -19,6 +19,7 @@ limitations under the License.
 pub mod chains;
 pub mod error;
 pub mod ethereum;
+pub mod bitcoin;
 
 pub use self::{
     error::Error,

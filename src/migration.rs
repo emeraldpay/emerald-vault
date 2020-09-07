@@ -35,6 +35,8 @@ mod test_commons {
         io::{Read, Write},
         path::{Path, PathBuf},
     };
+    use crate::structs::book::AddressRef;
+    use crate::EthereumAddress;
 
     pub fn unzip<P: AsRef<Path>>(src: P, target: PathBuf) {
         let file = File::open(src).unwrap();
@@ -73,13 +75,23 @@ mod test_commons {
             }
         }
     }
+
+    fn as_ethereum_address(r: &AddressRef) -> EthereumAddress {
+        match r {
+            AddressRef::EthereumAddress(e) => e.clone(),
+            _ => panic!("not ethereum")
+        }
+    }
+
     pub fn sort_wallets(wallets: &mut Vec<Wallet>) {
         wallets.sort_by(|a, b| {
-            a.get_entry(0)
-                .unwrap()
-                .address
-                .unwrap()
-                .cmp(&b.get_entry(0).unwrap().address.unwrap())
+            let addr_a = as_ethereum_address(
+                &a.get_entry(0).unwrap().address.unwrap()
+            );
+            let addr_b = as_ethereum_address(
+                &b.get_entry(0).unwrap().address.unwrap()
+            );
+            addr_a.cmp(&addr_b)
         });
     }
 }

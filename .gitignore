@@ -13,3 +13,4 @@ wiki
 Cargo.lock
 
 rls/
+temp/

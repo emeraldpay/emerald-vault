@@ -26,7 +26,6 @@ pub use self::{
     error::Error,
     language::{Language, BIP39_ENGLISH_WORDLIST},
 };
-pub use crate::hdwallet::bip32::generate_key;
 use hmac::Hmac;
 use num::{bigint::BigUint, FromPrimitive, ToPrimitive};
 use pbkdf2::pbkdf2;

@@ -2,7 +2,6 @@ use crate::{
     blockchain::chains::{Blockchain, EthereumChainId},
     convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
     hdwallet::WManager,
-    mnemonic::generate_key,
     storage::{error::VaultError, vault::VaultStorage},
     structs::{
         seed::{SeedRef, SeedSource},
@@ -17,6 +16,8 @@ use hdpath::StandardHDPath;
 use regex::Regex;
 use std::{convert::TryFrom, str::FromStr};
 use uuid::Uuid;
+use bitcoin::util::bip32::ExtendedPubKey;
+use crate::structs::book::AddressRef;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {
@@ -48,7 +49,7 @@ pub struct WalletEntry {
     pub blockchain: Blockchain,
     ///Public address, used for reference from UI. Actual address depends on the Private Key
     ///and maybe unavailable without password.
-    pub address: Option<EthereumAddress>,
+    pub address: Option<AddressRef>,
     ///Private Kye
     pub key: PKType,
     ///If true the the entry should be used only for sending.
@@ -166,6 +167,19 @@ impl ToString for EntryId {
 impl WalletEntry {
     pub fn get_full_id(&self, wallet: &Wallet) -> EntryId {
         EntryId::from(wallet, self)
+    }
+
+    pub fn is_hardware(&self, vault: &VaultStorage) -> Result<bool, VaultError> {
+        match &self.key {
+            PKType::SeedHd(seed) => {
+                let seed_details = vault.seeds().get(seed.seed_id)?;
+                match seed_details.source {
+                    SeedSource::Ledger(_) => Ok(true),
+                    SeedSource::Bytes(_) => Ok(false),
+                }
+            }
+            PKType::PrivateKeyRef(_) => Ok(false),
+        }
     }
 }
 

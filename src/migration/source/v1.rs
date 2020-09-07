@@ -178,6 +178,7 @@ mod tests {
     };
     use std::str::FromStr;
     use tempdir::TempDir;
+    use crate::structs::book::AddressRef;
 
     #[test]
     fn migrate_basic() {
@@ -215,11 +216,15 @@ mod tests {
         assert_eq!(etc_wallets.len(), 2);
         assert_eq!(
             etc_wallets[0].get_entry(0).unwrap().address,
-            Some(EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
+            Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
+            )
         );
         assert_eq!(
             etc_wallets[1].get_entry(0).unwrap().address,
-            Some(EthereumAddress::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap())
+            Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap()
+            ))
         );
 
         let kovan_wallets: Vec<&Wallet> = wallets

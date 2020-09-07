@@ -14,6 +14,7 @@ use chrono::Utc;
 use hdpath::StandardHDPath;
 use std::convert::TryFrom;
 use uuid::Uuid;
+use crate::structs::book::AddressRef;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();
@@ -69,7 +70,7 @@ pub fn add_to_vault(
             WalletEntry {
                 id: 0,
                 blockchain,
-                address: kf.address,
+                address: kf.address.map(|a| AddressRef::EthereumAddress(a)),
                 key: PKType::PrivateKeyRef(pk_id),
                 ..WalletEntry::default()
             }
@@ -118,7 +119,7 @@ pub fn add_to_vault(
             WalletEntry {
                 id: 0,
                 blockchain,
-                address: kf.address,
+                address: kf.address.map(|a| AddressRef::EthereumAddress(a)),
                 key: PKType::SeedHd(SeedRef {
                     seed_id,
                     hd_path: StandardHDPath::try_from(data.hd_path.clone().as_str())

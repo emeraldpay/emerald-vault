@@ -18,7 +18,6 @@ limitations under the License.
 //! according to the [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
 //!
 
-use super::error::Error;
 use crate::blockchain::{EthereumPrivateKey, PRIVATE_KEY_BYTES};
 use bitcoin::{
     network::constants::Network,
@@ -26,22 +25,31 @@ use bitcoin::{
 };
 use hdpath::StandardHDPath;
 use secp256k1::Secp256k1;
+use crate::storage::error::VaultError;
+use std::convert::TryFrom;
 
-
-/// Generate `PrivateKey` using BIP32
+/// Generate `ExtendedPrivKey` using BIP32
 ///
 ///  # Arguments:
 ///
 ///  * path - key derivation path
 ///  * seed - seed data for master node
 ///
-pub fn generate_key(path: &StandardHDPath, seed: &[u8]) -> Result<EthereumPrivateKey, Error> {
+pub fn generate_key(path: &StandardHDPath, seed: &[u8]) -> Result<ExtendedPrivKey, VaultError> {
     let secp = Secp256k1::new();
     let sk = ExtendedPrivKey::new_master(Network::Bitcoin, seed)
-        .and_then(|k| k.derive_priv(&secp, &DerivationPath::from(path)))?;
-    let key = EthereumPrivateKey::try_from(&sk.private_key.key[0..PRIVATE_KEY_BYTES])?;
+        .and_then(|k| k.derive_priv(&secp, &DerivationPath::from(path)))
+        .map_err(|_| VaultError::InvalidPrivateKey)?;
+    Ok(sk)
+}
 
-    Ok(key)
+impl TryFrom<ExtendedPrivKey> for EthereumPrivateKey {
+    type Error = VaultError;
+
+    fn try_from(value: ExtendedPrivKey) -> Result<Self, Self::Error> {
+        EthereumPrivateKey::try_from(&value.private_key.key[0..PRIVATE_KEY_BYTES])
+            .map_err(|_| VaultError::InvalidPrivateKey)
+    }
 }
 
 #[cfg(test)]
@@ -66,7 +74,7 @@ mod test {
         let priv_key = generate_key(&path, &seed).unwrap();
 
         assert_eq!(
-            priv_key.to_address(),
+            EthereumPrivateKey::try_from(priv_key).unwrap().to_address(),
             EthereumAddress::from_str("0x1DD9cBeFBbC3284e9C3228793a560B4F0841Db6f").unwrap()
         );
     }
@@ -83,7 +91,7 @@ mod test {
 
         let priv_key = generate_key(&path, &seed).unwrap();
         assert_eq!(
-            priv_key.to_address(),
+            EthereumPrivateKey::try_from(priv_key).unwrap().to_address(),
             EthereumAddress::from_str("0x5d383cDB23983578131aD57f3F36Ab19ca6E6854").unwrap()
         );
     }

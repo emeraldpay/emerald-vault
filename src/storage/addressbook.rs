@@ -276,6 +276,7 @@ mod tests {
     fn extract_address_str(details: &BookmarkDetails) -> Option<String> {
         match details.address {
             AddressRef::EthereumAddress(s) => Some(s.to_string()),
+            _ => panic!("not implemented for ext")
         }
     }
 
