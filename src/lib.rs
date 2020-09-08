@@ -68,9 +68,9 @@ pub mod hdwallet;
 pub mod migration;
 pub mod mnemonic;
 pub mod proto;
+pub mod sign;
 pub mod storage;
 pub mod structs;
-pub mod sign;
 
 pub use self::{blockchain::*, util::*};
 

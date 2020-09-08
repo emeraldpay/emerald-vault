@@ -14,4 +14,16 @@ message Bip32Public {
     uint32 child_number = 3;
     bytes chaincode = 4;
     bytes point = 5;
+    AddressType address_type = 6;
+}
+
+enum AddressType {
+    UNSPECIFIED = 0;
+    BITCOIN_P2WPKH = 1;
+    BITCOIN_P2WSH = 2;
+    BITCOIN_P2PKH = 3;
+    BITCOIN_P2SH = 4;
+    BITCOIN_P2WPKH_P2SH = 5;
+    BITCOIN_P2WSH_P2SH = 6;
+    ETHEREUM = 10;
 }

@@ -17,7 +17,11 @@ limitations under the License.
 //! # Account ECDSA signatures using the SECG curve secp256k1
 
 use super::{super::Error, EthereumAddress};
-use crate::util::{keccak256, to_arr, KECCAK256_BYTES};
+use crate::{
+    convert::error::ConversionError,
+    storage::error::VaultError,
+    util::{keccak256, to_arr, KECCAK256_BYTES},
+};
 use hex;
 use rand::{rngs::OsRng, Rng};
 use secp256k1::{
@@ -26,10 +30,7 @@ use secp256k1::{
     Secp256k1,
     SignOnly,
 };
-use std::{fmt, ops, str};
-use std::convert::TryFrom;
-use crate::storage::error::VaultError;
-use crate::convert::error::ConversionError;
+use std::{convert::TryFrom, fmt, ops, str};
 
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;

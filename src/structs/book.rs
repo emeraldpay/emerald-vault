@@ -1,6 +1,8 @@
-use crate::{blockchain::chains::Blockchain, EthereumAddress};
+use crate::{
+    blockchain::{bitcoin::XPub, chains::Blockchain},
+    EthereumAddress,
+};
 use chrono::{DateTime, Utc};
-use bitcoin::util::bip32::ExtendedPubKey;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct BookmarkDetails {
@@ -15,5 +17,5 @@ pub struct BookmarkDetails {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum AddressRef {
     EthereumAddress(EthereumAddress),
-    ExtendedPub(ExtendedPubKey)
+    ExtendedPub(XPub),
 }

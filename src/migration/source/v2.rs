@@ -339,6 +339,7 @@ mod tests {
         },
         storage::vault::VaultStorage,
         structs::{
+            book::AddressRef,
             seed::SeedSource,
             wallet::{PKType, Wallet},
         },
@@ -346,7 +347,6 @@ mod tests {
     };
     use std::str::FromStr;
     use tempdir::TempDir;
-    use crate::structs::book::AddressRef;
 
     #[test]
     fn migrate_basic() {
@@ -372,11 +372,15 @@ mod tests {
         assert_eq!(eth_wallets.len(), 2);
         assert_eq!(
             eth_wallets[0].get_entry(0).unwrap().address,
-            Some(AddressRef::EthereumAddress(EthereumAddress::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap()))
+            Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap()
+            ))
         );
         assert_eq!(
             eth_wallets[1].get_entry(0).unwrap().address,
-            Some(AddressRef::EthereumAddress(EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap()))
+            Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap()
+            ))
         );
 
         let etc_wallets: Vec<&Wallet> = wallets
@@ -386,7 +390,9 @@ mod tests {
         assert_eq!(etc_wallets.len(), 1);
         assert_eq!(
             etc_wallets[0].get_entry(0).unwrap().address,
-            Some(AddressRef::EthereumAddress(EthereumAddress::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap()))
+            Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap()
+            ))
         );
 
         let kovan_wallets: Vec<&Wallet> = wallets
@@ -420,15 +426,21 @@ mod tests {
         assert_eq!(eth_wallets.len(), 3);
         assert_eq!(
             eth_wallets[0].get_entry(0).unwrap().address,
-            Some(AddressRef::EthereumAddress(EthereumAddress::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap()))
+            Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3").unwrap()
+            ))
         );
         assert_eq!(
             eth_wallets[1].get_entry(0).unwrap().address,
-            Some(AddressRef::EthereumAddress(EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap()))
+            Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap()
+            ))
         );
         assert_eq!(
             eth_wallets[2].get_entry(0).unwrap().address,
-            Some(AddressRef::EthereumAddress(EthereumAddress::from_str("0xBD5222391BBB9F17484F2565455FB6610D9E145F").unwrap()))
+            Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0xBD5222391BBB9F17484F2565455FB6610D9E145F").unwrap()
+            ))
         );
 
         let ledger_acc = eth_wallets[2].get_entry(0).unwrap();
@@ -450,7 +462,9 @@ mod tests {
         assert_eq!(etc_wallets.len(), 1);
         assert_eq!(
             etc_wallets[0].get_entry(0).unwrap().address,
-            Some(AddressRef::EthereumAddress(EthereumAddress::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap()))
+            Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x5b30de96fdf94ac6c5b4a8c243f991c649d66fa1").unwrap()
+            ))
         );
 
         let kovan_wallets: Vec<&Wallet> = wallets

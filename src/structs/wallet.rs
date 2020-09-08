@@ -1,23 +1,19 @@
 use crate::{
-    blockchain::chains::{Blockchain, EthereumChainId},
-    convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
-    hdwallet::WManager,
+    blockchain::chains::Blockchain,
+    convert::error::ConversionError,
     storage::{error::VaultError, vault::VaultStorage},
     structs::{
+        book::AddressRef,
         seed::{SeedRef, SeedSource},
         types::HasUuid,
     },
-    EthereumAddress,
-    EthereumPrivateKey,
-    EthereumTransaction,
 };
+use bitcoin::util::bip32::ExtendedPubKey;
 use chrono::{DateTime, Utc};
 use hdpath::StandardHDPath;
 use regex::Regex;
 use std::{convert::TryFrom, str::FromStr};
 use uuid::Uuid;
-use bitcoin::util::bip32::ExtendedPubKey;
-use crate::structs::book::AddressRef;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Wallet {

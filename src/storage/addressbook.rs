@@ -23,13 +23,13 @@ use crate::{
 };
 use csv::{StringRecord, Writer};
 use std::{
+    cmp::Ordering,
     convert::{TryFrom, TryInto},
     fs,
     fs::{File, OpenOptions},
     path::{Path, PathBuf},
 };
 use uuid::Uuid;
-use std::cmp::Ordering;
 
 const FORMAT: &str = "bookmark/base64";
 
@@ -276,7 +276,7 @@ mod tests {
     fn extract_address_str(details: &BookmarkDetails) -> Option<String> {
         match details.address {
             AddressRef::EthereumAddress(s) => Some(s.to_string()),
-            _ => panic!("not implemented for ext")
+            _ => panic!("not implemented for ext"),
         }
     }
 

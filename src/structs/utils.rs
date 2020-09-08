@@ -1,4 +1,4 @@
-use chrono::{Utc, DateTime, TimeZone};
+use chrono::{DateTime, TimeZone, Utc};
 
 lazy_static! {
     pub static ref ZERO_TS: DateTime<Utc> = Utc.timestamp_millis(100);
@@ -7,7 +7,6 @@ lazy_static! {
 #[macro_export]
 macro_rules! ord_by_date_id {
     ($name:ident) => {
-
         impl std::cmp::Ord for $name {
             fn cmp(&self, other: &Self) -> std::cmp::Ordering {
                 let zero = &crate::structs::utils::ZERO_TS;
@@ -28,15 +27,14 @@ macro_rules! ord_by_date_id {
                 Some(self.cmp(other))
             }
         }
-
     };
 }
 
 #[cfg(test)]
 mod tests {
-    use chrono::{Utc, DateTime, TimeZone};
-    use uuid::Uuid;
+    use chrono::{DateTime, TimeZone, Utc};
     use std::cmp::Ordering;
+    use uuid::Uuid;
 
     #[derive(PartialEq, Eq, Debug)]
     struct TestData {

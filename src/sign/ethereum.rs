@@ -2,6 +2,7 @@ use crate::{
     blockchain::chains::EthereumChainId,
     convert::json::keyfile::EthereumJsonV3File,
     hdwallet::WManager,
+    sign::bip32::generate_key,
     storage::{error::VaultError, vault::VaultStorage},
     structs::{
         seed::SeedSource,
@@ -13,10 +14,8 @@ use crate::{
 use hdpath::StandardHDPath;
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
-use crate::sign::bip32::{generate_key};
 
 impl WalletEntry {
-
     fn sign_tx_by_pk(
         &self,
         tx: EthereumTransaction,
@@ -113,6 +112,7 @@ mod tests {
         hdwallet::test_commons::{is_ledger_enabled, read_test_txes},
         storage::vault::VaultStorage,
         structs::{
+            book::AddressRef,
             crypto::Encrypted,
             pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
             seed::{LedgerSource, Seed, SeedRef, SeedSource},
@@ -129,18 +129,15 @@ mod tests {
     use std::{convert::TryFrom, str::FromStr};
     use tempdir::TempDir;
     use uuid::Uuid;
-    use crate::structs::book::AddressRef;
 
     #[test]
     fn sign_erc20_approve() {
         let entry = WalletEntry {
             id: 0,
             blockchain: Blockchain::Ethereum,
-            address: Some(
-                AddressRef::EthereumAddress(
-                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()
-                ),
-            ),
+            address: Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            )),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
             ..WalletEntry::default()
         };
@@ -168,11 +165,9 @@ mod tests {
         let entry = WalletEntry {
             id: 0,
             blockchain: Blockchain::Ethereum,
-            address: Some(
-                AddressRef::EthereumAddress(
-                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()
-                ),
-            ),
+            address: Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            )),
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
             ..WalletEntry::default()
         };
@@ -221,11 +216,9 @@ mod tests {
         let entry = WalletEntry {
             id: 0,
             blockchain: Blockchain::Ethereum,
-            address: Some(
-                AddressRef::EthereumAddress(
-                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()
-                ),
-            ),
+            address: Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            )),
             key: PKType::PrivateKeyRef(key_id),
             ..WalletEntry::default()
         };
@@ -272,11 +265,9 @@ mod tests {
         let entry = WalletEntry {
             id: 0,
             blockchain: Blockchain::Ethereum,
-            address: Some(
-                AddressRef::EthereumAddress(
-                    EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()
-                ),
-            ),
+            address: Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            )),
             key: PKType::PrivateKeyRef(key_id),
             ..WalletEntry::default()
         };

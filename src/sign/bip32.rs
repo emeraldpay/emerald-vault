@@ -18,14 +18,16 @@ limitations under the License.
 //! according to the [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
 //!
 
-use crate::blockchain::{EthereumPrivateKey, PRIVATE_KEY_BYTES};
+use crate::{
+    blockchain::{EthereumPrivateKey, PRIVATE_KEY_BYTES},
+    storage::error::VaultError,
+};
 use bitcoin::{
     network::constants::Network,
     util::bip32::{DerivationPath, ExtendedPrivKey},
 };
 use hdpath::StandardHDPath;
 use secp256k1::Secp256k1;
-use crate::storage::error::VaultError;
 use std::convert::TryFrom;
 
 /// Generate `ExtendedPrivKey` using BIP32

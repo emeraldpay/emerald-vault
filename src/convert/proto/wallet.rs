@@ -1,8 +1,7 @@
 use crate::{
-    blockchain::{chains::Blockchain, EthereumAddress},
+    blockchain::chains::Blockchain,
     convert::error::ConversionError,
     proto::{
-        address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         common::FileType as proto_FileType,
         seed::SeedHD as proto_SeedHD,
         wallet::{
@@ -24,10 +23,8 @@ use protobuf::{parse_from_bytes, Message};
 use std::{
     cmp,
     convert::{TryFrom, TryInto},
-    str::FromStr,
 };
 use uuid::Uuid;
-use crate::structs::book::AddressRef;
 
 impl TryFrom<&proto_WalletEntry> for WalletEntry {
     type Error = ConversionError;
@@ -35,21 +32,8 @@ impl TryFrom<&proto_WalletEntry> for WalletEntry {
     fn try_from(value: &proto_WalletEntry) -> Result<Self, Self::Error> {
         let blockchain = Blockchain::try_from(value.get_blockchain_id())
             .map_err(|_| ConversionError::UnsupportedValue("blockchain_id".to_string()))?;
-        let address = value.address.clone().into_option();
-        let address = match &address {
-            Some(a) => match &a.address_type {
-                Some(address_type) => match address_type {
-                    proto_AddressType::plain_address(a) => {
-                        Some(AddressRef::EthereumAddress(EthereumAddress::from_str(a.as_str())?))
-                    }
-                    _ => {
-                        return Err(ConversionError::UnsupportedValue(
-                            "address_type".to_string(),
-                        ))
-                    }
-                },
-                None => None,
-            },
+        let address = match &value.address.clone().into_option() {
+            Some(address) => address.try_into()?,
             None => None,
         };
         let key = match &value.pk_type {
@@ -96,21 +80,8 @@ impl From<&WalletEntry> for proto_WalletEntry {
         result.set_id(value.id as u32);
         result.set_blockchain_id(value.blockchain.to_owned() as u32);
         result.set_receive_disabled(value.receive_disabled);
-
-        match &value.address {
-            Some(address_ref) => {
-                match address_ref {
-                    AddressRef::EthereumAddress(value) => {
-                        let mut address = proto_Address::new();
-                        address.set_plain_address(value.to_string());
-                        result.set_address(address);
-                    },
-                    _ => {
-                        panic!("unsupported address type to serialize Wallet Entry")
-                    }
-                }
-            },
-            None => {}
+        if let Some(address) = &value.address {
+            result.set_address(address.into())
         }
         if let Some(label) = &value.label {
             result.set_label(label.clone());
@@ -243,7 +214,7 @@ impl TryFrom<Wallet> for Vec<u8> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        blockchain::EthereumAddress,
+        blockchain::{bitcoin::XPub, EthereumAddress},
         chains::Blockchain,
         convert::error::ConversionError,
         proto::{
@@ -251,6 +222,7 @@ mod tests {
             wallet::{Wallet as proto_Wallet, WalletEntry as proto_WalletEntry},
         },
         structs::{
+            book::AddressRef,
             seed::SeedRef,
             wallet::{PKType, ReservedPath, Wallet, WalletEntry},
         },
@@ -263,7 +235,6 @@ mod tests {
         str::FromStr,
     };
     use uuid::Uuid;
-    use crate::structs::book::AddressRef;
 
     #[test]
     fn write_and_read_empty() {
@@ -316,12 +287,10 @@ mod tests {
             entries: vec![WalletEntry {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
-                address: Some(
-                    AddressRef::EthereumAddress(
-                        EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
-                            .unwrap()
-                    ),
-                ),
+                address: Some(AddressRef::EthereumAddress(
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                        .unwrap(),
+                )),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
                 created_at: Utc.timestamp_millis(0),
                 ..WalletEntry::default()
@@ -338,6 +307,42 @@ mod tests {
     }
 
     #[test]
+    fn write_and_read_wallet_bitcoin() {
+        let seed_id = Uuid::new_v4();
+        let wallet = Wallet {
+            id: Uuid::new_v4(),
+            label: Some("Test wallet 1".to_string()),
+            entries: vec![WalletEntry {
+                id: 0,
+                blockchain: Blockchain::Bitcoin,
+                address: Some(
+                    AddressRef::ExtendedPub(
+                        XPub::from_str("zpub6rxn6spLExVKZkzwQeytdBxDAuZk4KsdchwgHP9Ffi91CtvsnsigkP7ffGjn6KMsNyqcuwwh2DKTBVUrTidWJyrEUbctLKhrK3AT7Kyw4N8").unwrap()
+                    ),
+                ),
+                key: PKType::SeedHd(SeedRef { seed_id, hd_path: StandardHDPath::try_from("m/84'/0'/1'/0/0").unwrap() }),
+                created_at: Utc.timestamp_millis(0),
+                ..WalletEntry::default()
+            }],
+            entry_seq: 1,
+            created_at: Utc.timestamp_millis(0),
+            ..Wallet::default()
+        };
+
+        let b: Vec<u8> = wallet.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+
+        let act = Wallet::try_from(b).unwrap();
+        // reserves the account on save
+        let mut exp = wallet.clone();
+        exp.reserved = vec![ReservedPath {
+            seed_id,
+            account_id: 1,
+        }];
+        assert_eq!(act, exp);
+    }
+
+    #[test]
     fn write_and_read_wallet_wo_label() {
         let wallet = Wallet {
             id: Uuid::new_v4(),
@@ -345,12 +350,10 @@ mod tests {
             entries: vec![WalletEntry {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
-                address: Some(
-                    AddressRef::EthereumAddress(
-                        EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
-                            .unwrap()
-                    ),
-                ),
+                address: Some(AddressRef::EthereumAddress(
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                        .unwrap(),
+                )),
                 key: PKType::PrivateKeyRef(Uuid::new_v4()),
                 created_at: Utc.timestamp_millis(0),
                 ..WalletEntry::default()
@@ -374,12 +377,10 @@ mod tests {
             entries: vec![WalletEntry {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
-                address: Some(
-                    AddressRef::EthereumAddress(
-                        EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
-                            .unwrap()
-                    ),
-                ),
+                address: Some(AddressRef::EthereumAddress(
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                        .unwrap(),
+                )),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
                     hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/0").unwrap(),
@@ -410,12 +411,10 @@ mod tests {
             entries: vec![WalletEntry {
                 id: 0,
                 blockchain: Blockchain::Ethereum,
-                address: Some(
-                    AddressRef::EthereumAddress(
-                        EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
-                            .unwrap()
-                    ),
-                ),
+                address: Some(AddressRef::EthereumAddress(
+                    EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99")
+                        .unwrap(),
+                )),
                 key: PKType::SeedHd(SeedRef {
                     seed_id: Uuid::from_str("351ef1f4-f1dd-4acb-9d8b-d7eec02b1da2").unwrap(),
                     hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/1").unwrap(),

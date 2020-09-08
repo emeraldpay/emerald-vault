@@ -1,24 +1,40 @@
-use crate::structs::wallet::{WalletEntry};
-use crate::storage::error::VaultError;
-use crate::storage::vault::VaultStorage;
-use crate::blockchain::bitcoin::{InputScriptSource, InputReference, KeyMapping, BitcoinTransferProposal};
-use bitcoin::{Script, TxOut, Network, PrivateKey, Transaction, Address, TxIn, PublicKey, SigHashType, SigHash};
-use crate::sign::key_source::PrivateKeySource;
-use bitcoin::util::bip143::SighashComponents;
-use bitcoin::blockdata::script::Builder;
-use secp256k1::{Message, Secp256k1, All, Signature};
-use bitcoin::util::psbt::serialize::Serialize;
-use bitcoin::util::bip32::ChildNumber;
-use crate::blockchain::chains::Blockchain;
-use crate::structs::book::AddressRef;
-use bitcoin_hashes::{Hash, hash160::Hash as hash160, sha256, HashEngine};
-use bitcoin::consensus::{serialize, Encodable};
-use bitcoin::blockdata::opcodes;
+use crate::{
+    blockchain::{
+        bitcoin::{
+            AddressType,
+            BitcoinTransferProposal,
+            InputReference,
+            InputScriptSource,
+            KeyMapping,
+        },
+        chains::Blockchain,
+    },
+    sign::key_source::PrivateKeySource,
+    storage::{error::VaultError, vault::VaultStorage},
+    structs::{book::AddressRef, wallet::WalletEntry},
+};
+use bitcoin::{
+    blockdata::{opcodes, script::Builder},
+    consensus::{serialize, Encodable},
+    util::{bip143::SighashComponents, bip32::ChildNumber, psbt::serialize::Serialize},
+    Address,
+    Network,
+    PrivateKey,
+    PublicKey,
+    Script,
+    SigHash,
+    SigHashType,
+    Transaction,
+    TxIn,
+    TxOut,
+};
+use bitcoin_hashes::{hash160::Hash as hash160, sha256, Hash, HashEngine};
+use secp256k1::{All, Message, Secp256k1, Signature};
 use std::io;
 
-lazy_static!(
+lazy_static! {
     static ref DEFAULT_SECP256K1: Secp256k1<All> = Secp256k1::new();
-);
+}
 
 // For reference:
 // - https://en.bitcoin.it/wiki/BIP_0143
@@ -36,7 +52,7 @@ impl From<Blockchain> for Network {
         match b {
             Blockchain::Bitcoin => Network::Bitcoin,
             Blockchain::BitcoinTestnet => Network::Testnet,
-            _ => panic!("not a bitcoin")
+            _ => panic!("not a bitcoin"),
         }
     }
 }
@@ -56,19 +72,27 @@ impl WalletEntry {
 
                     let change_child = ChildNumber::from_normal_idx(change)
                         .map_err(|_| VaultError::InvalidDataError("change".to_string()))?;
-                    let change_pubkey = xpub.ckd_pub(&DEFAULT_SECP256K1, change_child)
+                    let change_pubkey = xpub
+                        .value
+                        .ckd_pub(&DEFAULT_SECP256K1, change_child)
                         .map_err(|_| VaultError::InvalidDataError("xpub".to_string()))?;
 
                     let index_child = ChildNumber::from_normal_idx(index)
                         .map_err(|_| VaultError::InvalidDataError("index".to_string()))?;
-                    let pubkey = change_pubkey.ckd_pub(&DEFAULT_SECP256K1, index_child)
+                    let pubkey = change_pubkey
+                        .ckd_pub(&DEFAULT_SECP256K1, index_child)
                         .map_err(|_| VaultError::InvalidDataError("xpub".to_string()))?;
 
-                    //TODO check actual type
-                    Ok(Address::p2wpkh(&pubkey.public_key, network.clone()))
-                },
-                _ => Err(VaultError::PublicKeyUnavailable)
-            }
+                    match xpub.address_type {
+                        AddressType::P2WPKH => {
+                            Ok(Address::p2wpkh(&pubkey.public_key, network.clone()))
+                        }
+                        //TODO support other types
+                        _ => Err(VaultError::InvalidDataError("address_type".to_string())),
+                    }
+                }
+                _ => Err(VaultError::PublicKeyUnavailable),
+            },
         }
     }
 }
@@ -78,9 +102,13 @@ impl InputScriptSource {
     fn to_pk(&self, proposal: &BitcoinTransferProposal) -> Result<PrivateKey, VaultError> {
         match self {
             InputScriptSource::HD(seed, hd_path) => {
-                let seed = proposal.get_seed(seed).ok_or(VaultError::PrivateKeyUnavailable)?;
+                let seed = proposal
+                    .get_seed(seed)
+                    .ok_or(VaultError::PrivateKeyUnavailable)?;
                 let password = proposal.keys.get_password(&seed.id)?;
-                let pk = seed.source.get_pk(Some(password), hd_path)?
+                let pk = seed
+                    .source
+                    .get_pk(Some(password), hd_path)?
                     .into_bitcoin_key(&proposal.network);
                 Ok(pk)
             }
@@ -124,7 +152,11 @@ impl InputReference {
         // Ok(script)
     }
 
-    pub fn sign(&self, proposal: &BitcoinTransferProposal, tx: &Transaction) -> Result<Vec<u8>, VaultError> {
+    pub fn sign(
+        &self,
+        proposal: &BitcoinTransferProposal,
+        tx: &Transaction,
+    ) -> Result<Vec<u8>, VaultError> {
         let pk = self.get_pk(proposal)?;
         let script = self.to_sign_script(proposal)?;
         let txin = &tx.input[0];
@@ -141,10 +173,14 @@ impl InputReference {
         Ok(result)
     }
 
-    pub fn witness(&self, proposal: &BitcoinTransferProposal, signature: &Vec<u8>) -> Result<Vec<Vec<u8>>, VaultError> {
+    pub fn witness(
+        &self,
+        proposal: &BitcoinTransferProposal,
+        signature: &Vec<u8>,
+    ) -> Result<Vec<Vec<u8>>, VaultError> {
         Ok(vec![
             signature.clone(),
-            self.get_pubkey(proposal)?.serialize()
+            self.get_pubkey(proposal)?.serialize(),
         ])
     }
 
@@ -163,9 +199,7 @@ impl BitcoinTransferProposal {
         Transaction {
             version: 1,
             lock_time: 0,
-            input: self.input.iter()
-                .map(|ir| ir.to_input())
-                .collect(),
+            input: self.input.iter().map(|ir| ir.to_input()).collect(),
             output: self.output.clone(),
         }
     }
@@ -198,29 +232,35 @@ impl BitcoinTransferProposal {
 
 #[cfg(test)]
 mod tests {
-    use crate::blockchain::bitcoin::{BitcoinTransferProposal, KeyMapping, InputReference, InputScriptSource, parse_xpub};
-    use bitcoin::{Network, OutPoint, Txid, TxOut};
-    use crate::structs::seed::{SeedSource, Seed};
-    use crate::mnemonic::{Mnemonic, Language};
-    use uuid::Uuid;
-    use std::process::id;
+    use crate::{
+        blockchain::{
+            bitcoin::{
+                BitcoinTransferProposal,
+                InputReference,
+                InputScriptSource,
+                KeyMapping,
+                XPub,
+            },
+            chains::Blockchain,
+        },
+        mnemonic::{Language, Mnemonic},
+        structs::{
+            book::AddressRef,
+            seed::{Seed, SeedSource},
+            wallet::WalletEntry,
+        },
+    };
+    use bitcoin::{util::bip32::ExtendedPubKey, Network, OutPoint, TxOut, Txid};
+    use chrono::{TimeZone, Utc};
     use hdpath::StandardHDPath;
-    use std::convert::TryFrom;
-    use std::str::FromStr;
-    use crate::structs::wallet::WalletEntry;
-    use crate::structs::book::AddressRef;
-    use bitcoin::util::bip32::ExtendedPubKey;
-    use crate::blockchain::chains::Blockchain;
-    use chrono::{Utc, TimeZone};
+    use std::{convert::TryFrom, process::id, str::FromStr};
+    use uuid::Uuid;
 
     fn create_proposal_1() -> (WalletEntry, BitcoinTransferProposal) {
         let phrase = Mnemonic::try_from(Language::English,
                                         "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
         ).unwrap();
-        let seed = SeedSource::create_bytes(
-            phrase.seed(None),
-            "test",
-        ).unwrap();
+        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
         let seed_id = Uuid::new_v4();
 
         let value_1 = 120_000u64;
@@ -228,7 +268,8 @@ mod tests {
 
         let from = InputReference {
             output: OutPoint::new(
-                Txid::from_str("a386377a406465423275f51d6dc71a2c245acc55c356a7e851a03b508827bc1e").unwrap(),
+                Txid::from_str("a386377a406465423275f51d6dc71a2c245acc55c356a7e851a03b508827bc1e")
+                    .unwrap(),
                 1,
             ),
             script_source: InputScriptSource::HD(
@@ -242,7 +283,7 @@ mod tests {
         let entry = WalletEntry {
             address: Some(
                 AddressRef::ExtendedPub(
-                    parse_xpub("vpub5ZXnQV6v5nrLX2vMhMyRPAHdSYtvkR4W3TseErkPm2ZrDGGRYDXPCDAk7PyVnm6D39XFZsZBZpVYsy5mtUMazobptrf71U7HeSPKhipGftY", Network::Testnet).unwrap()
+                    XPub::from_str("vpub5ZXnQV6v5nrLX2vMhMyRPAHdSYtvkR4W3TseErkPm2ZrDGGRYDXPCDAk7PyVnm6D39XFZsZBZpVYsy5mtUMazobptrf71U7HeSPKhipGftY").unwrap()
                 )
             ),
             blockchain: Blockchain::BitcoinTestnet,
@@ -259,12 +300,10 @@ mod tests {
             }],
             keys: KeyMapping::single(seed_id.clone(), "test".to_string()),
             input: vec![from],
-            output: vec![
-                TxOut {
-                    value: value_1 - fee,
-                    script_pubkey: entry.bitcoin_address(0, 0).unwrap().script_pubkey(),
-                }
-            ],
+            output: vec![TxOut {
+                value: value_1 - fee,
+                script_pubkey: entry.bitcoin_address(0, 0).unwrap().script_pubkey(),
+            }],
             change: entry.clone(),
             expected_fee: fee,
         };
@@ -276,10 +315,7 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
         ).unwrap();
-        let seed = SeedSource::create_bytes(
-            phrase.seed(None),
-            "test",
-        ).unwrap();
+        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
         let seed_id = Uuid::new_v4();
 
         let value_1 = 120_000u64;
@@ -287,7 +323,8 @@ mod tests {
 
         let from = InputReference {
             output: OutPoint::new(
-                Txid::from_str("16aa2d98e37e50c4c007a815a3cb8c20026a3df467781a7e97206a730cf4ef01").unwrap(),
+                Txid::from_str("16aa2d98e37e50c4c007a815a3cb8c20026a3df467781a7e97206a730cf4ef01")
+                    .unwrap(),
                 1,
             ),
             script_source: InputScriptSource::HD(
@@ -301,7 +338,7 @@ mod tests {
         let entry = WalletEntry {
             address: Some(
                 AddressRef::ExtendedPub(
-                    parse_xpub("vpub5ZXnQV6v5nrLX2vMhMyRPAHdSYtvkR4W3TseErkPm2ZrDGGRYDXPCDAk7PyVnm6D39XFZsZBZpVYsy5mtUMazobptrf71U7HeSPKhipGftY", Network::Testnet).unwrap()
+                    XPub::from_str("vpub5ZXnQV6v5nrLX2vMhMyRPAHdSYtvkR4W3TseErkPm2ZrDGGRYDXPCDAk7PyVnm6D39XFZsZBZpVYsy5mtUMazobptrf71U7HeSPKhipGftY").unwrap()
                 )
             ),
             blockchain: Blockchain::BitcoinTestnet,
@@ -318,12 +355,10 @@ mod tests {
             }],
             keys: KeyMapping::single(seed_id.clone(), "test".to_string()),
             input: vec![from],
-            output: vec![
-                TxOut {
-                    value: value_1 - fee,
-                    script_pubkey: entry.bitcoin_address(0, 0).unwrap().script_pubkey(),
-                }
-            ],
+            output: vec![TxOut {
+                value: value_1 - fee,
+                script_pubkey: entry.bitcoin_address(0, 0).unwrap().script_pubkey(),
+            }],
             change: entry.clone(),
             expected_fee: fee,
         };

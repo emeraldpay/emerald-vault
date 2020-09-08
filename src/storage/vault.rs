@@ -1,19 +1,22 @@
 use crate::{
     chains::Blockchain,
     convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
-    hdwallet::{WManager},
+    hdwallet::WManager,
+    sign::bip32::generate_key,
     storage::{
         addressbook::AddressbookStorage,
         archive::{Archive, ArchiveType},
         error::VaultError,
     },
     structs::{
+        book::AddressRef,
         pk::PrivateKeyHolder,
         seed::{Seed, SeedRef, SeedSource},
         types::HasUuid,
         wallet::{PKType, Wallet, WalletEntry},
     },
-    EthereumAddress, EthereumPrivateKey,
+    EthereumAddress,
+    EthereumPrivateKey,
 };
 use hdpath::StandardHDPath;
 use regex::Regex;
@@ -26,8 +29,6 @@ use std::{
     time::SystemTime,
 };
 use uuid::Uuid;
-use crate::sign::bip32::generate_key;
-use crate::structs::book::AddressRef;
 
 /// Compound trait for a vault entry which is stored in a separate file each
 pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
@@ -414,7 +415,9 @@ impl CreateWallet {
             entries: vec![WalletEntry {
                 id: 0,
                 blockchain,
-                address: pk.get_ethereum_address().map(|a| AddressRef::EthereumAddress(a)),
+                address: pk
+                    .get_ethereum_address()
+                    .map(|a| AddressRef::EthereumAddress(a)),
                 key: PKType::PrivateKeyRef(pk.get_id()),
                 ..WalletEntry::default()
             }],
@@ -469,7 +472,9 @@ impl AddEntry {
         let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
             .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let pk_id = pk.get_id();
-        let address = pk.get_ethereum_address().clone()
+        let address = pk
+            .get_ethereum_address()
+            .clone()
             .map(|a| AddressRef::EthereumAddress(a));
         let id = wallet.next_entry_id();
         self.keys.add(pk)?;
@@ -530,7 +535,8 @@ impl AddEntry {
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
-            address: address.or(expected_address)
+            address: address
+                .or(expected_address)
                 .map(|a| AddressRef::EthereumAddress(a)),
             key: PKType::SeedHd(SeedRef {
                 seed_id: seed_id.clone(),
@@ -978,14 +984,22 @@ mod tests {
         //#3 -> #1
 
         let seeds = vault.seeds.list_entries().unwrap();
-        assert_eq!(seeds.get(0).unwrap().id.to_string(),
-                   "067e14c4-85de-421e-9957-48a1cdef42ae".to_string());
-        assert_eq!(seeds.get(1).unwrap().id.to_string(),
-                   "5e47360d-3dc2-4b39-b399-75fbdd4ac020".to_string());
-        assert_eq!(seeds.get(2).unwrap().id.to_string(),
-                   "36805dff-a6e0-434d-be7d-5ef7931522d0".to_string());
-        assert_eq!(seeds.get(3).unwrap().id.to_string(),
-                   "13052693-c51c-4e8b-91b3-564d3cb78fb4".to_string());
+        assert_eq!(
+            seeds.get(0).unwrap().id.to_string(),
+            "067e14c4-85de-421e-9957-48a1cdef42ae".to_string()
+        );
+        assert_eq!(
+            seeds.get(1).unwrap().id.to_string(),
+            "5e47360d-3dc2-4b39-b399-75fbdd4ac020".to_string()
+        );
+        assert_eq!(
+            seeds.get(2).unwrap().id.to_string(),
+            "36805dff-a6e0-434d-be7d-5ef7931522d0".to_string()
+        );
+        assert_eq!(
+            seeds.get(3).unwrap().id.to_string(),
+            "13052693-c51c-4e8b-91b3-564d3cb78fb4".to_string()
+        );
     }
 
     #[test]
@@ -993,28 +1007,40 @@ mod tests {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
-        vault.wallets.add(Wallet {
-            id: Uuid::parse_str("13052693-c51c-4e8b-91b3-564d3cb78fb4").unwrap(),
-            // 2 jan 2020
-            created_at: Utc.timestamp_millis(1577962800000),
-            ..Wallet::default()
-        }).unwrap();
-        vault.wallets.add(Wallet {
-            id: Uuid::parse_str("5e47360d-3dc2-4b39-b399-75fbdd4ac020").unwrap(),
-            created_at: Utc.timestamp_millis(0),
-            ..Wallet::default()
-        }).unwrap();
-        vault.wallets.add(Wallet {
-            id: Uuid::parse_str("36805dff-a6e0-434d-be7d-5ef7931522d0").unwrap(),
-            // 1 jan 2020
-            created_at: Utc.timestamp_millis(1577876400000),
-            ..Wallet::default()
-        }).unwrap();
-        vault.wallets.add(Wallet {
-            id: Uuid::parse_str("067e14c4-85de-421e-9957-48a1cdef42ae").unwrap(),
-            created_at: Utc.timestamp_millis(0),
-            ..Wallet::default()
-        }).unwrap();
+        vault
+            .wallets
+            .add(Wallet {
+                id: Uuid::parse_str("13052693-c51c-4e8b-91b3-564d3cb78fb4").unwrap(),
+                // 2 jan 2020
+                created_at: Utc.timestamp_millis(1577962800000),
+                ..Wallet::default()
+            })
+            .unwrap();
+        vault
+            .wallets
+            .add(Wallet {
+                id: Uuid::parse_str("5e47360d-3dc2-4b39-b399-75fbdd4ac020").unwrap(),
+                created_at: Utc.timestamp_millis(0),
+                ..Wallet::default()
+            })
+            .unwrap();
+        vault
+            .wallets
+            .add(Wallet {
+                id: Uuid::parse_str("36805dff-a6e0-434d-be7d-5ef7931522d0").unwrap(),
+                // 1 jan 2020
+                created_at: Utc.timestamp_millis(1577876400000),
+                ..Wallet::default()
+            })
+            .unwrap();
+        vault
+            .wallets
+            .add(Wallet {
+                id: Uuid::parse_str("067e14c4-85de-421e-9957-48a1cdef42ae").unwrap(),
+                created_at: Utc.timestamp_millis(0),
+                ..Wallet::default()
+            })
+            .unwrap();
 
         //first comes items without date
         //#4 -> #2
@@ -1022,14 +1048,22 @@ mod tests {
         //#3 -> #1
 
         let seeds = vault.wallets.list_entries().unwrap();
-        assert_eq!(seeds.get(0).unwrap().id.to_string(),
-                   "067e14c4-85de-421e-9957-48a1cdef42ae".to_string());
-        assert_eq!(seeds.get(1).unwrap().id.to_string(),
-                   "5e47360d-3dc2-4b39-b399-75fbdd4ac020".to_string());
-        assert_eq!(seeds.get(2).unwrap().id.to_string(),
-                   "36805dff-a6e0-434d-be7d-5ef7931522d0".to_string());
-        assert_eq!(seeds.get(3).unwrap().id.to_string(),
-                   "13052693-c51c-4e8b-91b3-564d3cb78fb4".to_string());
+        assert_eq!(
+            seeds.get(0).unwrap().id.to_string(),
+            "067e14c4-85de-421e-9957-48a1cdef42ae".to_string()
+        );
+        assert_eq!(
+            seeds.get(1).unwrap().id.to_string(),
+            "5e47360d-3dc2-4b39-b399-75fbdd4ac020".to_string()
+        );
+        assert_eq!(
+            seeds.get(2).unwrap().id.to_string(),
+            "36805dff-a6e0-434d-be7d-5ef7931522d0".to_string()
+        );
+        assert_eq!(
+            seeds.get(3).unwrap().id.to_string(),
+            "13052693-c51c-4e8b-91b3-564d3cb78fb4".to_string()
+        );
     }
 
     #[test]

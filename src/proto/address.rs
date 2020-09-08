@@ -318,6 +318,7 @@ pub struct Bip32Public {
     pub child_number: u32,
     pub chaincode: ::std::vec::Vec<u8>,
     pub point: ::std::vec::Vec<u8>,
+    pub address_type: AddressType,
     // special fields
     pub unknown_fields: ::protobuf::UnknownFields,
     pub cached_size: ::protobuf::CachedSize,
@@ -430,6 +431,21 @@ impl Bip32Public {
     pub fn take_point(&mut self) -> ::std::vec::Vec<u8> {
         ::std::mem::replace(&mut self.point, ::std::vec::Vec::new())
     }
+
+    // .emerald.vault.AddressType address_type = 6;
+
+
+    pub fn get_address_type(&self) -> AddressType {
+        self.address_type
+    }
+    pub fn clear_address_type(&mut self) {
+        self.address_type = AddressType::UNSPECIFIED;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_address_type(&mut self, v: AddressType) {
+        self.address_type = v;
+    }
 }
 
 impl ::protobuf::Message for Bip32Public {
@@ -468,6 +484,9 @@ impl ::protobuf::Message for Bip32Public {
                 5 => {
                     ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.point)?;
                 },
+                6 => {
+                    ::protobuf::rt::read_proto3_enum_with_unknown_fields_into(wire_type, is, &mut self.address_type, 6, &mut self.unknown_fields)?
+                },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
                 },
@@ -495,6 +514,9 @@ impl ::protobuf::Message for Bip32Public {
         if !self.point.is_empty() {
             my_size += ::protobuf::rt::bytes_size(5, &self.point);
         }
+        if self.address_type != AddressType::UNSPECIFIED {
+            my_size += ::protobuf::rt::enum_size(6, self.address_type);
+        }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
         self.cached_size.set(my_size);
         my_size
@@ -515,6 +537,9 @@ impl ::protobuf::Message for Bip32Public {
         }
         if !self.point.is_empty() {
             os.write_bytes(5, &self.point)?;
+        }
+        if self.address_type != AddressType::UNSPECIFIED {
+            os.write_enum(6, self.address_type.value())?;
         }
         os.write_unknown_fields(self.get_unknown_fields())?;
         ::std::result::Result::Ok(())
@@ -583,10 +608,15 @@ impl ::protobuf::Message for Bip32Public {
                     |m: &Bip32Public| { &m.point },
                     |m: &mut Bip32Public| { &mut m.point },
                 ));
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeEnum<AddressType>>(
+                    "address_type",
+                    |m: &Bip32Public| { &m.address_type },
+                    |m: &mut Bip32Public| { &mut m.address_type },
+                ));
                 ::protobuf::reflect::MessageDescriptor::new::<Bip32Public>(
                     "Bip32Public",
                     fields,
-                    file_descriptor_proto()
+                    file_descriptor_proto(),
                 )
             })
         }
@@ -610,6 +640,7 @@ impl ::protobuf::Clear for Bip32Public {
         self.child_number = 0;
         self.chaincode.clear();
         self.point.clear();
+        self.address_type = AddressType::UNSPECIFIED;
         self.unknown_fields.clear();
     }
 }
@@ -626,43 +657,137 @@ impl ::protobuf::reflect::ProtobufValue for Bip32Public {
     }
 }
 
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+pub enum AddressType {
+    UNSPECIFIED = 0,
+    BITCOIN_P2WPKH = 1,
+    BITCOIN_P2WSH = 2,
+    BITCOIN_P2PKH = 3,
+    BITCOIN_P2SH = 4,
+    BITCOIN_P2WPKH_P2SH = 5,
+    BITCOIN_P2WSH_P2SH = 6,
+    ETHEREUM = 10,
+}
+
+impl ::protobuf::ProtobufEnum for AddressType {
+    fn value(&self) -> i32 {
+        *self as i32
+    }
+
+    fn from_i32(value: i32) -> ::std::option::Option<AddressType> {
+        match value {
+            0 => ::std::option::Option::Some(AddressType::UNSPECIFIED),
+            1 => ::std::option::Option::Some(AddressType::BITCOIN_P2WPKH),
+            2 => ::std::option::Option::Some(AddressType::BITCOIN_P2WSH),
+            3 => ::std::option::Option::Some(AddressType::BITCOIN_P2PKH),
+            4 => ::std::option::Option::Some(AddressType::BITCOIN_P2SH),
+            5 => ::std::option::Option::Some(AddressType::BITCOIN_P2WPKH_P2SH),
+            6 => ::std::option::Option::Some(AddressType::BITCOIN_P2WSH_P2SH),
+            10 => ::std::option::Option::Some(AddressType::ETHEREUM),
+            _ => ::std::option::Option::None
+        }
+    }
+
+    fn values() -> &'static [Self] {
+        static values: &'static [AddressType] = &[
+            AddressType::UNSPECIFIED,
+            AddressType::BITCOIN_P2WPKH,
+            AddressType::BITCOIN_P2WSH,
+            AddressType::BITCOIN_P2PKH,
+            AddressType::BITCOIN_P2SH,
+            AddressType::BITCOIN_P2WPKH_P2SH,
+            AddressType::BITCOIN_P2WSH_P2SH,
+            AddressType::ETHEREUM,
+        ];
+        values
+    }
+
+    fn enum_descriptor_static() -> &'static ::protobuf::reflect::EnumDescriptor {
+        static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::EnumDescriptor> = ::protobuf::lazy::Lazy {
+            lock: ::protobuf::lazy::ONCE_INIT,
+            ptr: 0 as *const ::protobuf::reflect::EnumDescriptor,
+        };
+        unsafe {
+            descriptor.get(|| {
+                ::protobuf::reflect::EnumDescriptor::new("AddressType", file_descriptor_proto())
+            })
+        }
+    }
+}
+
+impl ::std::marker::Copy for AddressType {}
+
+impl ::std::default::Default for AddressType {
+    fn default() -> Self {
+        AddressType::UNSPECIFIED
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for AddressType {
+    fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
+        ::protobuf::reflect::ProtobufValueRef::Enum(self.descriptor())
+    }
+}
+
 static file_descriptor_proto_data: &'static [u8] = b"\
     \n\raddress.proto\x12\remerald.vault\"r\n\x07Address\x120\n\x04xpub\x18\
     \x01\x20\x01(\x0b2\x1a.emerald.vault.Bip32PublicH\0R\x04xpub\x12%\n\rpla\
     in_address\x18\x03\x20\x01(\tH\0R\x0cplainAddressB\x0e\n\x0caddress_type\
-    \"\xa9\x01\n\x0bBip32Public\x12\x14\n\x05level\x18\x01\x20\x01(\rR\x05le\
+    \"\xe8\x01\n\x0bBip32Public\x12\x14\n\x05level\x18\x01\x20\x01(\rR\x05le\
     vel\x12-\n\x12parent_fingerprint\x18\x02\x20\x01(\rR\x11parentFingerprin\
     t\x12!\n\x0cchild_number\x18\x03\x20\x01(\rR\x0bchildNumber\x12\x1c\n\tc\
     haincode\x18\x04\x20\x01(\x0cR\tchaincode\x12\x14\n\x05point\x18\x05\x20\
-    \x01(\x0cR\x05pointJ\xb4\x04\n\x06\x12\x04\0\0\x10\x01\n\x08\n\x01\x0c\
-    \x12\x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\n\n\x02\x04\0\x12\
-    \x04\x03\0\x08\x01\n\n\n\x03\x04\0\x01\x12\x03\x03\x08\x0f\n\x0c\n\x04\
-    \x04\0\x08\0\x12\x04\x04\x04\x07\x05\n\x0c\n\x05\x04\0\x08\0\x01\x12\x03\
-    \x04\n\x16\n\x0b\n\x04\x04\0\x02\0\x12\x03\x05\x08\x1d\n\x0c\n\x05\x04\0\
-    \x02\0\x06\x12\x03\x05\x08\x13\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\x05\
-    \x14\x18\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x05\x1b\x1c\n\x0b\n\x04\x04\
-    \0\x02\x01\x12\x03\x06\x08!\n\x0c\n\x05\x04\0\x02\x01\x05\x12\x03\x06\
-    \x08\x0e\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x06\x0f\x1c\n\x0c\n\x05\
-    \x04\0\x02\x01\x03\x12\x03\x06\x1f\x20\n\n\n\x02\x04\x01\x12\x04\n\0\x10\
-    \x01\n\n\n\x03\x04\x01\x01\x12\x03\n\x08\x13\n\x0b\n\x04\x04\x01\x02\0\
-    \x12\x03\x0b\x04\x15\n\r\n\x05\x04\x01\x02\0\x04\x12\x04\x0b\x04\n\x15\n\
-    \x0c\n\x05\x04\x01\x02\0\x05\x12\x03\x0b\x04\n\n\x0c\n\x05\x04\x01\x02\0\
-    \x01\x12\x03\x0b\x0b\x10\n\x0c\n\x05\x04\x01\x02\0\x03\x12\x03\x0b\x13\
-    \x14\n\x0b\n\x04\x04\x01\x02\x01\x12\x03\x0c\x04\"\n\r\n\x05\x04\x01\x02\
-    \x01\x04\x12\x04\x0c\x04\x0b\x15\n\x0c\n\x05\x04\x01\x02\x01\x05\x12\x03\
-    \x0c\x04\n\n\x0c\n\x05\x04\x01\x02\x01\x01\x12\x03\x0c\x0b\x1d\n\x0c\n\
-    \x05\x04\x01\x02\x01\x03\x12\x03\x0c\x20!\n\x0b\n\x04\x04\x01\x02\x02\
-    \x12\x03\r\x04\x1c\n\r\n\x05\x04\x01\x02\x02\x04\x12\x04\r\x04\x0c\"\n\
-    \x0c\n\x05\x04\x01\x02\x02\x05\x12\x03\r\x04\n\n\x0c\n\x05\x04\x01\x02\
-    \x02\x01\x12\x03\r\x0b\x17\n\x0c\n\x05\x04\x01\x02\x02\x03\x12\x03\r\x1a\
-    \x1b\n\x0b\n\x04\x04\x01\x02\x03\x12\x03\x0e\x04\x18\n\r\n\x05\x04\x01\
-    \x02\x03\x04\x12\x04\x0e\x04\r\x1c\n\x0c\n\x05\x04\x01\x02\x03\x05\x12\
-    \x03\x0e\x04\t\n\x0c\n\x05\x04\x01\x02\x03\x01\x12\x03\x0e\n\x13\n\x0c\n\
-    \x05\x04\x01\x02\x03\x03\x12\x03\x0e\x16\x17\n\x0b\n\x04\x04\x01\x02\x04\
-    \x12\x03\x0f\x04\x14\n\r\n\x05\x04\x01\x02\x04\x04\x12\x04\x0f\x04\x0e\
-    \x18\n\x0c\n\x05\x04\x01\x02\x04\x05\x12\x03\x0f\x04\t\n\x0c\n\x05\x04\
-    \x01\x02\x04\x01\x12\x03\x0f\n\x0f\n\x0c\n\x05\x04\x01\x02\x04\x03\x12\
-    \x03\x0f\x12\x13b\x06proto3\
+    \x01(\x0cR\x05point\x12=\n\x0caddress_type\x18\x06\x20\x01(\x0e2\x1a.eme\
+    rald.vault.AddressTypeR\x0baddressType*\xa9\x01\n\x0bAddressType\x12\x0f\
+    \n\x0bUNSPECIFIED\x10\0\x12\x12\n\x0eBITCOIN_P2WPKH\x10\x01\x12\x11\n\rB\
+    ITCOIN_P2WSH\x10\x02\x12\x11\n\rBITCOIN_P2PKH\x10\x03\x12\x10\n\x0cBITCO\
+    IN_P2SH\x10\x04\x12\x17\n\x13BITCOIN_P2WPKH_P2SH\x10\x05\x12\x16\n\x12BI\
+    TCOIN_P2WSH_P2SH\x10\x06\x12\x0c\n\x08ETHEREUM\x10\nJ\x80\x07\n\x06\x12\
+    \x04\0\0\x1c\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\x03\
+    \x01\0\x16\n\n\n\x02\x04\0\x12\x04\x03\0\x08\x01\n\n\n\x03\x04\0\x01\x12\
+    \x03\x03\x08\x0f\n\x0c\n\x04\x04\0\x08\0\x12\x04\x04\x04\x07\x05\n\x0c\n\
+    \x05\x04\0\x08\0\x01\x12\x03\x04\n\x16\n\x0b\n\x04\x04\0\x02\0\x12\x03\
+    \x05\x08\x1d\n\x0c\n\x05\x04\0\x02\0\x06\x12\x03\x05\x08\x13\n\x0c\n\x05\
+    \x04\0\x02\0\x01\x12\x03\x05\x14\x18\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\
+    \x05\x1b\x1c\n\x0b\n\x04\x04\0\x02\x01\x12\x03\x06\x08!\n\x0c\n\x05\x04\
+    \0\x02\x01\x05\x12\x03\x06\x08\x0e\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\
+    \x06\x0f\x1c\n\x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x06\x1f\x20\n\n\n\x02\
+    \x04\x01\x12\x04\n\0\x11\x01\n\n\n\x03\x04\x01\x01\x12\x03\n\x08\x13\n\
+    \x0b\n\x04\x04\x01\x02\0\x12\x03\x0b\x04\x15\n\x0c\n\x05\x04\x01\x02\0\
+    \x05\x12\x03\x0b\x04\n\n\x0c\n\x05\x04\x01\x02\0\x01\x12\x03\x0b\x0b\x10\
+    \n\x0c\n\x05\x04\x01\x02\0\x03\x12\x03\x0b\x13\x14\n\x0b\n\x04\x04\x01\
+    \x02\x01\x12\x03\x0c\x04\"\n\x0c\n\x05\x04\x01\x02\x01\x05\x12\x03\x0c\
+    \x04\n\n\x0c\n\x05\x04\x01\x02\x01\x01\x12\x03\x0c\x0b\x1d\n\x0c\n\x05\
+    \x04\x01\x02\x01\x03\x12\x03\x0c\x20!\n\x0b\n\x04\x04\x01\x02\x02\x12\
+    \x03\r\x04\x1c\n\x0c\n\x05\x04\x01\x02\x02\x05\x12\x03\r\x04\n\n\x0c\n\
+    \x05\x04\x01\x02\x02\x01\x12\x03\r\x0b\x17\n\x0c\n\x05\x04\x01\x02\x02\
+    \x03\x12\x03\r\x1a\x1b\n\x0b\n\x04\x04\x01\x02\x03\x12\x03\x0e\x04\x18\n\
+    \x0c\n\x05\x04\x01\x02\x03\x05\x12\x03\x0e\x04\t\n\x0c\n\x05\x04\x01\x02\
+    \x03\x01\x12\x03\x0e\n\x13\n\x0c\n\x05\x04\x01\x02\x03\x03\x12\x03\x0e\
+    \x16\x17\n\x0b\n\x04\x04\x01\x02\x04\x12\x03\x0f\x04\x14\n\x0c\n\x05\x04\
+    \x01\x02\x04\x05\x12\x03\x0f\x04\t\n\x0c\n\x05\x04\x01\x02\x04\x01\x12\
+    \x03\x0f\n\x0f\n\x0c\n\x05\x04\x01\x02\x04\x03\x12\x03\x0f\x12\x13\n\x0b\
+    \n\x04\x04\x01\x02\x05\x12\x03\x10\x04!\n\x0c\n\x05\x04\x01\x02\x05\x06\
+    \x12\x03\x10\x04\x0f\n\x0c\n\x05\x04\x01\x02\x05\x01\x12\x03\x10\x10\x1c\
+    \n\x0c\n\x05\x04\x01\x02\x05\x03\x12\x03\x10\x1f\x20\n\n\n\x02\x05\0\x12\
+    \x04\x13\0\x1c\x01\n\n\n\x03\x05\0\x01\x12\x03\x13\x05\x10\n\x0b\n\x04\
+    \x05\0\x02\0\x12\x03\x14\x04\x14\n\x0c\n\x05\x05\0\x02\0\x01\x12\x03\x14\
+    \x04\x0f\n\x0c\n\x05\x05\0\x02\0\x02\x12\x03\x14\x12\x13\n\x0b\n\x04\x05\
+    \0\x02\x01\x12\x03\x15\x04\x17\n\x0c\n\x05\x05\0\x02\x01\x01\x12\x03\x15\
+    \x04\x12\n\x0c\n\x05\x05\0\x02\x01\x02\x12\x03\x15\x15\x16\n\x0b\n\x04\
+    \x05\0\x02\x02\x12\x03\x16\x04\x16\n\x0c\n\x05\x05\0\x02\x02\x01\x12\x03\
+    \x16\x04\x11\n\x0c\n\x05\x05\0\x02\x02\x02\x12\x03\x16\x14\x15\n\x0b\n\
+    \x04\x05\0\x02\x03\x12\x03\x17\x04\x16\n\x0c\n\x05\x05\0\x02\x03\x01\x12\
+    \x03\x17\x04\x11\n\x0c\n\x05\x05\0\x02\x03\x02\x12\x03\x17\x14\x15\n\x0b\
+    \n\x04\x05\0\x02\x04\x12\x03\x18\x04\x15\n\x0c\n\x05\x05\0\x02\x04\x01\
+    \x12\x03\x18\x04\x10\n\x0c\n\x05\x05\0\x02\x04\x02\x12\x03\x18\x13\x14\n\
+    \x0b\n\x04\x05\0\x02\x05\x12\x03\x19\x04\x1c\n\x0c\n\x05\x05\0\x02\x05\
+    \x01\x12\x03\x19\x04\x17\n\x0c\n\x05\x05\0\x02\x05\x02\x12\x03\x19\x1a\
+    \x1b\n\x0b\n\x04\x05\0\x02\x06\x12\x03\x1a\x04\x1b\n\x0c\n\x05\x05\0\x02\
+    \x06\x01\x12\x03\x1a\x04\x16\n\x0c\n\x05\x05\0\x02\x06\x02\x12\x03\x1a\
+    \x19\x1a\n\x0b\n\x04\x05\0\x02\x07\x12\x03\x1b\x04\x12\n\x0c\n\x05\x05\0\
+    \x02\x07\x01\x12\x03\x1b\x04\x0c\n\x0c\n\x05\x05\0\x02\x07\x02\x12\x03\
+    \x1b\x0f\x11b\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

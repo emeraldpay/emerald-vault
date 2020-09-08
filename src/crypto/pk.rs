@@ -7,8 +7,8 @@ use crate::{
     },
 };
 use chrono::Utc;
-use uuid::Uuid;
 use std::convert::TryFrom;
+use uuid::Uuid;
 
 impl PrivateKeyHolder {
     pub fn create_ethereum_v3(pk3: EthereumPk3) -> PrivateKeyHolder {

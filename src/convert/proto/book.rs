@@ -2,17 +2,16 @@ use crate::{
     blockchain::chains::Blockchain,
     convert::error::ConversionError,
     proto::{
-        address::{Address as proto_Address, Address_oneof_address_type as proto_AddressType},
         book::BookItem as proto_BookItem,
         common::FileType as proto_FileType,
     },
-    structs::book::{AddressRef, BookmarkDetails},
+    structs::book::{BookmarkDetails},
     util::none_if_empty,
-    EthereumAddress,
 };
 use chrono::{TimeZone, Utc};
 use protobuf::{parse_from_bytes, Message};
-use std::{convert::TryFrom, str::FromStr};
+use std::{convert::TryFrom};
+use std::convert::TryInto;
 
 /// Read from Protobuf bytes
 impl TryFrom<&[u8]> for BookmarkDetails {
@@ -20,22 +19,16 @@ impl TryFrom<&[u8]> for BookmarkDetails {
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let m = parse_from_bytes::<proto_BookItem>(value)?;
+        let address = match &m.address.clone().into_option() {
+            Some(address) => address.try_into()?,
+            None => None,
+        };
 
-        let address = match &m.get_address().address_type {
-            Some(t) => match t {
-                proto_AddressType::plain_address(s) => EthereumAddress::from_str(s.as_str()),
-                _ => {
-                    return Err(ConversionError::InvalidFieldValue(
-                        "address_type".to_string(),
-                    ))
-                }
-            },
-            None => {
-                return Err(ConversionError::InvalidFieldValue(
-                    "address is empty".to_string(),
-                ))
-            }
-        }?;
+        if address.is_none() {
+            return Err(ConversionError::InvalidFieldValue(
+                "address is empty".to_string(),
+            ))
+        }
 
         let blockchain = Blockchain::try_from(m.get_blockchain())
             .map_err(|_| ConversionError::InvalidFieldValue("blockchain".to_string()))?;
@@ -47,7 +40,7 @@ impl TryFrom<&[u8]> for BookmarkDetails {
             blockchain,
             label: none_if_empty(m.get_label()),
             description: none_if_empty(m.get_description()),
-            address: AddressRef::EthereumAddress(address),
+            address: address.unwrap(),
             created_at,
         };
 
@@ -78,16 +71,7 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
         if value.description.is_some() {
             m.set_description(value.description.unwrap());
         }
-        match value.address {
-            AddressRef::EthereumAddress(address) => {
-                let mut value = proto_Address::new();
-                value.set_plain_address(address.to_string());
-                m.set_address(value)
-            }
-            AddressRef::ExtendedPub(_) => {
-                panic!("Cannot save Extended Pub. TODO")
-            }
-        };
+        m.set_address((&value.address).into());
         m.set_created_at(value.created_at.timestamp_millis() as u64);
         m.write_to_bytes().map_err(|e| ConversionError::from(e))
     }
@@ -107,6 +91,7 @@ mod tests {
         convert::{TryFrom, TryInto},
         str::FromStr,
     };
+    use crate::blockchain::bitcoin::XPub;
 
     #[test]
     fn write_as_protobuf() {
@@ -140,6 +125,24 @@ mod tests {
             description: Some("World!".to_string()),
             address: AddressRef::EthereumAddress(
                 EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
+            ),
+            created_at: Utc.timestamp_millis(1592624592679),
+        };
+
+        let b: Vec<u8> = item.clone().try_into().unwrap();
+        assert!(b.len() > 0);
+        let act = BookmarkDetails::try_from(b).unwrap();
+        assert_eq!(act, item);
+    }
+
+    #[test]
+    fn write_and_read_xpub() {
+        let item = BookmarkDetails {
+            blockchain: Blockchain::Bitcoin,
+            label: Some("Hello".to_string()),
+            description: Some("World!".to_string()),
+            address: AddressRef::ExtendedPub(
+                XPub::from_str("zpub6tMBbzkLBxnSw8VSGXrnyBSY3r2j4KJRrxrMWm1pskuhbCnKS8R5SuHGjakEvf6efbqsM1NoPMxXZrPmQWTV7ZXZuK9dZcbEzkftLBDJHKj").unwrap(),
             ),
             created_at: Utc.timestamp_millis(1592624592679),
         };

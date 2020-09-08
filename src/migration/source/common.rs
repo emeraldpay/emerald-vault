@@ -3,6 +3,7 @@ use crate::{
     migration::source::json_data::{CryptoTypeV2, KeyFileV2},
     storage::vault::VaultStorage,
     structs::{
+        book::AddressRef,
         crypto::Encrypted,
         pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
         seed::{HDPathFingerprint, LedgerSource, Seed, SeedRef, SeedSource},
@@ -14,7 +15,6 @@ use chrono::Utc;
 use hdpath::StandardHDPath;
 use std::convert::TryFrom;
 use uuid::Uuid;
-use crate::structs::book::AddressRef;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();

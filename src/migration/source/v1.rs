@@ -173,12 +173,11 @@ mod tests {
             types::Migrate,
         },
         storage::vault::VaultStorage,
-        structs::wallet::Wallet,
+        structs::{book::AddressRef, wallet::Wallet},
         EthereumAddress,
     };
     use std::str::FromStr;
     use tempdir::TempDir;
-    use crate::structs::book::AddressRef;
 
     #[test]
     fn migrate_basic() {
@@ -217,8 +216,8 @@ mod tests {
         assert_eq!(
             etc_wallets[0].get_entry(0).unwrap().address,
             Some(AddressRef::EthereumAddress(
-                EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap())
-            )
+                EthereumAddress::from_str("0x410891c20e253a2d284f898368860ec7ffa6153c").unwrap()
+            ))
         );
         assert_eq!(
             etc_wallets[1].get_entry(0).unwrap().address,
