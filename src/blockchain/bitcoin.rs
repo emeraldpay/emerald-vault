@@ -14,7 +14,7 @@ use bitcoin::{
     PublicKey,
     TxOut,
 };
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use hdpath::{StandardHDPath, Purpose, AccountHDPath};
 use uuid::Uuid;
 
@@ -203,6 +203,20 @@ impl FromStr for XPub {
     }
 }
 
+impl ToString for XPub {
+    fn to_string(&self) -> String {
+        let mut data: Vec<u8> = Vec::with_capacity(78);
+        let version = self.address_type.xpub_version(&self.value.network);
+        data.write_u32::<BigEndian>(version).expect("Failed to write version");
+        data.push(self.value.depth);
+        data.extend_from_slice(self.value.parent_fingerprint.as_bytes());
+        data.write_u32::<BigEndian>(self.value.child_number.into()).expect("Failed to write child_number");
+        data.extend_from_slice(self.value.chain_code.as_bytes());
+        data.extend_from_slice(self.value.public_key.to_bytes().as_slice());
+        base58::check_encode_slice(data.as_slice())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -232,5 +246,19 @@ mod tests {
         let act = XPub::from_str("tpubDFJnjeM57mHkG8LhyzfDwsWYJUWwta4Aq4nPo59hfVGhanWn7h98c2q6WoexVgkHx9Bg2vrAhCQi13tZozsZmrU8ca43c7em3RUvMXbSdHi").unwrap();
         assert_eq!(act.value.network, Network::Testnet);
         assert_eq!(act.address_type, AddressType::P2PKH);
+    }
+
+    #[test]
+    fn to_string_xpub_p2wpkh() {
+        let orig = XPub::from_str("zpub6tGSDzdnLUJBBBanLhkcTqkc44WzxshiTBiCuZTgz198oQxPxx4kkdRAhQD3TBBieMPkFAfSUvKov7nKQX6cXJxZEU1BTeHVGjyR5EHubqb").unwrap();
+        let act = orig.to_string();
+        assert_eq!(act, "zpub6tGSDzdnLUJBBBanLhkcTqkc44WzxshiTBiCuZTgz198oQxPxx4kkdRAhQD3TBBieMPkFAfSUvKov7nKQX6cXJxZEU1BTeHVGjyR5EHubqb");
+    }
+
+    #[test]
+    fn to_string_xpub_p2pkh() {
+        let orig = XPub::from_str("xpub6DfEZhR1ZBu33KzKqHPA1GCfKPpdB9HWFu5UsA54kB5VL3VN34JogQxYHWtSgrippZHp8s9hL9KrAfdYX1sU6cYRXMhGYuvwepFUooGAef5").unwrap();
+        let act = orig.to_string();
+        assert_eq!(act, "xpub6DfEZhR1ZBu33KzKqHPA1GCfKPpdB9HWFu5UsA54kB5VL3VN34JogQxYHWtSgrippZHp8s9hL9KrAfdYX1sU6cYRXMhGYuvwepFUooGAef5");
     }
 }
