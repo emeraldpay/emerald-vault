@@ -15,7 +15,7 @@ use bitcoin::{
     TxOut,
 };
 use byteorder::{BigEndian, ReadBytesExt};
-use hdpath::StandardHDPath;
+use hdpath::{StandardHDPath, Purpose, AccountHDPath};
 use uuid::Uuid;
 
 use crate::{
@@ -120,6 +120,17 @@ impl AddressType {
             AddressType::P2WSHinP2SH => network_value(network, 0x0295b005, 0x024285b5), // Yprv, Uprv
             AddressType::P2WPKH => network_value(network, 0x04b2430c, 0x045f18bc), // zprv, vprv
             AddressType::P2WSH => network_value(network, 0x02aa7a99, 0x02575048),  // Zprv, Vprv
+        }
+    }
+
+    pub fn get_hd_path(&self, account: u32) -> AccountHDPath {
+        match self {
+            AddressType::P2PKH | AddressType::P2SH =>
+                AccountHDPath::new(Purpose::Pubkey, 0, account),
+            AddressType::P2WPKHinP2SH | AddressType::P2WSHinP2SH =>
+                AccountHDPath::new(Purpose::ScriptHash, 0, account),
+            AddressType::P2WPKH | AddressType::P2WSH =>
+                AccountHDPath::new(Purpose::Witness, 0, account),
         }
     }
 }

@@ -83,6 +83,19 @@ impl SeedRef {
     }
 }
 
+impl Default for Seed {
+    fn default() -> Self {
+        Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Bytes(
+                Encrypted::encrypt(vec![], "NONE").unwrap()
+            ),
+            label: None,
+            created_at: Utc::now(),
+        }
+    }
+}
+
 ord_by_date_id!(Seed);
 
 #[cfg(test)]

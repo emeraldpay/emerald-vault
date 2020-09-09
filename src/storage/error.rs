@@ -12,6 +12,7 @@ pub enum VaultError {
     UnsupportedDataError(String),
     InvalidDataError(String),
     IncorrectIdError,
+    IncorrectBlockchainError,
     ConversionError(ConversionError),
     UnrecognizedError,
     PasswordRequired,

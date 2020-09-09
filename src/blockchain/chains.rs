@@ -1,4 +1,5 @@
 use std::{convert::TryFrom, str::FromStr};
+use bitcoin::Network;
 
 /// Ethereum Chain Id Reference
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -27,12 +28,20 @@ pub enum Blockchain {
 }
 
 impl Blockchain {
-    fn get_type(self) -> BlockchainType {
+    pub fn get_type(&self) -> BlockchainType {
         match self {
             Blockchain::BitcoinTestnet | Blockchain::Bitcoin => BlockchainType::Bitcoin,
             Blockchain::Ethereum | Blockchain::EthereumClassic | Blockchain::KovanTestnet => {
                 BlockchainType::Ethereum
             }
+        }
+    }
+
+    pub fn as_bitcoin_network(&self) -> Network {
+        match self {
+            Blockchain::Bitcoin => Network::Bitcoin,
+            Blockchain::BitcoinTestnet => Network::Testnet,
+            _ => Network::Testnet
         }
     }
 }

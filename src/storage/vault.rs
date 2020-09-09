@@ -29,6 +29,8 @@ use std::{
     time::SystemTime,
 };
 use uuid::Uuid;
+use crate::storage::vault_ethereum::AddEthereumEntry;
+use crate::storage::vault_bitcoin::AddBitcoinEntry;
 
 /// Compound trait for a vault entry which is stored in a separate file each
 pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
@@ -70,13 +72,13 @@ impl VaultStorage {
     pub fn addressbook(&self) -> AddressbookStorage {
         AddressbookStorage::from_path(self.dir.clone().join("addressbook.csv"))
     }
-    pub fn add_entry(&self, wallet_id: Uuid) -> AddEntry {
-        AddEntry {
-            keys: self.keys().clone(),
-            seeds: self.seeds().clone(),
-            wallets: self.wallets().clone(),
-            wallet_id,
-        }
+
+    pub fn add_ethereum_entry(&self, wallet_id: Uuid) -> AddEthereumEntry {
+        AddEthereumEntry::new(&wallet_id, self.keys.clone(), self.seeds.clone(), self.wallets.clone())
+    }
+
+    pub fn add_bitcoin_entry(&self, wallet_id: Uuid) -> AddBitcoinEntry {
+        AddBitcoinEntry::new(&wallet_id, self.seeds.clone(), self.wallets.clone())
     }
 
     ///Access to functions for updating the entry
@@ -430,130 +432,6 @@ impl CreateWallet {
     }
 }
 
-pub struct AddEntry {
-    keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
-    seeds: Arc<dyn VaultAccessByFile<Seed>>,
-    wallets: Arc<dyn VaultAccessByFile<Wallet>>,
-    wallet_id: Uuid,
-}
-
-impl AddEntry {
-    pub fn ethereum(
-        &self,
-        json: &EthereumJsonV3File,
-        blockchain: Blockchain,
-    ) -> Result<usize, VaultError> {
-        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
-        let mut pk = PrivateKeyHolder::try_from(json)?;
-        let pk_id = pk.generate_id();
-        self.keys.add(pk)?;
-        let id = wallet.next_entry_id();
-        wallet.entries.push(WalletEntry {
-            id,
-            blockchain,
-            address: json.address.map(|a| AddressRef::EthereumAddress(a)),
-            key: PKType::PrivateKeyRef(pk_id),
-            receive_disabled: false,
-            label: json.name.clone(),
-            created_at: SystemTime::now().into(),
-        });
-        wallet.entry_seq = id + 1;
-        self.wallets.update(wallet.clone())?;
-        Ok(id)
-    }
-
-    pub fn raw_pk(
-        &mut self,
-        pk: Vec<u8>,
-        password: &str,
-        blockchain: Blockchain,
-    ) -> Result<usize, VaultError> {
-        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
-        let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
-            .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
-        let pk_id = pk.get_id();
-        let address = pk
-            .get_ethereum_address()
-            .clone()
-            .map(|a| AddressRef::EthereumAddress(a));
-        let id = wallet.next_entry_id();
-        self.keys.add(pk)?;
-        wallet.entries.push(WalletEntry {
-            id,
-            blockchain,
-            address,
-            key: PKType::PrivateKeyRef(pk_id),
-            ..WalletEntry::default()
-        });
-        wallet.entry_seq = id + 1;
-        self.wallets.update(wallet.clone())?;
-        Ok(id)
-    }
-
-    pub fn seed_hd(
-        &self,
-        seed_id: Uuid,
-        hd_path: StandardHDPath,
-        blockchain: Blockchain,
-        password: Option<String>,
-        expected_address: Option<EthereumAddress>,
-    ) -> Result<usize, VaultError> {
-        let seed = self.seeds.get(seed_id)?;
-        let address = match seed.source {
-            SeedSource::Bytes(seed) => {
-                if password.is_none() {
-                    return Err(VaultError::PasswordRequired);
-                }
-                let seed = seed.decrypt(password.unwrap().as_str())?;
-                let key = generate_key(&hd_path, seed.as_slice())?;
-                let ephemeral_pk = EthereumPrivateKey::try_from(key)?;
-                Some(ephemeral_pk.to_address())
-            }
-            SeedSource::Ledger(_) => {
-                // try to verify address if Ledger is currently connected
-                let hd_path_bytes = Some(hd_path.to_bytes());
-                let mut manager = WManager::new(hd_path_bytes.clone())?;
-                manager.update(None)?;
-                if manager.devices().is_empty() {
-                    // not connected
-                    None
-                } else {
-                    let fd = &manager.devices()[0].1;
-                    Some(manager.get_address(fd, hd_path_bytes)?)
-                }
-            }
-        };
-
-        if expected_address.is_some() && address.is_some() && address != expected_address {
-            return Err(VaultError::InvalidDataError(
-                "Different address".to_string(),
-            ));
-        }
-
-        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
-        let id = wallet.next_entry_id();
-        wallet.entries.push(WalletEntry {
-            id,
-            blockchain,
-            address: address
-                .or(expected_address)
-                .map(|a| AddressRef::EthereumAddress(a)),
-            key: PKType::SeedHd(SeedRef {
-                seed_id: seed_id.clone(),
-                hd_path: StandardHDPath::try_from(hd_path.to_string().as_str()).map_err(|_| {
-                    VaultError::ConversionError(ConversionError::InvalidFieldValue(
-                        "hd_path".to_string(),
-                    ))
-                })?,
-            }),
-            ..WalletEntry::default()
-        });
-        wallet.entry_seq = id + 1;
-        self.wallets.update(wallet.clone())?;
-        Ok(id)
-    }
-}
-
 pub struct UpdateEntry {
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
     wallet_id: Uuid,
@@ -819,96 +697,6 @@ mod tests {
     }
 
     #[test]
-    fn add_single_pk() {
-        let json = r#"
-            {
-                "version": 3,
-                "id": "305f4853-80af-4fa6-8619-6f285e83cf28",
-                "address": "6412c428fc02902d137b60dc0bd0f6cd1255ea99",
-                "name": "Hello",
-                "description": "World!!!!",
-                "visible": true,
-                "crypto": {
-                    "cipher": "aes-128-ctr",
-                    "cipherparams": {"iv": "e4610fb26bd43fa17d1f5df7a415f084"},
-                    "ciphertext": "dc50ab7bf07c2a793206683397fb15e5da0295cf89396169273c3f49093e8863",
-                    "kdf": "scrypt",
-                    "kdfparams": {
-                        "dklen": 32,
-                        "salt": "86c6a8857563b57be9e16ad7a3f3714f80b714bcf9da32a2788d695a194f3275",
-                        "n": 1024,
-                        "r": 8,
-                        "p": 1
-                    },
-                    "mac": "8dfedc1a92e2f2ca1c0c60cd40fabb8fb6ce7c05faf056281eb03e0a9996ecb0"
-                }
-            }
-        "#;
-        let json = EthereumJsonV3File::try_from(json.to_string()).expect("JSON not parsed");
-        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
-
-        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
-        let vault_pk = vault.keys();
-        let pk = PrivateKeyHolder::create_ethereum_v3(EthereumPk3::try_from(&json).unwrap());
-        let pk_id = pk.id;
-        let saved = vault_pk.add(pk);
-        assert!(saved.is_ok());
-
-        let list = vault_pk.list().unwrap();
-        assert_eq!(1, list.len());
-        assert_eq!(pk_id, list[0]);
-
-        vault_pk.get(pk_id).unwrap();
-    }
-
-    #[test]
-    fn remove_after_adding() {
-        let json = r#"
-            {
-                "version": 3,
-                "id": "305f4853-80af-4fa6-8619-6f285e83cf28",
-                "address": "6412c428fc02902d137b60dc0bd0f6cd1255ea99",
-                "name": "Hello",
-                "description": "World!!!!",
-                "visible": true,
-                "crypto": {
-                    "cipher": "aes-128-ctr",
-                    "cipherparams": {"iv": "e4610fb26bd43fa17d1f5df7a415f084"},
-                    "ciphertext": "dc50ab7bf07c2a793206683397fb15e5da0295cf89396169273c3f49093e8863",
-                    "kdf": "scrypt",
-                    "kdfparams": {
-                        "dklen": 32,
-                        "salt": "86c6a8857563b57be9e16ad7a3f3714f80b714bcf9da32a2788d695a194f3275",
-                        "n": 1024,
-                        "r": 8,
-                        "p": 1
-                    },
-                    "mac": "8dfedc1a92e2f2ca1c0c60cd40fabb8fb6ce7c05faf056281eb03e0a9996ecb0"
-                }
-            }
-        "#;
-        let json = EthereumJsonV3File::try_from(json.to_string()).expect("JSON not parsed");
-        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
-        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
-
-        let vault_pk = vault.keys();
-        let pk = PrivateKeyHolder::create_ethereum_v3(EthereumPk3::try_from(&json).unwrap());
-        let exp_id = pk.id;
-        let saved = vault_pk.add(pk);
-        assert!(saved.is_ok());
-
-        let list = vault_pk.list().unwrap();
-        assert_eq!(1, list.len());
-
-        let deleted = vault_pk.remove(exp_id);
-        assert!(deleted.is_ok());
-        assert!(deleted.unwrap());
-
-        let list = vault_pk.list().unwrap();
-        assert_eq!(0, list.len());
-    }
-
-    #[test]
     fn creates_seed() {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
@@ -1078,7 +866,7 @@ mod tests {
         assert_eq!(0, wallet.entries.len());
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1087,7 +875,7 @@ mod tests {
             )
             .unwrap();
         let id2 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1120,7 +908,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1147,7 +935,7 @@ mod tests {
         assert_eq!(0, wallet.entries.len());
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1156,7 +944,7 @@ mod tests {
             )
             .unwrap();
         let id2 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1171,7 +959,7 @@ mod tests {
         vault.wallets.update(wallet).expect("Not saved");
 
         let id3 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1556,7 +1344,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1588,7 +1376,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1598,7 +1386,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1633,7 +1421,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1643,7 +1431,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1680,7 +1468,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1690,7 +1478,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1728,7 +1516,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1772,7 +1560,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1801,7 +1589,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1836,7 +1624,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1846,7 +1634,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1898,7 +1686,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1908,7 +1696,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),

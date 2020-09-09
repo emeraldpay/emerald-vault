@@ -33,7 +33,7 @@ use secp256k1::{All, Message, Secp256k1, Signature};
 use std::io;
 
 lazy_static! {
-    static ref DEFAULT_SECP256K1: Secp256k1<All> = Secp256k1::new();
+    pub static ref DEFAULT_SECP256K1: Secp256k1<All> = Secp256k1::new();
 }
 
 // For reference:
