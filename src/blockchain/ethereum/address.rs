@@ -20,6 +20,11 @@ use super::super::Error;
 use crate::util::to_arr;
 use hex;
 use std::{fmt, ops, str::FromStr};
+use crate::{EthereumPrivateKey, PRIVATE_KEY_BYTES, keccak256};
+use bitcoin::util::bip32::ExtendedPrivKey;
+use std::convert::TryFrom;
+use crate::storage::error::VaultError;
+use secp256k1::PublicKey;
 
 /// Fixed bytes number to represent `Address`
 pub const ETHEREUM_ADDRESS_BYTES: usize = 20;
@@ -97,6 +102,22 @@ impl fmt::Display for EthereumAddress {
 impl fmt::Debug for EthereumAddress {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "0x{}", hex::encode(self.0))
+    }
+}
+
+impl TryFrom<ExtendedPrivKey> for EthereumPrivateKey {
+    type Error = VaultError;
+
+    fn try_from(value: ExtendedPrivKey) -> Result<Self, Self::Error> {
+        EthereumPrivateKey::try_from(&value.private_key.key[0..PRIVATE_KEY_BYTES])
+            .map_err(|_| VaultError::InvalidPrivateKey)
+    }
+}
+
+impl From<PublicKey> for EthereumAddress {
+    fn from(value: PublicKey) -> Self {
+        let hash = keccak256(&value.serialize_uncompressed()[1..] /* cut '04' */);
+        EthereumAddress(to_arr(&hash[12..]))
     }
 }
 

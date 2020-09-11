@@ -102,8 +102,7 @@ impl EthereumPrivateKey {
     /// Extract `Address` from current private key.
     pub fn to_address(self) -> EthereumAddress {
         let key = PublicKey::from_secret_key(&ECDSA, &self.into());
-        let hash = keccak256(&key.serialize_uncompressed()[1..] /* cut '04' */);
-        EthereumAddress(to_arr(&hash[12..]))
+        EthereumAddress::from(key)
     }
 
     /// Sign message

@@ -22,6 +22,7 @@ use crate::{
     convert::error::ConversionError,
     storage::error::VaultError,
     structs::{seed::Seed, wallet::WalletEntry},
+    sign::bitcoin::DEFAULT_SECP256K1
 };
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -86,6 +87,33 @@ pub enum AddressType {
     P2WSHinP2SH,
     P2WPKH,
     P2WSH,
+}
+
+impl XPub {
+    pub fn is_account(&self) -> bool {
+        self.value.depth == 3
+    }
+
+    fn for_type(&self, n: u32) -> Result<XPub, VaultError> {
+        let result = XPub {
+            address_type: self.address_type,
+            value: self.value
+                .ckd_pub(&DEFAULT_SECP256K1,
+                         ChildNumber::from_normal_idx(n)
+                             .expect(format!("Failed to get change: {:}", n).as_str()),
+                )
+                .map_err(|_| VaultError::PublicKeyUnavailable)?,
+        };
+        Ok(result)
+    }
+
+    pub fn for_receiving(&self) -> Result<XPub, VaultError> {
+        self.for_type(0)
+    }
+
+    pub fn for_change(&self) -> Result<XPub, VaultError> {
+        self.for_type(1)
+    }
 }
 
 fn network_value<T>(network: &Network, mainnet: T, testnet: T) -> T {

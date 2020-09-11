@@ -45,15 +45,6 @@ pub fn generate_key(path: &StandardHDPath, seed: &[u8]) -> Result<ExtendedPrivKe
     Ok(sk)
 }
 
-impl TryFrom<ExtendedPrivKey> for EthereumPrivateKey {
-    type Error = VaultError;
-
-    fn try_from(value: ExtendedPrivKey) -> Result<Self, Self::Error> {
-        EthereumPrivateKey::try_from(&value.private_key.key[0..PRIVATE_KEY_BYTES])
-            .map_err(|_| VaultError::InvalidPrivateKey)
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;

@@ -16,6 +16,7 @@ limitations under the License.
 */
 //! # Core domain logic module
 
+pub mod addresses;
 pub mod bitcoin;
 pub mod chains;
 pub mod error;

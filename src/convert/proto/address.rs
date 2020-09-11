@@ -59,6 +59,9 @@ impl From<&AddressRef> for proto_Address {
                 result.set_plain_address(address.to_string());
             }
             AddressRef::ExtendedPub(xpub) => result.set_xpub(xpub.into()),
+            AddressRef::BitcoinAddress(address) => {
+                result.set_plain_address(address.to_string())
+            }
         }
         result
     }

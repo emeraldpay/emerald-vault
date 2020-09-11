@@ -3,6 +3,7 @@ use crate::{
     EthereumAddress,
 };
 use chrono::{DateTime, Utc};
+use bitcoin::Address as BitcoinAddress;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct BookmarkDetails {
@@ -18,4 +19,5 @@ pub struct BookmarkDetails {
 pub enum AddressRef {
     EthereumAddress(EthereumAddress),
     ExtendedPub(XPub),
+    BitcoinAddress(BitcoinAddress)
 }
