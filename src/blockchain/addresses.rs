@@ -22,7 +22,7 @@ impl AddressFromPub<BitcoinAddress> for BitcoinAddress {
             Network::Testnet
         };
         let address = match address_type {
-            AddressType::P2WPKH => BitcoinAddress::p2wpkh(&pubkey, network),
+            AddressType::P2WPKH => BitcoinAddress::p2wpkh(&pubkey, network).map_err(|_| ())?,
             _ => return Err(())
         };
         Ok(address)

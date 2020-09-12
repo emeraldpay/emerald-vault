@@ -30,14 +30,14 @@ serde_json = "1.0"
 serde_derive = "1.0"
 glob = "0.3.0"
 uuid = { version = "0.8.1", features = ["serde", "v4"] }
-secp256k1 = { version = "0.17.1", features = ["rand", "recovery"] }
+secp256k1 = { version = "0.19.0", features = ["rand", "recovery"] }
 # used by secp
 rand = "0.6.5"
 getrandom = "0.1.14"
 byteorder = "1.3.4"
 ethabi = "2.0.0"
 num = "0.3.0"
-bitcoin = "0.23.0"
+bitcoin = "0.25.0"
 aes-ctr = "0.4.0"
 sha2 = "0.9.1"
 sha3 = "0.9.1"
@@ -58,7 +58,7 @@ base64 = "0.12.3"
 rlp = "0.4.5"
 hdpath = { version = "0.3", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
-bitcoin_hashes = "0.7.3"
+bitcoin_hashes = "0.9.0"
 
 [dev-dependencies]
 tempdir = "0.3.7"

@@ -85,7 +85,8 @@ impl WalletEntry {
 
                     match xpub.address_type {
                         AddressType::P2WPKH => {
-                            Ok(Address::p2wpkh(&pubkey.public_key, network.clone()))
+                            Address::p2wpkh(&pubkey.public_key, network.clone())
+                                .map_err(|_| VaultError::PublicKeyUnavailable)
                         }
                         //TODO support other types
                         _ => Err(VaultError::InvalidDataError("address_type".to_string())),
@@ -128,7 +129,8 @@ impl InputReference {
 
     pub fn to_address(&self, proposal: &BitcoinTransferProposal) -> Result<Address, VaultError> {
         let pubkey = self.get_pubkey(proposal)?;
-        let address = Address::p2wpkh(&pubkey, proposal.network.clone());
+        let address = Address::p2wpkh(&pubkey, proposal.network.clone())
+            .map_err(|_| VaultError::PublicKeyUnavailable)?;
         Ok(address)
     }
 
