@@ -44,6 +44,13 @@ impl Blockchain {
             _ => Network::Testnet
         }
     }
+
+    pub fn is_mainnet(&self) -> bool {
+        match self {
+            Blockchain::Bitcoin | Blockchain::Ethereum | Blockchain::EthereumClassic => true,
+            _ => false
+        }
+    }
 }
 
 impl From<Blockchain> for EthereumChainId {

@@ -231,9 +231,9 @@ impl Mnemonic {
     ///
     /// * password - password for seed generation
     ///
-    pub fn seed(&self, password: Option<&str>) -> Vec<u8> {
+    pub fn seed(&self, password: Option<String>) -> Vec<u8> {
         let passphrase = match password {
-            Some(p) => "mnemonic".to_string() + &p.to_string(),
+            Some(p) => "mnemonic".to_string() + p.as_str(),
             None => "mnemonic".to_string(),
         };
 
@@ -618,7 +618,7 @@ mod tests {
         let entropy = StandardMnemonic::size24().entropy().unwrap();
         let mnemonic = Mnemonic::from_entropy(Language::English, &entropy).unwrap();
 
-        let seed = mnemonic.seed(Some("12345"));
+        let seed = mnemonic.seed(Some("12345".to_string()));
         assert_eq!(seed.len(), 64);
     }
 
@@ -649,7 +649,7 @@ mod tests {
              abandon abandon abandon art"
         );
 
-        let entropy = mnemonic.seed(Some("TREZOR"));
+        let entropy = mnemonic.seed(Some("TREZOR".to_string()));
         assert_eq!(
             entropy,
             Vec::from_hex(
@@ -674,7 +674,7 @@ mod tests {
 
         assert_eq!(w, mnemonic.words);
         assert_eq!(
-            mnemonic.seed(Some("TREZOR")),
+            mnemonic.seed(Some("TREZOR".to_string())),
             Vec::from_hex(
                 "274ddc525802f7c828d8ef7ddbcdc530\
                  4e87ac3535913611fbbfa986d0c9e547\
@@ -692,7 +692,7 @@ mod tests {
         let mnemonic = Mnemonic::try_from(Language::English, s).unwrap();
 
         assert_eq!(
-            mnemonic.seed(Some("TREZOR")),
+            mnemonic.seed(Some("TREZOR".to_string())),
             Vec::from_hex(
                 "c55257c360c07c72029aebc1b53c05ed03\
                  62ada38ead3e3e9efa3708e53495531f0\
@@ -732,7 +732,7 @@ mod tests {
 
         assert_eq!(w, mnemonic.words);
         assert_eq!(
-            mnemonic.seed(Some("TREZOR")),
+            mnemonic.seed(Some("TREZOR".to_string())),
             Vec::from_hex(
                 "b15509eaa2d09d3efd3e006ef42151b3\
                  0367dc6e3aa5e44caba3fe4d3e352e65\
@@ -757,7 +757,7 @@ mod tests {
         assert_eq!(mnemonic.seed(None), Vec::from_hex(
             "455f5de41e8ec000a32c26c3f411903020269f70fef532aed49f9a1f9cf1a300752f476bd88764449e9b5728b5a67020b5536b60947bf1123a4a6e100845afc6"
         ).unwrap());
-        assert_eq!(mnemonic.seed(Some("test")), Vec::from_hex(
+        assert_eq!(mnemonic.seed(Some("test".to_string())), Vec::from_hex(
             "a49a8045f542196e4d0c8af8bd9e80853bb4582db8df4d57fda69d5301fc2b65d984b4c8fa6d374e1507b4c30972d7950c5390e239f27961f79396974e600eef"
         ).unwrap());
     }

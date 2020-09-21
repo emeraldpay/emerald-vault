@@ -118,7 +118,7 @@ impl WManager {
     ///
     pub fn get_address(
         &self,
-        fd: &str,
+        _fd: &str,
         hd_path: Option<Vec<u8>>,
     ) -> Result<EthereumAddress, Error> {
         let hd_path = self.pick_hd_path(hd_path)?;
@@ -127,7 +127,6 @@ impl WManager {
             .with_data(&hd_path)
             .build();
 
-        debug!("DEBUG get address: {:?}", &fd);
         let handle = self.open()?;
         let addr = sendrecv(&handle, &apdu)
             .and_then(|res| match res.len() {

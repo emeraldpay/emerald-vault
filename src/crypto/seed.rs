@@ -9,7 +9,7 @@ use chrono::Utc;
 use uuid::Uuid;
 
 impl Seed {
-    pub fn generate(seed_password: Option<&str>, save_password: &str) -> Result<Seed, ()> {
+    pub fn generate(seed_password: Option<String>, save_password: &str) -> Result<Seed, ()> {
         let mnemonic = Mnemonic::default();
         let seed = mnemonic.seed(seed_password);
         let result = Seed {

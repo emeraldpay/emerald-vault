@@ -163,6 +163,27 @@ impl AddressType {
     }
 }
 
+impl TryFrom<&Purpose> for AddressType {
+    type Error = VaultError;
+
+    fn try_from(value: &Purpose) -> Result<Self, Self::Error> {
+        match value {
+            Purpose::Witness => Ok(AddressType::P2WPKH),
+            Purpose::ScriptHash => Ok(AddressType::P2WSH),
+            Purpose::Pubkey => Ok(AddressType::P2PKH),
+            _ => Err(VaultError::ConversionError(ConversionError::UnsupportedValue(value.as_value().as_number().to_string())))
+        }
+    }
+}
+
+impl TryFrom<&StandardHDPath> for AddressType {
+    type Error = VaultError;
+
+    fn try_from(value: &StandardHDPath) -> Result<Self, Self::Error> {
+        AddressType::try_from(value.purpose())
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct AddressTypeNetwork(Network, AddressType);
 

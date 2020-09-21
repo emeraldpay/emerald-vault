@@ -187,7 +187,7 @@ impl WalletEntry {
     }
 
     pub fn get_addresses<T>(&self, role: AddressRole, start: u32, limit: u32) -> Result<Vec<T>, VaultError>
-        where T: AddressFromPub<T> + AddressCast<T>, {
+        where T: AddressFromPub<T> + AddressCast<T> {
         if limit == 0 {
             return Ok(vec![])
         }

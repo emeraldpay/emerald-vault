@@ -98,6 +98,12 @@ impl Default for Seed {
 
 ord_by_date_id!(Seed);
 
+impl Default for LedgerSource {
+    fn default() -> Self {
+        LedgerSource { fingerprints: vec![] }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::structs::seed::SeedRef;
