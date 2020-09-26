@@ -58,4 +58,6 @@ message Bip32Private {
         bytes open_key = 5;
         Encrypted encrypted_key = 6;
     }
+
+    BlockchainId network = 7;
 }

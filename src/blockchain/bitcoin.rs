@@ -151,14 +151,18 @@ impl AddressType {
         }
     }
 
-    pub fn get_hd_path(&self, account: u32) -> AccountHDPath {
+    pub fn get_hd_path(&self, account: u32, network: &Network) -> AccountHDPath {
+        let coin_type = match network {
+            Network::Bitcoin => 0,
+            Network::Testnet | Network::Regtest => 1
+        };
         match self {
             AddressType::P2PKH | AddressType::P2SH =>
-                AccountHDPath::new(Purpose::Pubkey, 0, account),
+                AccountHDPath::new(Purpose::Pubkey, coin_type, account),
             AddressType::P2WPKHinP2SH | AddressType::P2WSHinP2SH =>
-                AccountHDPath::new(Purpose::ScriptHash, 0, account),
+                AccountHDPath::new(Purpose::ScriptHash, coin_type, account),
             AddressType::P2WPKH | AddressType::P2WSH =>
-                AccountHDPath::new(Purpose::Witness, 0, account),
+                AccountHDPath::new(Purpose::Witness, coin_type, account),
         }
     }
 }

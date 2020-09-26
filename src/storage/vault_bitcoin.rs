@@ -18,12 +18,13 @@ pub struct AddBitcoinEntry {
 }
 
 fn get_address(blockchain: &Blockchain, address_type: AddressType, account: u32, seed: Vec<u8>) -> Result<XPub, VaultError> {
-    let master = ExtendedPrivKey::new_master(blockchain.as_bitcoin_network(), seed.as_slice())
+    let network = blockchain.as_bitcoin_network();
+    let master = ExtendedPrivKey::new_master(network.clone(), seed.as_slice())
         .map_err(|_| VaultError::InvalidPrivateKey)?;
     if !PathValue::is_ok(account) {
         return Err(VaultError::PrivateKeyUnavailable)
     }
-    let account = address_type.get_hd_path(account);
+    let account = address_type.get_hd_path(account, &network);
     let account_dp: DerivationPath = account.into();
     let xprv = master.derive_priv(&DEFAULT_SECP256K1, &account_dp)
         .map_err(|_| VaultError::PrivateKeyUnavailable)?;
@@ -57,7 +58,7 @@ impl AddBitcoinEntry {
         }
         let seed = self.seeds.get(seed_id)?;
         let address_type = AddressType::P2WPKH;
-        let account = address_type.get_hd_path(hd_path.account());
+        let account = address_type.get_hd_path(hd_path.account(), &blockchain.as_bitcoin_network());
         let address = match seed.source {
             SeedSource::Bytes(seed) => {
                 if password.is_none() {
@@ -140,6 +141,54 @@ mod tests {
         match address_ref {
             AddressRef::ExtendedPub(xpub) => {
                 assert_eq!(AddressType::P2WPKH, xpub.address_type);
+            }
+            _ => {
+                panic!("not xpub")
+            }
+        }
+    }
+
+    #[test]
+    fn adds_seed_entry_testnet() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+        let phrase = Mnemonic::try_from(
+            Language::English,
+            "quote ivory blast onion below kangaroo tonight spread awkward decide farm gun exact wood brown",
+        ).unwrap();
+        let seed_id = vault.seeds().add(
+            Seed {
+                source: SeedSource::create_bytes(phrase.seed(None), "test").unwrap(),
+                ..Default::default()
+            }
+        ).unwrap();
+        let wallet_id = vault.wallets().add(Wallet {
+            ..Default::default()
+        }).unwrap();
+
+        let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+            seed_id,
+            StandardHDPath::from_str("m/84'/1'/0'/0/0").unwrap(),
+            Blockchain::BitcoinTestnet,
+            Some("test".to_string()),
+        ).expect("entry not created");
+
+        let wallet = vault.wallets().get(wallet_id).unwrap();
+        assert_eq!(
+            vec![ReservedPath { seed_id, account_id: 0 }],
+            wallet.reserved
+        );
+        assert_eq!(1, wallet.entries.len());
+        let entry = &wallet.entries[0];
+
+        assert_eq!(Blockchain::BitcoinTestnet, entry.blockchain);
+        assert!(entry.address.is_some());
+
+        let address_ref = entry.address.as_ref().unwrap();
+        match address_ref {
+            AddressRef::ExtendedPub(xpub) => {
+                assert_eq!(AddressType::P2WPKH, xpub.address_type);
+                assert_eq!(xpub.to_string(), "vpub5Yxb4hoHAGV32y67pPDQCbPFUbB9w95gkR1nCxv92t2axDYWeNV4xzo1wxgz8A1S5QGWusHzCP969uaBbt4hjV8CT3PKe7tfic4v9RMbFc4".to_string())
             }
             _ => {
                 panic!("not xpub")

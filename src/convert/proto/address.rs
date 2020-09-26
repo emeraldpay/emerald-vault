@@ -13,6 +13,7 @@ use protobuf::ProtobufEnum;
 use crate::{
     blockchain::bitcoin::{AddressType, XPub},
     convert::error::ConversionError,
+    proto::common::BlockchainId as proto_BlockchainId,
     proto::address::{
         Address as proto_Address,
         AddressType as proto_AddressType,
@@ -22,6 +23,7 @@ use crate::{
     structs::book::AddressRef,
     EthereumAddress,
 };
+use crate::blockchain::chains::Blockchain;
 
 impl From<AddressType> for proto_AddressType {
     fn from(value: AddressType) -> Self {
@@ -47,6 +49,10 @@ impl From<&XPub> for proto_Bip32Public {
         result.set_chaincode(xpub.value.chain_code.as_bytes().to_vec());
         result.set_point(xpub.value.public_key.to_bytes());
         result.set_address_type(xpub.address_type.into());
+        result.set_network(match xpub.value.network {
+            Network::Bitcoin => proto_BlockchainId::CHAIN_BITCOIN,
+            Network::Testnet | Network::Regtest => proto_BlockchainId::CHAIN_TESTNET_BITCOIN,
+        });
         result
     }
 }
@@ -105,11 +111,14 @@ impl TryFrom<&proto_Bip32Public> for XPub {
         let public_key = PublicKey::from_slice(value.point.as_slice())
             .map_err(|_| ConversionError::InvalidFieldValue("public_key".to_string()))?;
         let address_type = value.address_type.try_into()?;
+        let network = Blockchain::try_from(value.network.value() as u32)
+            .map_err(|_| ConversionError::InvalidFieldValue("network".to_string()))?
+            .as_bitcoin_network();
 
         Ok(XPub {
             address_type,
             value: ExtendedPubKey {
-                network: Network::Bitcoin,
+                network,
                 depth,
                 parent_fingerprint,
                 child_number,
@@ -167,6 +176,17 @@ mod tests {
         );
         let m: proto_Address = (&initial).into();
         let act: Option<AddressRef> = (&m).try_into().expect("parsed back");
+        assert_eq!(act, Some(initial));
+    }
+
+    #[test]
+    fn encode_decode_testnet_xpub() {
+        let initial = AddressRef::ExtendedPub(
+            XPub::from_str("vpub5Yxb4hoHAGV32y67pPDQCbPFUbB9w95gkR1nCxv92t2axDYWeNV4xzo1wxgz8A1S5QGWusHzCP969uaBbt4hjV8CT3PKe7tfic4v9RMbFc4").unwrap()
+        );
+        let m: proto_Address = (&initial).into();
+        let act: Option<AddressRef> = (&m).try_into().expect("parsed back");
+        assert!(act.is_some());
         assert_eq!(act, Some(initial));
     }
 }

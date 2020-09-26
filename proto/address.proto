@@ -1,5 +1,6 @@
 syntax = "proto3";
 package emerald.vault;
+import "common.proto";
 
 message Address {
     oneof address_type {
@@ -15,6 +16,7 @@ message Bip32Public {
     bytes chaincode = 4;
     bytes point = 5;
     AddressType address_type = 6;
+    BlockchainId network = 7;
 }
 
 enum AddressType {
