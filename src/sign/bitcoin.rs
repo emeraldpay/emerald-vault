@@ -58,12 +58,12 @@ impl From<Blockchain> for Network {
 }
 
 impl WalletEntry {
-    fn sign_bitcoin(&self, tx: BitcoinTransferProposal) -> Result<Vec<u8>, VaultError> {
+    pub fn sign_bitcoin(&self, tx: BitcoinTransferProposal) -> Result<Vec<u8>, VaultError> {
         let signed = tx.seal()?;
         Ok(signed.serialize())
     }
 
-    fn bitcoin_address(&self, change: u32, index: u32) -> Result<Address, VaultError> {
+    pub fn bitcoin_address(&self, change: u32, index: u32) -> Result<Address, VaultError> {
         match &self.address {
             None => Err(VaultError::PublicKeyUnavailable),
             Some(address_ref) => match address_ref {
