@@ -4,16 +4,10 @@ use std::{
     str::FromStr,
 };
 
-use bitcoin::{
-    util::{
-        base58,
-        bip32::{ChainCode, ChildNumber, ExtendedPubKey, Fingerprint},
-    },
-    Network,
-    OutPoint,
-    PublicKey,
-    TxOut,
-};
+use bitcoin::{util::{
+    base58,
+    bip32::{ChainCode, ChildNumber, ExtendedPubKey, Fingerprint},
+}, Network, OutPoint, PublicKey, TxOut, Address};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use hdpath::{StandardHDPath, Purpose, AccountHDPath};
 use uuid::Uuid;
@@ -24,6 +18,7 @@ use crate::{
     structs::{seed::Seed, wallet::WalletEntry},
     sign::bitcoin::DEFAULT_SECP256K1
 };
+use std::cmp::min;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct InputReference {
@@ -113,6 +108,34 @@ impl XPub {
 
     pub fn for_change(&self) -> Result<XPub, VaultError> {
         self.for_type(1)
+    }
+
+    pub fn find_path(&self, account: &AccountHDPath, address: &Address, limit: u32) -> Option<StandardHDPath> {
+        if !self.is_account() {
+            return None
+        }
+
+        let limit = min(limit, 0x80000000 - 1);
+
+        let receive = self.for_receiving().expect("XPub is not available");
+        let change = self.for_change().expect("XPub is not available");
+
+        // TODO always starts from zero, suboptimal for large xpub. need to consider expected position, which may be different for receive and change
+        for i in 0..limit {
+            if let Ok(act) = receive.get_address::<Address>(i) {
+                if act.eq(address) {
+                    return Some(account.address_at(0, i).unwrap())
+                }
+            }
+
+            if let Ok(act) = change.get_address::<Address>(i) {
+                if act.eq(address) {
+                    return Some(account.address_at(1, i).unwrap())
+                }
+            }
+        }
+
+        return None
     }
 }
 
@@ -274,9 +297,11 @@ impl ToString for XPub {
 mod tests {
     use std::str::FromStr;
 
-    use bitcoin::Network;
+    use bitcoin::{Network, Address};
 
     use crate::blockchain::bitcoin::{AddressType, XPub};
+    use hdpath::{AccountHDPath, StandardHDPath};
+    use std::convert::TryFrom;
 
     #[test]
     fn parse_xpub_p2pkh() {
@@ -313,5 +338,65 @@ mod tests {
         let orig = XPub::from_str("xpub6DfEZhR1ZBu33KzKqHPA1GCfKPpdB9HWFu5UsA54kB5VL3VN34JogQxYHWtSgrippZHp8s9hL9KrAfdYX1sU6cYRXMhGYuvwepFUooGAef5").unwrap();
         let act = orig.to_string();
         assert_eq!(act, "xpub6DfEZhR1ZBu33KzKqHPA1GCfKPpdB9HWFu5UsA54kB5VL3VN34JogQxYHWtSgrippZHp8s9hL9KrAfdYX1sU6cYRXMhGYuvwepFUooGAef5");
+    }
+
+    #[test]
+    fn find_path() {
+        // seed: dream frog grape this park hungry quarter elbow fluid acid rack knee brown anxiety jewel
+        let xpub = XPub::from_str("zpub6qteEGUGgZ9zvHGqSutP8r9S9Sueg17khktxrBR37msaC3MUtw53qehxdcp9GYBKAFxu9FispvDweXg7ipsX6oJZ6tthJfUEjWfSsZuANqP").unwrap();
+        let account = AccountHDPath::from_str("m/84'/0'/0'").unwrap();
+
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/0'/0'/0/0").unwrap()),
+            xpub.find_path(&account, &Address::from_str("bc1qll4sdpqfhj57aufzzvew7ckpvqfszux5ludhqk").unwrap(), 100)
+        );
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/0'/0'/0/1").unwrap()),
+            xpub.find_path(&account, &Address::from_str("bc1q50nlkh0ml0ssmxhj8pwtsnvggr0zvgefsxtp0q").unwrap(), 100)
+        );
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/0'/0'/0/10").unwrap()),
+            xpub.find_path(&account, &Address::from_str("bc1q29dcvzah8n4kvx62y4m5rakuu25n798686w8ze").unwrap(), 100)
+        );
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/0'/0'/0/51").unwrap()),
+            xpub.find_path(&account, &Address::from_str("bc1qpykvymju08ej3tq43pfyp6lf3gucv6xnlhdasy").unwrap(), 100)
+        );
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/0'/0'/0/99").unwrap()),
+            xpub.find_path(&account, &Address::from_str("bc1qgtq69f6pa8x5784ka3cvzc6zauhsw6m82galnv").unwrap(), 100)
+        );
+        assert_eq!(
+            None,
+            xpub.find_path(&account, &Address::from_str("bc1q8t8mctklx4l8krp7y07l66vtrk3d0fgvjlm87g").unwrap(), 100)
+        );
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/0'/0'/1/0").unwrap()),
+            xpub.find_path(&account, &Address::from_str("bc1qre5f3j3w9qgjhjh20sljqz6dwyred2fpug4nhc").unwrap(), 100)
+        );
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/0'/0'/1/11").unwrap()),
+            xpub.find_path(&account, &Address::from_str("bc1qk82d259y5vd9zp4vc6r893qzgtms4tfm4gfwhy").unwrap(), 100)
+        );
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/0'/0'/1/77").unwrap()),
+            xpub.find_path(&account, &Address::from_str("bc1qf43gxudgwp7vknpeh4zlhwsv6cmqvrfk9djyed").unwrap(), 100)
+        );
+    }
+
+    #[test]
+    fn find_path_testnet() {
+        // seed: dream frog grape this park hungry quarter elbow fluid acid rack knee brown anxiety jewel
+        let xpub = XPub::from_str("vpub5ZTSU3hrtSgLtVuBKQrKbKw76TJu8Ndy2apQ138CyiEhVmYpjEGbKFGsrv4Yu1jUNA4pDRJWvctdFvRNvsCVrJfVBHHpnygzAXd71f5pdUC").unwrap();
+        let account = AccountHDPath::from_str("m/84'/1'/5'").unwrap();
+
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/1'/5'/0/2").unwrap()),
+            xpub.find_path(&account, &Address::from_str("tb1q7v6nnp057hdlwtu6uzqedd43q9zqc5w82sar5w").unwrap(), 100)
+        );
+        assert_eq!(
+            Some(StandardHDPath::from_str("m/84'/1'/5'/1/7").unwrap()),
+            xpub.find_path(&account, &Address::from_str("tb1q2p4yhftnwe4ft0nztadeqtn9wzequpwzv3puz0").unwrap(), 100)
+        );
     }
 }
