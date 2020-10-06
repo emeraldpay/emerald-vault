@@ -158,10 +158,11 @@ impl InputReference {
         &self,
         proposal: &BitcoinTransferProposal,
         tx: &Transaction,
+        index: usize,
     ) -> Result<Vec<u8>, VaultError> {
         let pk = self.get_pk(proposal)?;
         let script = self.to_sign_script(proposal)?;
-        let txin = &tx.input[0];
+        let txin = &tx.input[index];
 
         let hash = SighashComponents::new(tx)
             .sighash_all(&txin, &script, self.expected_value)
@@ -222,8 +223,8 @@ impl BitcoinTransferProposal {
         let unsigned_tx = self.unsigned();
 
         let mut input = Vec::with_capacity(self.input.len());
-        for ir in &self.input {
-            let signature = ir.sign(self, &unsigned_tx)?;
+        for (i, ir) in self.input.iter().enumerate() {
+            let signature = ir.sign(self, &unsigned_tx, i)?;
             let witness = ir.witness(self, &signature)?;
             input.push(TxIn {
                 witness,
@@ -406,6 +407,23 @@ mod tests {
     }
 
     fn create_proposal_3() -> (WalletEntry, BitcoinTransferProposal) {
+        // summary:
+        // BITCOIN network
+        // from:
+        //   16aa2d98e37e50c4c007a815a3cb8c20026a3df467781a7e97206a730cf4ef01:1
+        //   1_120_000 sat
+        //   by bc1ql09uhx3xy4sra99zsg7wxhyfxkx25h6qs9kafp (SK: L4pw8nW4YEK42edsVp3YM3UATfVBCWyd642WVN8PNieEMXTNGzwY)
+        //
+        //   8c20026a3df467781a7e97206a730cf4ef0116aa2d98e37e50c4c007a815a3cb:0
+        //   2_000_000 sat
+        //   by bc1q9t9werndltgzvcw5rzxwm887gv354d7jvjzt8m (SK: KxfA9zpTCJcJkpFJPts2iwYNBrZA5pd9xmDHriDwG8bJJYMJ7cXY)
+        //
+        // to:
+        //   819_568 sat bc1qpfv2avr740dpms6udyqz53y49fpwkvf0ga26q9
+        //   1_200_000 sat 3MPSdemXQLHJmw1tAB9YTVa84LC24xJ6X3
+        //   1_100_000 sat 13TwUDiEthUop7FWoyZ6U9Jtd1oHAgabzg
+        //   432 fees
+
         let phrase = Mnemonic::try_from(Language::English,
                                         "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
         ).unwrap();
@@ -424,7 +442,7 @@ mod tests {
             ),
             script_source: InputScriptSource::HD(
                 seed_id.clone(),
-                StandardHDPath::try_from("m/84'/1'/0'/0/0").unwrap(),
+                StandardHDPath::try_from("m/84'/0'/0'/0/0").unwrap(),
             ),
             sequence: 0xfffffffd,
             expected_value: value_1,
@@ -438,7 +456,7 @@ mod tests {
             ),
             script_source: InputScriptSource::HD(
                 seed_id.clone(),
-                StandardHDPath::try_from("m/84'/1'/0'/0/0").unwrap(),
+                StandardHDPath::try_from("m/84'/0'/0'/0/1").unwrap(),
             ),
             sequence: 0xfffffffd,
             expected_value: value_2,
@@ -447,15 +465,15 @@ mod tests {
         let entry = WalletEntry {
             address: Some(
                 AddressRef::ExtendedPub(
-                    XPub::from_str("vpub5ZXnQV6v5nrLX2vMhMyRPAHdSYtvkR4W3TseErkPm2ZrDGGRYDXPCDAk7PyVnm6D39XFZsZBZpVYsy5mtUMazobptrf71U7HeSPKhipGftY").unwrap()
+                    XPub::from_str("zpub6rJvhC2ZYTfV6JKoUF5nEyohJr4L11ib23wpzhjd6JwmHDkusBJV9V6dN6ExfEkm11qhmXLqbjHBHRJhtaNRrFVdWJEY4tpkEyBB4gn2GCF").unwrap()
                 )
             ),
-            blockchain: Blockchain::BitcoinTestnet,
+            blockchain: Blockchain::Bitcoin,
             ..Default::default()
         };
 
         let proposal = BitcoinTransferProposal {
-            network: Network::Testnet,
+            network: Network::Bitcoin,
             seed: vec![Seed {
                 id: seed_id.clone(),
                 source: seed,
@@ -469,7 +487,7 @@ mod tests {
             output: vec![
                 TxOut {
                     value: value_1 + value_2 - 1_200_000 - 1_100_000 - fee,
-                    script_pubkey: entry.bitcoin_address(0, 0).unwrap().script_pubkey(),
+                    script_pubkey: entry.bitcoin_address(1, 0).unwrap().script_pubkey(),
                 },
                 // next two are from: "ignore save system happy novel dance stool hen crater key misery draft ramp fox absorb"
                 TxOut {
@@ -557,7 +575,7 @@ mod tests {
         let (entry, proposal) = create_proposal_3();
         let raw = proposal.raw_unsigned();
         assert_eq!(
-            "010000000201eff40c736a20977e1a7867f43d6a02208ccba315a807c0c4507ee3982daa160100000000fdffffffcba315a807c0c4507ee3982daa1601eff40c736a20977e1a7867f43d6a02208c0000000000fdffffff0370810c00000000001600142757c732c931d7722a6bdaf99ee9955303116520804f12000000000017a914d80fa779a090737095a3ac918f4bb110af3ad52e87e0c81000000000001976a9141b0889064d55d54e0d722015c24dbec18e9c130888ac00000000",
+            "010000000201eff40c736a20977e1a7867f43d6a02208ccba315a807c0c4507ee3982daa160100000000fdffffffcba315a807c0c4507ee3982daa1601eff40c736a20977e1a7867f43d6a02208c0000000000fdffffff0370810c00000000001600140a58aeb07eabda1dc35c69002a44952a42eb312f804f12000000000017a914d80fa779a090737095a3ac918f4bb110af3ad52e87e0c81000000000001976a9141b0889064d55d54e0d722015c24dbec18e9c130888ac00000000",
             hex::encode(raw)
         )
     }
@@ -572,6 +590,17 @@ mod tests {
         let signed = entry.sign_bitcoin(proposal).unwrap();
         assert_eq!(
             "010000000001011ebc2788503ba051e8a756c355cc5a242c1ac76d1df57532426564407a3786a30100000000ffffffff0110d30100000000001600142757c732c931d7722a6bdaf99ee995530311652002483045022100c5af6d33efc9a564c0e955160e0b8def089cc6c933ddf08967eac25d4ddfc09a02205ed59dcc068251dee669ca19425c0c83208d1b1c1f5b7147f4f0b7cb2d15a872012103a3aa29d96671671b065b35de511c03ea5592eafb5de7a07542633af2d42f49ea00000000",
+            hex::encode(signed)
+        );
+    }
+
+    #[test]
+    fn sign_two_input_tx() {
+        let (entry, proposal) = create_proposal_3();
+
+        let signed = entry.sign_bitcoin(proposal).unwrap();
+        assert_eq!(
+            "0100000000010201eff40c736a20977e1a7867f43d6a02208ccba315a807c0c4507ee3982daa160100000000fdffffffcba315a807c0c4507ee3982daa1601eff40c736a20977e1a7867f43d6a02208c0000000000fdffffff0370810c00000000001600140a58aeb07eabda1dc35c69002a44952a42eb312f804f12000000000017a914d80fa779a090737095a3ac918f4bb110af3ad52e87e0c81000000000001976a9141b0889064d55d54e0d722015c24dbec18e9c130888ac0248304502210083ad6bada1106d63326647616be507031b28712788036269156a37255ed509a402206c2e3c2cef0f2467a9abda70a8837ddf2d60fa4b809ccd43ffee59ebedc75e81012103ac6c5500040904ae7ed004c1971cf7e00afcf25de6d599a6b90f79681e90133d0248304502210096372fe1d649f45efb6142458c15a6254fe2c14fb9bfc618cf01c35918ccee8802204ac4a01492cc7b24500d62d38b0451e7990679ef32cef4d8a1d897f696fc42e00121026307cafeaac676cfc824d66cd16d106f9a9bc34d8ce1f1ca90f8b6355bd11b4600000000",
             hex::encode(signed)
         );
     }
