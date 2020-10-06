@@ -196,6 +196,18 @@ impl InputReference {
     }
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum BitcoinTxError {
+    InsufficientFunds(u64, u64),
+    LargeFee,
+    IncorrectFee,
+    NoOutputs,
+    NoInputs,
+}
+
+/// Max fee, check during _optinal_ validation, is 0.05 BTC.
+const FEE_MAX: u64 = 5_000_000;
+
 impl BitcoinTransferProposal {
     fn unsigned(&self) -> Transaction {
         Transaction {
@@ -225,6 +237,30 @@ impl BitcoinTransferProposal {
         };
 
         Ok(tx)
+    }
+
+    /// Validates _structure_ of the transaction. I.e. that it has inputs, outputs, and amounts are
+    /// agreed.
+    pub fn validate(&self) -> Result<(), BitcoinTxError> {
+        let send: u64 = self.input.iter().map(|it| it.expected_value).sum();
+        if send == 0 {
+            return Err(BitcoinTxError::NoInputs);
+        }
+        let receive: u64 = self.output.iter().map(|it| it.value).sum();
+        if receive == 0 {
+            return Err(BitcoinTxError::NoOutputs);
+        }
+        if receive > send {
+            return Err(BitcoinTxError::InsufficientFunds(send, receive));
+        }
+        let fee = self.expected_fee;
+        if fee != send - receive {
+            return Err(BitcoinTxError::IncorrectFee);
+        }
+        if fee > FEE_MAX {
+            return Err(BitcoinTxError::LargeFee);
+        }
+        Ok(())
     }
 
     pub fn raw_unsigned(&self) -> Vec<u8> {
@@ -257,6 +293,7 @@ mod tests {
     use hdpath::StandardHDPath;
     use std::{convert::TryFrom, process::id, str::FromStr};
     use uuid::Uuid;
+    use crate::sign::bitcoin::BitcoinTxError;
 
     fn create_proposal_1() -> (WalletEntry, BitcoinTransferProposal) {
         let phrase = Mnemonic::try_from(Language::English,
@@ -366,6 +403,53 @@ mod tests {
         };
 
         (entry, proposal)
+    }
+
+    #[test]
+    fn validate_ok() {
+        let (entry, proposal) = create_proposal_1();
+        let valid = proposal.validate();
+        assert!(valid.is_ok());
+
+        let (entry, proposal) = create_proposal_2();
+        let valid = proposal.validate();
+        assert!(valid.is_ok());
+    }
+
+    #[test]
+    fn invalidate_no_input() {
+        let (_, mut proposal) = create_proposal_1();
+        proposal.input = vec![];
+        assert_eq!(proposal.validate(), Err(BitcoinTxError::NoInputs));
+    }
+
+    #[test]
+    fn invalidate_no_output() {
+        let (_, mut proposal) = create_proposal_1();
+        proposal.output = vec![];
+        assert_eq!(proposal.validate(), Err(BitcoinTxError::NoOutputs));
+    }
+
+    #[test]
+    fn invalidate_not_enough_sent() {
+        let (_, mut proposal) = create_proposal_1();
+        proposal.output[0].value = 140000;
+        assert_eq!(proposal.validate(), Err(BitcoinTxError::InsufficientFunds(120000, 140000)));
+    }
+
+    #[test]
+    fn invalidate_fee_wrong() {
+        let (_, mut proposal) = create_proposal_1();
+        proposal.expected_fee = 100;
+        assert_eq!(proposal.validate(), Err(BitcoinTxError::IncorrectFee));
+    }
+
+    #[test]
+    fn invalidate_large_fee() {
+        let (_, mut proposal) = create_proposal_1();
+        proposal.input[0].expected_value += 6_000_000;
+        proposal.expected_fee += 6_000_000;
+        assert_eq!(proposal.validate(), Err(BitcoinTxError::LargeFee));
     }
 
     #[test]
