@@ -288,7 +288,7 @@ mod tests {
             wallet::WalletEntry,
         },
     };
-    use bitcoin::{util::bip32::ExtendedPubKey, Network, OutPoint, TxOut, Txid};
+    use bitcoin::{util::bip32::ExtendedPubKey, Network, OutPoint, TxOut, Txid, Address};
     use chrono::{TimeZone, Utc};
     use hdpath::StandardHDPath;
     use std::{convert::TryFrom, process::id, str::FromStr};
@@ -405,15 +405,101 @@ mod tests {
         (entry, proposal)
     }
 
+    fn create_proposal_3() -> (WalletEntry, BitcoinTransferProposal) {
+        let phrase = Mnemonic::try_from(Language::English,
+                                        "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
+        ).unwrap();
+        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
+        let seed_id = Uuid::new_v4();
+
+        let value_1 = 1_120_000u64;
+        let value_2 = 2_000_000u64;
+        let fee = 432u64;
+
+        let from1 = InputReference {
+            output: OutPoint::new(
+                Txid::from_str("16aa2d98e37e50c4c007a815a3cb8c20026a3df467781a7e97206a730cf4ef01")
+                    .unwrap(),
+                1,
+            ),
+            script_source: InputScriptSource::HD(
+                seed_id.clone(),
+                StandardHDPath::try_from("m/84'/1'/0'/0/0").unwrap(),
+            ),
+            sequence: 0xfffffffd,
+            expected_value: value_1,
+        };
+
+        let from2 = InputReference {
+            output: OutPoint::new(
+                Txid::from_str("8c20026a3df467781a7e97206a730cf4ef0116aa2d98e37e50c4c007a815a3cb")
+                    .unwrap(),
+                0,
+            ),
+            script_source: InputScriptSource::HD(
+                seed_id.clone(),
+                StandardHDPath::try_from("m/84'/1'/0'/0/0").unwrap(),
+            ),
+            sequence: 0xfffffffd,
+            expected_value: value_2,
+        };
+
+        let entry = WalletEntry {
+            address: Some(
+                AddressRef::ExtendedPub(
+                    XPub::from_str("vpub5ZXnQV6v5nrLX2vMhMyRPAHdSYtvkR4W3TseErkPm2ZrDGGRYDXPCDAk7PyVnm6D39XFZsZBZpVYsy5mtUMazobptrf71U7HeSPKhipGftY").unwrap()
+                )
+            ),
+            blockchain: Blockchain::BitcoinTestnet,
+            ..Default::default()
+        };
+
+        let proposal = BitcoinTransferProposal {
+            network: Network::Testnet,
+            seed: vec![Seed {
+                id: seed_id.clone(),
+                source: seed,
+                label: None,
+                created_at: Utc.timestamp_millis(0),
+            }],
+            keys: KeyMapping::single(seed_id.clone(), "test".to_string()),
+            input: vec![
+                from1, from2
+            ],
+            output: vec![
+                TxOut {
+                    value: value_1 + value_2 - 1_200_000 - 1_100_000 - fee,
+                    script_pubkey: entry.bitcoin_address(0, 0).unwrap().script_pubkey(),
+                },
+                // next two are from: "ignore save system happy novel dance stool hen crater key misery draft ramp fox absorb"
+                TxOut {
+                    value: 1_200_000,
+                    // m/49'/0'/0'/0/0
+                    script_pubkey: Address::from_str("3MPSdemXQLHJmw1tAB9YTVa84LC24xJ6X3").unwrap().script_pubkey(),
+                },
+                TxOut {
+                    value: 1_100_000,
+                    // m/44'/0'/0'/0/0
+                    script_pubkey: Address::from_str("13TwUDiEthUop7FWoyZ6U9Jtd1oHAgabzg").unwrap().script_pubkey(),
+                }
+            ],
+            change: entry.clone(),
+            expected_fee: fee,
+        };
+
+        (entry, proposal)
+    }
+
     #[test]
     fn validate_ok() {
-        let (entry, proposal) = create_proposal_1();
-        let valid = proposal.validate();
-        assert!(valid.is_ok());
+        let (_, proposal) = create_proposal_1();
+        assert_eq!(Ok(()), proposal.validate());
 
-        let (entry, proposal) = create_proposal_2();
-        let valid = proposal.validate();
-        assert!(valid.is_ok());
+        let (_, proposal) = create_proposal_2();
+        assert_eq!(Ok(()), proposal.validate());
+
+        let (_, proposal) = create_proposal_3();
+        assert_eq!(Ok(()), proposal.validate());
     }
 
     #[test]
@@ -433,8 +519,12 @@ mod tests {
     #[test]
     fn invalidate_not_enough_sent() {
         let (_, mut proposal) = create_proposal_1();
-        proposal.output[0].value = 140000;
+        proposal.output[0].value = 140_000;
         assert_eq!(proposal.validate(), Err(BitcoinTxError::InsufficientFunds(120000, 140000)));
+
+        let (_, mut proposal) = create_proposal_3();
+        proposal.output[2].value += 40_000;
+        assert_eq!(proposal.validate(), Err(BitcoinTxError::InsufficientFunds(1_120_000 + 2_000_000, 1_120_000 + 2_000_000 - 432 + 40_000)));
     }
 
     #[test]
@@ -458,6 +548,16 @@ mod tests {
         let raw = proposal.raw_unsigned();
         assert_eq!(
             "01000000011ebc2788503ba051e8a756c355cc5a242c1ac76d1df57532426564407a3786a30100000000ffffffff0110d30100000000001600142757c732c931d7722a6bdaf99ee995530311652000000000",
+            hex::encode(raw)
+        )
+    }
+
+    #[test]
+    fn encode_nonsegwit_out_unsigned_tx() {
+        let (entry, proposal) = create_proposal_3();
+        let raw = proposal.raw_unsigned();
+        assert_eq!(
+            "010000000201eff40c736a20977e1a7867f43d6a02208ccba315a807c0c4507ee3982daa160100000000fdffffffcba315a807c0c4507ee3982daa1601eff40c736a20977e1a7867f43d6a02208c0000000000fdffffff0370810c00000000001600142757c732c931d7722a6bdaf99ee9955303116520804f12000000000017a914d80fa779a090737095a3ac918f4bb110af3ad52e87e0c81000000000001976a9141b0889064d55d54e0d722015c24dbec18e9c130888ac00000000",
             hex::encode(raw)
         )
     }
