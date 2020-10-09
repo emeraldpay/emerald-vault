@@ -10,7 +10,7 @@ use crate::{
 };
 use bitcoin::util::bip32::ExtendedPubKey;
 use chrono::{DateTime, Utc};
-use hdpath::StandardHDPath;
+use hdpath::{StandardHDPath, AccountHDPath};
 use regex::Regex;
 use std::{convert::TryFrom, str::FromStr};
 use uuid::Uuid;
@@ -32,6 +32,13 @@ pub struct Wallet {
 pub struct ReservedPath {
     pub seed_id: Uuid,
     pub account_id: u32,
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct EntryAddress<T> {
+    pub address: T,
+    pub hd_path: Option<StandardHDPath>,
+    pub role: AddressRole,
 }
 
 ///An entry of a Wallet. Contains actual configuration for an address, including private key.
@@ -74,6 +81,7 @@ pub struct EntryId {
 pub enum AddressRole {
     Receive,
     Change,
+    Default
 }
 
 impl HasUuid for Wallet {
@@ -186,7 +194,14 @@ impl WalletEntry {
         }
     }
 
-    pub fn get_addresses<T>(&self, role: AddressRole, start: u32, limit: u32) -> Result<Vec<T>, VaultError>
+    pub fn account_hd(&self) -> Option<AccountHDPath> {
+        match &self.key {
+            PKType::SeedHd(seed) => Some(AccountHDPath::from(&seed.hd_path)),
+            PKType::PrivateKeyRef(_) => None
+        }
+    }
+
+    pub fn get_addresses<T>(&self, role: AddressRole, start: u32, limit: u32) -> Result<Vec<EntryAddress<T>>, VaultError>
         where T: AddressFromPub<T> + AddressCast<T> {
         if limit == 0 {
             return Ok(vec![])
@@ -195,25 +210,52 @@ impl WalletEntry {
             None => Ok(vec![]),
             Some(address) => match address {
                 AddressRef::EthereumAddress(value) => match T::from_ethereum_address(value.clone()) {
-                    Some(address) => Ok(vec![address]),
+                    Some(address) => Ok(vec![EntryAddress { hd_path: None, role: AddressRole::Default, address }]),
                     None => Ok(vec![])
                 },
                 AddressRef::BitcoinAddress(value) => match T::from_bitcoin_address(value.clone()) {
-                    Some(address) => Ok(vec![address]),
+                    Some(address) => Ok(vec![EntryAddress { hd_path: None, role: AddressRole::Default, address }]),
                     None => Ok(vec![])
                 },
                 AddressRef::ExtendedPub(xpub) => {
+                    let hd_path_base: Option<StandardHDPath>;
                     let xpub = if xpub.is_account() {
                         match role {
-                            AddressRole::Receive => xpub.for_receiving()?,
-                            AddressRole::Change => xpub.for_change()?
+                            AddressRole::Receive => {
+                                hd_path_base = self.account_hd()
+                                    .map(|a| a.address_at(0, 0).unwrap());
+                                xpub.for_receiving()?
+                            },
+                            AddressRole::Change => {
+                                hd_path_base = self.account_hd()
+                                    .map(|a| a.address_at(1, 0).unwrap());
+                                xpub.for_change()?
+                            },
+                            AddressRole::Default => return Err(VaultError::PublicKeyUnavailable)
                         }
                     } else {
                         // if we have only index-level xpub we expect it to be use for all roles
+                        if role != AddressRole::Default {
+                            return Err(VaultError::PublicKeyUnavailable)
+                        }
+                        hd_path_base = None;
                         xpub.clone()
                     };
-                    let addresses: Vec<T> = range(start, start + limit)
-                        .map(|n| xpub.get_address::<T>(n).ok())
+                    let addresses: Vec<EntryAddress<T>> = range(start, start + limit)
+                        .map(|n|
+                            xpub.get_address::<T>(n).ok().map(|a| EntryAddress {
+                                address: a,
+                                hd_path: hd_path_base.as_ref().map(|a|
+                                    StandardHDPath::new(
+                                        a.purpose().clone(),
+                                        a.coin_type(),
+                                        a.account(),
+                                        a.change(),
+                                        n,
+                                    )),
+                                role: role.clone(),
+                            })
+                        )
                         .filter(|a| a.is_some())
                         .map(|a| a.unwrap())
                         .collect();
@@ -248,7 +290,7 @@ mod tests {
     use tempdir::TempDir;
     use uuid::Uuid;
     use crate::blockchain::bitcoin::XPub;
-    use crate::structs::wallet::AddressRole;
+    use crate::structs::wallet::{AddressRole, EntryAddress};
     use bitcoin::Address;
     use crate::structs::book::AddressRef;
 
@@ -325,17 +367,41 @@ mod tests {
                 // seed: anchor badge zone antique book leader cupboard wolf confirm average unable nut tortoise dinner private
                 XPub::from_str("zpub6rebv42D4si3ibWtrRoeS3qvEaRWBuLfwq1SXZt6UMVU9CH8snBWeFFMSMvWsv5WFGVRhqr8gg2AR751SrKteeX9bq57HbTyQvqPznSpZex").unwrap()
             )),
+            key: PKType::SeedHd(SeedRef {
+                seed_id: Uuid::new_v4(),
+                hd_path: StandardHDPath::from_str("m/84'/0'/4'/0/0").unwrap(),
+            }),
             ..Default::default()
         };
 
         let act = entry.get_addresses::<Address>(AddressRole::Receive, 0, 5).unwrap();
         assert_eq!(
             vec![
-                Address::from_str("bc1q8redwn9d9qr0nkp7ah367u56ufxjprf0lvp7an").unwrap(),
-                Address::from_str("bc1q8lv69l5lnnpals79jqn78a3fy2eh8t9uls828y").unwrap(),
-                Address::from_str("bc1q0pat93taakyswlt8gsxsru3a3x6e5k59arukmu").unwrap(),
-                Address::from_str("bc1q4zxhcd25qqpxrdrf6d3p0qtg3vcjavajujw8rd").unwrap(),
-                Address::from_str("bc1qzzve7js08mhsewg2jy6kkkj7fs298k9kz2snhs").unwrap(),
+                EntryAddress {
+                    role: AddressRole::Receive,
+                    address: Address::from_str("bc1q8redwn9d9qr0nkp7ah367u56ufxjprf0lvp7an").unwrap(),
+                    hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/0").unwrap()),
+                },
+                EntryAddress {
+                    role: AddressRole::Receive,
+                    address: Address::from_str("bc1q8lv69l5lnnpals79jqn78a3fy2eh8t9uls828y").unwrap(),
+                    hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/1").unwrap()),
+                },
+                EntryAddress {
+                    role: AddressRole::Receive,
+                    address: Address::from_str("bc1q0pat93taakyswlt8gsxsru3a3x6e5k59arukmu").unwrap(),
+                    hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/2").unwrap()),
+                },
+                EntryAddress {
+                    role: AddressRole::Receive,
+                    address: Address::from_str("bc1q4zxhcd25qqpxrdrf6d3p0qtg3vcjavajujw8rd").unwrap(),
+                    hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/3").unwrap()),
+                },
+                EntryAddress {
+                    role: AddressRole::Receive,
+                    address: Address::from_str("bc1qzzve7js08mhsewg2jy6kkkj7fs298k9kz2snhs").unwrap(),
+                    hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/4").unwrap()),
+                },
             ],
             act
         );
@@ -344,7 +410,11 @@ mod tests {
         let act = entry.get_addresses::<Address>(AddressRole::Change, 0, 1).unwrap();
         assert_eq!(
             vec![
-                Address::from_str("bc1q07937xm8m57yg9kq5u5569ajcvzgptlr42g8za").unwrap(),
+                EntryAddress {
+                    role: AddressRole::Change,
+                    address: Address::from_str("bc1q07937xm8m57yg9kq5u5569ajcvzgptlr42g8za").unwrap(),
+                    hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/1/0").unwrap()),
+                },
             ],
             act
         );
@@ -363,7 +433,11 @@ mod tests {
         let act = entry.get_addresses::<EthereumAddress>(AddressRole::Receive, 0, 1).unwrap();
         assert_eq!(
             vec![
-                EthereumAddress::from_str("0x7Bd9D156C6624b4D9a429cf81b91a9B500bDE2C7").unwrap(),
+                EntryAddress {
+                    address: EthereumAddress::from_str("0x7Bd9D156C6624b4D9a429cf81b91a9B500bDE2C7").unwrap(),
+                    hd_path: None,
+                    role: AddressRole::Default,
+                }
             ],
             act
         );
@@ -371,7 +445,11 @@ mod tests {
         let act = entry.get_addresses::<EthereumAddress>(AddressRole::Change, 0, 1).unwrap();
         assert_eq!(
             vec![
-                EthereumAddress::from_str("0x7Bd9D156C6624b4D9a429cf81b91a9B500bDE2C7").unwrap(),
+                EntryAddress {
+                    address: EthereumAddress::from_str("0x7Bd9D156C6624b4D9a429cf81b91a9B500bDE2C7").unwrap(),
+                    hd_path: None,
+                    role: AddressRole::Default,
+                }
             ],
             act
         );
