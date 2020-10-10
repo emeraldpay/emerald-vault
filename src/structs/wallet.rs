@@ -176,6 +176,29 @@ impl ToString for EntryId {
     }
 }
 
+impl ToString for AddressRole {
+    fn to_string(&self) -> String {
+        match self {
+            AddressRole::Default => "default".to_string(),
+            AddressRole::Change => "change".to_string(),
+            AddressRole::Receive => "receive".to_string()
+        }
+    }
+}
+
+impl FromStr for AddressRole {
+    type Err = ConversionError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "default" => Ok(AddressRole::Default),
+            "change" => Ok(AddressRole::Change),
+            "receive" => Ok(AddressRole::Receive),
+            _ => Err(ConversionError::UnsupportedValue(s.to_string()))
+        }
+    }
+}
+
 impl WalletEntry {
     pub fn get_full_id(&self, wallet: &Wallet) -> EntryId {
         EntryId::from(wallet, self)
@@ -293,6 +316,31 @@ mod tests {
     use crate::structs::wallet::{AddressRole, EntryAddress};
     use bitcoin::Address;
     use crate::structs::book::AddressRef;
+    use crate::convert::error::ConversionError;
+
+    #[test]
+    fn encode_decode_role() {
+        assert_eq!(
+            Ok(AddressRole::Receive),
+            AddressRole::from_str(AddressRole::Receive.to_string().as_str())
+        );
+        assert_eq!(
+            Ok(AddressRole::Change),
+            AddressRole::from_str(AddressRole::Change.to_string().as_str())
+        );
+        assert_eq!(
+            Ok(AddressRole::Default),
+            AddressRole::from_str(AddressRole::Default.to_string().as_str())
+        );
+    }
+
+    #[test]
+    fn fail_decode_invalid_role() {
+        assert_eq!(
+            Err(ConversionError::UnsupportedValue("hello".to_string())),
+            AddressRole::from_str("hello")
+        );
+    }
 
     #[test]
     fn create_and_access_ledger_seed() {
