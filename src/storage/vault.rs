@@ -1,7 +1,6 @@
 use crate::{
     chains::Blockchain,
     convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
-    hdwallet::WManager,
     sign::bip32::generate_key,
     storage::{
         addressbook::AddressbookStorage,

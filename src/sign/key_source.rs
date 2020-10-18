@@ -1,10 +1,4 @@
-use crate::{
-    sign::bip32::generate_key,
-    storage::{error::VaultError, vault::VaultStorage},
-    structs::{seed::SeedSource, wallet::PKType},
-    to_arr,
-    EthereumPrivateKey,
-};
+use crate::{sign::bip32::generate_key, storage::{error::VaultError, vault::VaultStorage}, structs::{seed::SeedSource, wallet::PKType}, to_arr, EthereumPrivateKey, EthereumAddress};
 use bitcoin::{util::bip32::ExtendedPrivKey, Network, PrivateKey};
 use hdpath::StandardHDPath;
 use secp256k1::SecretKey;
@@ -14,8 +8,8 @@ use crate::sign::bitcoin::DEFAULT_SECP256K1;
 use bitcoin::util::bip32::ExtendedPubKey;
 use crate::blockchain::bitcoin::AddressType;
 use crate::blockchain::chains::{Blockchain, BlockchainType};
-use crate::hdwallet::WManager;
 use std::str::FromStr;
+use emerald_hwkey::ledger::manager::LedgerKey;
 
 pub enum PrivateKeySource {
     Base(SecretKey),
@@ -91,13 +85,14 @@ impl SeedSource {
                     //TODO bitcoin
                     BlockchainType::Bitcoin => unimplemented!(),
                     BlockchainType::Ethereum => {
-                        let mut wallet_manager = WManager::new(
+                        let mut wallet_manager = LedgerKey::new(
                             Some(StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap().to_bytes())
                         ).map_err(|_| VaultError::PrivateKeyUnavailable)?;
                         let mut result = Vec::with_capacity(hd_path_all.len());
                         for hd_path in hd_path_all {
-                            let address = wallet_manager.get_address("", Some(hd_path.to_bytes()))?;
-                            if let Some(address) = T::from_ethereum_address(address) {
+                            let address = wallet_manager.get_address("", Some(hd_path.to_bytes()))
+                                .map(|a| format!("0x{:}", a))?;
+                            if let Some(address) = T::from_ethereum_address(EthereumAddress::from_str(address.as_str())?) {
                                 result.push((hd_path.clone(), address));
                             }
                         }

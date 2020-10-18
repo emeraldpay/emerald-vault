@@ -293,7 +293,7 @@ impl WalletEntry {
 mod tests {
     use crate::{
         blockchain::chains::Blockchain,
-        hdwallet::test_commons::{is_ledger_enabled, read_test_txes},
+        tests::{is_ledger_enabled, read_test_txes},
         storage::vault::VaultStorage,
         structs::{
             crypto::Encrypted,

@@ -2,9 +2,9 @@ use crate::{
     blockchain,
     convert::error::ConversionError,
     crypto::error::CryptoError,
-    hdwallet::Error as HWalletError,
 };
 use std::fmt::Display;
+use emerald_hwkey::errors::HWKeyError;
 
 #[derive(Debug, Display, Clone, PartialEq)]
 pub enum VaultError {
@@ -21,7 +21,7 @@ pub enum VaultError {
     PrivateKeyUnavailable,
     PublicKeyUnavailable,
     CryptoFailed(CryptoError),
-    HDKeyFailed(HWalletError),
+    HWKeyFailed(HWKeyError),
 }
 
 impl std::convert::From<ConversionError> for VaultError {
@@ -95,9 +95,9 @@ impl std::convert::From<CryptoError> for VaultError {
     }
 }
 
-impl std::convert::From<HWalletError> for VaultError {
-    fn from(err: HWalletError) -> Self {
-        VaultError::HDKeyFailed(err)
+impl std::convert::From<HWKeyError> for VaultError {
+    fn from(err: HWKeyError) -> Self {
+        VaultError::HWKeyFailed(err)
     }
 }
 

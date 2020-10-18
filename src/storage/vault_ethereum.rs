@@ -8,7 +8,6 @@ use crate::blockchain::{
     ethereum::{EthereumPrivateKey, EthereumAddress},
 };
 use crate::convert::error::ConversionError;
-use crate::hdwallet::WManager;
 use crate::sign::bip32::generate_key;
 use crate::storage::error::VaultError;
 use crate::storage::vault::{VaultAccessByFile};
@@ -21,6 +20,8 @@ use crate::convert::json::keyfile::EthereumJsonV3File;
 use std::time::SystemTime;
 use crate::structs::types::HasUuid;
 use crate::blockchain::chains::BlockchainType;
+use emerald_hwkey::ledger::manager::LedgerKey;
+use std::str::FromStr;
 
 pub struct AddEthereumEntry {
     keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
@@ -119,14 +120,16 @@ impl AddEthereumEntry {
             SeedSource::Ledger(_) => {
                 // try to verify address if Ledger is currently connected
                 let hd_path_bytes = Some(hd_path.to_bytes());
-                let mut manager = WManager::new(hd_path_bytes.clone())?;
+                let mut manager = LedgerKey::new(hd_path_bytes.clone())?;
                 manager.update(None)?;
                 if manager.devices().is_empty() {
                     // not connected
                     None
                 } else {
                     let fd = &manager.devices()[0].1;
-                    Some(manager.get_address(fd, hd_path_bytes)?)
+                    let address = manager.get_address(fd, hd_path_bytes)
+                        .map(|a| format!("0x{:}", a))?;
+                    Some(EthereumAddress::from_str(address.as_str())?)
                 }
             }
         };

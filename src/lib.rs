@@ -58,13 +58,13 @@ extern crate time;
 extern crate uuid;
 #[macro_use]
 extern crate byte_array_struct;
+extern crate emerald_hwkey;
 
 #[macro_use]
 pub mod util;
 pub mod blockchain;
 pub mod convert;
 pub mod crypto;
-pub mod hdwallet;
 pub mod migration;
 pub mod mnemonic;
 pub mod proto;
@@ -88,11 +88,21 @@ mod tests {
     pub use hex::{FromHex, ToHex};
     use log::Level;
     pub use regex::Regex;
-    use std::{
-        fs,
-        fs::DirEntry,
-        path::{Path, PathBuf},
-    };
+    use std::{fs, fs::DirEntry, path::{Path, PathBuf}, env};
+
+    #[derive(Deserialize)]
+    pub struct TestAddress {
+        pub hdpath: String,
+        pub address: String,
+    }
+
+    #[derive(Deserialize)]
+    pub struct TestTx {
+        pub id: String,
+        pub description: Option<String>,
+        pub from: Option<String>,
+        pub raw: String,
+    }
 
     #[allow(dead_code)]
     pub fn init_tests() {
@@ -111,5 +121,26 @@ mod tests {
         }
         let arch_dir = in_arch.first().unwrap();
         Some(arch_dir.path())
+    }
+
+    pub fn is_ledger_enabled() -> bool {
+        match env::var("EMRLD_TEST_LEDGER") {
+            Ok(v) => v == "true",
+            Err(_) => false,
+        }
+    }
+
+    pub fn read_test_addresses() -> Vec<TestAddress> {
+        let json = fs::read_to_string("./tests/hdwallet/address.json")
+            .expect("./tests/hdwallet/address.json is not available");
+        let result: Vec<TestAddress> = serde_json::from_str(json.as_str()).expect("Invalid JSON");
+        result
+    }
+
+    pub fn read_test_txes() -> Vec<TestTx> {
+        let json = fs::read_to_string("./tests/hdwallet/tx.json")
+            .expect("./tests/hdwallet/tx.json is not available");
+        let result: Vec<TestTx> = serde_json::from_str(json.as_str()).expect("Invalid JSON");
+        result
     }
 }

@@ -1,19 +1,11 @@
-use crate::{
-    blockchain::chains::EthereumChainId,
-    convert::json::keyfile::EthereumJsonV3File,
-    hdwallet::WManager,
-    sign::bip32::generate_key,
-    storage::{error::VaultError, vault::VaultStorage},
-    structs::{
-        seed::SeedSource,
-        wallet::{EntryId, PKType, Wallet, WalletEntry},
-    },
-    EthereumPrivateKey,
-    EthereumTransaction,
-};
+use crate::{blockchain::chains::EthereumChainId, convert::json::keyfile::EthereumJsonV3File, sign::bip32::generate_key, storage::{error::VaultError, vault::VaultStorage}, structs::{
+    seed::SeedSource,
+    wallet::{EntryId, PKType, Wallet, WalletEntry},
+}, EthereumPrivateKey, EthereumTransaction, EthereumSignature};
 use hdpath::StandardHDPath;
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
+use emerald_hwkey::ledger::manager::LedgerKey;
 
 impl WalletEntry {
     fn sign_tx_by_pk(
@@ -36,7 +28,7 @@ impl WalletEntry {
             .map_err(|_| VaultError::InvalidDataError("HDPath".to_string()))?;
 
         //TODO verify actual device, right now vault just uses a first currently available device
-        let mut manager = WManager::new(Some(hd_path.to_bytes()))?;
+        let mut manager = LedgerKey::new(Some(hd_path.to_bytes()))?;
         if manager.update(None).is_err() {
             return Err(VaultError::PrivateKeyUnavailable);
         }
@@ -49,6 +41,7 @@ impl WalletEntry {
         let sign = manager
             .sign_transaction(&fd, &rlp, None)
             .map_err(|_| VaultError::InvalidPrivateKey)?;
+        let sign = EthereumSignature::from(sign);
         let raw = tx.raw_from_sig(Some(chain_id.as_chainid()), &sign);
         //TODO verify that signature is from the entry's address
         Ok(raw)
@@ -109,7 +102,6 @@ impl WalletEntry {
 mod tests {
     use crate::{
         blockchain::chains::Blockchain,
-        hdwallet::test_commons::{is_ledger_enabled, read_test_txes},
         storage::vault::VaultStorage,
         structs::{
             book::AddressRef,
@@ -129,6 +121,7 @@ mod tests {
     use std::{convert::TryFrom, str::FromStr};
     use tempdir::TempDir;
     use uuid::Uuid;
+    use crate::tests::{is_ledger_enabled, read_test_txes};
 
     #[test]
     fn sign_erc20_approve() {
