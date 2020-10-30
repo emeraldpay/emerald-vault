@@ -6,6 +6,8 @@ use hdpath::StandardHDPath;
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::ledger::app_ethereum::EthereumApp;
+use emerald_hwkey::ledger::traits::LedgerApp;
 
 impl WalletEntry {
     fn sign_tx_by_pk(
@@ -28,18 +30,15 @@ impl WalletEntry {
             .map_err(|_| VaultError::InvalidDataError("HDPath".to_string()))?;
 
         //TODO verify actual device, right now vault just uses a first currently available device
-        let mut manager = LedgerKey::new(Some(hd_path.to_bytes()))?;
-        if manager.update(None).is_err() {
-            return Err(VaultError::PrivateKeyUnavailable);
-        }
-        if manager.devices().is_empty() {
+        let manager = LedgerKey::new_connected().map_err(|_| VaultError::PrivateKeyUnavailable)?;
+        let ethereum_app = EthereumApp::new(manager);
+        if ethereum_app.is_open().is_none() {
             return Err(VaultError::PrivateKeyUnavailable);
         }
         let chain_id = EthereumChainId::from(self.blockchain);
         let rlp = tx.to_rlp(Some(chain_id.as_chainid()));
-        let fd = &manager.devices()[0].1;
-        let sign = manager
-            .sign_transaction(&fd, &rlp, None)
+        let sign = ethereum_app
+            .sign_transaction(&rlp, &hd_path)
             .map_err(|_| VaultError::InvalidPrivateKey)?;
         let sign = EthereumSignature::from(sign);
         let raw = tx.raw_from_sig(Some(chain_id.as_chainid()), &sign);

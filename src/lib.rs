@@ -40,7 +40,6 @@ extern crate ethabi;
 extern crate glob;
 extern crate hdpath;
 extern crate hex;
-extern crate hidapi;
 extern crate hmac;
 extern crate num;
 extern crate pbkdf2;

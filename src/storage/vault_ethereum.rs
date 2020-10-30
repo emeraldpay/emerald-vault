@@ -22,6 +22,8 @@ use crate::structs::types::HasUuid;
 use crate::blockchain::chains::BlockchainType;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use std::str::FromStr;
+use emerald_hwkey::ledger::app_ethereum::EthereumApp;
+use emerald_hwkey::ledger::traits::LedgerApp;
 
 pub struct AddEthereumEntry {
     keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
@@ -119,17 +121,14 @@ impl AddEthereumEntry {
             }
             SeedSource::Ledger(_) => {
                 // try to verify address if Ledger is currently connected
-                let hd_path_bytes = Some(hd_path.to_bytes());
-                let mut manager = LedgerKey::new(hd_path_bytes.clone())?;
-                manager.update(None)?;
-                if manager.devices().is_empty() {
-                    // not connected
+                let manager = LedgerKey::new_connected().map_err(|_| VaultError::PrivateKeyUnavailable)?;
+                let ethereum_app = EthereumApp::new(manager);
+                if ethereum_app.is_open().is_none() {
                     None
                 } else {
-                    let fd = &manager.devices()[0].1;
-                    let address = manager.get_address(fd, hd_path_bytes)
-                        .map(|a| format!("0x{:}", a))?;
-                    Some(EthereumAddress::from_str(address.as_str())?)
+                    ethereum_app.get_address(&hd_path, false)
+                        .ok()
+                        .and_then(|a| EthereumAddress::from_str(a.address.as_str()).ok())
                 }
             }
         };

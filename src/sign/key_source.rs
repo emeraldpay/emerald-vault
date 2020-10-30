@@ -10,6 +10,8 @@ use crate::blockchain::bitcoin::AddressType;
 use crate::blockchain::chains::{Blockchain, BlockchainType};
 use std::str::FromStr;
 use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::ledger::app_ethereum::EthereumApp;
+use emerald_hwkey::ledger::traits::LedgerApp;
 
 pub enum PrivateKeySource {
     Base(SecretKey),
@@ -85,13 +87,17 @@ impl SeedSource {
                     //TODO bitcoin
                     BlockchainType::Bitcoin => unimplemented!(),
                     BlockchainType::Ethereum => {
-                        let mut wallet_manager = LedgerKey::new(
-                            Some(StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap().to_bytes())
-                        ).map_err(|_| VaultError::PrivateKeyUnavailable)?;
+                        let manager = LedgerKey::new_connected()
+                            .map_err(|_| VaultError::PrivateKeyUnavailable)?;
+                        let ethereum_app = EthereumApp::new(manager);
+                        if ethereum_app.is_open().is_none() {
+                            return Err(VaultError::PrivateKeyUnavailable);
+                        }
+
                         let mut result = Vec::with_capacity(hd_path_all.len());
                         for hd_path in hd_path_all {
-                            let address = wallet_manager.get_address("", Some(hd_path.to_bytes()))
-                                .map(|a| format!("0x{:}", a))?;
+                            let address = ethereum_app.get_address(hd_path, false)
+                                .map(|a| format!("0x{:}", a.address))?;
                             if let Some(address) = T::from_ethereum_address(EthereumAddress::from_str(address.as_str())?) {
                                 result.push((hd_path.clone(), address));
                             }
