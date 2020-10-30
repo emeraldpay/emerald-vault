@@ -62,6 +62,12 @@ impl KeyMapping {
     }
 }
 
+impl Default for KeyMapping {
+    fn default() -> Self {
+        KeyMapping(HashMap::new())
+    }
+}
+
 impl BitcoinTransferProposal {
     pub fn get_seed(&self, id: &Uuid) -> Option<Seed> {
         self.seed.iter().find(|s| s.id.eq(id)).map(|x| x.clone())
@@ -85,6 +91,14 @@ pub enum AddressType {
 }
 
 impl XPub {
+
+    pub fn standard(xpub: ExtendedPubKey) -> XPub {
+        XPub {
+            value: xpub,
+            address_type: AddressType::P2WPKH
+        }
+    }
+
     pub fn is_account(&self) -> bool {
         self.value.depth == 3
     }

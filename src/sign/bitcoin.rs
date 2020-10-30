@@ -31,6 +31,11 @@ use bitcoin::{
 use bitcoin_hashes::{hash160::Hash as hash160, sha256, Hash, HashEngine};
 use secp256k1::{All, Message, Secp256k1, Signature};
 use std::io;
+use crate::structs::seed::SeedSource;
+use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, BitcoinApps, SignTx, UnsignedInput};
+use emerald_hwkey::ledger::traits::LedgerApp;
+use hdpath::StandardHDPath;
 
 lazy_static! {
     pub static ref DEFAULT_SECP256K1: Secp256k1<All> = Secp256k1::new();
@@ -100,6 +105,13 @@ impl WalletEntry {
 
 
 impl InputScriptSource {
+
+    fn get_hd_path(&self) -> Option<StandardHDPath> {
+        match self {
+            InputScriptSource::HD(_, hd_path) => Some(hd_path.clone())
+        }
+    }
+
     fn to_pk(&self, proposal: &BitcoinTransferProposal) -> Result<PrivateKey, VaultError> {
         match self {
             InputScriptSource::HD(seed, hd_path) => {
@@ -157,9 +169,9 @@ impl InputReference {
     pub fn sign(
         &self,
         proposal: &BitcoinTransferProposal,
-        tx: &Transaction,
+        tx: &mut Transaction,
         index: usize,
-    ) -> Result<Vec<u8>, VaultError> {
+    ) -> Result<(), VaultError> {
         let pk = self.get_pk(proposal)?;
         let script = self.to_sign_script(proposal)?;
         let txin = &tx.input[index];
@@ -172,8 +184,14 @@ impl InputReference {
             .map_err(|_| VaultError::InvalidDataError("tx-hash".to_string()))?;
 
         let signature = DEFAULT_SECP256K1.sign(&msg, &pk.key);
-        let result = encode_signature(signature);
-        Ok(result)
+        let signature = encode_signature(signature);
+
+        tx.input[index] = TxIn {
+            witness: self.witness(&proposal, &signature)?,
+            ..tx.input[index].clone()
+        };
+
+        Ok(())
     }
 
     pub fn witness(
@@ -212,32 +230,59 @@ const FEE_MAX: u64 = 5_000_000;
 impl BitcoinTransferProposal {
     fn unsigned(&self) -> Transaction {
         Transaction {
-            version: 1,
+            version: 2,
             lock_time: 0,
             input: self.input.iter().map(|ir| ir.to_input()).collect(),
             output: self.output.clone(),
         }
     }
 
-    fn seal(&self) -> Result<Transaction, VaultError> {
-        let unsigned_tx = self.unsigned();
+    fn is_ledger(&self) -> bool {
+        self.seed.len() == 1 && self.seed.iter().all(|seed| {
+            match seed.source {
+                SeedSource::Ledger(_) => true,
+                _ => false
+            }
+        })
+    }
 
-        let mut input = Vec::with_capacity(self.input.len());
-        for (i, ir) in self.input.iter().enumerate() {
-            let signature = ir.sign(self, &unsigned_tx, i)?;
-            let witness = ir.witness(self, &signature)?;
-            input.push(TxIn {
-                witness,
-                ..ir.to_input()
-            });
+    fn seal(&self) -> Result<Transaction, VaultError> {
+        let mut tx = self.unsigned();
+
+        if self.is_ledger() {
+            self.seal_with_ledger(&mut tx)?;
+        } else {
+            for (i, ir) in self.input.iter().enumerate() {
+                ir.sign(self, &mut tx, i)?;
+            }
         }
 
-        let tx = Transaction {
-            input,
-            ..unsigned_tx
-        };
-
         Ok(tx)
+    }
+
+    fn seal_with_ledger(&self, tx: &mut Transaction) -> Result<(), VaultError> {
+        let manager = LedgerKey::new_connected().map_err(|_| VaultError::PublicKeyUnavailable)?;
+        let bitcoin_app = BitcoinApp::new(manager);
+        let exp_app = match self.network {
+            Network::Bitcoin => BitcoinApps::Mainnet,
+            Network::Testnet => BitcoinApps::Testnet,
+            _ => return Err(VaultError::IncorrectBlockchainError)
+        };
+        if bitcoin_app.is_open() != Some(exp_app) {
+            return Err(VaultError::PublicKeyUnavailable)
+        }
+        let conf = SignTx {
+            network: self.network,
+            inputs: self.input.iter().enumerate().map(|(i, ir)| {
+                UnsignedInput {
+                    index: i,
+                    amount: ir.expected_value,
+                    hd_path: ir.script_source.get_hd_path().expect("not-hd-path")
+                }
+            }).collect()
+        };
+        bitcoin_app.sign_tx(tx, &conf)?;
+        Ok(())
     }
 
     /// Validates _structure_ of the transaction. I.e. that it has inputs, outputs, and amounts are
@@ -295,6 +340,10 @@ mod tests {
     use std::{convert::TryFrom, process::id, str::FromStr};
     use uuid::Uuid;
     use crate::sign::bitcoin::BitcoinTxError;
+    use tempdir::TempDir;
+    use crate::storage::vault::VaultStorage;
+    use crate::structs::seed::LedgerSource;
+    use crate::structs::wallet::Wallet;
 
     fn create_proposal_1() -> (WalletEntry, BitcoinTransferProposal) {
         let phrase = Mnemonic::try_from(Language::English,
@@ -565,7 +614,7 @@ mod tests {
         let (entry, proposal) = create_proposal_1();
         let raw = proposal.raw_unsigned();
         assert_eq!(
-            "01000000011ebc2788503ba051e8a756c355cc5a242c1ac76d1df57532426564407a3786a30100000000ffffffff0110d30100000000001600142757c732c931d7722a6bdaf99ee995530311652000000000",
+            "02000000011ebc2788503ba051e8a756c355cc5a242c1ac76d1df57532426564407a3786a30100000000ffffffff0110d30100000000001600142757c732c931d7722a6bdaf99ee995530311652000000000",
             hex::encode(raw)
         )
     }
@@ -575,7 +624,7 @@ mod tests {
         let (entry, proposal) = create_proposal_3();
         let raw = proposal.raw_unsigned();
         assert_eq!(
-            "010000000201eff40c736a20977e1a7867f43d6a02208ccba315a807c0c4507ee3982daa160100000000fdffffffcba315a807c0c4507ee3982daa1601eff40c736a20977e1a7867f43d6a02208c0000000000fdffffff0370810c00000000001600140a58aeb07eabda1dc35c69002a44952a42eb312f804f12000000000017a914d80fa779a090737095a3ac918f4bb110af3ad52e87e0c81000000000001976a9141b0889064d55d54e0d722015c24dbec18e9c130888ac00000000",
+            "020000000201eff40c736a20977e1a7867f43d6a02208ccba315a807c0c4507ee3982daa160100000000fdffffffcba315a807c0c4507ee3982daa1601eff40c736a20977e1a7867f43d6a02208c0000000000fdffffff0370810c00000000001600140a58aeb07eabda1dc35c69002a44952a42eb312f804f12000000000017a914d80fa779a090737095a3ac918f4bb110af3ad52e87e0c81000000000001976a9141b0889064d55d54e0d722015c24dbec18e9c130888ac00000000",
             hex::encode(raw)
         )
     }
@@ -589,7 +638,7 @@ mod tests {
 
         let signed = entry.sign_bitcoin(proposal).unwrap();
         assert_eq!(
-            "010000000001011ebc2788503ba051e8a756c355cc5a242c1ac76d1df57532426564407a3786a30100000000ffffffff0110d30100000000001600142757c732c931d7722a6bdaf99ee995530311652002483045022100c5af6d33efc9a564c0e955160e0b8def089cc6c933ddf08967eac25d4ddfc09a02205ed59dcc068251dee669ca19425c0c83208d1b1c1f5b7147f4f0b7cb2d15a872012103a3aa29d96671671b065b35de511c03ea5592eafb5de7a07542633af2d42f49ea00000000",
+            "020000000001011ebc2788503ba051e8a756c355cc5a242c1ac76d1df57532426564407a3786a30100000000ffffffff0110d30100000000001600142757c732c931d7722a6bdaf99ee995530311652002483045022100cca7c37f875be0125c524593ce58f3ecbe279fc1c03dbc0258022ffd4a12bf5c02205dfebd69c41b92e30a57998acd81052e6c96421ded2ee11918f7feb7821c45e6012103a3aa29d96671671b065b35de511c03ea5592eafb5de7a07542633af2d42f49ea00000000",
             hex::encode(signed)
         );
     }
@@ -600,7 +649,7 @@ mod tests {
 
         let signed = entry.sign_bitcoin(proposal).unwrap();
         assert_eq!(
-            "0100000000010201eff40c736a20977e1a7867f43d6a02208ccba315a807c0c4507ee3982daa160100000000fdffffffcba315a807c0c4507ee3982daa1601eff40c736a20977e1a7867f43d6a02208c0000000000fdffffff0370810c00000000001600140a58aeb07eabda1dc35c69002a44952a42eb312f804f12000000000017a914d80fa779a090737095a3ac918f4bb110af3ad52e87e0c81000000000001976a9141b0889064d55d54e0d722015c24dbec18e9c130888ac0248304502210083ad6bada1106d63326647616be507031b28712788036269156a37255ed509a402206c2e3c2cef0f2467a9abda70a8837ddf2d60fa4b809ccd43ffee59ebedc75e81012103ac6c5500040904ae7ed004c1971cf7e00afcf25de6d599a6b90f79681e90133d0248304502210096372fe1d649f45efb6142458c15a6254fe2c14fb9bfc618cf01c35918ccee8802204ac4a01492cc7b24500d62d38b0451e7990679ef32cef4d8a1d897f696fc42e00121026307cafeaac676cfc824d66cd16d106f9a9bc34d8ce1f1ca90f8b6355bd11b4600000000",
+            "0200000000010201eff40c736a20977e1a7867f43d6a02208ccba315a807c0c4507ee3982daa160100000000fdffffffcba315a807c0c4507ee3982daa1601eff40c736a20977e1a7867f43d6a02208c0000000000fdffffff0370810c00000000001600140a58aeb07eabda1dc35c69002a44952a42eb312f804f12000000000017a914d80fa779a090737095a3ac918f4bb110af3ad52e87e0c81000000000001976a9141b0889064d55d54e0d722015c24dbec18e9c130888ac0247304402203455e564c69f27186e90e261afa2b11aedafe756428d40a71750648963038dc502207056fff9d5b03708f295787929f416555d0cff0a8025a0e36da673a2fc306ba9012103ac6c5500040904ae7ed004c1971cf7e00afcf25de6d599a6b90f79681e90133d02483045022100f327d218b2e56739e3a68756bf4618e50d53052b75e374c13e1f90c04eb072340220376ec4b2215362267c5e94267abfc8700a4c1b08e7e421a13aa8f018d875123b0121026307cafeaac676cfc824d66cd16d106f9a9bc34d8ce1f1ca90f8b6355bd11b4600000000",
             hex::encode(signed)
         );
     }
@@ -614,7 +663,7 @@ mod tests {
         let pubkey = &signed_tx.input[0].witness[0];
 
         assert_eq!(
-            "3045022100c5af6d33efc9a564c0e955160e0b8def089cc6c933ddf08967eac25d4ddfc09a02205ed59dcc068251dee669ca19425c0c83208d1b1c1f5b7147f4f0b7cb2d15a87201",
+            "3045022100cca7c37f875be0125c524593ce58f3ecbe279fc1c03dbc0258022ffd4a12bf5c02205dfebd69c41b92e30a57998acd81052e6c96421ded2ee11918f7feb7821c45e601",
             hex::encode(signature)
         )
     }
@@ -624,5 +673,72 @@ mod tests {
         let (entry, proposal) = create_proposal_2();
         let signed = entry.sign_bitcoin(proposal).unwrap();
         println!("RAW {:?}", hex::encode(signed));
+    }
+
+    #[cfg(test_ledger_bitcoin_test)]
+    #[test]
+    fn sign_basic_ledger() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let seed_id = vault.seeds().add(Seed {
+            source: SeedSource::Ledger(LedgerSource::default()),
+            ..Default::default()
+        }).unwrap();
+
+        let wallet_id = vault.wallets().add(Wallet {
+            ..Default::default()
+        }).unwrap();
+
+        let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+            seed_id,
+            StandardHDPath::from_str("m/84'/1'/0'/0/0").unwrap(),
+            Blockchain::BitcoinTestnet,
+            None,
+        ).expect("entry not created");
+
+        let entry = vault.wallets().get(wallet_id).unwrap().get_entry(entry_id).unwrap();
+
+        let from_amount = 4_567_800;
+        let fee = 123;
+        let to_amount = from_amount - fee;
+
+        let proposal = BitcoinTransferProposal {
+            network: Network::Testnet,
+            seed: vec![vault.seeds().get(seed_id).unwrap()],
+            keys: KeyMapping::default(),
+            input: vec![
+                InputReference {
+                    output: OutPoint::new(Txid::from_str("41217d32e29b67d01692eed0ca776ea24a9f03299dfc46dde1bf14d3918e5275").unwrap(), 0),
+                    script_source: InputScriptSource::HD(seed_id, StandardHDPath::from_str("m/84'/1'/0'/0/0").unwrap()),
+                    expected_value: from_amount,
+                    sequence: 0xfffffffd
+                }
+            ],
+            output: vec![
+                TxOut {
+                    value: to_amount,
+                    script_pubkey: Address::from_str("tb1qg9zx7vnkfs8yaycm66wz5tat6d9x29wrezhcr0").unwrap().script_pubkey(),
+                },
+            ],
+            change: entry.clone(),
+            expected_fee: fee,
+        };
+
+        let signed_tx = proposal.seal().unwrap();
+        let signature = &signed_tx.input[0].witness[0];
+        let pubkey = &signed_tx.input[0].witness[1];
+
+        assert_eq!(
+            "0300aa53021aac8f948b391b2c6aab930f6186d0bc1d29fca81a2459e85630e18f",
+            hex::encode(pubkey)
+        );
+
+        assert_eq!(
+            "304402202ffaf3d2856ecb77485064b02216870596881ed2387b2e01d82fb91b9c26b6ff02206408c6cbf17123bf5ae4678030e0d557b8794690cd822f72999b0b2c49dc0b8501",
+            hex::encode(signature)
+        );
+
+
     }
 }
