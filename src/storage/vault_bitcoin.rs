@@ -91,7 +91,6 @@ impl AddBitcoinEntry {
                 if bitcoin_app.is_open() != Some(exp_app) {
                     return Err(VaultError::PublicKeyUnavailable)
                 }
-                println!("get xpub {}", blockchain.as_bitcoin_network());
                 let xpub = bitcoin_app.get_xpub(&account, blockchain.as_bitcoin_network())?;
                 AddressRef::ExtendedPub(XPub::standard(xpub))
             }
