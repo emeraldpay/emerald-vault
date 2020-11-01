@@ -12,6 +12,7 @@ use std::str::FromStr;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::LedgerApp;
+use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, GetAddressOpts};
 
 pub enum PrivateKeySource {
     Base(SecretKey),
@@ -83,28 +84,41 @@ impl SeedSource {
                 }
             },
             SeedSource::Ledger(_) => {
+                let manager = LedgerKey::new_connected()
+                    .map_err(|_| VaultError::PrivateKeyUnavailable)?;
+                let mut result = Vec::with_capacity(hd_path_all.len());
                 match blockchain.get_type() {
-                    //TODO bitcoin
-                    BlockchainType::Bitcoin => unimplemented!(),
-                    BlockchainType::Ethereum => {
-                        let manager = LedgerKey::new_connected()
-                            .map_err(|_| VaultError::PrivateKeyUnavailable)?;
-                        let ethereum_app = EthereumApp::new(manager);
-                        if ethereum_app.is_open().is_none() {
+                    BlockchainType::Bitcoin => {
+                        let app = BitcoinApp::new(manager);
+                        if app.is_open().is_none() {
                             return Err(VaultError::PrivateKeyUnavailable);
                         }
-
-                        let mut result = Vec::with_capacity(hd_path_all.len());
+                        let opts = GetAddressOpts {
+                            network: blockchain.as_bitcoin_network(),
+                            ..Default::default()
+                        };
                         for hd_path in hd_path_all {
-                            let address = ethereum_app.get_address(hd_path, false)
+                            let address = app.get_address(hd_path, opts)?;
+                            if let Some(address) = T::from_bitcoin_address(address.address) {
+                                result.push((hd_path.clone(), address));
+                            }
+                        }
+                    },
+                    BlockchainType::Ethereum => {
+                        let app = EthereumApp::new(manager);
+                        if app.is_open().is_none() {
+                            return Err(VaultError::PrivateKeyUnavailable);
+                        }
+                        for hd_path in hd_path_all {
+                            let address = app.get_address(hd_path, false)
                                 .map(|a| format!("0x{:}", a.address))?;
                             if let Some(address) = T::from_ethereum_address(EthereumAddress::from_str(address.as_str())?) {
                                 result.push((hd_path.clone(), address));
                             }
                         }
-                        Ok(result)
                     }
                 }
+                Ok(result)
             },
         }
     }
