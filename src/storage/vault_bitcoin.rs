@@ -4,7 +4,7 @@ use crate::structs::seed::{Seed, SeedSource, SeedRef};
 use crate::structs::wallet::{Wallet, WalletEntry, PKType};
 use uuid::Uuid;
 use crate::storage::error::VaultError;
-use hdpath::{StandardHDPath, AccountHDPath, PathValue};
+use hdpath::{StandardHDPath, AccountHDPath, PathValue, HDPath};
 use crate::blockchain::chains::{Blockchain, BlockchainType};
 use bitcoin::util::bip32::{ExtendedPrivKey, ExtendedPubKey, DerivationPath};
 use crate::blockchain::bitcoin::{AddressType, XPub};
@@ -61,7 +61,7 @@ impl AddBitcoinEntry {
     pub fn seed_hd(
         &self,
         seed_id: Uuid,
-        hd_path: StandardHDPath,
+        hd_path: AccountHDPath,
         blockchain: Blockchain,
         password: Option<String>,
     ) -> Result<usize, VaultError> {
@@ -71,6 +71,9 @@ impl AddBitcoinEntry {
         let seed = self.seeds.get(seed_id)?;
         let address_type = AddressType::P2WPKH;
         let account = address_type.get_hd_path(hd_path.account(), &blockchain.as_bitcoin_network());
+        if account.purpose() != hd_path.purpose() {
+            return Err(VaultError::UnsupportedDataError("Invalid HD Path purpose for address".to_string()))
+        }
         let address = match seed.source {
             SeedSource::Bytes(seed) => {
                 if password.is_none() {
@@ -145,7 +148,7 @@ mod tests {
 
         let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
             seed_id,
-            StandardHDPath::from_str("m/84'/0'/3'/0/0").unwrap(),
+            AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
             Blockchain::Bitcoin,
             Some("test".to_string()),
         ).expect("entry not created");
@@ -192,7 +195,7 @@ mod tests {
 
         let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
             seed_id,
-            StandardHDPath::from_str("m/84'/1'/0'/0/0").unwrap(),
+            AccountHDPath::from_str("m/84'/1'/0'").unwrap(),
             Blockchain::BitcoinTestnet,
             Some("test".to_string()),
         ).expect("entry not created");
@@ -237,7 +240,7 @@ mod tests {
 
         let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
             seed_id,
-            StandardHDPath::from_str("m/84'/0'/3'/0/0").unwrap(),
+            AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
             Blockchain::Bitcoin,
             None,
         ).expect("entry not created");
