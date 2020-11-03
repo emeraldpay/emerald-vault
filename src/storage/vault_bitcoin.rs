@@ -85,7 +85,7 @@ impl AddBitcoinEntry {
             }
             SeedSource::Ledger(_) => {
                 let manager = LedgerKey::new_connected().map_err(|_| VaultError::PublicKeyUnavailable)?;
-                let bitcoin_app = BitcoinApp::new(manager);
+                let bitcoin_app = BitcoinApp::new(&manager);
                 let exp_app = match blockchain {
                     Blockchain::Bitcoin => BitcoinApps::Mainnet,
                     Blockchain::BitcoinTestnet => BitcoinApps::Testnet,

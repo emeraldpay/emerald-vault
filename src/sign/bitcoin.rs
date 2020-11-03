@@ -262,7 +262,7 @@ impl BitcoinTransferProposal {
 
     fn seal_with_ledger(&self, tx: &mut Transaction) -> Result<(), VaultError> {
         let manager = LedgerKey::new_connected().map_err(|_| VaultError::PublicKeyUnavailable)?;
-        let bitcoin_app = BitcoinApp::new(manager);
+        let bitcoin_app = BitcoinApp::new(&manager);
         let exp_app = match self.network {
             Network::Bitcoin => BitcoinApps::Mainnet,
             Network::Testnet => BitcoinApps::Testnet,
@@ -336,7 +336,7 @@ mod tests {
     };
     use bitcoin::{util::bip32::ExtendedPubKey, Network, OutPoint, TxOut, Txid, Address};
     use chrono::{TimeZone, Utc};
-    use hdpath::StandardHDPath;
+    use hdpath::{StandardHDPath, AccountHDPath};
     use std::{convert::TryFrom, process::id, str::FromStr};
     use uuid::Uuid;
     use crate::sign::bitcoin::BitcoinTxError;
@@ -692,7 +692,7 @@ mod tests {
 
         let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
             seed_id,
-            StandardHDPath::from_str("m/84'/1'/0'/0/0").unwrap(),
+            AccountHDPath::from_str("m/84'/1'/0'").unwrap(),
             Blockchain::BitcoinTestnet,
             None,
         ).expect("entry not created");

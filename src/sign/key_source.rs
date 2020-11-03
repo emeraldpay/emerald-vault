@@ -89,7 +89,7 @@ impl SeedSource {
                 let mut result = Vec::with_capacity(hd_path_all.len());
                 match blockchain.get_type() {
                     BlockchainType::Bitcoin => {
-                        let app = BitcoinApp::new(manager);
+                        let app = BitcoinApp::new(&manager);
                         if app.is_open().is_none() {
                             return Err(VaultError::PrivateKeyUnavailable);
                         }
@@ -105,7 +105,7 @@ impl SeedSource {
                         }
                     },
                     BlockchainType::Ethereum => {
-                        let app = EthereumApp::new(manager);
+                        let app = EthereumApp::new(&manager);
                         if app.is_open().is_none() {
                             return Err(VaultError::PrivateKeyUnavailable);
                         }
