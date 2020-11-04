@@ -22,6 +22,8 @@ use emerald_hwkey::{
         }
     }
 };
+use std::borrow::Borrow;
+use crate::storage::entry::AddEntryOptions;
 
 pub struct AddBitcoinEntry {
     seeds: Arc<dyn VaultAccessByFile<Seed>>,
@@ -63,7 +65,7 @@ impl AddBitcoinEntry {
         seed_id: Uuid,
         hd_path: AccountHDPath,
         blockchain: Blockchain,
-        password: Option<String>,
+        opts: AddEntryOptions,
     ) -> Result<usize, VaultError> {
         if blockchain.get_type() != BlockchainType::Bitcoin {
             return Err(VaultError::IncorrectBlockchainError)
@@ -74,37 +76,65 @@ impl AddBitcoinEntry {
         if account.purpose() != hd_path.purpose() {
             return Err(VaultError::UnsupportedDataError("Invalid HD Path purpose for address".to_string()))
         }
-        let address = match seed.source {
+        let xpub = match seed.source {
             SeedSource::Bytes(seed) => {
-                if password.is_none() {
-                    return Err(VaultError::PasswordRequired);
+                match &opts.seed_password {
+                    Some(seed_password) => {
+                        let seed = seed.decrypt(seed_password.as_str())?;
+                        Some(get_address(&blockchain, address_type, account.account(), seed)?)
+                    },
+                    None => return Err(VaultError::PasswordRequired)
                 }
-                let seed = seed.decrypt(password.unwrap().as_str())?;
-                let address = get_address(&blockchain, address_type, account.account(), seed)?;
-                AddressRef::ExtendedPub(address)
             }
             SeedSource::Ledger(_) => {
-                let manager = LedgerKey::new_connected().map_err(|_| VaultError::PublicKeyUnavailable)?;
-                let bitcoin_app = BitcoinApp::new(&manager);
-                let exp_app = match blockchain {
-                    Blockchain::Bitcoin => BitcoinApps::Mainnet,
-                    Blockchain::BitcoinTestnet => BitcoinApps::Testnet,
-                    _ => return Err(VaultError::IncorrectBlockchainError)
-                };
-                if bitcoin_app.is_open() != Some(exp_app) {
-                    return Err(VaultError::PublicKeyUnavailable)
+                let manager = LedgerKey::new_connected();
+                if let Ok(manager) = manager {
+                    let bitcoin_app = BitcoinApp::new(&manager);
+                    let exp_app = match blockchain {
+                        Blockchain::Bitcoin => Some(BitcoinApps::Mainnet),
+                        Blockchain::BitcoinTestnet => Some(BitcoinApps::Testnet),
+                        _ => None
+                    };
+                    if exp_app.is_none() || bitcoin_app.is_open() != exp_app {
+                        None
+                    } else {
+                        let xpub = bitcoin_app.get_xpub(&account, blockchain.as_bitcoin_network())?;
+                        Some(XPub::standard(xpub))
+                    }
+                } else {
+                    None
                 }
-                let xpub = bitcoin_app.get_xpub(&account, blockchain.as_bitcoin_network())?;
-                AddressRef::ExtendedPub(XPub::standard(xpub))
             }
         };
+
+        if opts.xpub.is_some() && xpub.is_some() && opts.xpub != xpub {
+            return Err(VaultError::InvalidDataError(
+                "Different xpub".to_string(),
+            ));
+        }
+
+        let xpub = xpub.or_else(|| {
+            opts.xpub.clone()
+        });
+
+        if xpub.is_none() {
+            return Err(VaultError::PublicKeyUnavailable)
+        }
+
+        let xpub = xpub.unwrap();
+
+        if xpub.value.network != blockchain.as_bitcoin_network() {
+            return Err(VaultError::IncorrectBlockchainError)
+        }
+
+        let address_ref = AddressRef::ExtendedPub(xpub);
 
         let mut wallet = self.wallets.get(self.wallet_id.clone())?;
         let id = wallet.next_entry_id();
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
-            address: Some(address),
+            address: Some(address_ref),
             key: PKType::SeedHd(SeedRef {
                 seed_id: seed_id.clone(),
                 hd_path: account.address_at(0, 0).expect("Generate first address for account"),
@@ -150,7 +180,7 @@ mod tests {
             seed_id,
             AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
             Blockchain::Bitcoin,
-            Some("test".to_string()),
+            AddEntryOptions::with_seed_password("test"),
         ).expect("entry not created");
 
         let wallet = vault.wallets().get(wallet_id).unwrap();
@@ -197,7 +227,7 @@ mod tests {
             seed_id,
             AccountHDPath::from_str("m/84'/1'/0'").unwrap(),
             Blockchain::BitcoinTestnet,
-            Some("test".to_string()),
+            AddEntryOptions::with_seed_password("test"),
         ).expect("entry not created");
 
         let wallet = vault.wallets().get(wallet_id).unwrap();
@@ -242,7 +272,7 @@ mod tests {
             seed_id,
             AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
             Blockchain::Bitcoin,
-            None,
+            AddEntryOptions::default(),
         ).expect("entry not created");
 
         let wallet = vault.wallets().get(wallet_id).unwrap();
@@ -265,5 +295,113 @@ mod tests {
                 panic!("not xpub")
             }
         }
+    }
+
+    #[cfg(not(test_ledger_bitcoin))]
+    #[test]
+    fn add_seed_ledger_with_xpub() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let seed_id = vault.seeds().add(Seed {
+            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] }),
+            ..Default::default()
+        }).unwrap();
+
+        let wallet_id = vault.wallets().add(Wallet {
+            ..Default::default()
+        }).unwrap();
+
+        let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+            seed_id,
+            AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
+            Blockchain::Bitcoin,
+            AddEntryOptions {
+                xpub: Some(
+                    XPub::from_str(
+                    "zpub6rRF9XhDBRQSTqepDnwAPS5m3vMWTh7PGLy3DUKMKLtrmFonGeJjZGPh9zPQgp6uFz6yJ5t9b15aD6HiUMmaAds1M7pUYxsMVE5CPD6TWUL"
+                    ).unwrap()),
+                ..AddEntryOptions::default()
+            },
+        ).expect("entry not created");
+
+        let wallet = vault.wallets().get(wallet_id).unwrap();
+        let entry = &wallet.entries[0];
+
+        assert_eq!(Blockchain::Bitcoin, entry.blockchain);
+
+        let address_ref = entry.address.as_ref().unwrap();
+        match address_ref {
+            AddressRef::ExtendedPub(xpub) => {
+                assert_eq!(AddressType::P2WPKH, xpub.address_type);
+                assert_eq!(xpub.to_string(), "zpub6rRF9XhDBRQSTqepDnwAPS5m3vMWTh7PGLy3DUKMKLtrmFonGeJjZGPh9zPQgp6uFz6yJ5t9b15aD6HiUMmaAds1M7pUYxsMVE5CPD6TWUL".to_string())
+            }
+            _ => {
+                panic!("not xpub")
+            }
+        }
+    }
+
+    #[test]
+    fn cannot_create_with_wrong_chain_xpub() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let seed_id = vault.seeds().add(Seed {
+            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] }),
+            ..Default::default()
+        }).unwrap();
+
+        let wallet_id = vault.wallets().add(Wallet {
+            ..Default::default()
+        }).unwrap();
+
+        // xpub is for mainnet, but blockchain is testnet
+
+        let added = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+            seed_id,
+            AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
+            Blockchain::BitcoinTestnet,
+            AddEntryOptions {
+                xpub: Some(
+                    XPub::from_str(
+                        "zpub6rRF9XhDBRQSTqepDnwAPS5m3vMWTh7PGLy3DUKMKLtrmFonGeJjZGPh9zPQgp6uFz6yJ5t9b15aD6HiUMmaAds1M7pUYxsMVE5CPD6TWUL"
+                    ).unwrap()),
+                ..AddEntryOptions::default()
+            },
+        );
+
+        assert_eq!(added.err(), Some(VaultError::IncorrectBlockchainError));
+    }
+
+    #[cfg(test_ledger_bitcoin)]
+    #[test]
+    fn cannot_create_with_wrong_xpub() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let seed_id = vault.seeds().add(Seed {
+            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] }),
+            ..Default::default()
+        }).unwrap();
+
+        let wallet_id = vault.wallets().add(Wallet {
+            ..Default::default()
+        }).unwrap();
+
+        let added = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+            seed_id,
+            AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
+            Blockchain::Bitcoin,
+            AddEntryOptions {
+                xpub: Some(
+                    XPub::from_str(
+                        "zpub6qKPZBoCJ1v8JA3MqALek9x8mref4BPp77jh9FHmATRHgrj2ZEZkYTB6o4WjhUkJYxSwV5SaLqeHYRCgkQRZMNnv9pjvp3epbzJ3bDdzPZp"
+                    ).unwrap()),
+                ..AddEntryOptions::default()
+            },
+        );
+
+        assert_eq!(added.err(), Some(VaultError::InvalidDataError("Different xpub".to_string())));
     }
 }
