@@ -26,9 +26,11 @@ use bitcoin::{
     network::constants::Network,
     util::bip32::{DerivationPath, ExtendedPrivKey},
 };
-use hdpath::StandardHDPath;
+use hdpath::{StandardHDPath, HDPath, CustomHDPath};
 use secp256k1::Secp256k1;
 use std::convert::TryFrom;
+use bitcoin::util::bip32::ExtendedPubKey;
+use crate::sign::bitcoin::DEFAULT_SECP256K1;
 
 /// Generate `ExtendedPrivKey` using BIP32
 ///
@@ -37,12 +39,17 @@ use std::convert::TryFrom;
 ///  * path - key derivation path
 ///  * seed - seed data for master node
 ///
-pub fn generate_key(path: &StandardHDPath, seed: &[u8]) -> Result<ExtendedPrivKey, VaultError> {
+pub fn generate_key<P: HDPath>(path: &P, seed: &[u8]) -> Result<ExtendedPrivKey, VaultError> {
     let secp = Secp256k1::new();
     let sk = ExtendedPrivKey::new_master(Network::Bitcoin, seed)
-        .and_then(|k| k.derive_priv(&secp, &DerivationPath::from(path)))
+        .and_then(|k| k.derive_priv(&secp, &path.as_bitcoin()))
         .map_err(|_| VaultError::InvalidPrivateKey)?;
     Ok(sk)
+}
+
+pub fn generate_pubkey<P: HDPath>(path: &P, seed: &[u8]) -> Result<ExtendedPubKey, VaultError> {
+    let sec_key = generate_key(path, &seed)?;
+    Ok(ExtendedPubKey::from_private(&DEFAULT_SECP256K1, &sec_key))
 }
 
 #[cfg(test)]
