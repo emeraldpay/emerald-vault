@@ -210,10 +210,18 @@ impl TryFrom<&Purpose> for AddressType {
     fn try_from(value: &Purpose) -> Result<Self, Self::Error> {
         match value {
             Purpose::Witness => Ok(AddressType::P2WPKH),
-            Purpose::ScriptHash => Ok(AddressType::P2WSH),
+            Purpose::ScriptHash => Ok(AddressType::P2WPKHinP2SH),
             Purpose::Pubkey => Ok(AddressType::P2PKH),
             _ => Err(VaultError::ConversionError(ConversionError::UnsupportedValue(value.as_value().as_number().to_string())))
         }
+    }
+}
+
+impl TryFrom<Purpose> for AddressType {
+    type Error = VaultError;
+
+    fn try_from(value: Purpose) -> Result<Self, Self::Error> {
+        AddressType::try_from(&value)
     }
 }
 
@@ -221,6 +229,14 @@ impl TryFrom<&StandardHDPath> for AddressType {
     type Error = VaultError;
 
     fn try_from(value: &StandardHDPath) -> Result<Self, Self::Error> {
+        AddressType::try_from(value.purpose())
+    }
+}
+
+impl TryFrom<&AccountHDPath> for AddressType {
+    type Error = VaultError;
+
+    fn try_from(value: &AccountHDPath) -> Result<Self, Self::Error> {
         AddressType::try_from(value.purpose())
     }
 }
@@ -314,7 +330,7 @@ mod tests {
     use bitcoin::{Network, Address};
 
     use crate::blockchain::bitcoin::{AddressType, XPub};
-    use hdpath::{AccountHDPath, StandardHDPath};
+    use hdpath::{AccountHDPath, StandardHDPath, Purpose};
     use std::convert::TryFrom;
 
     #[test]
@@ -331,6 +347,23 @@ mod tests {
         assert_eq!(act.value.depth, 4u8);
         assert_eq!(act.value.network, Network::Bitcoin);
         assert_eq!(act.address_type, AddressType::P2WPKH);
+    }
+
+    #[test]
+    fn parse_xpub_p2wpkh_p2sh() {
+        let act = XPub::from_str("ypub6XKWqjEULzxUZ1AaNausD7JFWzg8jKCFmdycJpojoiRLDCNuLxKREUXnvTD26q3AAsiSBDymo2E21yhAiUY8Vrnu4UHQvfTrKRcvzyV2Pd2").unwrap();
+        assert_eq!(act.value.depth, 3u8);
+        assert_eq!(act.value.network, Network::Bitcoin);
+        assert_eq!(act.address_type, AddressType::P2WPKHinP2SH);
+    }
+
+    #[test]
+    fn encode_xpub_p2wpkh_p2sh() {
+        let source = XPub::from_str("ypub6XKWqjEULzxUZ1AaNausD7JFWzg8jKCFmdycJpojoiRLDCNuLxKREUXnvTD26q3AAsiSBDymo2E21yhAiUY8Vrnu4UHQvfTrKRcvzyV2Pd2").unwrap();
+        assert_eq!(
+            "ypub6XKWqjEULzxUZ1AaNausD7JFWzg8jKCFmdycJpojoiRLDCNuLxKREUXnvTD26q3AAsiSBDymo2E21yhAiUY8Vrnu4UHQvfTrKRcvzyV2Pd2".to_string(),
+            source.to_string()
+        );
     }
 
     #[test]
@@ -412,5 +445,12 @@ mod tests {
             Some(StandardHDPath::from_str("m/84'/1'/5'/1/7").unwrap()),
             xpub.find_path(&account, &Address::from_str("tb1q2p4yhftnwe4ft0nztadeqtn9wzequpwzv3puz0").unwrap(), 100)
         );
+    }
+
+    #[test]
+    fn correct_address_type() {
+        assert_eq!(AddressType::P2PKH, AddressType::try_from(Purpose::Pubkey).unwrap());
+        assert_eq!(AddressType::P2WPKHinP2SH, AddressType::try_from(Purpose::ScriptHash).unwrap());
+        assert_eq!(AddressType::P2WPKH, AddressType::try_from(Purpose::Witness).unwrap());
     }
 }
