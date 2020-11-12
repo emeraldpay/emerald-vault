@@ -61,7 +61,8 @@ hdpath = { version = "0.6", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
 bitcoin_hashes = "0.9.0"
 #emerald-hwkey = { path = "../emerald-hwkey" }
-emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
+#emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
+emerald-hwkey = "0.1"
 
 [dev-dependencies]
 tempdir = "0.3.7"
