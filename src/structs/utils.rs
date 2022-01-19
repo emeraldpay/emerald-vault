@@ -47,11 +47,11 @@ mod tests {
     #[test]
     fn ord_by_date() {
         chrono::TimeZone::timestamp_millis(&Utc, 0);
-        let mut value1 = TestData {
+        let value1 = TestData {
             id: Default::default(),
             created_at: Utc.timestamp_millis(100),
         };
-        let mut value2 = TestData {
+        let value2 = TestData {
             id: Default::default(),
             created_at: Utc.timestamp_millis(200),
         };
@@ -62,11 +62,11 @@ mod tests {
 
     #[test]
     fn ord_greater_with_date() {
-        let mut value1 = TestData {
+        let value1 = TestData {
             id: Default::default(),
             created_at: Utc.timestamp_millis(0),
         };
-        let mut value2 = TestData {
+        let value2 = TestData {
             id: Default::default(),
             created_at: Utc.timestamp_millis(200),
         };
@@ -77,11 +77,11 @@ mod tests {
 
     #[test]
     fn ord_same_date_by_id() {
-        let mut value1 = TestData {
+        let value1 = TestData {
             id: Uuid::parse_str("46805dff-a6e0-434d-be7d-5ef7931522d0").unwrap(),
             created_at: Utc.timestamp_millis(0),
         };
-        let mut value2 = TestData {
+        let value2 = TestData {
             id: Uuid::parse_str("36805dff-a6e0-434d-be7d-5ef7931522d0").unwrap(),
             created_at: Utc.timestamp_millis(200),
         };

@@ -30,7 +30,7 @@ impl AddressFromPub<BitcoinAddress> for BitcoinAddress {
 }
 
 impl AddressCast<BitcoinAddress> for BitcoinAddress {
-    fn from_ethereum_address(x: EthereumAddress) -> Option<BitcoinAddress> {
+    fn from_ethereum_address(_: EthereumAddress) -> Option<BitcoinAddress> {
         None
     }
 
@@ -50,7 +50,7 @@ impl AddressCast<EthereumAddress> for EthereumAddress {
         Some(x)
     }
 
-    fn from_bitcoin_address(x: BitcoinAddress) -> Option<EthereumAddress> {
+    fn from_bitcoin_address(_: BitcoinAddress) -> Option<EthereumAddress> {
         None
     }
 }

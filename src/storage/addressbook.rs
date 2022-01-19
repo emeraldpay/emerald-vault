@@ -269,7 +269,7 @@ mod tests {
         EthereumAddress,
     };
     use chrono::Utc;
-    use std::{fs, path::Path, str::FromStr, time::SystemTime};
+    use std::{fs, path::Path, str::FromStr};
     use tempdir::TempDir;
     use uuid::Uuid;
 

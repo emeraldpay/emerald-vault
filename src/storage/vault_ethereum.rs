@@ -169,9 +169,8 @@ mod tests {
     use crate::{
         convert::json::keyfile::EthereumJsonV3File,
         structs::pk::{EthereumPk3, PrivateKeyHolder},
-        tests::{read_dir_fully, *},
+        tests::*,
     };
-    use chrono::{TimeZone, Utc};
     use tempdir::TempDir;
     use crate::storage::vault::VaultStorage;
 

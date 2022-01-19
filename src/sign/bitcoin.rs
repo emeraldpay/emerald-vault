@@ -5,32 +5,26 @@ use crate::{
             BitcoinTransferProposal,
             InputReference,
             InputScriptSource,
-            KeyMapping,
         },
         chains::Blockchain,
     },
-    sign::key_source::PrivateKeySource,
-    storage::{error::VaultError, vault::VaultStorage},
+    storage::error::VaultError,
     structs::{book::AddressRef, wallet::WalletEntry},
 };
 use bitcoin::{
-    blockdata::{opcodes, script::Builder},
-    consensus::{serialize, Encodable},
+    consensus::serialize,
     util::{bip143::SighashComponents, bip32::ChildNumber, psbt::serialize::Serialize},
     Address,
     Network,
     PrivateKey,
     PublicKey,
     Script,
-    SigHash,
     SigHashType,
     Transaction,
     TxIn,
-    TxOut,
 };
-use bitcoin_hashes::{hash160::Hash as hash160, sha256, Hash, HashEngine};
+use bitcoin_hashes::HashEngine;
 use secp256k1::{All, Message, Secp256k1, Signature};
-use std::io;
 use crate::structs::seed::SeedSource;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, BitcoinApps, SignTx, UnsignedInput};
@@ -334,10 +328,10 @@ mod tests {
             wallet::WalletEntry,
         },
     };
-    use bitcoin::{util::bip32::ExtendedPubKey, Network, OutPoint, TxOut, Txid, Address};
+    use bitcoin::{Network, OutPoint, TxOut, Txid, Address};
     use chrono::{TimeZone, Utc};
     use hdpath::{StandardHDPath, AccountHDPath};
-    use std::{convert::TryFrom, process::id, str::FromStr};
+    use std::{convert::TryFrom, str::FromStr};
     use uuid::Uuid;
     use crate::sign::bitcoin::BitcoinTxError;
     use tempdir::TempDir;
@@ -611,7 +605,7 @@ mod tests {
 
     #[test]
     fn encode_basic_unsigned_tx() {
-        let (entry, proposal) = create_proposal_1();
+        let (_, proposal) = create_proposal_1();
         let raw = proposal.raw_unsigned();
         assert_eq!(
             "02000000011ebc2788503ba051e8a756c355cc5a242c1ac76d1df57532426564407a3786a30100000000ffffffff0110d30100000000001600142757c732c931d7722a6bdaf99ee995530311652000000000",
@@ -621,7 +615,7 @@ mod tests {
 
     #[test]
     fn encode_nonsegwit_out_unsigned_tx() {
-        let (entry, proposal) = create_proposal_3();
+        let (_, proposal) = create_proposal_3();
         let raw = proposal.raw_unsigned();
         assert_eq!(
             "020000000201eff40c736a20977e1a7867f43d6a02208ccba315a807c0c4507ee3982daa160100000000fdffffffcba315a807c0c4507ee3982daa1601eff40c736a20977e1a7867f43d6a02208c0000000000fdffffff0370810c00000000001600140a58aeb07eabda1dc35c69002a44952a42eb312f804f12000000000017a914d80fa779a090737095a3ac918f4bb110af3ad52e87e0c81000000000001976a9141b0889064d55d54e0d722015c24dbec18e9c130888ac00000000",
@@ -657,10 +651,9 @@ mod tests {
 
     #[test]
     fn witness_basic_tx() {
-        let (entry, proposal) = create_proposal_1();
+        let (_, proposal) = create_proposal_1();
         let signed_tx = proposal.seal().unwrap();
         let signature = &signed_tx.input[0].witness[0];
-        let pubkey = &signed_tx.input[0].witness[0];
 
         assert_eq!(
             "3045022100cca7c37f875be0125c524593ce58f3ecbe279fc1c03dbc0258022ffd4a12bf5c02205dfebd69c41b92e30a57998acd81052e6c96421ded2ee11918f7feb7821c45e601",

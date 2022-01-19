@@ -118,21 +118,21 @@ impl Migrate for V1Storage {
 
         supported_blockchains.iter().for_each(|blockchain| {
             // Migrate all data for a single blockchain
-            &self.migration.info(format!("Migrate {:?}", blockchain));
+            let _ = &self.migration.info(format!("Migrate {:?}", blockchain));
             let migrated_keys = self.migrate_wallets(&vault, &mut created_wallets, blockchain);
-            &self
+            let _ = &self
                 .migration
                 .info(format!("Done migrating {:?}", blockchain));
 
             if migrated_keys {
-                &self
+                let _ = &self
                     .migration
                     .info(format!("Moving to archive keys for {:?}", blockchain));
                 match self.blockchain_path(blockchain) {
                     Some(path) => {
                         let archived = archive.submit(path);
                         if archived.is_err() {
-                            &self.migration.error(format!(
+                            let _ = &self.migration.error(format!(
                                 "Failed to add to archive. Error: {}",
                                 archived.err().unwrap()
                             ));
@@ -169,7 +169,7 @@ mod tests {
         blockchain::chains::Blockchain,
         migration::{
             source::v1::V1Storage,
-            test_commons::{show_dir, sort_wallets, unzip},
+            test_commons::{sort_wallets, unzip},
             types::Migrate,
         },
         storage::vault::VaultStorage,

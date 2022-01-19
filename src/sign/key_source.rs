@@ -1,19 +1,24 @@
-use crate::{sign::bip32::generate_key, storage::{error::VaultError, vault::VaultStorage}, structs::{seed::SeedSource, wallet::PKType}, to_arr, EthereumPrivateKey, EthereumAddress};
+use crate::{
+    sign::bip32::generate_key,
+    storage::{error::VaultError, vault::VaultStorage},
+    structs::{seed::SeedSource, wallet::PKType},
+    EthereumPrivateKey,
+    EthereumAddress,
+    blockchain::addresses::{AddressFromPub, AddressCast},
+    blockchain::bitcoin::{AddressType, XPub},
+    blockchain::chains::{Blockchain, BlockchainType},
+    sign::bip32::generate_pubkey,
+};
 use bitcoin::{util::bip32::ExtendedPrivKey, Network, PrivateKey};
 use hdpath::{StandardHDPath, AccountHDPath};
 use secp256k1::SecretKey;
 use std::convert::TryFrom;
-use crate::blockchain::addresses::{AddressFromPub, AddressCast};
-use crate::sign::bitcoin::DEFAULT_SECP256K1;
 use bitcoin::util::bip32::ExtendedPubKey;
-use crate::blockchain::bitcoin::{AddressType, XPub};
-use crate::blockchain::chains::{Blockchain, BlockchainType};
 use std::str::FromStr;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::{LedgerApp, PubkeyAddressApp};
 use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, GetAddressOpts};
-use crate::sign::bip32::generate_pubkey;
 
 pub enum PrivateKeySource {
     Base(SecretKey),
@@ -203,7 +208,7 @@ impl PKType {
                     Some(password) => key.decrypt(password.as_str())?,
                 };
                 let key = SecretKey::from_slice(key.as_slice())
-                    .map_err(|e| VaultError::InvalidPrivateKey)?;
+                    .map_err(|_| VaultError::InvalidPrivateKey)?;
                 Ok(PrivateKeySource::Base(key))
             }
             PKType::SeedHd(seed) => {

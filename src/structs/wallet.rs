@@ -8,11 +8,10 @@ use crate::{
         types::HasUuid,
     },
 };
-use bitcoin::util::bip32::ExtendedPubKey;
 use chrono::{DateTime, Utc};
 use hdpath::{StandardHDPath, AccountHDPath};
 use regex::Regex;
-use std::{convert::TryFrom, str::FromStr};
+use std::str::FromStr;
 use uuid::Uuid;
 use num::range;
 use crate::blockchain::addresses::{AddressFromPub, AddressCast};
@@ -293,19 +292,12 @@ impl WalletEntry {
 mod tests {
     use crate::{
         blockchain::chains::Blockchain,
-        tests::{is_ledger_enabled, read_test_txes},
         storage::vault::VaultStorage,
         structs::{
-            crypto::Encrypted,
-            pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
             seed::{LedgerSource, Seed, SeedRef, SeedSource},
-            types::HasUuid,
             wallet::{EntryId, PKType, Wallet, WalletEntry},
         },
-        to_32bytes,
         EthereumAddress,
-        EthereumPrivateKey,
-        EthereumTransaction,
     };
     use chrono::Utc;
     use hdpath::StandardHDPath;

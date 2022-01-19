@@ -19,17 +19,15 @@ limitations under the License.
 //!
 
 use crate::{
-    blockchain::{EthereumPrivateKey, PRIVATE_KEY_BYTES},
     storage::error::VaultError,
 };
 use bitcoin::{
     network::constants::Network,
-    util::bip32::{DerivationPath, ExtendedPrivKey},
+    util::bip32::ExtendedPrivKey,
+    util::bip32::ExtendedPubKey,
 };
-use hdpath::{StandardHDPath, HDPath, CustomHDPath};
+use hdpath::HDPath;
 use secp256k1::Secp256k1;
-use std::convert::TryFrom;
-use bitcoin::util::bip32::{ChildNumber, ExtendedPubKey};
 use crate::sign::bitcoin::DEFAULT_SECP256K1;
 
 /// Generate `ExtendedPrivKey` using BIP32
@@ -54,9 +52,14 @@ pub fn generate_pubkey<P: HDPath>(path: &P, seed: &[u8]) -> Result<ExtendedPubKe
 
 #[cfg(test)]
 mod test {
+    use std::convert::TryFrom;
     use super::*;
-    use crate::blockchain::EthereumAddress;
-    use hdpath::Purpose;
+    use crate::blockchain::{
+        EthereumPrivateKey,
+        PRIVATE_KEY_BYTES,
+        EthereumAddress,
+    };
+    use hdpath::{Purpose, StandardHDPath};
     use hex::FromHex;
     use std::str::FromStr;
 

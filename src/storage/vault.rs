@@ -1,7 +1,6 @@
 use crate::{
     chains::Blockchain,
     convert::{error::ConversionError, json::keyfile::EthereumJsonV3File},
-    sign::bip32::generate_key,
     storage::{
         addressbook::AddressbookStorage,
         archive::{Archive, ArchiveType},
@@ -10,14 +9,11 @@ use crate::{
     structs::{
         book::AddressRef,
         pk::PrivateKeyHolder,
-        seed::{Seed, SeedRef, SeedSource},
+        seed::Seed,
         types::HasUuid,
         wallet::{PKType, Wallet, WalletEntry},
     },
-    EthereumAddress,
-    EthereumPrivateKey,
 };
-use hdpath::StandardHDPath;
 use regex::Regex;
 use std::{
     convert::{TryFrom, TryInto},
@@ -25,7 +21,6 @@ use std::{
     path::{Path, PathBuf},
     str::FromStr,
     sync::Arc,
-    time::SystemTime,
 };
 use uuid::Uuid;
 use crate::storage::vault_ethereum::AddEthereumEntry;
@@ -643,8 +638,6 @@ impl<P> VaultAccess<P> for StandardVaultFiles
 mod tests {
     use super::*;
     use crate::{
-        convert::json::keyfile::EthereumJsonV3File,
-        structs::pk::{EthereumPk3, PrivateKeyHolder},
         tests::{read_dir_fully, *},
     };
     use chrono::{TimeZone, Utc};

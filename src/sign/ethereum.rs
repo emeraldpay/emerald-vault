@@ -1,9 +1,16 @@
-use crate::{blockchain::chains::EthereumChainId, convert::json::keyfile::EthereumJsonV3File, sign::bip32::generate_key, storage::{error::VaultError, vault::VaultStorage}, structs::{
-    seed::SeedSource,
-    wallet::{EntryId, PKType, Wallet, WalletEntry},
-}, EthereumPrivateKey, EthereumTransaction, EthereumSignature};
+use crate::{
+    blockchain::chains::EthereumChainId,
+    convert::json::keyfile::EthereumJsonV3File,
+    storage::{error::VaultError, vault::VaultStorage},
+    structs::{
+        wallet::{PKType, WalletEntry},
+    },
+    EthereumPrivateKey,
+    EthereumTransaction,
+    EthereumSignature,
+};
 use hdpath::StandardHDPath;
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryFrom;
 use uuid::Uuid;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
@@ -88,7 +95,7 @@ impl WalletEntry {
                 EthereumJsonV3File::from_wallet(label, &key)
                     .map_err(|_| VaultError::InvalidPrivateKey)
             }
-            PKType::SeedHd(seed) => {
+            PKType::SeedHd(_) => {
                 let key = self.key.get_ethereum_pk(&vault, password.clone())?;
                 EthereumJsonV3File::from_pk(label, key, password.expect("Password is not set"))
                     .map_err(|_| VaultError::InvalidPrivateKey)

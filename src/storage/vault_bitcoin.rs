@@ -4,7 +4,7 @@ use crate::structs::seed::{Seed, SeedSource, SeedRef};
 use crate::structs::wallet::{Wallet, WalletEntry, PKType};
 use uuid::Uuid;
 use crate::storage::error::VaultError;
-use hdpath::{StandardHDPath, AccountHDPath, PathValue, HDPath};
+use hdpath::{AccountHDPath, PathValue};
 use crate::blockchain::chains::{Blockchain, BlockchainType};
 use bitcoin::util::bip32::{ExtendedPrivKey, ExtendedPubKey, DerivationPath};
 use crate::blockchain::bitcoin::{AddressType, XPub};
@@ -22,7 +22,6 @@ use emerald_hwkey::{
         }
     }
 };
-use std::borrow::Borrow;
 use crate::storage::entry::AddEntryOptions;
 
 pub struct AddBitcoinEntry {
@@ -153,7 +152,6 @@ mod tests {
     use tempdir::TempDir;
     use crate::storage::vault::VaultStorage;
     use crate::mnemonic::{Mnemonic, Language};
-    use std::convert::TryFrom;
     use crate::structs::wallet::ReservedPath;
     use std::str::FromStr;
     use crate::structs::seed::LedgerSource;
@@ -176,7 +174,7 @@ mod tests {
             ..Default::default()
         }).unwrap();
 
-        let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+        let _ = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
             seed_id,
             AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
             Blockchain::Bitcoin,
@@ -223,7 +221,7 @@ mod tests {
             ..Default::default()
         }).unwrap();
 
-        let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+        let _ = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
             seed_id,
             AccountHDPath::from_str("m/84'/1'/0'").unwrap(),
             Blockchain::BitcoinTestnet,
@@ -312,14 +310,14 @@ mod tests {
             ..Default::default()
         }).unwrap();
 
-        let entry_id = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+        let _ = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
             seed_id,
             AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
             Blockchain::Bitcoin,
             AddEntryOptions {
                 xpub: Some(
                     XPub::from_str(
-                    "zpub6rRF9XhDBRQSTqepDnwAPS5m3vMWTh7PGLy3DUKMKLtrmFonGeJjZGPh9zPQgp6uFz6yJ5t9b15aD6HiUMmaAds1M7pUYxsMVE5CPD6TWUL"
+                        "zpub6rRF9XhDBRQSTqepDnwAPS5m3vMWTh7PGLy3DUKMKLtrmFonGeJjZGPh9zPQgp6uFz6yJ5t9b15aD6HiUMmaAds1M7pUYxsMVE5CPD6TWUL"
                     ).unwrap()),
                 ..AddEntryOptions::default()
             },

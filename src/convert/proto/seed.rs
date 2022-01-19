@@ -251,7 +251,6 @@ mod tests {
             label: Some("Hello World!".to_string()),
             created_at: Utc::now(),
         };
-        let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 
@@ -268,7 +267,6 @@ mod tests {
             label: Some("".to_string()),
             created_at: Utc::now(),
         };
-        let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 
@@ -285,7 +283,6 @@ mod tests {
             label: Some("Hello World!".to_string()),
             created_at: Utc.timestamp_millis(1592624592679),
         };
-        let seed_id = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 
