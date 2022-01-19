@@ -80,7 +80,7 @@ impl EthereumTransaction {
         rlp.append(&trim_bytes(&sig.s[..]));
 
         rlp.finalize_unbounded_list();
-        rlp.out()
+        rlp.out().to_vec()
     }
 
     /// RLP packed transaction
@@ -88,7 +88,7 @@ impl EthereumTransaction {
         // let mut buf = Vec::new();
         let mut rlp = self.to_rlp_raw(chain_id);
         rlp.finalize_unbounded_list();
-        rlp.out()
+        rlp.out().to_vec()
     }
 
     fn to_rlp_raw(&self, chain_id: Option<u8>) -> RlpStream {

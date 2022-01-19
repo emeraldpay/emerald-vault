@@ -51,7 +51,7 @@ impl From<&XPub> for proto_Bip32Public {
         result.set_address_type(xpub.address_type.into());
         result.set_network(match xpub.value.network {
             Network::Bitcoin => proto_BlockchainId::CHAIN_BITCOIN,
-            Network::Testnet | Network::Regtest => proto_BlockchainId::CHAIN_TESTNET_BITCOIN,
+            Network::Testnet | Network::Regtest | Network::Signet => proto_BlockchainId::CHAIN_TESTNET_BITCOIN,
         });
         result
     }

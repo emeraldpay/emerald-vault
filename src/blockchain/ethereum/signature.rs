@@ -95,7 +95,7 @@ impl EthereumPrivateKey {
     }
 
     /// Generate a new `PrivateKey` with given custom random generator
-    pub fn gen_custom<R: Rng + ?Sized>(rng: &mut R) -> Self {
+    pub fn gen_custom<R: Rng + ?Sized + secp256k1::rand::RngCore>(rng: &mut R) -> Self {
         EthereumPrivateKey::from(SecretKey::new(rng))
     }
 

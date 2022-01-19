@@ -29,7 +29,7 @@ use bitcoin::{
 use hdpath::{StandardHDPath, HDPath, CustomHDPath};
 use secp256k1::Secp256k1;
 use std::convert::TryFrom;
-use bitcoin::util::bip32::ExtendedPubKey;
+use bitcoin::util::bip32::{ChildNumber, ExtendedPubKey};
 use crate::sign::bitcoin::DEFAULT_SECP256K1;
 
 /// Generate `ExtendedPrivKey` using BIP32

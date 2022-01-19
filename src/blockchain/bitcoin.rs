@@ -191,7 +191,7 @@ impl AddressType {
     pub fn get_hd_path(&self, account: u32, network: &Network) -> AccountHDPath {
         let coin_type = match network {
             Network::Bitcoin => 0,
-            Network::Testnet | Network::Regtest => 1
+            Network::Testnet | Network::Regtest | Network::Signet => 1
         };
         match self {
             AddressType::P2PKH | AddressType::P2SH =>

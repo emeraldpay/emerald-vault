@@ -19,40 +19,40 @@ path = "src/lib.rs"
 #crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-time = "0.2.16"
-futures = "0.3.5"
+time = "0.3.5"
+futures = "0.3.19"
 lazy_static = "1.0"
-log = "0.4.8"
-regex = "1.3.9"
-hex = "0.4.2"
+log = "0.4.14"
+regex = "1.5.4"
+hex = "0.4.3"
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 glob = "0.3.0"
-uuid = { version = "0.8.1", features = ["serde", "v4"] }
-secp256k1 = { version = "0.19.0", features = ["rand", "recovery"] }
+uuid = { version = "0.8.2", features = ["serde", "v4"] }
+secp256k1 = { version = "0.20.3", features = ["rand", "recovery"] }
 # used by secp
 rand = "0.6.5"
-getrandom = "0.1.14"
-byteorder = "1.3.4"
+getrandom = "0.2.4"
+byteorder = "1.4.3"
 ethabi = "2.0.0"
 num = "0.3.0"
-bitcoin = "0.25.0"
-aes-ctr = "0.4.0"
-sha2 = "0.9.1"
-sha3 = "0.9.1"
-pbkdf2 = "0.4.0"
+bitcoin = "0.27.1"
+aes-ctr = "0.6.0"
+sha2 = "0.10.1"
+sha3 = "0.10.0"
+pbkdf2 = "0.10.0"
 scrypt = "0.4.1"
-hmac = "0.8.1"
+hmac = "0.12.0"
 hyper = { version = "0.12", optional = true }
 clippy = { version = "0.0", optional = true }
 chrono = "0.4.13"
 protobuf = { version = "= 2.8.1", features = ["with-bytes"] }
-enum-display-derive = "0.1.0"
-fs_extra = "1.1.0"
-csv = "1.1.3"
-base64 = "0.12.3"
-rlp = "0.4.5"
+enum-display-derive = "0.1.1"
+fs_extra = "1.2.0"
+csv = "1.1.6"
+base64 = "0.13.0"
+rlp = "0.5.1"
 hdpath = { version = "0.6", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
 bitcoin_hashes = "0.9.0"

@@ -3,9 +3,9 @@ use crate::{
     keccak256,
     structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, ScryptKdf},
 };
-use aes_ctr::{
-    stream_cipher::{generic_array::GenericArray, NewStreamCipher, SyncStreamCipher},
-    Aes128Ctr,
+use aes_ctr::Aes128Ctr;
+use aes_ctr::cipher::{
+    stream::{generic_array::GenericArray, NewStreamCipher, SyncStreamCipher},
 };
 use rand::{prelude::Rng, thread_rng};
 use std::convert::TryFrom;
