@@ -337,7 +337,7 @@ mod tests {
                 assert_eq!(xpub.to_string(), "zpub6rRF9XhDBRQSTqepDnwAPS5m3vMWTh7PGLy3DUKMKLtrmFonGeJjZGPh9zPQgp6uFz6yJ5t9b15aD6HiUMmaAds1M7pUYxsMVE5CPD6TWUL".to_string())
             }
             _ => {
-                panic!("not xpub")
+                assert!(false, "not xpub")
             }
         }
     }
@@ -345,31 +345,36 @@ mod tests {
     #[test]
     fn cannot_create_with_wrong_chain_xpub() {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
-        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+        let vault = VaultStorage::create(tmp_dir.path()).expect("Vault not initialized");
 
         let seed_id = vault.seeds().add(Seed {
             source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] }),
             ..Default::default()
-        }).unwrap();
+        }).expect("No seed_id");
 
         let wallet_id = vault.wallets().add(Wallet {
             ..Default::default()
-        }).unwrap();
+        }).expect("No wallet_id");
 
         // xpub is for mainnet, but blockchain is testnet
 
-        let added = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
-            seed_id,
-            AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
-            Blockchain::BitcoinTestnet,
-            AddEntryOptions {
-                xpub: Some(
-                    XPub::from_str(
-                        "zpub6rRF9XhDBRQSTqepDnwAPS5m3vMWTh7PGLy3DUKMKLtrmFonGeJjZGPh9zPQgp6uFz6yJ5t9b15aD6HiUMmaAds1M7pUYxsMVE5CPD6TWUL"
-                    ).unwrap()),
-                ..AddEntryOptions::default()
-            },
-        );
+        let account = AccountHDPath::from_str("m/84'/0'/3'").expect("Invalid account hd");
+        let xpub = XPub::from_str(
+            "zpub6rRF9XhDBRQSTqepDnwAPS5m3vMWTh7PGLy3DUKMKLtrmFonGeJjZGPh9zPQgp6uFz6yJ5t9b15aD6HiUMmaAds1M7pUYxsMVE5CPD6TWUL"
+        ).expect("Invalid XPub");
+        let add_entry_opts = AddEntryOptions {
+            xpub: Some(xpub),
+            ..AddEntryOptions::default()
+        };
+
+        let added = vault
+            .add_bitcoin_entry(wallet_id.clone())
+            .seed_hd(
+                seed_id,
+                account,
+                Blockchain::BitcoinTestnet,
+                add_entry_opts,
+            );
 
         assert_eq!(added.err(), Some(VaultError::IncorrectBlockchainError));
     }
