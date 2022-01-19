@@ -44,10 +44,6 @@ sha3 = "0.9.1"
 pbkdf2 = "0.4.0"
 scrypt = "0.4.1"
 hmac = "0.8.1"
-# rocksdb 0.12.2 is the last one which compiles on macOS with -C target-feature=+crt-static
-rocksdb = { version = "= 0.12.2", default-features = false, features = ["snappy"] }
-# version 5.18.4 doesn't compile on mac
-librocksdb-sys = "= 5.18.3"
 hyper = { version = "0.12", optional = true }
 clippy = { version = "0.0", optional = true }
 chrono = "0.4.13"

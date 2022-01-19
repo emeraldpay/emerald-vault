@@ -2,7 +2,7 @@ pub mod source;
 pub mod types;
 
 use crate::migration::{
-    source::{v1::V1Storage, v2::V2Storage},
+    source::{v1::V1Storage},
     types::Migrate,
 };
 use std::path::{Path, PathBuf};
@@ -19,11 +19,10 @@ where
         error!("Failed to migrate from Vault V1 {:?}", migrated_v1.err())
     }
 
-    let mut migration_v2 = V2Storage::create(path.clone());
-    let migrated_v2 = migration_v2.migrate(path.clone());
-    if migrated_v2.is_err() {
-        error!("Failed to migrate from Vault V1 {:?}", migrated_v2.err())
-    }
+    //
+    // V2 is skipped as too heavy.
+    // The migration was supported by Emerald Wallet v2.2.0-v2.5.x
+    //
 }
 
 #[cfg(test)]

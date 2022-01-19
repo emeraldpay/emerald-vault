@@ -46,7 +46,6 @@ extern crate pbkdf2;
 extern crate protobuf;
 extern crate rand;
 extern crate regex;
-extern crate rocksdb;
 extern crate scrypt;
 extern crate secp256k1;
 extern crate serde;
