@@ -53,6 +53,19 @@ openssl pkgconfig rustc cargo clang
 
 Should your distribution or operating system not have a recent `cargo` and `rustc` binaries, you can install them from http://doc.crates.io/
 
+Install Protobuf codegen for Rust: https://github.com/stepancheg/rust-protobuf/tree/master/protobuf-codegen
+
+.Generate Rust code from Protobuf
+----
+protoc --rust_out=src/proto --proto_path=./proto address.proto
+protoc --rust_out=src/proto --proto_path=./proto book.proto
+protoc --rust_out=src/proto --proto_path=./proto common.proto
+protoc --rust_out=src/proto --proto_path=./proto crypto.proto
+protoc --rust_out=src/proto --proto_path=./proto pk.proto
+protoc --rust_out=src/proto --proto_path=./proto seed.proto
+protoc --rust_out=src/proto --proto_path=./proto wallet.proto
+----
+
 [source]
 ----
 cargo build
