@@ -20,3 +20,10 @@ impl From<scrypt::errors::InvalidOutputLen> for CryptoError {
         CryptoError::InvalidParams
     }
 }
+
+impl From<argon2::Error> for CryptoError {
+    fn from(_: argon2::Error) -> Self {
+        CryptoError::InvalidParams
+    }
+}
+

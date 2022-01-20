@@ -6,6 +6,7 @@ use hmac::Hmac;
 use pbkdf2::pbkdf2;
 use scrypt::{scrypt, ScryptParams};
 use sha2::{Sha256, Sha512};
+use crate::structs::crypto::Argon2;
 
 /// Key Derivation source
 pub trait KeyDerive {
@@ -37,11 +38,30 @@ impl KeyDerive for ScryptKdf {
     }
 }
 
+impl KeyDerive for Argon2 {
+    fn derive(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
+        let kdf = argon2::Argon2::new(
+            argon2::Algorithm::Argon2id,
+            argon2::Version::default(),
+            argon2::Params::new(
+                self.mem,
+                self.iterations,
+                self.parallel,
+                Some(32),
+            )?,
+        );
+        let mut key = vec![0u8; 32];
+        kdf.hash_password_into(password.as_bytes(), self.salt.as_slice(), &mut key)?;
+        Ok(key)
+    }
+}
+
 impl KeyDerive for Kdf {
     fn derive(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
         match &self {
             Kdf::Scrypt(v) => v.derive(password),
             Kdf::Pbkdf2(v) => v.derive(password),
+            Kdf::Argon2(v) => v.derive(password),
         }
     }
 }
@@ -54,6 +74,17 @@ impl ScryptKdf {
             n: 8192,
             r: 8,
             p: 1,
+        }
+    }
+}
+
+impl Argon2 {
+    pub fn create_with_salt(salt: Vec<u8>) -> Self {
+        Argon2 {
+            mem: 4096,
+            iterations: 4,
+            parallel: 4,
+            salt,
         }
     }
 }
@@ -243,6 +274,18 @@ mod tests {
         assert_eq!(
             hex::encode(kdf.derive("test12345678").unwrap()),
             "04b4115dc5134213bf6d2af6632b9f0352777f40fdaa4543bccd7d4573f52868"
+        );
+    }
+
+    #[test]
+    fn derive_argon2() {
+        let kdf = Argon2::create_with_salt(
+            hex::decode("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4").unwrap()
+        );
+
+        assert_eq!(
+            hex::encode(kdf.derive("1234567890").unwrap()),
+            "9e56e4faa4b75909c74e4e3e73726254864411542a04dc236f712b7801b651a4"
         );
     }
 }

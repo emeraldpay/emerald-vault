@@ -359,7 +359,7 @@ impl EthereumJsonV3File {
         pk: EthereumPrivateKey,
         password: String,
     ) -> Result<EthereumJsonV3File, CryptoError> {
-        let encrypted = Encrypted::encrypt(pk.to_vec(), password.as_str())?;
+        let encrypted = Encrypted::encrypt_ethereum(pk.to_vec(), password.as_str())?;
         let crypto = CoreCryptoJson::try_from(&encrypted)
             .map_err(|_| CryptoError::UnsupportedSource("encrypted format".to_string()))?;
         let result = EthereumJsonV3File {
@@ -427,6 +427,7 @@ impl TryFrom<&Encrypted> for CoreCryptoJson {
                         r: value.r,
                         p: value.p,
                     },
+                    Kdf::Argon2(_) => return Err(ConversionError::UnsupportedFormat)
                 };
                 let mac = match &cipher.mac {
                     MacType::Web3(v) => v.clone(),
@@ -443,6 +444,7 @@ impl TryFrom<&Encrypted> for CoreCryptoJson {
                         salt: hex::encode(match &value.kdf {
                             Kdf::Pbkdf2(v) => v.salt.clone(),
                             Kdf::Scrypt(v) => v.salt.clone(),
+                            Kdf::Argon2(_) => return Err(ConversionError::UnsupportedFormat)
                         }),
                     },
                     mac: hex::encode(mac),

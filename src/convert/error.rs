@@ -13,6 +13,7 @@ pub enum ConversionError {
     /// value  is the field name
     UnsupportedValue(String),
     UnsupportedVersion,
+    UnsupportedFormat,
     InvalidHex,
     InvalidBase58,
     CSVError,

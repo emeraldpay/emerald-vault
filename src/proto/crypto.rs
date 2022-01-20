@@ -288,7 +288,7 @@ impl ::protobuf::Message for ScryptKdf {
             ::protobuf::reflect::MessageDescriptor::new_pb_name::<ScryptKdf>(
                 "ScryptKdf",
                 fields,
-                file_descriptor_proto(),
+                file_descriptor_proto()
             )
         })
     }
@@ -549,7 +549,7 @@ impl ::protobuf::Message for Pbkdf2 {
             ::protobuf::reflect::MessageDescriptor::new_pb_name::<Pbkdf2>(
                 "Pbkdf2",
                 fields,
-                file_descriptor_proto(),
+                file_descriptor_proto()
             )
         })
     }
@@ -582,7 +582,271 @@ impl ::protobuf::reflect::ProtobufValue for Pbkdf2 {
     }
 }
 
-#[derive(PartialEq,Clone,Default)]
+#[derive(PartialEq, Clone, Default)]
+pub struct Argon2 {
+    // message fields
+    pub mem: u32,
+    pub iterations: u32,
+    pub parallel: u32,
+    pub salt: ::std::vec::Vec<u8>,
+    // special fields
+    pub unknown_fields: ::protobuf::UnknownFields,
+    pub cached_size: ::protobuf::CachedSize,
+}
+
+impl<'a> ::std::default::Default for &'a Argon2 {
+    fn default() -> &'a Argon2 {
+        <Argon2 as ::protobuf::Message>::default_instance()
+    }
+}
+
+impl Argon2 {
+    pub fn new() -> Argon2 {
+        ::std::default::Default::default()
+    }
+
+    // uint32 mem = 1;
+
+
+    pub fn get_mem(&self) -> u32 {
+        self.mem
+    }
+    pub fn clear_mem(&mut self) {
+        self.mem = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_mem(&mut self, v: u32) {
+        self.mem = v;
+    }
+
+    // uint32 iterations = 2;
+
+
+    pub fn get_iterations(&self) -> u32 {
+        self.iterations
+    }
+    pub fn clear_iterations(&mut self) {
+        self.iterations = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_iterations(&mut self, v: u32) {
+        self.iterations = v;
+    }
+
+    // uint32 parallel = 3;
+
+
+    pub fn get_parallel(&self) -> u32 {
+        self.parallel
+    }
+    pub fn clear_parallel(&mut self) {
+        self.parallel = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_parallel(&mut self, v: u32) {
+        self.parallel = v;
+    }
+
+    // bytes salt = 4;
+
+
+    pub fn get_salt(&self) -> &[u8] {
+        &self.salt
+    }
+    pub fn clear_salt(&mut self) {
+        self.salt.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_salt(&mut self, v: ::std::vec::Vec<u8>) {
+        self.salt = v;
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_salt(&mut self) -> &mut ::std::vec::Vec<u8> {
+        &mut self.salt
+    }
+
+    // Take field
+    pub fn take_salt(&mut self) -> ::std::vec::Vec<u8> {
+        ::std::mem::replace(&mut self.salt, ::std::vec::Vec::new())
+    }
+}
+
+impl ::protobuf::Message for Argon2 {
+    fn is_initialized(&self) -> bool {
+        true
+    }
+
+    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        while !is.eof()? {
+            let (field_number, wire_type) = is.read_tag_unpack()?;
+            match field_number {
+                1 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint32()?;
+                    self.mem = tmp;
+                },
+                2 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint32()?;
+                    self.iterations = tmp;
+                },
+                3 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint32()?;
+                    self.parallel = tmp;
+                },
+                4 => {
+                    ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.salt)?;
+                },
+                _ => {
+                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
+                },
+            };
+        }
+        ::std::result::Result::Ok(())
+    }
+
+    // Compute sizes of nested messages
+    #[allow(unused_variables)]
+    fn compute_size(&self) -> u32 {
+        let mut my_size = 0;
+        if self.mem != 0 {
+            my_size += ::protobuf::rt::value_size(1, self.mem, ::protobuf::wire_format::WireTypeVarint);
+        }
+        if self.iterations != 0 {
+            my_size += ::protobuf::rt::value_size(2, self.iterations, ::protobuf::wire_format::WireTypeVarint);
+        }
+        if self.parallel != 0 {
+            my_size += ::protobuf::rt::value_size(3, self.parallel, ::protobuf::wire_format::WireTypeVarint);
+        }
+        if !self.salt.is_empty() {
+            my_size += ::protobuf::rt::bytes_size(4, &self.salt);
+        }
+        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
+        self.cached_size.set(my_size);
+        my_size
+    }
+
+    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        if self.mem != 0 {
+            os.write_uint32(1, self.mem)?;
+        }
+        if self.iterations != 0 {
+            os.write_uint32(2, self.iterations)?;
+        }
+        if self.parallel != 0 {
+            os.write_uint32(3, self.parallel)?;
+        }
+        if !self.salt.is_empty() {
+            os.write_bytes(4, &self.salt)?;
+        }
+        os.write_unknown_fields(self.get_unknown_fields())?;
+        ::std::result::Result::Ok(())
+    }
+
+    fn get_cached_size(&self) -> u32 {
+        self.cached_size.get()
+    }
+
+    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
+        &self.unknown_fields
+    }
+
+    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
+        &mut self.unknown_fields
+    }
+
+    fn as_any(&self) -> &dyn (::std::any::Any) {
+        self as &dyn (::std::any::Any)
+    }
+    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
+        self as &mut dyn (::std::any::Any)
+    }
+    fn into_any(self: ::std::boxed::Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
+        self
+    }
+
+    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
+        Self::descriptor_static()
+    }
+
+    fn new() -> Argon2 {
+        Argon2::new()
+    }
+
+    fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
+        static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::MessageDescriptor> = ::protobuf::rt::LazyV2::INIT;
+        descriptor.get(|| {
+            let mut fields = ::std::vec::Vec::new();
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
+                "mem",
+                |m: &Argon2| { &m.mem },
+                |m: &mut Argon2| { &mut m.mem },
+            ));
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
+                "iterations",
+                |m: &Argon2| { &m.iterations },
+                |m: &mut Argon2| { &mut m.iterations },
+            ));
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint32>(
+                "parallel",
+                |m: &Argon2| { &m.parallel },
+                |m: &mut Argon2| { &mut m.parallel },
+            ));
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBytes>(
+                "salt",
+                |m: &Argon2| { &m.salt },
+                |m: &mut Argon2| { &mut m.salt },
+            ));
+            ::protobuf::reflect::MessageDescriptor::new_pb_name::<Argon2>(
+                "Argon2",
+                fields,
+                file_descriptor_proto(),
+            )
+        })
+    }
+
+    fn default_instance() -> &'static Argon2 {
+        static instance: ::protobuf::rt::LazyV2<Argon2> = ::protobuf::rt::LazyV2::INIT;
+        instance.get(Argon2::new)
+    }
+}
+
+impl ::protobuf::Clear for Argon2 {
+    fn clear(&mut self) {
+        self.mem = 0;
+        self.iterations = 0;
+        self.parallel = 0;
+        self.salt.clear();
+        self.unknown_fields.clear();
+    }
+}
+
+impl ::std::fmt::Debug for Argon2 {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        ::protobuf::text_format::fmt(self, f)
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for Argon2 {
+    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
+        ::protobuf::reflect::ReflectValueRef::Message(self)
+    }
+}
+
+#[derive(PartialEq, Clone, Default)]
 pub struct Encrypted {
     // message fields
     pub field_type: Encrypted_CipherType,
@@ -606,6 +870,7 @@ impl<'a> ::std::default::Default for &'a Encrypted {
 pub enum Encrypted_oneof_kdf_type {
     kdf_scrypt(ScryptKdf),
     kdf_pbkdf(Pbkdf2),
+    kdf_argon(Argon2),
 }
 
 impl Encrypted {
@@ -810,6 +1075,54 @@ impl Encrypted {
             Pbkdf2::new()
         }
     }
+
+    // .emerald.vault.Argon2 kdf_argon = 7;
+
+
+    pub fn get_kdf_argon(&self) -> &Argon2 {
+        match self.kdf_type {
+            ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_argon(ref v)) => v,
+            _ => <Argon2 as ::protobuf::Message>::default_instance(),
+        }
+    }
+    pub fn clear_kdf_argon(&mut self) {
+        self.kdf_type = ::std::option::Option::None;
+    }
+
+    pub fn has_kdf_argon(&self) -> bool {
+        match self.kdf_type {
+            ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_argon(..)) => true,
+            _ => false,
+        }
+    }
+
+    // Param is passed by value, moved
+    pub fn set_kdf_argon(&mut self, v: Argon2) {
+        self.kdf_type = ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_argon(v))
+    }
+
+    // Mutable pointer to the field.
+    pub fn mut_kdf_argon(&mut self) -> &mut Argon2 {
+        if let ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_argon(_)) = self.kdf_type {} else {
+            self.kdf_type = ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_argon(Argon2::new()));
+        }
+        match self.kdf_type {
+            ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_argon(ref mut v)) => v,
+            _ => panic!(),
+        }
+    }
+
+    // Take field
+    pub fn take_kdf_argon(&mut self) -> Argon2 {
+        if self.has_kdf_argon() {
+            match self.kdf_type.take() {
+                ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_argon(v)) => v,
+                _ => panic!(),
+            }
+        } else {
+            Argon2::new()
+        }
+    }
 }
 
 impl ::protobuf::Message for Encrypted {
@@ -825,6 +1138,11 @@ impl ::protobuf::Message for Encrypted {
             }
         }
         if let Some(Encrypted_oneof_kdf_type::kdf_pbkdf(ref v)) = self.kdf_type {
+            if !v.is_initialized() {
+                return false;
+            }
+        }
+        if let Some(Encrypted_oneof_kdf_type::kdf_argon(ref v)) = self.kdf_type {
             if !v.is_initialized() {
                 return false;
             }
@@ -859,6 +1177,12 @@ impl ::protobuf::Message for Encrypted {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
                     self.kdf_type = ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_pbkdf(is.read_message()?));
+                },
+                7 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeLengthDelimited {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    self.kdf_type = ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_argon(is.read_message()?));
                 },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
@@ -895,6 +1219,10 @@ impl ::protobuf::Message for Encrypted {
                     let len = v.compute_size();
                     my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
                 },
+                &Encrypted_oneof_kdf_type::kdf_argon(ref v) => {
+                    let len = v.compute_size();
+                    my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
+                },
             };
         }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
@@ -926,6 +1254,11 @@ impl ::protobuf::Message for Encrypted {
                 },
                 &Encrypted_oneof_kdf_type::kdf_pbkdf(ref v) => {
                     os.write_tag(6, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+                    os.write_raw_varint32(v.get_cached_size())?;
+                    v.write_to_with_cached_sizes(os)?;
+                },
+                &Encrypted_oneof_kdf_type::kdf_argon(ref v) => {
+                    os.write_tag(7, ::protobuf::wire_format::WireTypeLengthDelimited)?;
                     os.write_raw_varint32(v.get_cached_size())?;
                     v.write_to_with_cached_sizes(os)?;
                 },
@@ -999,6 +1332,11 @@ impl ::protobuf::Message for Encrypted {
                 Encrypted::has_kdf_pbkdf,
                 Encrypted::get_kdf_pbkdf,
             ));
+            fields.push(::protobuf::reflect::accessor::make_singular_message_accessor::<_, Argon2>(
+                "kdf_argon",
+                Encrypted::has_kdf_argon,
+                Encrypted::get_kdf_argon,
+            ));
             ::protobuf::reflect::MessageDescriptor::new_pb_name::<Encrypted>(
                 "Encrypted",
                 fields,
@@ -1019,6 +1357,7 @@ impl ::protobuf::Clear for Encrypted {
         self.secret.clear();
         self.iv.clear();
         self.mac.clear();
+        self.kdf_type = ::std::option::Option::None;
         self.kdf_type = ::std::option::Option::None;
         self.kdf_type = ::std::option::Option::None;
         self.unknown_fields.clear();
@@ -1246,7 +1585,7 @@ impl ::protobuf::Message for Mac {
             ::protobuf::reflect::MessageDescriptor::new_pb_name::<Mac>(
                 "Mac",
                 fields,
-                file_descriptor_proto(),
+                file_descriptor_proto()
             )
         })
     }
@@ -1384,90 +1723,108 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     \x20\x01(\rR\x01r\x12\x0c\n\x01p\x18\x05\x20\x01(\rR\x01p\"j\n\x06Pbkdf2\
     \x12\x14\n\x05dklen\x18\x01\x20\x01(\rR\x05dklen\x12\x0c\n\x01c\x18\x02\
     \x20\x01(\rR\x01c\x12(\n\x03prf\x18\x03\x20\x01(\x0e2\x16.emerald.vault.\
-    PrfTypeR\x03prf\x12\x12\n\x04salt\x18\x04\x20\x01(\x0cR\x04salt\"\xc8\
+    PrfTypeR\x03prf\x12\x12\n\x04salt\x18\x04\x20\x01(\x0cR\x04salt\"j\n\x06\
+    Argon2\x12\x10\n\x03mem\x18\x01\x20\x01(\rR\x03mem\x12\x1e\n\niterations\
+    \x18\x02\x20\x01(\rR\niterations\x12\x1a\n\x08parallel\x18\x03\x20\x01(\
+    \rR\x08parallel\x12\x12\n\x04salt\x18\x04\x20\x01(\x0cR\x04salt\"\xfe\
     \x02\n\tEncrypted\x127\n\x04type\x18\x01\x20\x01(\x0e2#.emerald.vault.En\
     crypted.CipherTypeR\x04type\x12\x16\n\x06secret\x18\x02\x20\x01(\x0cR\
     \x06secret\x12\x0e\n\x02iv\x18\x03\x20\x01(\x0cR\x02iv\x12$\n\x03mac\x18\
     \x04\x20\x01(\x0b2\x12.emerald.vault.MacR\x03mac\x129\n\nkdf_scrypt\x18\
     \x05\x20\x01(\x0b2\x18.emerald.vault.ScryptKdfH\0R\tkdfScrypt\x124\n\tkd\
-    f_pbkdf\x18\x06\x20\x01(\x0b2\x15.emerald.vault.Pbkdf2H\0R\x08kdfPbkdf\"\
-    7\n\nCipherType\x12\x12\n\x0eCIPHER_UNKNOWN\x10\0\x12\x15\n\x11CIPHER_AE\
-    S128_CTR\x10\x01B\n\n\x08kdf_type\"u\n\x03Mac\x12.\n\x04type\x18\x01\x20\
-    \x01(\x0e2\x1a.emerald.vault.Mac.MacTypeR\x04type\x12\x14\n\x05value\x18\
-    \x02\x20\x01(\x0cR\x05value\"(\n\x07MacType\x12\x0f\n\x0bMAC_UNKNOWN\x10\
-    \0\x12\x0c\n\x08MAC_WEB3\x10\x01*/\n\x07PrfType\x12\x0f\n\x0bPRF_UNKNOWN\
-    \x10\0\x12\x13\n\x0fPRF_HMAC_SHA256\x10\x01J\x9d\x0b\n\x06\x12\x04\0\0/\
-    \x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\
-    \n\n\x02\x04\0\x12\x04\x03\0\t\x01\n\n\n\x03\x04\0\x01\x12\x03\x03\x08\
-    \x11\n\x0b\n\x04\x04\0\x02\0\x12\x03\x04\x04\x15\n\x0c\n\x05\x04\0\x02\0\
-    \x05\x12\x03\x04\x04\n\n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\x04\x0b\x10\n\
-    \x0c\n\x05\x04\0\x02\0\x03\x12\x03\x04\x13\x14\n\x0b\n\x04\x04\0\x02\x01\
-    \x12\x03\x05\x04\x13\n\x0c\n\x05\x04\0\x02\x01\x05\x12\x03\x05\x04\t\n\
-    \x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x05\n\x0e\n\x0c\n\x05\x04\0\x02\x01\
-    \x03\x12\x03\x05\x11\x12\n\x0b\n\x04\x04\0\x02\x02\x12\x03\x06\x04\x11\n\
-    \x0c\n\x05\x04\0\x02\x02\x05\x12\x03\x06\x04\n\n\x0c\n\x05\x04\0\x02\x02\
-    \x01\x12\x03\x06\x0b\x0c\n\x0c\n\x05\x04\0\x02\x02\x03\x12\x03\x06\x0f\
-    \x10\n\x0b\n\x04\x04\0\x02\x03\x12\x03\x07\x04\x11\n\x0c\n\x05\x04\0\x02\
-    \x03\x05\x12\x03\x07\x04\n\n\x0c\n\x05\x04\0\x02\x03\x01\x12\x03\x07\x0b\
-    \x0c\n\x0c\n\x05\x04\0\x02\x03\x03\x12\x03\x07\x0f\x10\n\x0b\n\x04\x04\0\
-    \x02\x04\x12\x03\x08\x04\x11\n\x0c\n\x05\x04\0\x02\x04\x05\x12\x03\x08\
-    \x04\n\n\x0c\n\x05\x04\0\x02\x04\x01\x12\x03\x08\x0b\x0c\n\x0c\n\x05\x04\
-    \0\x02\x04\x03\x12\x03\x08\x0f\x10\n\n\n\x02\x04\x01\x12\x04\x0b\0\x10\
-    \x01\n\n\n\x03\x04\x01\x01\x12\x03\x0b\x08\x0e\n\x0b\n\x04\x04\x01\x02\0\
-    \x12\x03\x0c\x04\x15\n\x0c\n\x05\x04\x01\x02\0\x05\x12\x03\x0c\x04\n\n\
-    \x0c\n\x05\x04\x01\x02\0\x01\x12\x03\x0c\x0b\x10\n\x0c\n\x05\x04\x01\x02\
-    \0\x03\x12\x03\x0c\x13\x14\n\x0b\n\x04\x04\x01\x02\x01\x12\x03\r\x04\x11\
-    \n\x0c\n\x05\x04\x01\x02\x01\x05\x12\x03\r\x04\n\n\x0c\n\x05\x04\x01\x02\
-    \x01\x01\x12\x03\r\x0b\x0c\n\x0c\n\x05\x04\x01\x02\x01\x03\x12\x03\r\x0f\
-    \x10\n\x0b\n\x04\x04\x01\x02\x02\x12\x03\x0e\x04\x14\n\x0c\n\x05\x04\x01\
-    \x02\x02\x06\x12\x03\x0e\x04\x0b\n\x0c\n\x05\x04\x01\x02\x02\x01\x12\x03\
-    \x0e\x0c\x0f\n\x0c\n\x05\x04\x01\x02\x02\x03\x12\x03\x0e\x12\x13\n\x0b\n\
-    \x04\x04\x01\x02\x03\x12\x03\x0f\x04\x13\n\x0c\n\x05\x04\x01\x02\x03\x05\
-    \x12\x03\x0f\x04\t\n\x0c\n\x05\x04\x01\x02\x03\x01\x12\x03\x0f\n\x0e\n\
-    \x0c\n\x05\x04\x01\x02\x03\x03\x12\x03\x0f\x11\x12\n\n\n\x02\x05\0\x12\
-    \x04\x12\0\x15\x01\n\n\n\x03\x05\0\x01\x12\x03\x12\x05\x0c\n\x0b\n\x04\
-    \x05\0\x02\0\x12\x03\x13\x04\x14\n\x0c\n\x05\x05\0\x02\0\x01\x12\x03\x13\
-    \x04\x0f\n\x0c\n\x05\x05\0\x02\0\x02\x12\x03\x13\x12\x13\n\x0b\n\x04\x05\
-    \0\x02\x01\x12\x03\x14\x04\x18\n\x0c\n\x05\x05\0\x02\x01\x01\x12\x03\x14\
-    \x04\x13\n\x0c\n\x05\x05\0\x02\x01\x02\x12\x03\x14\x16\x17\n\n\n\x02\x04\
-    \x02\x12\x04\x17\0%\x01\n\n\n\x03\x04\x02\x01\x12\x03\x17\x08\x11\n\x0b\
-    \n\x04\x04\x02\x02\0\x12\x03\x18\x04\x18\n\x0c\n\x05\x04\x02\x02\0\x06\
-    \x12\x03\x18\x04\x0e\n\x0c\n\x05\x04\x02\x02\0\x01\x12\x03\x18\x0f\x13\n\
-    \x0c\n\x05\x04\x02\x02\0\x03\x12\x03\x18\x16\x17\n\x0b\n\x04\x04\x02\x02\
-    \x01\x12\x03\x19\x04\x15\n\x0c\n\x05\x04\x02\x02\x01\x05\x12\x03\x19\x04\
-    \t\n\x0c\n\x05\x04\x02\x02\x01\x01\x12\x03\x19\n\x10\n\x0c\n\x05\x04\x02\
-    \x02\x01\x03\x12\x03\x19\x13\x14\n\x0b\n\x04\x04\x02\x02\x02\x12\x03\x1a\
-    \x04\x11\n\x0c\n\x05\x04\x02\x02\x02\x05\x12\x03\x1a\x04\t\n\x0c\n\x05\
-    \x04\x02\x02\x02\x01\x12\x03\x1a\n\x0c\n\x0c\n\x05\x04\x02\x02\x02\x03\
-    \x12\x03\x1a\x0f\x10\n\x0b\n\x04\x04\x02\x02\x03\x12\x03\x1b\x04\x10\n\
-    \x0c\n\x05\x04\x02\x02\x03\x06\x12\x03\x1b\x04\x07\n\x0c\n\x05\x04\x02\
-    \x02\x03\x01\x12\x03\x1b\x08\x0b\n\x0c\n\x05\x04\x02\x02\x03\x03\x12\x03\
-    \x1b\x0e\x0f\n\x0c\n\x04\x04\x02\x08\0\x12\x04\x1c\x04\x1f\x05\n\x0c\n\
-    \x05\x04\x02\x08\0\x01\x12\x03\x1c\n\x12\n\x0b\n\x04\x04\x02\x02\x04\x12\
-    \x03\x1d\x08!\n\x0c\n\x05\x04\x02\x02\x04\x06\x12\x03\x1d\x08\x11\n\x0c\
-    \n\x05\x04\x02\x02\x04\x01\x12\x03\x1d\x12\x1c\n\x0c\n\x05\x04\x02\x02\
-    \x04\x03\x12\x03\x1d\x1f\x20\n\x0b\n\x04\x04\x02\x02\x05\x12\x03\x1e\x08\
-    \x1d\n\x0c\n\x05\x04\x02\x02\x05\x06\x12\x03\x1e\x08\x0e\n\x0c\n\x05\x04\
-    \x02\x02\x05\x01\x12\x03\x1e\x0f\x18\n\x0c\n\x05\x04\x02\x02\x05\x03\x12\
-    \x03\x1e\x1b\x1c\n\x0c\n\x04\x04\x02\x04\0\x12\x04!\x04$\x05\n\x0c\n\x05\
-    \x04\x02\x04\0\x01\x12\x03!\t\x13\n\r\n\x06\x04\x02\x04\0\x02\0\x12\x03\
-    \"\x08\x19\n\x0e\n\x07\x04\x02\x04\0\x02\0\x01\x12\x03\"\x08\x16\n\x0e\n\
-    \x07\x04\x02\x04\0\x02\0\x02\x12\x03\"\x17\x18\n\r\n\x06\x04\x02\x04\0\
-    \x02\x01\x12\x03#\x08\x1c\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x01\x12\x03#\
-    \x08\x19\n\x0e\n\x07\x04\x02\x04\0\x02\x01\x02\x12\x03#\x1a\x1b\n\n\n\
-    \x02\x04\x03\x12\x04'\0/\x01\n\n\n\x03\x04\x03\x01\x12\x03'\x08\x0b\n\
-    \x0b\n\x04\x04\x03\x02\0\x12\x03(\x04\x15\n\x0c\n\x05\x04\x03\x02\0\x06\
-    \x12\x03(\x04\x0b\n\x0c\n\x05\x04\x03\x02\0\x01\x12\x03(\x0c\x10\n\x0c\n\
-    \x05\x04\x03\x02\0\x03\x12\x03(\x13\x14\n\x0b\n\x04\x04\x03\x02\x01\x12\
-    \x03)\x04\x14\n\x0c\n\x05\x04\x03\x02\x01\x05\x12\x03)\x04\t\n\x0c\n\x05\
-    \x04\x03\x02\x01\x01\x12\x03)\n\x0f\n\x0c\n\x05\x04\x03\x02\x01\x03\x12\
-    \x03)\x12\x13\n\x0c\n\x04\x04\x03\x04\0\x12\x04+\x04.\x05\n\x0c\n\x05\
-    \x04\x03\x04\0\x01\x12\x03+\t\x10\n\r\n\x06\x04\x03\x04\0\x02\0\x12\x03,\
-    \x08\x18\n\x0e\n\x07\x04\x03\x04\0\x02\0\x01\x12\x03,\x08\x13\n\x0e\n\
-    \x07\x04\x03\x04\0\x02\0\x02\x12\x03,\x16\x17\n\r\n\x06\x04\x03\x04\0\
-    \x02\x01\x12\x03-\x08\x15\n\x0e\n\x07\x04\x03\x04\0\x02\x01\x01\x12\x03-\
-    \x08\x10\n\x0e\n\x07\x04\x03\x04\0\x02\x01\x02\x12\x03-\x13\x14b\x06prot\
-    o3\
+    f_pbkdf\x18\x06\x20\x01(\x0b2\x15.emerald.vault.Pbkdf2H\0R\x08kdfPbkdf\
+    \x124\n\tkdf_argon\x18\x07\x20\x01(\x0b2\x15.emerald.vault.Argon2H\0R\
+    \x08kdfArgon\"7\n\nCipherType\x12\x12\n\x0eCIPHER_UNKNOWN\x10\0\x12\x15\
+    \n\x11CIPHER_AES128_CTR\x10\x01B\n\n\x08kdf_type\"u\n\x03Mac\x12.\n\x04t\
+    ype\x18\x01\x20\x01(\x0e2\x1a.emerald.vault.Mac.MacTypeR\x04type\x12\x14\
+    \n\x05value\x18\x02\x20\x01(\x0cR\x05value\"(\n\x07MacType\x12\x0f\n\x0b\
+    MAC_UNKNOWN\x10\0\x12\x0c\n\x08MAC_WEB3\x10\x01*/\n\x07PrfType\x12\x0f\n\
+    \x0bPRF_UNKNOWN\x10\0\x12\x13\n\x0fPRF_HMAC_SHA256\x10\x01J\xc8\r\n\x06\
+    \x12\x04\0\07\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\
+    \x03\x01\0\x16\n\n\n\x02\x04\0\x12\x04\x03\0\t\x01\n\n\n\x03\x04\0\x01\
+    \x12\x03\x03\x08\x11\n\x0b\n\x04\x04\0\x02\0\x12\x03\x04\x04\x15\n\x0c\n\
+    \x05\x04\0\x02\0\x05\x12\x03\x04\x04\n\n\x0c\n\x05\x04\0\x02\0\x01\x12\
+    \x03\x04\x0b\x10\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x04\x13\x14\n\x0b\n\
+    \x04\x04\0\x02\x01\x12\x03\x05\x04\x13\n\x0c\n\x05\x04\0\x02\x01\x05\x12\
+    \x03\x05\x04\t\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x05\n\x0e\n\x0c\n\
+    \x05\x04\0\x02\x01\x03\x12\x03\x05\x11\x12\n\x0b\n\x04\x04\0\x02\x02\x12\
+    \x03\x06\x04\x11\n\x0c\n\x05\x04\0\x02\x02\x05\x12\x03\x06\x04\n\n\x0c\n\
+    \x05\x04\0\x02\x02\x01\x12\x03\x06\x0b\x0c\n\x0c\n\x05\x04\0\x02\x02\x03\
+    \x12\x03\x06\x0f\x10\n\x0b\n\x04\x04\0\x02\x03\x12\x03\x07\x04\x11\n\x0c\
+    \n\x05\x04\0\x02\x03\x05\x12\x03\x07\x04\n\n\x0c\n\x05\x04\0\x02\x03\x01\
+    \x12\x03\x07\x0b\x0c\n\x0c\n\x05\x04\0\x02\x03\x03\x12\x03\x07\x0f\x10\n\
+    \x0b\n\x04\x04\0\x02\x04\x12\x03\x08\x04\x11\n\x0c\n\x05\x04\0\x02\x04\
+    \x05\x12\x03\x08\x04\n\n\x0c\n\x05\x04\0\x02\x04\x01\x12\x03\x08\x0b\x0c\
+    \n\x0c\n\x05\x04\0\x02\x04\x03\x12\x03\x08\x0f\x10\n\n\n\x02\x04\x01\x12\
+    \x04\x0b\0\x10\x01\n\n\n\x03\x04\x01\x01\x12\x03\x0b\x08\x0e\n\x0b\n\x04\
+    \x04\x01\x02\0\x12\x03\x0c\x04\x15\n\x0c\n\x05\x04\x01\x02\0\x05\x12\x03\
+    \x0c\x04\n\n\x0c\n\x05\x04\x01\x02\0\x01\x12\x03\x0c\x0b\x10\n\x0c\n\x05\
+    \x04\x01\x02\0\x03\x12\x03\x0c\x13\x14\n\x0b\n\x04\x04\x01\x02\x01\x12\
+    \x03\r\x04\x11\n\x0c\n\x05\x04\x01\x02\x01\x05\x12\x03\r\x04\n\n\x0c\n\
+    \x05\x04\x01\x02\x01\x01\x12\x03\r\x0b\x0c\n\x0c\n\x05\x04\x01\x02\x01\
+    \x03\x12\x03\r\x0f\x10\n\x0b\n\x04\x04\x01\x02\x02\x12\x03\x0e\x04\x14\n\
+    \x0c\n\x05\x04\x01\x02\x02\x06\x12\x03\x0e\x04\x0b\n\x0c\n\x05\x04\x01\
+    \x02\x02\x01\x12\x03\x0e\x0c\x0f\n\x0c\n\x05\x04\x01\x02\x02\x03\x12\x03\
+    \x0e\x12\x13\n\x0b\n\x04\x04\x01\x02\x03\x12\x03\x0f\x04\x13\n\x0c\n\x05\
+    \x04\x01\x02\x03\x05\x12\x03\x0f\x04\t\n\x0c\n\x05\x04\x01\x02\x03\x01\
+    \x12\x03\x0f\n\x0e\n\x0c\n\x05\x04\x01\x02\x03\x03\x12\x03\x0f\x11\x12\n\
+    \n\n\x02\x04\x02\x12\x04\x12\0\x17\x01\n\n\n\x03\x04\x02\x01\x12\x03\x12\
+    \x08\x0e\n\x0b\n\x04\x04\x02\x02\0\x12\x03\x13\x04\x13\n\x0c\n\x05\x04\
+    \x02\x02\0\x05\x12\x03\x13\x04\n\n\x0c\n\x05\x04\x02\x02\0\x01\x12\x03\
+    \x13\x0b\x0e\n\x0c\n\x05\x04\x02\x02\0\x03\x12\x03\x13\x11\x12\n\x0b\n\
+    \x04\x04\x02\x02\x01\x12\x03\x14\x04\x1a\n\x0c\n\x05\x04\x02\x02\x01\x05\
+    \x12\x03\x14\x04\n\n\x0c\n\x05\x04\x02\x02\x01\x01\x12\x03\x14\x0b\x15\n\
+    \x0c\n\x05\x04\x02\x02\x01\x03\x12\x03\x14\x18\x19\n\x0b\n\x04\x04\x02\
+    \x02\x02\x12\x03\x15\x04\x18\n\x0c\n\x05\x04\x02\x02\x02\x05\x12\x03\x15\
+    \x04\n\n\x0c\n\x05\x04\x02\x02\x02\x01\x12\x03\x15\x0b\x13\n\x0c\n\x05\
+    \x04\x02\x02\x02\x03\x12\x03\x15\x16\x17\n\x0b\n\x04\x04\x02\x02\x03\x12\
+    \x03\x16\x04\x13\n\x0c\n\x05\x04\x02\x02\x03\x05\x12\x03\x16\x04\t\n\x0c\
+    \n\x05\x04\x02\x02\x03\x01\x12\x03\x16\n\x0e\n\x0c\n\x05\x04\x02\x02\x03\
+    \x03\x12\x03\x16\x11\x12\n\n\n\x02\x05\0\x12\x04\x19\0\x1c\x01\n\n\n\x03\
+    \x05\0\x01\x12\x03\x19\x05\x0c\n\x0b\n\x04\x05\0\x02\0\x12\x03\x1a\x04\
+    \x14\n\x0c\n\x05\x05\0\x02\0\x01\x12\x03\x1a\x04\x0f\n\x0c\n\x05\x05\0\
+    \x02\0\x02\x12\x03\x1a\x12\x13\n\x0b\n\x04\x05\0\x02\x01\x12\x03\x1b\x04\
+    \x18\n\x0c\n\x05\x05\0\x02\x01\x01\x12\x03\x1b\x04\x13\n\x0c\n\x05\x05\0\
+    \x02\x01\x02\x12\x03\x1b\x16\x17\n\n\n\x02\x04\x03\x12\x04\x1e\0-\x01\n\
+    \n\n\x03\x04\x03\x01\x12\x03\x1e\x08\x11\n\x0b\n\x04\x04\x03\x02\0\x12\
+    \x03\x1f\x04\x18\n\x0c\n\x05\x04\x03\x02\0\x06\x12\x03\x1f\x04\x0e\n\x0c\
+    \n\x05\x04\x03\x02\0\x01\x12\x03\x1f\x0f\x13\n\x0c\n\x05\x04\x03\x02\0\
+    \x03\x12\x03\x1f\x16\x17\n\x0b\n\x04\x04\x03\x02\x01\x12\x03\x20\x04\x15\
+    \n\x0c\n\x05\x04\x03\x02\x01\x05\x12\x03\x20\x04\t\n\x0c\n\x05\x04\x03\
+    \x02\x01\x01\x12\x03\x20\n\x10\n\x0c\n\x05\x04\x03\x02\x01\x03\x12\x03\
+    \x20\x13\x14\n\x0b\n\x04\x04\x03\x02\x02\x12\x03!\x04\x11\n\x0c\n\x05\
+    \x04\x03\x02\x02\x05\x12\x03!\x04\t\n\x0c\n\x05\x04\x03\x02\x02\x01\x12\
+    \x03!\n\x0c\n\x0c\n\x05\x04\x03\x02\x02\x03\x12\x03!\x0f\x10\n\x0b\n\x04\
+    \x04\x03\x02\x03\x12\x03\"\x04\x10\n\x0c\n\x05\x04\x03\x02\x03\x06\x12\
+    \x03\"\x04\x07\n\x0c\n\x05\x04\x03\x02\x03\x01\x12\x03\"\x08\x0b\n\x0c\n\
+    \x05\x04\x03\x02\x03\x03\x12\x03\"\x0e\x0f\n\x0c\n\x04\x04\x03\x08\0\x12\
+    \x04#\x04'\x05\n\x0c\n\x05\x04\x03\x08\0\x01\x12\x03#\n\x12\n\x0b\n\x04\
+    \x04\x03\x02\x04\x12\x03$\x08!\n\x0c\n\x05\x04\x03\x02\x04\x06\x12\x03$\
+    \x08\x11\n\x0c\n\x05\x04\x03\x02\x04\x01\x12\x03$\x12\x1c\n\x0c\n\x05\
+    \x04\x03\x02\x04\x03\x12\x03$\x1f\x20\n\x0b\n\x04\x04\x03\x02\x05\x12\
+    \x03%\x08\x1d\n\x0c\n\x05\x04\x03\x02\x05\x06\x12\x03%\x08\x0e\n\x0c\n\
+    \x05\x04\x03\x02\x05\x01\x12\x03%\x0f\x18\n\x0c\n\x05\x04\x03\x02\x05\
+    \x03\x12\x03%\x1b\x1c\n\x0b\n\x04\x04\x03\x02\x06\x12\x03&\x08\x1d\n\x0c\
+    \n\x05\x04\x03\x02\x06\x06\x12\x03&\x08\x0e\n\x0c\n\x05\x04\x03\x02\x06\
+    \x01\x12\x03&\x0f\x18\n\x0c\n\x05\x04\x03\x02\x06\x03\x12\x03&\x1b\x1c\n\
+    \x0c\n\x04\x04\x03\x04\0\x12\x04)\x04,\x05\n\x0c\n\x05\x04\x03\x04\0\x01\
+    \x12\x03)\t\x13\n\r\n\x06\x04\x03\x04\0\x02\0\x12\x03*\x08\x1b\n\x0e\n\
+    \x07\x04\x03\x04\0\x02\0\x01\x12\x03*\x08\x16\n\x0e\n\x07\x04\x03\x04\0\
+    \x02\0\x02\x12\x03*\x19\x1a\n\r\n\x06\x04\x03\x04\0\x02\x01\x12\x03+\x08\
+    \x1e\n\x0e\n\x07\x04\x03\x04\0\x02\x01\x01\x12\x03+\x08\x19\n\x0e\n\x07\
+    \x04\x03\x04\0\x02\x01\x02\x12\x03+\x1c\x1d\n\n\n\x02\x04\x04\x12\x04/\0\
+    7\x01\n\n\n\x03\x04\x04\x01\x12\x03/\x08\x0b\n\x0b\n\x04\x04\x04\x02\0\
+    \x12\x030\x04\x15\n\x0c\n\x05\x04\x04\x02\0\x06\x12\x030\x04\x0b\n\x0c\n\
+    \x05\x04\x04\x02\0\x01\x12\x030\x0c\x10\n\x0c\n\x05\x04\x04\x02\0\x03\
+    \x12\x030\x13\x14\n\x0b\n\x04\x04\x04\x02\x01\x12\x031\x04\x14\n\x0c\n\
+    \x05\x04\x04\x02\x01\x05\x12\x031\x04\t\n\x0c\n\x05\x04\x04\x02\x01\x01\
+    \x12\x031\n\x0f\n\x0c\n\x05\x04\x04\x02\x01\x03\x12\x031\x12\x13\n\x0c\n\
+    \x04\x04\x04\x04\0\x12\x043\x046\x05\n\x0c\n\x05\x04\x04\x04\0\x01\x12\
+    \x033\t\x10\n\r\n\x06\x04\x04\x04\0\x02\0\x12\x034\x08\x18\n\x0e\n\x07\
+    \x04\x04\x04\0\x02\0\x01\x12\x034\x08\x13\n\x0e\n\x07\x04\x04\x04\0\x02\
+    \0\x02\x12\x034\x16\x17\n\r\n\x06\x04\x04\x04\0\x02\x01\x12\x035\x08\x15\
+    \n\x0e\n\x07\x04\x04\x04\0\x02\x01\x01\x12\x035\x08\x10\n\x0e\n\x07\x04\
+    \x04\x04\0\x02\x01\x02\x12\x035\x13\x14b\x06proto3\
 ";
 
 static file_descriptor_proto_lazy: ::protobuf::rt::LazyV2<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::rt::LazyV2::INIT;

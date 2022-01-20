@@ -196,6 +196,7 @@ mod tests {
         match address_ref {
             AddressRef::ExtendedPub(xpub) => {
                 assert_eq!(AddressType::P2WPKH, xpub.address_type);
+                assert_eq!(xpub.value.to_string(), "xpub6Bmen2HSjEynDHynGWTMxhEsoAZbHfvXvQ2n43NHDvzRu7V2aKtAP2ZkbUWcvpfcEjwuzXaMJNfWhovSRzrjsmQUucpVmTKSctYcGrmrAu8")
             }
             _ => {
                 panic!("not xpub")

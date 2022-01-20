@@ -17,6 +17,17 @@ pub struct Pbkdf2 {
     pub prf: PrfType,
 }
 
+/*
+    Default type of KDF
+ */
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct Argon2 {
+    pub mem: u32,
+    pub iterations: u32,
+    pub parallel: u32,
+    pub salt: Vec<u8>,
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum PrfType {
     HmacSha256,
@@ -27,6 +38,7 @@ pub enum PrfType {
 pub enum Kdf {
     Scrypt(ScryptKdf),
     Pbkdf2(Pbkdf2),
+    Argon2(Argon2),
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]

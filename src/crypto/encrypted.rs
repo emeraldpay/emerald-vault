@@ -9,6 +9,7 @@ use aes_ctr::cipher::{
 };
 use rand::{prelude::Rng, thread_rng};
 use std::convert::TryFrom;
+use crate::structs::crypto::Argon2;
 
 /// Encrypt given text with provided key and initial vector
 fn encrypt_aes128(data: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
@@ -30,7 +31,48 @@ fn decrypt_aes128(data: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
 }
 
 impl Encrypted {
+    pub fn encrypt2(msg: Vec<u8>, password: &str) -> Result<Encrypted, CryptoError> {
+        return Encrypted::encrypt_ethereum(msg, password);
+    }
+
     pub fn encrypt(msg: Vec<u8>, password: &str) -> Result<Encrypted, CryptoError> {
+        // for security reasons shouldn't allow empty passwords
+        if password.len() == 0 {
+            return Err(CryptoError::InvalidKey);
+        }
+        // see https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-argon2-10
+        // > Select the salt length. 128 bits is sufficient for all
+        // > applications, but can be reduced to 64 bits in the case of space
+        // > constraints.
+        let mut salt: [u8; 16] = [0; 16];
+        thread_rng()
+            .try_fill(&mut salt)
+            .map_err(|_| CryptoError::NoEntropy)?;
+        let kdf = Argon2::create_with_salt(salt.to_vec());
+        let key = kdf.derive(password)?;
+
+        let mut iv: [u8; 16] = [0; 16];
+        thread_rng()
+            .try_fill(&mut iv)
+            .map_err(|_| CryptoError::NoEntropy)?;
+        let key = Web3Key::try_from(key)?;
+        let encrypted = encrypt_aes128(msg.as_slice(), &key.message_key, &iv);
+        let result = Encrypted {
+            cipher: Cipher::Aes128Ctr(Aes128CtrCipher {
+                encrypted: encrypted.clone(),
+                iv: iv.to_vec(),
+                mac: MacType::sign_web3(&key.mac_key.to_vec(), encrypted)?,
+            }),
+            kdf: Kdf::Argon2(kdf),
+        };
+        Ok(result)
+    }
+
+    /*
+    For backward compatibility with ethereum keys provided as JSON. Such files are supposed to use Scrypt or PBKDF2 KDF
+     */
+    //TODO try to unify with the method above
+    pub fn encrypt_ethereum(msg: Vec<u8>, password: &str) -> Result<Encrypted, CryptoError> {
         // for security reasons shouldn't allow empty passwords
         if password.len() == 0 {
             return Err(CryptoError::InvalidKey);
@@ -277,6 +319,25 @@ mod tests {
         assert!(decrypted.is_ok());
         assert_eq!(
             "fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd",
+            hex::encode(decrypted.unwrap())
+        )
+    }
+
+    #[test]
+    fn encrypt_0000() {
+        let encrypted = Encrypted::encrypt(
+            hex::decode("00")
+                .unwrap(),
+            "test",
+        );
+
+        assert!(encrypted.is_ok());
+
+        let decrypted = encrypted.unwrap().decrypt("test");
+        //        println!("{:?}", decrypted.err());
+        assert!(decrypted.is_ok());
+        assert_eq!(
+            "00",
             hex::encode(decrypted.unwrap())
         )
     }
