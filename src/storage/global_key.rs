@@ -2,10 +2,12 @@ use std::convert::TryFrom;
 use std::fs;
 use std::path::{Path, PathBuf};
 use protobuf::Message;
+use uuid::Uuid;
 use crate::storage::error::VaultError;
 use crate::storage::vault::VaultStorage;
 use crate::structs::crypto::{GlobalKey, GlobalKeyRef};
 use crate::proto::crypto::{GlobalKey as proto_GlobalKey};
+use crate::structs::types::UsesGlobalKey;
 
 ///
 /// Manage storage for a Global Key
@@ -74,6 +76,30 @@ impl VaultGlobalKey {
     }
 }
 
+impl VaultStorage {
+    ///
+    /// Get list of items in the Vault that use individual passwords. Such item may be a Seed or an individual Key
+    pub fn get_global_key_missing(&self) -> Result<Vec<Uuid>, VaultError> {
+        let seeds: Vec<Uuid> = self.seeds()
+            .list_entries()?
+            .iter()
+            .filter(|seed| !seed.is_using_global())
+            .map(|seed| seed.id)
+            .collect();
+        let keys: Vec<Uuid> = self.keys()
+            .list_entries()?
+            .iter()
+            .filter(|key| !key.is_using_global())
+            .map(|key| key.id)
+            .collect();
+
+        let mut result = Vec::with_capacity(seeds.len() + keys.len());
+        result.extend(seeds);
+        result.extend(keys);
+        Ok(result)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -82,6 +108,7 @@ mod tests {
     use crate::chains::Blockchain;
     use crate::EthereumAddress;
     use crate::storage::vault::VaultStorage;
+    use crate::structs::pk::PrivateKeyHolder;
     use crate::structs::seed::Seed;
 
     #[test]
@@ -223,5 +250,49 @@ mod tests {
         println!("Result: {:?}", get_w_global);
 
         assert!(get_w_global.is_ok());
+    }
+
+    #[test]
+    fn reports_nokey_items() {
+        let tmp_dir = TempDir::new("emerald-global-key-test").unwrap();
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let seed_id_1 = vault.seeds().add(
+            Seed::test_generate(None, "test-1".as_bytes(), None).unwrap()
+        ).unwrap();
+
+        let key_id_1 = vault.keys().add(
+            PrivateKeyHolder::generate_ethereum_raw("test-2").unwrap()
+        ).unwrap();
+
+        println!("init: {:?}, {:?}", seed_id_1, key_id_1);
+
+        let global_store = vault.global_key();
+        global_store.create("test-g").unwrap();
+        let global = Some(global_store.get().unwrap());
+
+        let seed_id_2 = vault.seeds().add(
+            Seed::test_generate(None, "test-g".as_bytes(), global.clone()).unwrap()
+        ).unwrap();
+
+        let key_id_2 = vault.keys().add(
+            PrivateKeyHolder::create_ethereum_raw(hex::decode("15cc67bb2a7f75a682198264728b951c461bd4a92692ab3bb00f01e9dbe2fbe4").unwrap(), "test-g", global.clone()).unwrap()
+        ).unwrap();
+
+        let key_id_3 = vault.keys().add(
+            PrivateKeyHolder::generate_ethereum_raw("test-3").unwrap()
+        ).unwrap();
+
+        println!("post: {:?}, {:?}, {:?}", seed_id_2, key_id_2, key_id_3);
+
+        let unused = vault.get_global_key_missing().unwrap();
+
+        println!("{:?}", unused);
+
+        assert_eq!(unused.len(), 3);
+
+        assert!(unused.contains(&seed_id_1));
+        assert!(unused.contains(&key_id_1));
+        assert!(unused.contains(&key_id_3));
     }
 }

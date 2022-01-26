@@ -8,6 +8,12 @@ pub trait HasUuid {
 
 pub trait IsVerified {
     fn verify(self) -> Result<Self, String>
-    where
-        Self: std::marker::Sized;
+        where
+            Self: std::marker::Sized;
+}
+
+/// For vault items that may use a Global Key
+pub trait UsesGlobalKey {
+    /// Check if it's currently encrypted with a Global Key
+    fn is_using_global(&self) -> bool;
 }

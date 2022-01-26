@@ -9,6 +9,7 @@ use sha2::Digest;
 use std::convert::TryFrom;
 use uuid::Uuid;
 use crate::structs::crypto::GlobalKey;
+use crate::structs::types::UsesGlobalKey;
 
 byte_array_struct!(
     pub struct Bytes256(32);
@@ -73,6 +74,21 @@ impl SeedSource {
     pub fn test_create_bytes(seed: Vec<u8>, password: &[u8]) -> Result<Self, CryptoError> {
         let value = Encrypted::encrypt(seed, password, None)?;
         Ok(SeedSource::Bytes(value))
+    }
+}
+
+impl UsesGlobalKey for SeedSource {
+    fn is_using_global(&self) -> bool {
+        match self {
+            SeedSource::Ledger(_) => false,
+            SeedSource::Bytes(e) => e.is_using_global()
+        }
+    }
+}
+
+impl UsesGlobalKey for Seed {
+    fn is_using_global(&self) -> bool {
+        self.source.is_using_global()
     }
 }
 

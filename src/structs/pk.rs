@@ -4,6 +4,7 @@ use crate::{
 };
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
+use crate::structs::types::UsesGlobalKey;
 
 #[derive(PartialEq, Eq)]
 pub struct PrivateKeyHolder {
@@ -34,6 +35,14 @@ impl PrivateKeyHolder {
     pub fn generate_id(&mut self) -> Uuid {
         self.id = Uuid::new_v4();
         self.id.clone()
+    }
+}
+
+impl UsesGlobalKey for PrivateKeyHolder {
+    fn is_using_global(&self) -> bool {
+        match &self.pk {
+            PrivateKeyType::EthereumPk(e) => e.key.is_using_global()
+        }
     }
 }
 

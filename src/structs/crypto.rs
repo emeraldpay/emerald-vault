@@ -3,7 +3,7 @@ use rand::RngCore;
 use rand::rngs::OsRng;
 use crate::crypto::error::CryptoError;
 use crate::storage::error::VaultError;
-use crate::structs::types::IsVerified;
+use crate::structs::types::{IsVerified, UsesGlobalKey};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct ScryptKdf {
@@ -109,6 +109,12 @@ impl Encrypted {
     }
 }
 
+impl UsesGlobalKey for Encrypted {
+    fn is_using_global(&self) -> bool {
+        self.global_key.is_some()
+    }
+}
+
 impl IsVerified for ScryptKdf {
     fn verify(self) -> Result<Self, String> {
         if self.salt.len() != 32 {
@@ -139,5 +145,19 @@ impl GlobalKeyRef {
         Ok(GlobalKeyRef {
             nonce
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::structs::crypto::{Encrypted, GlobalKey};
+
+    #[test]
+    fn tells_that_global_key_is_used() {
+        let global = GlobalKey::generate("test-g".as_bytes()).unwrap();
+        let direct = Encrypted::encrypt("test".as_bytes().to_vec(), "test-g".as_bytes(), None).unwrap();
+        let with_global = Encrypted::encrypt("test".as_bytes().to_vec(), "test-g".as_bytes(), Some(global)).unwrap();
+        assert!(!direct.is_using_global());
+        assert!(with_global.is_using_global());
     }
 }
