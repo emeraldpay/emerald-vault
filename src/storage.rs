@@ -49,6 +49,7 @@ mod vault_ethereum;
 mod vault_bitcoin;
 pub mod vault;
 pub mod global_key;
+pub mod admin;
 
 use std::{
     env,

@@ -4,9 +4,11 @@ use crate::{
 };
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
+use crate::crypto::error::CryptoError;
+use crate::structs::crypto::GlobalKey;
 use crate::structs::types::UsesGlobalKey;
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct PrivateKeyHolder {
     pub id: Uuid,
     pub pk: PrivateKeyType,
@@ -14,12 +16,12 @@ pub struct PrivateKeyHolder {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum PrivateKeyType {
     EthereumPk(EthereumPk3),
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct EthereumPk3 {
     pub address: Option<EthereumAddress>,
     pub key: Encrypted,
@@ -35,6 +37,21 @@ impl PrivateKeyHolder {
     pub fn generate_id(&mut self) -> Uuid {
         self.id = Uuid::new_v4();
         self.id.clone()
+    }
+
+    pub(crate) fn reencrypt(self, password: &[u8], global_password: &[u8], global: GlobalKey) -> Result<Self, CryptoError> {
+        let pk = match self.pk {
+            PrivateKeyType::EthereumPk(e) => PrivateKeyType::EthereumPk(
+                EthereumPk3 {
+                    key: e.key.reencrypt(Some(password), global_password, global)?,
+                    ..e
+                }
+            )
+        };
+        Ok(PrivateKeyHolder {
+            pk,
+            ..self
+        })
     }
 }
 

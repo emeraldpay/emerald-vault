@@ -30,6 +30,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use uuid::Uuid;
+use crate::storage::archive::Archive;
 
 const FORMAT: &str = "bookmark/base64";
 
@@ -254,6 +255,10 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
         } else {
             Err(VaultError::IncorrectIdError)
         }
+    }
+
+    fn update_multiple(&self, entry: AddressBookmark, archive: &Archive) -> Result<bool, VaultError> {
+        self.update(entry)
     }
 }
 

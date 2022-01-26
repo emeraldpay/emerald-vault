@@ -75,6 +75,15 @@ impl SeedSource {
         let value = Encrypted::encrypt(seed, password, None)?;
         Ok(SeedSource::Bytes(value))
     }
+
+    pub(crate) fn reencrypt(self, password: &[u8], global_password: &[u8], global: GlobalKey) -> Result<Self, CryptoError> {
+        match self {
+            SeedSource::Ledger(_) => Err(CryptoError::UnsupportedSource("Ledger".to_string())),
+            SeedSource::Bytes(e) => Ok(
+                SeedSource::Bytes(e.reencrypt(Some(password), global_password, global)?)
+            )
+        }
+    }
 }
 
 impl UsesGlobalKey for SeedSource {

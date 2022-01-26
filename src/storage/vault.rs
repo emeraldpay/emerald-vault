@@ -34,6 +34,7 @@ pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
         P: HasUuid + Ord,
 {}
 
+#[derive(Clone)]
 pub struct VaultStorage {
     pub dir: PathBuf,
 
@@ -551,6 +552,8 @@ pub trait VaultAccess<P>
     fn remove(&self, id: Uuid) -> Result<bool, VaultError>;
     /// Set the new value of the specified item. The id it taken for entry itself, and used to update the value
     fn update(&self, entry: P) -> Result<bool, VaultError>;
+    /// Multiple updates, all backed up to the same archive
+    fn update_multiple(&self, entry: P, archive: &Archive) -> Result<bool, VaultError>;
 
     /// Read all entries in the storage
     fn list_entries(&self) -> Result<Vec<P>, VaultError> {
@@ -572,15 +575,20 @@ impl<P> VaultAccess<P> for StandardVaultFiles
         Vec<u8>: std::convert::TryFrom<P>,
 {
     fn update(&self, entry: P) -> Result<bool, VaultError> {
+        let archive = Archive::create(&self.dir, ArchiveType::Update);
+        let result = self.update_multiple(entry, &archive);
+        archive.finalize();
+        return result
+    }
+
+    fn update_multiple(&self, entry: P, archive: &Archive) -> Result<bool, VaultError> {
         let id = entry.get_id();
         let fname = self.get_filename_for(id.clone());
         if fname.exists() {
             let data: Vec<u8> = entry
                 .try_into()
                 .map_err(|_| ConversionError::InvalidProtobuf)?;
-            let archive = Archive::create(&self.dir, ArchiveType::Update);
             let result = safe_update(fname, data.as_slice(), Some(&archive)).map(|_| true);
-            archive.finalize();
             result
         } else {
             Err(VaultError::IncorrectIdError)

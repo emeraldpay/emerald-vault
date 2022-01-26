@@ -8,6 +8,7 @@ pub enum CryptoError {
     UnsupportedSource(String),
     NoEntropy,
     GlobalKeyRequired,
+    PasswordRequired,
 }
 
 impl From<scrypt::errors::InvalidParams> for CryptoError {

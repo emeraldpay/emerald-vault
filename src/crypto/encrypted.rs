@@ -76,6 +76,27 @@ impl Encrypted {
         Ok(result)
     }
 
+    ///
+    /// Decrypt and encrypt the current Secret again, with a new nonce, etc. It supposed to actualize encryption
+    /// schema to the current one. Ex. if an old Secret with individual password is provided it's re-encrypted
+    /// using a Global Key.
+    ///
+    /// Params:
+    /// - `prev_password` - used only if a legacy secret gets re-encrypted, otherwise None
+    /// - `global_password` - global key password
+    /// - `global` - global key
+    pub fn reencrypt(self, prev_password: Option<&[u8]>, global_password: &[u8], global: GlobalKey) -> Result<Encrypted, CryptoError> {
+        let msg = if self.is_using_global() {
+            self.decrypt(global_password, Some(global.clone()))?
+        } else {
+            if prev_password.is_none() {
+                return Err(CryptoError::PasswordRequired)
+            }
+            self.decrypt(prev_password.unwrap(), None)?
+        };
+        Encrypted::encrypt(msg, global_password, Some(global))
+    }
+
     /*
     For backward compatibility with ethereum keys provided as JSON. Such files are supposed to use Scrypt or PBKDF2 KDF
      */
@@ -492,5 +513,69 @@ mod tests {
 
         println!("{:?} {:?}", hex::encode(&key1), hex::encode(&key2));
         assert_ne!(hex::encode(key1), hex::encode(key2));
+    }
+
+    #[test]
+    fn reencrypt_from_legacy() {
+        let legacy = Encrypted::encrypt(
+            "test-msg".as_bytes().to_vec(),
+            "test".as_bytes(),
+            None,
+        ).unwrap();
+
+        let global = GlobalKey::generate("test-g".as_bytes()).unwrap();
+
+        let new = legacy.reencrypt(Some("test".as_bytes()), "test-g".as_bytes(), global.clone()).unwrap();
+        assert!(new.is_using_global());
+        let msg = new.decrypt("test-g".as_bytes(), Some(global));
+        assert!(msg.is_ok());
+        let msg = String::from_utf8(msg.unwrap()).unwrap();
+        assert_eq!(msg, "test-msg".to_string());
+    }
+
+    #[test]
+    fn reencrypt_from_global() {
+        let global = GlobalKey::generate("test-g".as_bytes()).unwrap();
+
+        let v1 = Encrypted::encrypt(
+            "test-msg".as_bytes().to_vec(),
+            "test-g".as_bytes(),
+            Some(global.clone()),
+        ).unwrap();
+
+        let v2 = v1.reencrypt(None, "test-g".as_bytes(), global.clone()).unwrap();
+        assert!(v2.is_using_global());
+        let msg = v2.decrypt("test-g".as_bytes(), Some(global));
+        assert!(msg.is_ok());
+        let msg = String::from_utf8(msg.unwrap()).unwrap();
+        assert_eq!(msg, "test-msg".to_string());
+    }
+
+    #[test]
+    fn no_reencrypt_wrong_password() {
+        let legacy = Encrypted::encrypt(
+            "test-msg".as_bytes().to_vec(),
+            "test".as_bytes(),
+            None,
+        ).unwrap();
+
+        let global = GlobalKey::generate("test-g".as_bytes()).unwrap();
+
+        let new = legacy.reencrypt(Some("test-wrong".as_bytes()), "test-g".as_bytes(), global.clone());
+        assert!(new.is_err());
+    }
+
+    #[test]
+    fn no_reencrypt_empty_password() {
+        let legacy = Encrypted::encrypt(
+            "test-msg".as_bytes().to_vec(),
+            "test".as_bytes(),
+            None,
+        ).unwrap();
+
+        let global = GlobalKey::generate("test-g".as_bytes()).unwrap();
+
+        let new = legacy.reencrypt(None, "test-g".as_bytes(), global.clone());
+        assert!(new.is_err());
     }
 }
