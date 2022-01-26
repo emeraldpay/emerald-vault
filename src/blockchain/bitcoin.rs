@@ -19,6 +19,7 @@ use crate::{
     sign::bitcoin::DEFAULT_SECP256K1
 };
 use std::cmp::min;
+use crate::structs::crypto::GlobalKey;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct InputReference {
@@ -45,26 +46,75 @@ pub struct BitcoinTransferProposal {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct KeyMapping(HashMap<Uuid, String>);
+pub struct KeyMapping {
+    pub keys: HashMap<Uuid, String>,
+
+    /// reference to a global password if set
+    pub global: Option<GlobalKey>,
+    pub global_password: Option<String>,
+}
 
 impl KeyMapping {
+    ///
+    /// Create mapping just referencing a single object (PK or Seed).
+    /// NOTE: it doesn't use Global Key
     pub fn single(id: Uuid, password: String) -> KeyMapping {
         let mut instance = HashMap::with_capacity(1);
         instance.insert(id, password);
-        KeyMapping(instance)
+        KeyMapping {
+            keys: instance,
+            global: None,
+            global_password: None,
+        }
     }
 
+    ///
+    /// Create mapping referencing only a Global Key
+    pub fn global(global: GlobalKey, password: String) -> KeyMapping {
+        KeyMapping {
+            keys: HashMap::new(),
+            global: Some(global),
+            global_password: Some(password),
+        }
+    }
+
+
+    ///
+    /// Returns password for the specified object id. It may be a global key if the object doesn't
+    /// have an individual password
     pub fn get_password(&self, id: &Uuid) -> Result<String, VaultError> {
-        match self.0.get(id) {
+        match self.keys.get(id) {
             Some(p) => Ok(p.clone()),
-            None => Err(VaultError::PasswordRequired),
+            None => self.global_password.clone().ok_or(VaultError::PasswordRequired),
+        }
+    }
+
+    ///
+    /// Merge two Key Mappings into one.
+    pub fn plus(self, other: KeyMapping) -> KeyMapping {
+        let mut instance = HashMap::with_capacity(self.keys.len() + other.keys.len());
+        for key in self.keys {
+            instance.insert(key.0, key.1);
+        }
+        for key in other.keys {
+            instance.insert(key.0, key.1);
+        }
+
+        KeyMapping {
+            keys: instance,
+            global: self.global.or(other.global),
+            global_password: self.global_password.or(other.global_password),
         }
     }
 }
 
 impl Default for KeyMapping {
     fn default() -> Self {
-        KeyMapping(HashMap::new())
+        KeyMapping {
+            keys: HashMap::new(),
+            global: None,
+            global_password: None,
+        }
     }
 }
 
@@ -329,9 +379,11 @@ mod tests {
 
     use bitcoin::{Network, Address};
 
-    use crate::blockchain::bitcoin::{AddressType, XPub};
+    use crate::blockchain::bitcoin::{AddressType, KeyMapping, XPub};
     use hdpath::{AccountHDPath, StandardHDPath, Purpose};
     use std::convert::TryFrom;
+    use uuid::Uuid;
+    use crate::structs::crypto::GlobalKey;
 
     #[test]
     fn parse_xpub_p2pkh() {
@@ -452,5 +504,38 @@ mod tests {
         assert_eq!(AddressType::P2PKH, AddressType::try_from(Purpose::Pubkey).unwrap());
         assert_eq!(AddressType::P2WPKHinP2SH, AddressType::try_from(Purpose::ScriptHash).unwrap());
         assert_eq!(AddressType::P2WPKH, AddressType::try_from(Purpose::Witness).unwrap());
+    }
+
+    #[test]
+    fn merge_two_keymappings() {
+        let m1 = KeyMapping::single(Uuid::from_str("21f05b67-378a-40ac-9db9-fa4d4f1cd6b2").unwrap(), "test-1".to_string());
+        let m2 = KeyMapping::single(Uuid::from_str("f515cbba-6261-44fc-8c90-73a183d235c7").unwrap(), "test-2".to_string());
+
+        let m3 = m1.plus(m2);
+
+        assert_eq!(m3.get_password(&Uuid::from_str("21f05b67-378a-40ac-9db9-fa4d4f1cd6b2").unwrap()).unwrap(), "test-1".to_string());
+        assert_eq!(m3.get_password(&Uuid::from_str("f515cbba-6261-44fc-8c90-73a183d235c7").unwrap()).unwrap(), "test-2".to_string());
+    }
+
+    #[test]
+    fn merge_keymapping_with_global() {
+        let m1 = KeyMapping::single(Uuid::from_str("21f05b67-378a-40ac-9db9-fa4d4f1cd6b2").unwrap(), "test-1".to_string());
+        let global = GlobalKey::generate("test-2".as_bytes()).unwrap();
+        let m2 = KeyMapping::global(global.clone(), "test-2".to_string());
+
+        let m3 = m1.plus(m2);
+
+        assert_eq!(m3.get_password(&Uuid::from_str("21f05b67-378a-40ac-9db9-fa4d4f1cd6b2").unwrap()).unwrap(), "test-1".to_string());
+        assert_eq!(m3.global, Some(global));
+        assert_eq!(m3.global_password, Some("test-2".to_string()));
+    }
+
+    #[test]
+    fn use_global_key() {
+        let global = GlobalKey::generate("test-2".as_bytes()).unwrap();
+        let m = KeyMapping::global(global, "test-g".to_string());
+
+        assert_eq!(m.get_password(&Uuid::from_str("21f05b67-378a-40ac-9db9-fa4d4f1cd6b2").unwrap()).unwrap(), "test-g".to_string());
+        assert_eq!(m.get_password(&Uuid::from_str("f515cbba-6261-44fc-8c90-73a183d235c7").unwrap()).unwrap(), "test-g".to_string());
     }
 }

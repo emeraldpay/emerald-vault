@@ -1,3 +1,8 @@
+use std::convert::TryInto;
+use rand::RngCore;
+use rand::rngs::OsRng;
+use crate::crypto::error::CryptoError;
+use crate::storage::error::VaultError;
 use crate::structs::types::IsVerified;
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -45,6 +50,8 @@ pub enum Kdf {
 pub struct Encrypted {
     pub cipher: Cipher,
     pub kdf: Kdf,
+    /// When set the encryption key is derived from a Global Key
+    pub global_key: Option<GlobalKeyRef>,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -62,6 +69,22 @@ pub struct Aes128CtrCipher {
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum MacType {
     Web3(Vec<u8>),
+}
+
+///
+/// Reference to use when generating subkey from a global key.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct GlobalKeyRef {
+    ///
+    /// Random nonce used for Key Derivation from Global Key
+    pub nonce: [u8; 16],
+}
+
+///
+/// Global Key. I.e., a key that used a main source to derive a subkey for different items (private keys, seed, etc)
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct GlobalKey {
+    pub key: Encrypted,
 }
 
 impl Encrypted {
@@ -104,5 +127,17 @@ impl IsVerified for ScryptKdf {
             return Err("r is too small".to_string());
         }
         Ok(self)
+    }
+}
+
+impl GlobalKeyRef {
+    ///
+    /// Build Global Kye Ref with provided `nonce`
+    pub(crate) fn create(nonce: Vec<u8>) -> Result<GlobalKeyRef, VaultError> {
+        let nonce = nonce.try_into()
+            .map_err(|_| VaultError::UnsupportedDataError("nonce size".to_string()))?;
+        Ok(GlobalKeyRef {
+            nonce
+        })
     }
 }

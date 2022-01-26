@@ -15,6 +15,10 @@ use uuid::Uuid;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::LedgerApp;
+use futures::stream::iter;
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use rand::rngs::OsRng;
 
 impl WalletEntry {
     fn sign_tx_by_pk(
@@ -71,7 +75,7 @@ impl WalletEntry {
         if password.is_none() {
             return Err(VaultError::PasswordRequired);
         }
-        let key = self.key.get_ethereum_pk(&vault, password.clone())?;
+        let key = self.key.get_ethereum_pk(&vault, password.clone(), vault.global_key().get_if_exists()?)?;
         self.sign_tx_by_pk(tx, key)
     }
 
@@ -80,27 +84,37 @@ impl WalletEntry {
         password: String,
         vault: &VaultStorage,
     ) -> Result<EthereumPrivateKey, VaultError> {
-        self.key.get_ethereum_pk(&vault, Some(password))
+        self.key.get_ethereum_pk(&vault, Some(password), vault.global_key().get_if_exists()?)
     }
 
     pub fn export_ethereum_web3(
         &self,
-        password: Option<String>,
+        password: &str,
         vault: &VaultStorage,
-    ) -> Result<EthereumJsonV3File, VaultError> {
+    ) -> Result<(String, EthereumJsonV3File), VaultError> {
         let label = self.label.clone();
-        match &self.key {
+        let key = match &self.key {
             PKType::PrivateKeyRef(pk) => {
-                let key = vault.keys().get(pk.clone())?;
-                EthereumJsonV3File::from_wallet(label, &key)
-                    .map_err(|_| VaultError::InvalidPrivateKey)
+                let raw_pk = vault.keys().get(pk.clone())?.decrypt(password.as_bytes(), vault.global_key().get_if_exists()?)?;
+                EthereumPrivateKey::try_from(raw_pk.as_slice())?
             }
             PKType::SeedHd(_) => {
-                let key = self.key.get_ethereum_pk(&vault, password.clone())?;
-                EthereumJsonV3File::from_pk(label, key, password.expect("Password is not set"))
-                    .map_err(|_| VaultError::InvalidPrivateKey)
+                self.key.get_ethereum_pk(&vault, Some(password.to_string()), vault.global_key().get_if_exists()?)?
             }
-        }
+        };
+
+        // generate a new temp password for the exported PK
+        // should never reuse the original password as it may be global or used by other wallets
+        let mut rnd = OsRng::new()?;
+        let password: String = std::iter::repeat(())
+            .take(20)
+            .map(|_| rnd.sample(Alphanumeric))
+            .map(char::from)
+            .collect();
+
+        let pk = EthereumJsonV3File::from_pk(label, key, password.to_string())
+            .map_err(|_| VaultError::InvalidPrivateKey)?;
+        Ok((password, pk))
     }
 }
 
@@ -205,7 +219,7 @@ mod tests {
                     EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b")
                         .unwrap(),
                 ),
-                key: Encrypted::encrypt(raw_pk, "testtest").unwrap(),
+                key: Encrypted::encrypt(raw_pk, "testtest".as_bytes(), None).unwrap(),
             }),
             created_at: Utc::now(),
         };
@@ -255,7 +269,7 @@ mod tests {
                     EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b")
                         .unwrap(),
                 ),
-                key: Encrypted::encrypt(raw_pk, "testtest").unwrap(),
+                key: Encrypted::encrypt(raw_pk, "testtest".as_bytes(), None).unwrap(),
             }),
             created_at: Utc::now(),
         };
@@ -287,9 +301,9 @@ mod tests {
 
         let seed = Seed {
             id: Uuid::new_v4(),
-            source: SeedSource::create_bytes(
+            source: SeedSource::test_create_bytes(
                 hex::decode("0c0727514fe0c87460ddc2bff08075174e1b45283db9d6d34ae23fb877dd12da98d6235f56d9cc4ce3ec245ffe226176338569c59db502ccebfb5c6cd6a264b4").unwrap(),
-                "test1234",
+                "test1234".as_bytes(),
             ).unwrap(),
             label: None,
             created_at: Utc::now(),

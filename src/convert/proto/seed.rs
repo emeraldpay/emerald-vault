@@ -164,26 +164,26 @@ impl TryFrom<Seed> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        proto::seed::{LedgerSeed as proto_LedgerSeed, Seed as proto_Seed},
-        structs::{
-            crypto::Encrypted,
-            seed::{LedgerSource, Seed, SeedSource},
-        },
-    };
+    use crate::{EthereumAddress, proto::seed::{LedgerSeed as proto_LedgerSeed, Seed as proto_Seed}, structs::{
+        crypto::Encrypted,
+        seed::{LedgerSource, Seed, SeedSource},
+    }};
     use chrono::{TimeZone, Utc};
     use protobuf::{parse_from_bytes, Message, ProtobufEnum};
     use std::{
         convert::{TryFrom, TryInto},
         str::FromStr,
     };
+    use hdpath::StandardHDPath;
     use uuid::Uuid;
+    use crate::chains::Blockchain;
+    use crate::structs::crypto::{GlobalKey, GlobalKeyRef};
 
     #[test]
     fn write_as_protobuf() {
         let seed = Seed {
             id: Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap(),
-            source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap()),
+            source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test".as_bytes(), None).unwrap()),
             label: None,
             created_at: Utc.timestamp_millis(1592624592679),
         };
@@ -205,7 +205,7 @@ mod tests {
     fn write_and_read_bytes() {
         let seed = Seed {
             id: Uuid::new_v4(),
-            source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test").unwrap()),
+            source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test".as_bytes(), None).unwrap()),
             label: None,
             created_at: Utc::now(),
         };
@@ -218,6 +218,36 @@ mod tests {
             SeedSource::Bytes(e) => e,
             _ => panic!("Not bytes"),
         };
+    }
+
+    #[test]
+    fn write_and_read_with_global_key() {
+        let global = GlobalKey {
+            key: Encrypted::encrypt("global-key".as_bytes().to_vec(), "test".as_bytes(), None).unwrap()
+        };
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Bytes(Encrypted::encrypt(
+                // bike ball brain shuffle protect need language rescue energy girl silent network tomato blame resist
+                hex::decode("9ed868a54783aab940e8d5779d726bafd675d3922dafa03ec3c3303b3e4a7cb8d061ae5e85304fd7ad8537974f4448f030e2a94c98e2800ea04a999e36592772").unwrap(),
+                "test".as_bytes(),
+                Some(global.clone()),
+            ).unwrap()),
+            label: None,
+            created_at: Utc::now(),
+        };
+        let seed_id = seed.id.clone();
+        let buf: Vec<u8> = seed.try_into().unwrap();
+        let seed_act = Seed::try_from(buf).unwrap();
+
+        let addresses = seed_act.source.get_addresses::<EthereumAddress>(
+            Some("test".to_string()),
+            Some(global),
+            &vec![StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap()],
+            Blockchain::Ethereum,
+        ).unwrap();
+
+        assert_eq!(addresses.get(0).unwrap().1.to_string(), "0xe8099e65a00286a2cce1c58945ad63e16e5cd6e6");
     }
 
     #[test]

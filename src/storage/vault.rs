@@ -5,6 +5,7 @@ use crate::{
         addressbook::AddressbookStorage,
         archive::{Archive, ArchiveType},
         error::VaultError,
+        global_key::VaultGlobalKey
     },
     structs::{
         book::AddressRef,
@@ -25,6 +26,7 @@ use std::{
 use uuid::Uuid;
 use crate::storage::vault_ethereum::AddEthereumEntry;
 use crate::storage::vault_bitcoin::AddBitcoinEntry;
+use crate::structs::crypto::GlobalKey;
 
 /// Compound trait for a vault entry which is stored in a separate file each
 pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
@@ -61,18 +63,34 @@ impl VaultStorage {
             keys: self.keys(),
             wallets: self.wallets(),
             seeds: self.seeds(),
+            global: self.global_key().get_if_exists().unwrap(),
         }
     }
     pub fn addressbook(&self) -> AddressbookStorage {
         AddressbookStorage::from_path(self.dir.clone().join("addressbook.csv"))
     }
+    pub fn global_key(&self) -> VaultGlobalKey {
+        let dir = &self.dir;
+        VaultGlobalKey { vault: dir.clone() }
+    }
 
     pub fn add_ethereum_entry(&self, wallet_id: Uuid) -> AddEthereumEntry {
-        AddEthereumEntry::new(&wallet_id, self.keys.clone(), self.seeds.clone(), self.wallets.clone())
+        AddEthereumEntry::new(
+            &wallet_id,
+            self.keys.clone(),
+            self.seeds.clone(),
+            self.wallets.clone(),
+            self.global_key().get_if_exists().unwrap(),
+        )
     }
 
     pub fn add_bitcoin_entry(&self, wallet_id: Uuid) -> AddBitcoinEntry {
-        AddBitcoinEntry::new(&wallet_id, self.seeds.clone(), self.wallets.clone())
+        AddBitcoinEntry::new(
+            &wallet_id,
+            self.seeds.clone(),
+            self.wallets.clone(),
+            self.global_key().get_if_exists().unwrap(),
+        )
     }
 
     ///Access to functions for updating the entry
@@ -364,6 +382,7 @@ pub struct CreateWallet {
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
     #[allow(dead_code)]
     seeds: Arc<dyn VaultAccessByFile<Seed>>,
+    global: Option<GlobalKey>,
 }
 
 impl CreateWallet {
@@ -371,6 +390,7 @@ impl CreateWallet {
     ///with default or empty values. The labels is set from JSON name field, if available.
     ///
     ///Returns UUID of the newly created wallet
+    #[deprecated] // require password and encrypt key with global key
     pub fn ethereum(
         &self,
         json: &EthereumJsonV3File,
@@ -405,7 +425,7 @@ impl CreateWallet {
         password: &str,
         blockchain: Blockchain,
     ) -> Result<Uuid, VaultError> {
-        let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
+        let pk = PrivateKeyHolder::create_ethereum_raw(pk, password, self.global.clone())
             .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let wallet = Wallet {
             entries: vec![WalletEntry {
@@ -696,7 +716,7 @@ mod tests {
         let all = vault.seeds.list().unwrap();
         assert_eq!(0, all.len());
 
-        let mut seed = Seed::generate(None, "testtest").unwrap();
+        let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.created_at = Utc.timestamp_millis(0);
         let id = seed.get_id();
         let added = vault.seeds.add(seed.clone());
@@ -713,7 +733,7 @@ mod tests {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
-        let mut seed = Seed::generate(None, "testtest").unwrap();
+        let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.created_at = Utc.timestamp_millis(0);
         let id = seed.get_id();
         let added = vault.seeds.add(seed.clone());
@@ -736,24 +756,24 @@ mod tests {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
-        let mut seed = Seed::generate(None, "testtest").unwrap();
+        let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.id = Uuid::parse_str("13052693-c51c-4e8b-91b3-564d3cb78fb4").unwrap();
         // 2 jan 2020
         seed.created_at = Utc.timestamp_millis(1577962800000);
         vault.seeds.add(seed.clone()).unwrap();
 
-        let mut seed = Seed::generate(None, "testtest").unwrap();
+        let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.id = Uuid::parse_str("5e47360d-3dc2-4b39-b399-75fbdd4ac020").unwrap();
         seed.created_at = Utc.timestamp_millis(0);
         vault.seeds.add(seed.clone()).unwrap();
 
-        let mut seed = Seed::generate(None, "testtest").unwrap();
+        let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.id = Uuid::parse_str("36805dff-a6e0-434d-be7d-5ef7931522d0").unwrap();
         // 1 jan 2020
         seed.created_at = Utc.timestamp_millis(1577876400000);
         vault.seeds.add(seed.clone()).unwrap();
 
-        let mut seed = Seed::generate(None, "testtest").unwrap();
+        let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.id = Uuid::parse_str("067e14c4-85de-421e-9957-48a1cdef42ae").unwrap();
         seed.created_at = Utc.timestamp_millis(0);
         vault.seeds.add(seed.clone()).unwrap();

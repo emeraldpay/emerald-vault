@@ -7,14 +7,20 @@ use crate::{
 };
 use chrono::Utc;
 use uuid::Uuid;
+use crate::structs::crypto::GlobalKey;
 
 impl Seed {
-    pub fn generate(seed_password: Option<String>, save_password: &str) -> Result<Seed, ()> {
+    #[cfg(test)]
+    pub fn test_generate(
+        seed_password: Option<String>,
+        global_password: &[u8],
+        global: Option<GlobalKey>,
+    ) -> Result<Seed, ()> {
         let mnemonic = Mnemonic::default();
         let seed = mnemonic.seed(seed_password);
         let result = Seed {
             id: Uuid::new_v4(),
-            source: SeedSource::Bytes(Encrypted::encrypt(seed, save_password).map_err(|_| ())?),
+            source: SeedSource::Bytes(Encrypted::encrypt(seed, global_password, global).map_err(|_| ())?),
             label: None,
             created_at: Utc::now(),
         };

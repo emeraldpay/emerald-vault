@@ -113,9 +113,10 @@ impl InputScriptSource {
                     .get_seed(seed)
                     .ok_or(VaultError::PrivateKeyUnavailable)?;
                 let password = proposal.keys.get_password(&seed.id)?;
+                let global = proposal.keys.global.clone();
                 let pk = seed
                     .source
-                    .get_pk(Some(password), hd_path)?
+                    .get_pk(Some(password), &global, hd_path)?
                     .into_bitcoin_key(&proposal.network);
                 Ok(pk)
             }
@@ -343,7 +344,7 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
         ).unwrap();
-        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
+        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
         let seed_id = Uuid::new_v4();
 
         let value_1 = 120_000u64;
@@ -398,7 +399,7 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
         ).unwrap();
-        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
+        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
         let seed_id = Uuid::new_v4();
 
         let value_1 = 120_000u64;
@@ -470,7 +471,7 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
         ).unwrap();
-        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
+        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
         let seed_id = Uuid::new_v4();
 
         let value_1 = 1_120_000u64;

@@ -19,6 +19,7 @@ use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::{LedgerApp, PubkeyAddressApp};
 use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, GetAddressOpts};
+use crate::structs::crypto::GlobalKey;
 
 pub enum PrivateKeySource {
     Base(SecretKey),
@@ -70,13 +71,14 @@ impl SeedSource {
     pub fn get_pk(
         &self,
         password: Option<String>,
+        global: &Option<GlobalKey>,
         hd_path: &StandardHDPath,
     ) -> Result<PrivateKeySource, VaultError> {
         match self {
             SeedSource::Bytes(bytes) => match password {
                 None => Err(VaultError::PasswordRequired),
                 Some(password) => {
-                    let seed_key = bytes.decrypt(password.as_str())?;
+                    let seed_key = bytes.decrypt(password.as_bytes(), global.clone())?;
                     let key = generate_key(hd_path, &seed_key)?;
                     Ok(PrivateKeySource::Extended(key))
                 }
@@ -87,8 +89,9 @@ impl SeedSource {
 
     pub fn get_xpub(&self,
                     password: Option<String>,
+                    global: &Option<GlobalKey>,
                     hd_path_all: &Vec<AccountHDPath>,
-                    blockchain: Blockchain
+                    blockchain: Blockchain,
     ) -> Result<Vec<(AccountHDPath, XPub)>, VaultError> {
         if hd_path_all.is_empty() {
             return Ok(vec![])
@@ -104,7 +107,7 @@ impl SeedSource {
             SeedSource::Bytes(bytes) => match password {
                 None => Err(VaultError::PasswordRequired),
                 Some(password) => {
-                    let seed_key = bytes.decrypt(password.as_str())?;
+                    let seed_key = bytes.decrypt(password.as_bytes(), global.clone())?;
                     for hd_path in hd_path_all {
                         let pub_key = ExtendedPubKey {
                             network,
@@ -131,9 +134,10 @@ impl SeedSource {
     }
 
     pub fn get_addresses<T>(&self,
-                          password: Option<String>,
-                          hd_path_all: &Vec<StandardHDPath>,
-                          blockchain: Blockchain
+                            password: Option<String>,
+                            global: Option<GlobalKey>,
+                            hd_path_all: &Vec<StandardHDPath>,
+                            blockchain: Blockchain,
     ) -> Result<Vec<(StandardHDPath, T)>, VaultError>
         where T: AddressFromPub<T> + AddressCast<T> {
         if hd_path_all.is_empty() {
@@ -144,7 +148,7 @@ impl SeedSource {
             SeedSource::Bytes(bytes) => match password {
                 None => Err(VaultError::PasswordRequired),
                 Some(password) => {
-                    let seed_key = bytes.decrypt(password.as_str())?;
+                    let seed_key = bytes.decrypt(password.as_bytes(), global)?;
                     for hd_path in hd_path_all {
                         let pub_key = generate_pubkey(hd_path, &seed_key)?;
                         let address_type = AddressType::try_from(hd_path)?;
@@ -199,13 +203,14 @@ impl PKType {
         &self,
         vault: &VaultStorage,
         password: Option<String>,
+        global: Option<GlobalKey>,
     ) -> Result<PrivateKeySource, VaultError> {
         match &self {
             PKType::PrivateKeyRef(pk) => {
                 let key = vault.keys().get(pk.clone())?;
                 let key = match password {
                     None => return Err(VaultError::PasswordRequired),
-                    Some(password) => key.decrypt(password.as_str())?,
+                    Some(password) => key.decrypt(password.as_bytes(), global)?,
                 };
                 let key = SecretKey::from_slice(key.as_slice())
                     .map_err(|_| VaultError::InvalidPrivateKey)?;
@@ -214,7 +219,7 @@ impl PKType {
             PKType::SeedHd(seed) => {
                 let seed_details = vault.seeds().get(seed.seed_id.clone())?;
                 let hd_path = StandardHDPath::try_from(seed.hd_path.to_string().as_str())?;
-                seed_details.source.get_pk(password, &hd_path)
+                seed_details.source.get_pk(password, &global, &hd_path)
             }
         }
     }
@@ -223,8 +228,9 @@ impl PKType {
         &self,
         vault: &VaultStorage,
         password: Option<String>,
+        global: Option<GlobalKey>,
     ) -> Result<EthereumPrivateKey, VaultError> {
-        let source = self.get_pk(vault, password)?;
+        let source = self.get_pk(vault, password, global)?;
         Ok(EthereumPrivateKey::from(source.into_secret()))
     }
 }
@@ -245,16 +251,17 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "often impact pistol seminar park example foil urge bird balance reopen uphold enforce protect pear",
         ).unwrap();
-        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
+        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
 
         let addresses = seed.get_addresses::<EthereumAddress>(
             Some("test".to_string()),
+            None,
             &vec![
                 StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(),
                 StandardHDPath::from_str("m/44'/60'/0'/0/7").unwrap(),
                 StandardHDPath::from_str("m/44'/60'/1'/0/1").unwrap(),
             ],
-            Blockchain::Ethereum
+            Blockchain::Ethereum,
         );
         assert!(addresses.is_ok());
         let addresses = addresses.unwrap();
@@ -272,16 +279,17 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "often impact pistol seminar park example foil urge bird balance reopen uphold enforce protect pear",
         ).unwrap();
-        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
+        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
 
         let addresses = seed.get_addresses::<Address>(
             Some("test".to_string()),
+            None,
             &vec![
                 StandardHDPath::from_str("m/84'/0'/0'/0/0").unwrap(),
                 StandardHDPath::from_str("m/84'/0'/0'/0/7").unwrap(),
                 StandardHDPath::from_str("m/84'/0'/1'/0/1").unwrap(),
             ],
-            Blockchain::Bitcoin
+            Blockchain::Bitcoin,
         );
         assert!(addresses.is_ok());
         let addresses = addresses.unwrap();
@@ -299,16 +307,17 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "often impact pistol seminar park example foil urge bird balance reopen uphold enforce protect pear",
         ).unwrap();
-        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
+        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
 
         let addresses = seed.get_xpub(
             Some("test".to_string()),
+            &None,
             &vec![
                 AccountHDPath::from_str("m/84'/0'/0'").unwrap(),
                 AccountHDPath::from_str("m/84'/0'/1'").unwrap(),
                 AccountHDPath::from_str("m/44'/0'/0'").unwrap(),
             ],
-            Blockchain::Bitcoin
+            Blockchain::Bitcoin,
         );
         assert!(addresses.is_ok());
         let addresses = addresses.unwrap();
@@ -332,14 +341,15 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "often impact pistol seminar park example foil urge bird balance reopen uphold enforce protect pear",
         ).unwrap();
-        let seed = SeedSource::create_bytes(phrase.seed(None), "test").unwrap();
+        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
 
         let addresses = seed.get_xpub(
             Some("test".to_string()),
+            &None,
             &vec![
                 AccountHDPath::from_str("m/84'/1'/0'").unwrap(),
             ],
-            Blockchain::BitcoinTestnet
+            Blockchain::BitcoinTestnet,
         );
         assert!(addresses.is_ok());
         let addresses = addresses.unwrap();

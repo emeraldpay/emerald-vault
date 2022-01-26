@@ -24,27 +24,35 @@ use emerald_hwkey::ledger::manager::LedgerKey;
 use std::str::FromStr;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::LedgerApp;
+use crate::structs::crypto::GlobalKey;
 
 pub struct AddEthereumEntry {
     keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
     seeds: Arc<dyn VaultAccessByFile<Seed>>,
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
     wallet_id: Uuid,
+    global: Option<GlobalKey>,
 }
 
 impl AddEthereumEntry {
-    pub fn new(wallet_id: &Uuid,
-               keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
-               seeds: Arc<dyn VaultAccessByFile<Seed>>,
-               wallets: Arc<dyn VaultAccessByFile<Wallet>>, ) -> AddEthereumEntry {
+    pub fn new(
+        wallet_id: &Uuid,
+        keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
+        seeds: Arc<dyn VaultAccessByFile<Seed>>,
+        wallets: Arc<dyn VaultAccessByFile<Wallet>>,
+        global: Option<GlobalKey>,
+    ) -> AddEthereumEntry {
         AddEthereumEntry {
             wallet_id: wallet_id.clone(),
             keys,
             seeds,
             wallets,
+            global,
         }
     }
 
+    // deprecate just direct import. require a password and reencrypt it with global key
+    #[deprecated]
     pub fn json(
         &self,
         json: &EthereumJsonV3File,
@@ -76,7 +84,7 @@ impl AddEthereumEntry {
         blockchain: Blockchain,
     ) -> Result<usize, VaultError> {
         let mut wallet = self.wallets.get(self.wallet_id.clone())?;
-        let pk = PrivateKeyHolder::create_ethereum_raw(pk, password)
+        let pk = PrivateKeyHolder::create_ethereum_raw(pk, password, self.global.clone())
             .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let pk_id = pk.get_id();
         let address = pk
@@ -114,7 +122,7 @@ impl AddEthereumEntry {
                 if password.is_none() {
                     return Err(VaultError::PasswordRequired);
                 }
-                let seed = seed.decrypt(password.unwrap().as_str())?;
+                let seed = seed.decrypt(password.unwrap().as_bytes(), self.global.clone())?;
                 let key = generate_key(&hd_path, seed.as_slice())?;
                 let ephemeral_pk = EthereumPrivateKey::try_from(key)?;
                 Some(ephemeral_pk.to_address())

@@ -9,6 +9,7 @@ use crate::{
 use chrono::Utc;
 use std::convert::TryFrom;
 use uuid::Uuid;
+use crate::structs::crypto::{GlobalKey, GlobalKeyRef};
 
 impl PrivateKeyHolder {
     pub fn create_ethereum_v3(pk3: EthereumPk3) -> PrivateKeyHolder {
@@ -19,20 +20,22 @@ impl PrivateKeyHolder {
         }
     }
 
+    #[cfg(test)]
     pub fn generate_ethereum_raw(password: &str) -> Result<PrivateKeyHolder, CryptoError> {
         let pk = core_PK::gen();
-        PrivateKeyHolder::create_ethereum_raw(pk.0.to_vec(), password)
+        PrivateKeyHolder::create_ethereum_raw(pk.0.to_vec(), password, None)
     }
 
     pub fn create_ethereum_raw(
         pk: Vec<u8>,
         password: &str,
+        global: Option<GlobalKey>
     ) -> Result<PrivateKeyHolder, CryptoError> {
         let parsed = core_PK::try_from(pk.as_slice())
             .map_err(|_| CryptoError::InvalidKey)?;
         let encrypted = EthereumPk3 {
             address: Some(parsed.to_address()),
-            key: Encrypted::encrypt(pk, password)?,
+            key: Encrypted::encrypt(pk, password.as_bytes(), global)?,
         };
         Ok(PrivateKeyHolder::create_ethereum_v3(encrypted))
     }
@@ -43,9 +46,9 @@ impl PrivateKeyHolder {
         }
     }
 
-    pub fn decrypt(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
+    pub fn decrypt(&self, password: &[u8], global: Option<GlobalKey>) -> Result<Vec<u8>, CryptoError> {
         match &self.pk {
-            PrivateKeyType::EthereumPk(ethereum) => ethereum.key.decrypt(password),
+            PrivateKeyType::EthereumPk(ethereum) => ethereum.key.decrypt(password, global),
         }
     }
 }

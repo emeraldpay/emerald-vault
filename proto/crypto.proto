@@ -38,6 +38,7 @@ message Encrypted {
         Pbkdf2 kdf_pbkdf = 6;
         Argon2 kdf_argon = 7;
     }
+    GlobalKeyRef global_key = 8;
 
     enum CipherType {
         CIPHER_UNKNOWN = 0;
@@ -53,4 +54,12 @@ message Mac {
         MAC_UNKNOWN = 0;
         MAC_WEB3 = 1;
     }
+}
+
+message GlobalKeyRef {
+    bytes nonce = 1;
+}
+
+message GlobalKey {
+    Encrypted key = 1;
 }

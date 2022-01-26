@@ -48,3 +48,10 @@ impl From<error::Error> for ConversionError {
         ConversionError::OtherError
     }
 }
+
+
+impl From<std::convert::Infallible> for ConversionError {
+    fn from(_: std::convert::Infallible) -> Self {
+        ConversionError::OtherError
+    }
+}

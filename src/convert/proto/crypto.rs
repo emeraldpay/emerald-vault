@@ -4,6 +4,8 @@ use crate::{
         Encrypted as proto_Encrypted,
         Encrypted_CipherType as proto_CipherType,
         Encrypted_oneof_kdf_type as proto_Encrypted_oneof_kdf_type,
+        GlobalKey as proto_GlobalKey,
+        GlobalKeyRef as proto_GlobalKeyRef,
         Mac as proto_Mac,
         Mac_MacType as proto_MacType,
         Pbkdf2 as proto_Pbkdf2,
@@ -16,15 +18,16 @@ use crate::{
         types::IsVerified,
     },
 };
-use std::convert::TryFrom;
-use crate::structs::crypto::Argon2;
+use std::convert::{TryFrom, TryInto};
+use protobuf::Message;
+use crate::structs::crypto::{Argon2, GlobalKey, GlobalKeyRef};
 
 /// From Protobuf Message
 impl TryFrom<proto_PrfType> for PrfType {
     type Error = ConversionError;
     fn try_from(data: proto_PrfType) -> Result<Self, Self::Error>
-    where
-        Self: std::marker::Sized,
+        where
+            Self: std::marker::Sized,
     {
         match data {
             proto_PrfType::PRF_HMAC_SHA256 => Ok(PrfType::HmacSha256),
@@ -167,7 +170,11 @@ impl TryFrom<&proto_Encrypted> for Encrypted {
             Some(kdf_type) => Kdf::try_from(kdf_type),
             None => Err(ConversionError::FieldIsEmpty("kdf_type".to_string())),
         }?;
-        Ok(Encrypted { cipher, kdf })
+        let global_key_ref = match data.global_key.as_ref() {
+            Some(r) => Some(GlobalKeyRef::try_from(r)?),
+            None => None
+        };
+        Ok(Encrypted { cipher, kdf, global_key: global_key_ref })
     }
 }
 
@@ -197,7 +204,90 @@ impl TryFrom<&Encrypted> for proto_Encrypted {
                 }
             }
         }
-
+        if let Some(g) = &value.global_key {
+            encrypted.set_global_key(proto_GlobalKeyRef::try_from(g)?);
+        }
         Ok(encrypted)
+    }
+}
+
+impl TryFrom<proto_GlobalKey> for GlobalKey {
+    type Error = ConversionError;
+
+    fn try_from(value: proto_GlobalKey) -> Result<Self, Self::Error> {
+        if value.key.is_none() {
+            return Err(ConversionError::FieldIsEmpty("key".to_string()));
+        }
+        let proto_encrypted = value.key.unwrap();
+        let encrypted: Encrypted = Encrypted::try_from(&proto_encrypted)?;
+        Ok(GlobalKey {
+            key: encrypted
+        })
+    }
+}
+
+impl TryFrom<&[u8]> for GlobalKey {
+    type Error = ConversionError;
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        let proto = proto_GlobalKey::parse_from_bytes(value)?;
+        GlobalKey::try_from(proto)
+    }
+}
+
+impl TryFrom<&GlobalKey> for proto_GlobalKey {
+    type Error = ConversionError;
+
+    fn try_from(value: &GlobalKey) -> Result<Self, Self::Error> {
+        let mut msg = proto_GlobalKey::new();
+        let mut proto_key: proto_Encrypted = proto_Encrypted::try_from(&value.key)?;
+        msg.set_key(proto_key);
+        Ok(msg)
+    }
+}
+
+impl TryFrom<&proto_GlobalKeyRef> for GlobalKeyRef {
+    type Error = ConversionError;
+
+    fn try_from(value: &proto_GlobalKeyRef) -> Result<Self, Self::Error> {
+        let nonce = value.nonce.clone().try_into()
+            .map_err(|_| ConversionError::InvalidLength)?;
+        Ok(GlobalKeyRef {
+            nonce
+        })
+    }
+}
+
+impl TryFrom<&GlobalKeyRef> for proto_GlobalKeyRef {
+    type Error = ConversionError;
+
+    fn try_from(value: &GlobalKeyRef) -> Result<Self, Self::Error> {
+        let mut msg = proto_GlobalKeyRef::new();
+        msg.set_nonce(value.nonce.to_vec());
+        Ok(msg)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::convert::{TryFrom, TryInto};
+    use protobuf::Message;
+    use crate::structs::crypto::{Encrypted, GlobalKey};
+    use crate::proto::crypto::{GlobalKey as proto_GlobalKey};
+
+    #[test]
+    fn write_read_global_key() {
+        let global = GlobalKey {
+            key: Encrypted::encrypt("global-key".as_bytes().to_vec(), "test".as_bytes(), None).unwrap()
+        };
+        let buf: Vec<u8> = proto_GlobalKey::try_from(&global).unwrap().write_to_bytes().unwrap();
+        let global_read = GlobalKey::try_from(buf.as_slice()).unwrap();
+        assert_eq!(&global, &global_read);
+
+        let global_ne = GlobalKey {
+            key: Encrypted::encrypt("global-key-2".as_bytes().to_vec(), "test".as_bytes(), None).unwrap()
+        };
+
+        assert_ne!(global_ne, global_read);
     }
 }

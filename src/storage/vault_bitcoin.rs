@@ -23,11 +23,13 @@ use emerald_hwkey::{
     }
 };
 use crate::storage::entry::AddEntryOptions;
+use crate::structs::crypto::GlobalKey;
 
 pub struct AddBitcoinEntry {
     seeds: Arc<dyn VaultAccessByFile<Seed>>,
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
     wallet_id: Uuid,
+    global: Option<GlobalKey>,
 }
 
 fn get_address(blockchain: &Blockchain, address_type: AddressType, account: u32, seed: Vec<u8>) -> Result<XPub, VaultError> {
@@ -51,11 +53,14 @@ fn get_address(blockchain: &Blockchain, address_type: AddressType, account: u32,
 impl AddBitcoinEntry {
     pub fn new(wallet_id: &Uuid,
                seeds: Arc<dyn VaultAccessByFile<Seed>>,
-               wallets: Arc<dyn VaultAccessByFile<Wallet>>, ) -> AddBitcoinEntry {
+               wallets: Arc<dyn VaultAccessByFile<Wallet>>,
+               global: Option<GlobalKey>,
+    ) -> AddBitcoinEntry {
         AddBitcoinEntry {
             wallet_id: wallet_id.clone(),
             seeds,
             wallets,
+            global,
         }
     }
 
@@ -79,7 +84,7 @@ impl AddBitcoinEntry {
             SeedSource::Bytes(seed) => {
                 match &opts.seed_password {
                     Some(seed_password) => {
-                        let seed = seed.decrypt(seed_password.as_str())?;
+                        let seed = seed.decrypt(seed_password.as_bytes(), self.global.clone())?;
                         Some(get_address(&blockchain, address_type, account.account(), seed)?)
                     },
                     None => return Err(VaultError::PasswordRequired)
@@ -166,7 +171,7 @@ mod tests {
         ).unwrap();
         let seed_id = vault.seeds().add(
             Seed {
-                source: SeedSource::create_bytes(phrase.seed(None), "test").unwrap(),
+                source: SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap(),
                 ..Default::default()
             }
         ).unwrap();
@@ -214,7 +219,7 @@ mod tests {
         ).unwrap();
         let seed_id = vault.seeds().add(
             Seed {
-                source: SeedSource::create_bytes(phrase.seed(None), "test").unwrap(),
+                source: SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap(),
                 ..Default::default()
             }
         ).unwrap();

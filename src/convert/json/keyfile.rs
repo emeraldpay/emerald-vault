@@ -281,7 +281,7 @@ impl TryFrom<&CoreCryptoJson> for Encrypted {
             mac: MacType::Web3(mac),
         });
         let kdf = Kdf::from(value);
-        let result = Encrypted { cipher, kdf };
+        let result = Encrypted { cipher, kdf, global_key: None };
         Ok(result)
     }
 }
@@ -359,7 +359,7 @@ impl EthereumJsonV3File {
         pk: EthereumPrivateKey,
         password: String,
     ) -> Result<EthereumJsonV3File, CryptoError> {
-        let encrypted = Encrypted::encrypt_ethereum(pk.to_vec(), password.as_str())?;
+        let encrypted = Encrypted::encrypt_ethereum(pk.to_vec(), password.as_bytes())?;
         let crypto = CoreCryptoJson::try_from(&encrypted)
             .map_err(|_| CryptoError::UnsupportedSource("encrypted format".to_string()))?;
         let result = EthereumJsonV3File {
@@ -404,7 +404,7 @@ impl TryFrom<&EthereumJsonV3File> for Encrypted {
                 p,
             }),
         };
-        Ok(Encrypted { cipher, kdf })
+        Ok(Encrypted { cipher, kdf, global_key: None })
     }
 }
 
@@ -927,9 +927,10 @@ mod tests {
                         salt: hex::decode(
                             "fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4",
                         )
-                        .unwrap(),
+                            .unwrap(),
                         prf: PrfType::HmacSha256,
                     }),
+                    global_key: None,
                 },
             }),
             created_at: Utc::now(),
@@ -989,7 +990,7 @@ mod tests {
 
         let mkg = Encrypted::try_from(&json)
             .unwrap()
-            .decrypt("testpassword")
+            .decrypt("testpassword".as_bytes(), None)
             .unwrap();
         assert_eq!(
             hex::encode(mkg),

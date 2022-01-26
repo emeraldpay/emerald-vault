@@ -7,9 +7,10 @@ use aes_ctr::Aes128Ctr;
 use aes_ctr::cipher::{
     stream::{generic_array::GenericArray, NewStreamCipher, SyncStreamCipher},
 };
-use rand::{prelude::Rng, thread_rng};
+use rand::{prelude::Rng, RngCore, thread_rng};
 use std::convert::TryFrom;
-use crate::structs::crypto::Argon2;
+use rand::rngs::OsRng;
+use crate::structs::crypto::{Argon2, GlobalKey, GlobalKeyRef};
 
 /// Encrypt given text with provided key and initial vector
 fn encrypt_aes128(data: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
@@ -31,15 +32,21 @@ fn decrypt_aes128(data: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
 }
 
 impl Encrypted {
-    pub fn encrypt2(msg: Vec<u8>, password: &str) -> Result<Encrypted, CryptoError> {
-        return Encrypted::encrypt_ethereum(msg, password);
-    }
-
-    pub fn encrypt(msg: Vec<u8>, password: &str) -> Result<Encrypted, CryptoError> {
+    pub fn encrypt(msg: Vec<u8>, password: &[u8], global: Option<GlobalKey>) -> Result<Encrypted, CryptoError> {
         // for security reasons shouldn't allow empty passwords
         if password.len() == 0 {
             return Err(CryptoError::InvalidKey);
         }
+
+        let actual_password = match global {
+            Some(global) => {
+                let key_ref = GlobalKeyRef::new()?;
+                let msg_password = global.get_password(password, &key_ref.nonce)?;
+                (msg_password.to_vec(), Some(key_ref))
+            },
+            None => (password.to_vec(), None)
+        };
+
         // see https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-argon2-10
         // > Select the salt length. 128 bits is sufficient for all
         // > applications, but can be reduced to 64 bits in the case of space
@@ -49,10 +56,10 @@ impl Encrypted {
             .try_fill(&mut salt)
             .map_err(|_| CryptoError::NoEntropy)?;
         let kdf = Argon2::create_with_salt(salt.to_vec());
-        let key = kdf.derive(password)?;
+        let key = kdf.derive(actual_password.0.as_slice())?;
 
         let mut iv: [u8; 16] = [0; 16];
-        thread_rng()
+        OsRng::new()?
             .try_fill(&mut iv)
             .map_err(|_| CryptoError::NoEntropy)?;
         let key = Web3Key::try_from(key)?;
@@ -64,6 +71,7 @@ impl Encrypted {
                 mac: MacType::sign_web3(&key.mac_key.to_vec(), encrypted)?,
             }),
             kdf: Kdf::Argon2(kdf),
+            global_key: actual_password.1
         };
         Ok(result)
     }
@@ -71,8 +79,8 @@ impl Encrypted {
     /*
     For backward compatibility with ethereum keys provided as JSON. Such files are supposed to use Scrypt or PBKDF2 KDF
      */
-    //TODO try to unify with the method above
-    pub fn encrypt_ethereum(msg: Vec<u8>, password: &str) -> Result<Encrypted, CryptoError> {
+    #[deprecated] // need to just decrypt them and import as normal
+    pub fn encrypt_ethereum(msg: Vec<u8>, password: &[u8]) -> Result<Encrypted, CryptoError> {
         // for security reasons shouldn't allow empty passwords
         if password.len() == 0 {
             return Err(CryptoError::InvalidKey);
@@ -97,14 +105,29 @@ impl Encrypted {
                 mac: MacType::sign_web3(&key.mac_key.to_vec(), encrypted)?,
             }),
             kdf: Kdf::Scrypt(kdf),
+            //TODO
+            global_key: None,
         };
         Ok(result)
     }
 
-    pub fn decrypt(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
-        let key = self.kdf.derive(password)?;
+    pub fn decrypt(&self, password: &[u8], global: Option<GlobalKey>) -> Result<Vec<u8>, CryptoError> {
+        let actual_password = if self.is_using_global() {
+            if global.is_none() {
+                return Err(CryptoError::GlobalKeyRequired)
+            }
+            let temp = global.unwrap().get_password(password, &self.global_key.as_ref().unwrap().nonce)?;
+            temp.to_vec()
+        } else {
+            password.to_vec()
+        };
+        let key = self.kdf.derive(actual_password.as_slice())?;
         let msg = self.cipher.decrypt_value(key)?;
         Ok(msg)
+    }
+
+    pub fn is_using_global(&self) -> bool {
+        self.global_key.is_some()
     }
 }
 
@@ -182,6 +205,48 @@ impl MacType {
     }
 }
 
+impl GlobalKey {
+    pub fn get_password(&self, base_password: &[u8], nonce: &[u8; 16]) -> Result<[u8; 32], CryptoError> {
+        let base = self.key.decrypt(base_password, None)?;
+        let kdf = argon2::Argon2::new(
+            argon2::Algorithm::Argon2id,
+            argon2::Version::default(),
+            argon2::Params::new(
+                128,
+                2,
+                1,
+                Some(32),
+            )?,
+        );
+        let mut key = [0u8; 32];
+        kdf.hash_password_into(base.as_slice(), nonce, &mut key)?;
+        Ok(key)
+    }
+
+    pub fn generate(base_password: &[u8]) -> Result<GlobalKey, CryptoError> {
+        let mut key = [0u8; 32];
+        OsRng::new()?.fill_bytes(&mut key);
+        Ok(
+            GlobalKey {
+                key: Encrypted::encrypt(key.to_vec(), base_password, None)?
+            }
+        )
+    }
+}
+
+impl GlobalKeyRef {
+    ///
+    /// Create new Global Key Ref with a new randomly generated `nonce`
+    pub fn new() -> Result<GlobalKeyRef, CryptoError> {
+        let mut nonce = [0u8; 16];
+        OsRng::new()?.fill_bytes(&mut nonce);
+
+        Ok(GlobalKeyRef {
+            nonce
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -192,6 +257,7 @@ mod tests {
         structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, MacType},
     };
     use std::convert::TryFrom;
+    use crate::structs::crypto::{GlobalKey, GlobalKeyRef};
 
     #[test]
     fn verify_mac_1() {
@@ -309,12 +375,13 @@ mod tests {
         let encrypted = Encrypted::encrypt(
             hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                 .unwrap(),
-            "test",
+            "test".as_bytes(),
+            None,
         );
 
         assert!(encrypted.is_ok());
 
-        let decrypted = encrypted.unwrap().decrypt("test");
+        let decrypted = encrypted.unwrap().decrypt("test".as_bytes(), None);
         //        println!("{:?}", decrypted.err());
         assert!(decrypted.is_ok());
         assert_eq!(
@@ -328,12 +395,13 @@ mod tests {
         let encrypted = Encrypted::encrypt(
             hex::decode("00")
                 .unwrap(),
-            "test",
+            "test".as_bytes(),
+            None,
         );
 
         assert!(encrypted.is_ok());
 
-        let decrypted = encrypted.unwrap().decrypt("test");
+        let decrypted = encrypted.unwrap().decrypt("test".as_bytes(), None);
         //        println!("{:?}", decrypted.err());
         assert!(decrypted.is_ok());
         assert_eq!(
@@ -394,9 +462,35 @@ mod tests {
         let act = Encrypted::encrypt(
             hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                 .unwrap(),
-            "",
+            "".as_bytes(),
+            None,
         );
         assert!(act.is_err());
         assert_eq!(CryptoError::InvalidKey, act.err().unwrap());
+    }
+
+    #[test]
+    fn generates_diff_nonce() {
+        let r1 = GlobalKeyRef::new().unwrap();
+        let r2 = GlobalKeyRef::new().unwrap();
+
+        assert_ne!(hex::encode(r1.nonce), hex::encode(r2.nonce));
+    }
+
+
+    #[test]
+    fn diff_password_per_nonce() {
+        let r1 = GlobalKeyRef::create(hex::decode("00000000000000000000000000000000").unwrap()).unwrap();
+        let r2 = GlobalKeyRef::create(hex::decode("00000000000000000000000000000001").unwrap()).unwrap();
+
+        let key = GlobalKey {
+            key: Encrypted::encrypt("test message".as_bytes().to_vec(), "test".as_bytes(), None).unwrap()
+        };
+
+        let key1 = key.get_password("test".as_bytes(), &r1.nonce).unwrap();
+        let key2 = key.get_password("test".as_bytes(), &r2.nonce).unwrap();
+
+        println!("{:?} {:?}", hex::encode(&key1), hex::encode(&key2));
+        assert_ne!(hex::encode(key1), hex::encode(key2));
     }
 }

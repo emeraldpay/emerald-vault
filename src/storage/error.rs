@@ -106,3 +106,9 @@ impl std::convert::From<hdpath::Error> for VaultError {
         VaultError::UnsupportedDataError(format!("Invalid HDPath: {:?}", err))
     }
 }
+
+impl std::convert::From<rand::Error> for VaultError {
+    fn from(err: rand::Error) -> Self {
+        Self::from(CryptoError::from(err))
+    }
+}

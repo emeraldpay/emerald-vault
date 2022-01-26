@@ -813,7 +813,7 @@ impl ::protobuf::Message for Argon2 {
             ::protobuf::reflect::MessageDescriptor::new_pb_name::<Argon2>(
                 "Argon2",
                 fields,
-                file_descriptor_proto(),
+                file_descriptor_proto()
             )
         })
     }
@@ -853,6 +853,7 @@ pub struct Encrypted {
     pub secret: ::std::vec::Vec<u8>,
     pub iv: ::std::vec::Vec<u8>,
     pub mac: ::protobuf::SingularPtrField<Mac>,
+    pub global_key: ::protobuf::SingularPtrField<GlobalKeyRef>,
     // message oneof groups
     pub kdf_type: ::std::option::Option<Encrypted_oneof_kdf_type>,
     // special fields
@@ -1123,6 +1124,39 @@ impl Encrypted {
             Argon2::new()
         }
     }
+
+    // .emerald.vault.GlobalKeyRef global_key = 8;
+
+
+    pub fn get_global_key(&self) -> &GlobalKeyRef {
+        self.global_key.as_ref().unwrap_or_else(|| <GlobalKeyRef as ::protobuf::Message>::default_instance())
+    }
+    pub fn clear_global_key(&mut self) {
+        self.global_key.clear();
+    }
+
+    pub fn has_global_key(&self) -> bool {
+        self.global_key.is_some()
+    }
+
+    // Param is passed by value, moved
+    pub fn set_global_key(&mut self, v: GlobalKeyRef) {
+        self.global_key = ::protobuf::SingularPtrField::some(v);
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_global_key(&mut self) -> &mut GlobalKeyRef {
+        if self.global_key.is_none() {
+            self.global_key.set_default();
+        }
+        self.global_key.as_mut().unwrap()
+    }
+
+    // Take field
+    pub fn take_global_key(&mut self) -> GlobalKeyRef {
+        self.global_key.take().unwrap_or_else(|| GlobalKeyRef::new())
+    }
 }
 
 impl ::protobuf::Message for Encrypted {
@@ -1147,6 +1181,11 @@ impl ::protobuf::Message for Encrypted {
                 return false;
             }
         }
+        for v in &self.global_key {
+            if !v.is_initialized() {
+                return false;
+            }
+        };
         true
     }
 
@@ -1184,6 +1223,9 @@ impl ::protobuf::Message for Encrypted {
                     }
                     self.kdf_type = ::std::option::Option::Some(Encrypted_oneof_kdf_type::kdf_argon(is.read_message()?));
                 },
+                8 => {
+                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.global_key)?;
+                },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
                 },
@@ -1206,6 +1248,10 @@ impl ::protobuf::Message for Encrypted {
             my_size += ::protobuf::rt::bytes_size(3, &self.iv);
         }
         if let Some(ref v) = self.mac.as_ref() {
+            let len = v.compute_size();
+            my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
+        }
+        if let Some(ref v) = self.global_key.as_ref() {
             let len = v.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         }
@@ -1242,6 +1288,11 @@ impl ::protobuf::Message for Encrypted {
         }
         if let Some(ref v) = self.mac.as_ref() {
             os.write_tag(4, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_raw_varint32(v.get_cached_size())?;
+            v.write_to_with_cached_sizes(os)?;
+        }
+        if let Some(ref v) = self.global_key.as_ref() {
+            os.write_tag(8, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
         }
@@ -1337,6 +1388,11 @@ impl ::protobuf::Message for Encrypted {
                 Encrypted::has_kdf_argon,
                 Encrypted::get_kdf_argon,
             ));
+            fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<GlobalKeyRef>>(
+                "global_key",
+                |m: &Encrypted| { &m.global_key },
+                |m: &mut Encrypted| { &mut m.global_key },
+            ));
             ::protobuf::reflect::MessageDescriptor::new_pb_name::<Encrypted>(
                 "Encrypted",
                 fields,
@@ -1360,6 +1416,7 @@ impl ::protobuf::Clear for Encrypted {
         self.kdf_type = ::std::option::Option::None;
         self.kdf_type = ::std::option::Option::None;
         self.kdf_type = ::std::option::Option::None;
+        self.global_key.clear();
         self.unknown_fields.clear();
     }
 }
@@ -1666,7 +1723,340 @@ impl ::protobuf::reflect::ProtobufValue for Mac_MacType {
     }
 }
 
-#[derive(Clone,PartialEq,Eq,Debug,Hash)]
+#[derive(PartialEq, Clone, Default)]
+pub struct GlobalKeyRef {
+    // message fields
+    pub nonce: ::std::vec::Vec<u8>,
+    // special fields
+    pub unknown_fields: ::protobuf::UnknownFields,
+    pub cached_size: ::protobuf::CachedSize,
+}
+
+impl<'a> ::std::default::Default for &'a GlobalKeyRef {
+    fn default() -> &'a GlobalKeyRef {
+        <GlobalKeyRef as ::protobuf::Message>::default_instance()
+    }
+}
+
+impl GlobalKeyRef {
+    pub fn new() -> GlobalKeyRef {
+        ::std::default::Default::default()
+    }
+
+    // bytes nonce = 1;
+
+
+    pub fn get_nonce(&self) -> &[u8] {
+        &self.nonce
+    }
+    pub fn clear_nonce(&mut self) {
+        self.nonce.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_nonce(&mut self, v: ::std::vec::Vec<u8>) {
+        self.nonce = v;
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_nonce(&mut self) -> &mut ::std::vec::Vec<u8> {
+        &mut self.nonce
+    }
+
+    // Take field
+    pub fn take_nonce(&mut self) -> ::std::vec::Vec<u8> {
+        ::std::mem::replace(&mut self.nonce, ::std::vec::Vec::new())
+    }
+}
+
+impl ::protobuf::Message for GlobalKeyRef {
+    fn is_initialized(&self) -> bool {
+        true
+    }
+
+    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        while !is.eof()? {
+            let (field_number, wire_type) = is.read_tag_unpack()?;
+            match field_number {
+                1 => {
+                    ::protobuf::rt::read_singular_proto3_bytes_into(wire_type, is, &mut self.nonce)?;
+                },
+                _ => {
+                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
+                },
+            };
+        }
+        ::std::result::Result::Ok(())
+    }
+
+    // Compute sizes of nested messages
+    #[allow(unused_variables)]
+    fn compute_size(&self) -> u32 {
+        let mut my_size = 0;
+        if !self.nonce.is_empty() {
+            my_size += ::protobuf::rt::bytes_size(1, &self.nonce);
+        }
+        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
+        self.cached_size.set(my_size);
+        my_size
+    }
+
+    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        if !self.nonce.is_empty() {
+            os.write_bytes(1, &self.nonce)?;
+        }
+        os.write_unknown_fields(self.get_unknown_fields())?;
+        ::std::result::Result::Ok(())
+    }
+
+    fn get_cached_size(&self) -> u32 {
+        self.cached_size.get()
+    }
+
+    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
+        &self.unknown_fields
+    }
+
+    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
+        &mut self.unknown_fields
+    }
+
+    fn as_any(&self) -> &dyn (::std::any::Any) {
+        self as &dyn (::std::any::Any)
+    }
+    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
+        self as &mut dyn (::std::any::Any)
+    }
+    fn into_any(self: ::std::boxed::Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
+        self
+    }
+
+    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
+        Self::descriptor_static()
+    }
+
+    fn new() -> GlobalKeyRef {
+        GlobalKeyRef::new()
+    }
+
+    fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
+        static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::MessageDescriptor> = ::protobuf::rt::LazyV2::INIT;
+        descriptor.get(|| {
+            let mut fields = ::std::vec::Vec::new();
+            fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBytes>(
+                "nonce",
+                |m: &GlobalKeyRef| { &m.nonce },
+                |m: &mut GlobalKeyRef| { &mut m.nonce },
+            ));
+            ::protobuf::reflect::MessageDescriptor::new_pb_name::<GlobalKeyRef>(
+                "GlobalKeyRef",
+                fields,
+                file_descriptor_proto(),
+            )
+        })
+    }
+
+    fn default_instance() -> &'static GlobalKeyRef {
+        static instance: ::protobuf::rt::LazyV2<GlobalKeyRef> = ::protobuf::rt::LazyV2::INIT;
+        instance.get(GlobalKeyRef::new)
+    }
+}
+
+impl ::protobuf::Clear for GlobalKeyRef {
+    fn clear(&mut self) {
+        self.nonce.clear();
+        self.unknown_fields.clear();
+    }
+}
+
+impl ::std::fmt::Debug for GlobalKeyRef {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        ::protobuf::text_format::fmt(self, f)
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for GlobalKeyRef {
+    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
+        ::protobuf::reflect::ReflectValueRef::Message(self)
+    }
+}
+
+#[derive(PartialEq, Clone, Default)]
+pub struct GlobalKey {
+    // message fields
+    pub key: ::protobuf::SingularPtrField<Encrypted>,
+    // special fields
+    pub unknown_fields: ::protobuf::UnknownFields,
+    pub cached_size: ::protobuf::CachedSize,
+}
+
+impl<'a> ::std::default::Default for &'a GlobalKey {
+    fn default() -> &'a GlobalKey {
+        <GlobalKey as ::protobuf::Message>::default_instance()
+    }
+}
+
+impl GlobalKey {
+    pub fn new() -> GlobalKey {
+        ::std::default::Default::default()
+    }
+
+    // .emerald.vault.Encrypted key = 1;
+
+
+    pub fn get_key(&self) -> &Encrypted {
+        self.key.as_ref().unwrap_or_else(|| <Encrypted as ::protobuf::Message>::default_instance())
+    }
+    pub fn clear_key(&mut self) {
+        self.key.clear();
+    }
+
+    pub fn has_key(&self) -> bool {
+        self.key.is_some()
+    }
+
+    // Param is passed by value, moved
+    pub fn set_key(&mut self, v: Encrypted) {
+        self.key = ::protobuf::SingularPtrField::some(v);
+    }
+
+    // Mutable pointer to the field.
+    // If field is not initialized, it is initialized with default value first.
+    pub fn mut_key(&mut self) -> &mut Encrypted {
+        if self.key.is_none() {
+            self.key.set_default();
+        }
+        self.key.as_mut().unwrap()
+    }
+
+    // Take field
+    pub fn take_key(&mut self) -> Encrypted {
+        self.key.take().unwrap_or_else(|| Encrypted::new())
+    }
+}
+
+impl ::protobuf::Message for GlobalKey {
+    fn is_initialized(&self) -> bool {
+        for v in &self.key {
+            if !v.is_initialized() {
+                return false;
+            }
+        };
+        true
+    }
+
+    fn merge_from(&mut self, is: &mut ::protobuf::CodedInputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        while !is.eof()? {
+            let (field_number, wire_type) = is.read_tag_unpack()?;
+            match field_number {
+                1 => {
+                    ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.key)?;
+                },
+                _ => {
+                    ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
+                },
+            };
+        }
+        ::std::result::Result::Ok(())
+    }
+
+    // Compute sizes of nested messages
+    #[allow(unused_variables)]
+    fn compute_size(&self) -> u32 {
+        let mut my_size = 0;
+        if let Some(ref v) = self.key.as_ref() {
+            let len = v.compute_size();
+            my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
+        }
+        my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
+        self.cached_size.set(my_size);
+        my_size
+    }
+
+    fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream<'_>) -> ::protobuf::ProtobufResult<()> {
+        if let Some(ref v) = self.key.as_ref() {
+            os.write_tag(1, ::protobuf::wire_format::WireTypeLengthDelimited)?;
+            os.write_raw_varint32(v.get_cached_size())?;
+            v.write_to_with_cached_sizes(os)?;
+        }
+        os.write_unknown_fields(self.get_unknown_fields())?;
+        ::std::result::Result::Ok(())
+    }
+
+    fn get_cached_size(&self) -> u32 {
+        self.cached_size.get()
+    }
+
+    fn get_unknown_fields(&self) -> &::protobuf::UnknownFields {
+        &self.unknown_fields
+    }
+
+    fn mut_unknown_fields(&mut self) -> &mut ::protobuf::UnknownFields {
+        &mut self.unknown_fields
+    }
+
+    fn as_any(&self) -> &dyn (::std::any::Any) {
+        self as &dyn (::std::any::Any)
+    }
+    fn as_any_mut(&mut self) -> &mut dyn (::std::any::Any) {
+        self as &mut dyn (::std::any::Any)
+    }
+    fn into_any(self: ::std::boxed::Box<Self>) -> ::std::boxed::Box<dyn (::std::any::Any)> {
+        self
+    }
+
+    fn descriptor(&self) -> &'static ::protobuf::reflect::MessageDescriptor {
+        Self::descriptor_static()
+    }
+
+    fn new() -> GlobalKey {
+        GlobalKey::new()
+    }
+
+    fn descriptor_static() -> &'static ::protobuf::reflect::MessageDescriptor {
+        static descriptor: ::protobuf::rt::LazyV2<::protobuf::reflect::MessageDescriptor> = ::protobuf::rt::LazyV2::INIT;
+        descriptor.get(|| {
+            let mut fields = ::std::vec::Vec::new();
+            fields.push(::protobuf::reflect::accessor::make_singular_ptr_field_accessor::<_, ::protobuf::types::ProtobufTypeMessage<Encrypted>>(
+                "key",
+                |m: &GlobalKey| { &m.key },
+                |m: &mut GlobalKey| { &mut m.key },
+            ));
+            ::protobuf::reflect::MessageDescriptor::new_pb_name::<GlobalKey>(
+                "GlobalKey",
+                fields,
+                file_descriptor_proto(),
+            )
+        })
+    }
+
+    fn default_instance() -> &'static GlobalKey {
+        static instance: ::protobuf::rt::LazyV2<GlobalKey> = ::protobuf::rt::LazyV2::INIT;
+        instance.get(GlobalKey::new)
+    }
+}
+
+impl ::protobuf::Clear for GlobalKey {
+    fn clear(&mut self) {
+        self.key.clear();
+        self.unknown_fields.clear();
+    }
+}
+
+impl ::std::fmt::Debug for GlobalKey {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        ::protobuf::text_format::fmt(self, f)
+    }
+}
+
+impl ::protobuf::reflect::ProtobufValue for GlobalKey {
+    fn as_ref(&self) -> ::protobuf::reflect::ReflectValueRef {
+        ::protobuf::reflect::ReflectValueRef::Message(self)
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub enum PrfType {
     PRF_UNKNOWN = 0,
     PRF_HMAC_SHA256 = 1,
@@ -1726,105 +2116,119 @@ static file_descriptor_proto_data: &'static [u8] = b"\
     PrfTypeR\x03prf\x12\x12\n\x04salt\x18\x04\x20\x01(\x0cR\x04salt\"j\n\x06\
     Argon2\x12\x10\n\x03mem\x18\x01\x20\x01(\rR\x03mem\x12\x1e\n\niterations\
     \x18\x02\x20\x01(\rR\niterations\x12\x1a\n\x08parallel\x18\x03\x20\x01(\
-    \rR\x08parallel\x12\x12\n\x04salt\x18\x04\x20\x01(\x0cR\x04salt\"\xfe\
-    \x02\n\tEncrypted\x127\n\x04type\x18\x01\x20\x01(\x0e2#.emerald.vault.En\
+    \rR\x08parallel\x12\x12\n\x04salt\x18\x04\x20\x01(\x0cR\x04salt\"\xba\
+    \x03\n\tEncrypted\x127\n\x04type\x18\x01\x20\x01(\x0e2#.emerald.vault.En\
     crypted.CipherTypeR\x04type\x12\x16\n\x06secret\x18\x02\x20\x01(\x0cR\
     \x06secret\x12\x0e\n\x02iv\x18\x03\x20\x01(\x0cR\x02iv\x12$\n\x03mac\x18\
     \x04\x20\x01(\x0b2\x12.emerald.vault.MacR\x03mac\x129\n\nkdf_scrypt\x18\
     \x05\x20\x01(\x0b2\x18.emerald.vault.ScryptKdfH\0R\tkdfScrypt\x124\n\tkd\
     f_pbkdf\x18\x06\x20\x01(\x0b2\x15.emerald.vault.Pbkdf2H\0R\x08kdfPbkdf\
     \x124\n\tkdf_argon\x18\x07\x20\x01(\x0b2\x15.emerald.vault.Argon2H\0R\
-    \x08kdfArgon\"7\n\nCipherType\x12\x12\n\x0eCIPHER_UNKNOWN\x10\0\x12\x15\
-    \n\x11CIPHER_AES128_CTR\x10\x01B\n\n\x08kdf_type\"u\n\x03Mac\x12.\n\x04t\
-    ype\x18\x01\x20\x01(\x0e2\x1a.emerald.vault.Mac.MacTypeR\x04type\x12\x14\
-    \n\x05value\x18\x02\x20\x01(\x0cR\x05value\"(\n\x07MacType\x12\x0f\n\x0b\
-    MAC_UNKNOWN\x10\0\x12\x0c\n\x08MAC_WEB3\x10\x01*/\n\x07PrfType\x12\x0f\n\
-    \x0bPRF_UNKNOWN\x10\0\x12\x13\n\x0fPRF_HMAC_SHA256\x10\x01J\xc8\r\n\x06\
-    \x12\x04\0\07\x01\n\x08\n\x01\x0c\x12\x03\0\0\x12\n\x08\n\x01\x02\x12\
-    \x03\x01\0\x16\n\n\n\x02\x04\0\x12\x04\x03\0\t\x01\n\n\n\x03\x04\0\x01\
-    \x12\x03\x03\x08\x11\n\x0b\n\x04\x04\0\x02\0\x12\x03\x04\x04\x15\n\x0c\n\
-    \x05\x04\0\x02\0\x05\x12\x03\x04\x04\n\n\x0c\n\x05\x04\0\x02\0\x01\x12\
-    \x03\x04\x0b\x10\n\x0c\n\x05\x04\0\x02\0\x03\x12\x03\x04\x13\x14\n\x0b\n\
-    \x04\x04\0\x02\x01\x12\x03\x05\x04\x13\n\x0c\n\x05\x04\0\x02\x01\x05\x12\
-    \x03\x05\x04\t\n\x0c\n\x05\x04\0\x02\x01\x01\x12\x03\x05\n\x0e\n\x0c\n\
-    \x05\x04\0\x02\x01\x03\x12\x03\x05\x11\x12\n\x0b\n\x04\x04\0\x02\x02\x12\
-    \x03\x06\x04\x11\n\x0c\n\x05\x04\0\x02\x02\x05\x12\x03\x06\x04\n\n\x0c\n\
-    \x05\x04\0\x02\x02\x01\x12\x03\x06\x0b\x0c\n\x0c\n\x05\x04\0\x02\x02\x03\
-    \x12\x03\x06\x0f\x10\n\x0b\n\x04\x04\0\x02\x03\x12\x03\x07\x04\x11\n\x0c\
-    \n\x05\x04\0\x02\x03\x05\x12\x03\x07\x04\n\n\x0c\n\x05\x04\0\x02\x03\x01\
-    \x12\x03\x07\x0b\x0c\n\x0c\n\x05\x04\0\x02\x03\x03\x12\x03\x07\x0f\x10\n\
-    \x0b\n\x04\x04\0\x02\x04\x12\x03\x08\x04\x11\n\x0c\n\x05\x04\0\x02\x04\
-    \x05\x12\x03\x08\x04\n\n\x0c\n\x05\x04\0\x02\x04\x01\x12\x03\x08\x0b\x0c\
-    \n\x0c\n\x05\x04\0\x02\x04\x03\x12\x03\x08\x0f\x10\n\n\n\x02\x04\x01\x12\
-    \x04\x0b\0\x10\x01\n\n\n\x03\x04\x01\x01\x12\x03\x0b\x08\x0e\n\x0b\n\x04\
-    \x04\x01\x02\0\x12\x03\x0c\x04\x15\n\x0c\n\x05\x04\x01\x02\0\x05\x12\x03\
-    \x0c\x04\n\n\x0c\n\x05\x04\x01\x02\0\x01\x12\x03\x0c\x0b\x10\n\x0c\n\x05\
-    \x04\x01\x02\0\x03\x12\x03\x0c\x13\x14\n\x0b\n\x04\x04\x01\x02\x01\x12\
-    \x03\r\x04\x11\n\x0c\n\x05\x04\x01\x02\x01\x05\x12\x03\r\x04\n\n\x0c\n\
-    \x05\x04\x01\x02\x01\x01\x12\x03\r\x0b\x0c\n\x0c\n\x05\x04\x01\x02\x01\
-    \x03\x12\x03\r\x0f\x10\n\x0b\n\x04\x04\x01\x02\x02\x12\x03\x0e\x04\x14\n\
-    \x0c\n\x05\x04\x01\x02\x02\x06\x12\x03\x0e\x04\x0b\n\x0c\n\x05\x04\x01\
-    \x02\x02\x01\x12\x03\x0e\x0c\x0f\n\x0c\n\x05\x04\x01\x02\x02\x03\x12\x03\
-    \x0e\x12\x13\n\x0b\n\x04\x04\x01\x02\x03\x12\x03\x0f\x04\x13\n\x0c\n\x05\
-    \x04\x01\x02\x03\x05\x12\x03\x0f\x04\t\n\x0c\n\x05\x04\x01\x02\x03\x01\
-    \x12\x03\x0f\n\x0e\n\x0c\n\x05\x04\x01\x02\x03\x03\x12\x03\x0f\x11\x12\n\
-    \n\n\x02\x04\x02\x12\x04\x12\0\x17\x01\n\n\n\x03\x04\x02\x01\x12\x03\x12\
-    \x08\x0e\n\x0b\n\x04\x04\x02\x02\0\x12\x03\x13\x04\x13\n\x0c\n\x05\x04\
-    \x02\x02\0\x05\x12\x03\x13\x04\n\n\x0c\n\x05\x04\x02\x02\0\x01\x12\x03\
-    \x13\x0b\x0e\n\x0c\n\x05\x04\x02\x02\0\x03\x12\x03\x13\x11\x12\n\x0b\n\
-    \x04\x04\x02\x02\x01\x12\x03\x14\x04\x1a\n\x0c\n\x05\x04\x02\x02\x01\x05\
-    \x12\x03\x14\x04\n\n\x0c\n\x05\x04\x02\x02\x01\x01\x12\x03\x14\x0b\x15\n\
-    \x0c\n\x05\x04\x02\x02\x01\x03\x12\x03\x14\x18\x19\n\x0b\n\x04\x04\x02\
-    \x02\x02\x12\x03\x15\x04\x18\n\x0c\n\x05\x04\x02\x02\x02\x05\x12\x03\x15\
-    \x04\n\n\x0c\n\x05\x04\x02\x02\x02\x01\x12\x03\x15\x0b\x13\n\x0c\n\x05\
-    \x04\x02\x02\x02\x03\x12\x03\x15\x16\x17\n\x0b\n\x04\x04\x02\x02\x03\x12\
-    \x03\x16\x04\x13\n\x0c\n\x05\x04\x02\x02\x03\x05\x12\x03\x16\x04\t\n\x0c\
-    \n\x05\x04\x02\x02\x03\x01\x12\x03\x16\n\x0e\n\x0c\n\x05\x04\x02\x02\x03\
-    \x03\x12\x03\x16\x11\x12\n\n\n\x02\x05\0\x12\x04\x19\0\x1c\x01\n\n\n\x03\
-    \x05\0\x01\x12\x03\x19\x05\x0c\n\x0b\n\x04\x05\0\x02\0\x12\x03\x1a\x04\
-    \x14\n\x0c\n\x05\x05\0\x02\0\x01\x12\x03\x1a\x04\x0f\n\x0c\n\x05\x05\0\
-    \x02\0\x02\x12\x03\x1a\x12\x13\n\x0b\n\x04\x05\0\x02\x01\x12\x03\x1b\x04\
-    \x18\n\x0c\n\x05\x05\0\x02\x01\x01\x12\x03\x1b\x04\x13\n\x0c\n\x05\x05\0\
-    \x02\x01\x02\x12\x03\x1b\x16\x17\n\n\n\x02\x04\x03\x12\x04\x1e\0-\x01\n\
-    \n\n\x03\x04\x03\x01\x12\x03\x1e\x08\x11\n\x0b\n\x04\x04\x03\x02\0\x12\
-    \x03\x1f\x04\x18\n\x0c\n\x05\x04\x03\x02\0\x06\x12\x03\x1f\x04\x0e\n\x0c\
-    \n\x05\x04\x03\x02\0\x01\x12\x03\x1f\x0f\x13\n\x0c\n\x05\x04\x03\x02\0\
-    \x03\x12\x03\x1f\x16\x17\n\x0b\n\x04\x04\x03\x02\x01\x12\x03\x20\x04\x15\
-    \n\x0c\n\x05\x04\x03\x02\x01\x05\x12\x03\x20\x04\t\n\x0c\n\x05\x04\x03\
-    \x02\x01\x01\x12\x03\x20\n\x10\n\x0c\n\x05\x04\x03\x02\x01\x03\x12\x03\
-    \x20\x13\x14\n\x0b\n\x04\x04\x03\x02\x02\x12\x03!\x04\x11\n\x0c\n\x05\
-    \x04\x03\x02\x02\x05\x12\x03!\x04\t\n\x0c\n\x05\x04\x03\x02\x02\x01\x12\
-    \x03!\n\x0c\n\x0c\n\x05\x04\x03\x02\x02\x03\x12\x03!\x0f\x10\n\x0b\n\x04\
-    \x04\x03\x02\x03\x12\x03\"\x04\x10\n\x0c\n\x05\x04\x03\x02\x03\x06\x12\
-    \x03\"\x04\x07\n\x0c\n\x05\x04\x03\x02\x03\x01\x12\x03\"\x08\x0b\n\x0c\n\
-    \x05\x04\x03\x02\x03\x03\x12\x03\"\x0e\x0f\n\x0c\n\x04\x04\x03\x08\0\x12\
-    \x04#\x04'\x05\n\x0c\n\x05\x04\x03\x08\0\x01\x12\x03#\n\x12\n\x0b\n\x04\
-    \x04\x03\x02\x04\x12\x03$\x08!\n\x0c\n\x05\x04\x03\x02\x04\x06\x12\x03$\
-    \x08\x11\n\x0c\n\x05\x04\x03\x02\x04\x01\x12\x03$\x12\x1c\n\x0c\n\x05\
-    \x04\x03\x02\x04\x03\x12\x03$\x1f\x20\n\x0b\n\x04\x04\x03\x02\x05\x12\
-    \x03%\x08\x1d\n\x0c\n\x05\x04\x03\x02\x05\x06\x12\x03%\x08\x0e\n\x0c\n\
-    \x05\x04\x03\x02\x05\x01\x12\x03%\x0f\x18\n\x0c\n\x05\x04\x03\x02\x05\
-    \x03\x12\x03%\x1b\x1c\n\x0b\n\x04\x04\x03\x02\x06\x12\x03&\x08\x1d\n\x0c\
-    \n\x05\x04\x03\x02\x06\x06\x12\x03&\x08\x0e\n\x0c\n\x05\x04\x03\x02\x06\
-    \x01\x12\x03&\x0f\x18\n\x0c\n\x05\x04\x03\x02\x06\x03\x12\x03&\x1b\x1c\n\
-    \x0c\n\x04\x04\x03\x04\0\x12\x04)\x04,\x05\n\x0c\n\x05\x04\x03\x04\0\x01\
-    \x12\x03)\t\x13\n\r\n\x06\x04\x03\x04\0\x02\0\x12\x03*\x08\x1b\n\x0e\n\
-    \x07\x04\x03\x04\0\x02\0\x01\x12\x03*\x08\x16\n\x0e\n\x07\x04\x03\x04\0\
-    \x02\0\x02\x12\x03*\x19\x1a\n\r\n\x06\x04\x03\x04\0\x02\x01\x12\x03+\x08\
-    \x1e\n\x0e\n\x07\x04\x03\x04\0\x02\x01\x01\x12\x03+\x08\x19\n\x0e\n\x07\
-    \x04\x03\x04\0\x02\x01\x02\x12\x03+\x1c\x1d\n\n\n\x02\x04\x04\x12\x04/\0\
-    7\x01\n\n\n\x03\x04\x04\x01\x12\x03/\x08\x0b\n\x0b\n\x04\x04\x04\x02\0\
-    \x12\x030\x04\x15\n\x0c\n\x05\x04\x04\x02\0\x06\x12\x030\x04\x0b\n\x0c\n\
-    \x05\x04\x04\x02\0\x01\x12\x030\x0c\x10\n\x0c\n\x05\x04\x04\x02\0\x03\
-    \x12\x030\x13\x14\n\x0b\n\x04\x04\x04\x02\x01\x12\x031\x04\x14\n\x0c\n\
-    \x05\x04\x04\x02\x01\x05\x12\x031\x04\t\n\x0c\n\x05\x04\x04\x02\x01\x01\
-    \x12\x031\n\x0f\n\x0c\n\x05\x04\x04\x02\x01\x03\x12\x031\x12\x13\n\x0c\n\
-    \x04\x04\x04\x04\0\x12\x043\x046\x05\n\x0c\n\x05\x04\x04\x04\0\x01\x12\
-    \x033\t\x10\n\r\n\x06\x04\x04\x04\0\x02\0\x12\x034\x08\x18\n\x0e\n\x07\
-    \x04\x04\x04\0\x02\0\x01\x12\x034\x08\x13\n\x0e\n\x07\x04\x04\x04\0\x02\
-    \0\x02\x12\x034\x16\x17\n\r\n\x06\x04\x04\x04\0\x02\x01\x12\x035\x08\x15\
-    \n\x0e\n\x07\x04\x04\x04\0\x02\x01\x01\x12\x035\x08\x10\n\x0e\n\x07\x04\
-    \x04\x04\0\x02\x01\x02\x12\x035\x13\x14b\x06proto3\
+    \x08kdfArgon\x12:\n\nglobal_key\x18\x08\x20\x01(\x0b2\x1b.emerald.vault.\
+    GlobalKeyRefR\tglobalKey\"7\n\nCipherType\x12\x12\n\x0eCIPHER_UNKNOWN\
+    \x10\0\x12\x15\n\x11CIPHER_AES128_CTR\x10\x01B\n\n\x08kdf_type\"u\n\x03M\
+    ac\x12.\n\x04type\x18\x01\x20\x01(\x0e2\x1a.emerald.vault.Mac.MacTypeR\
+    \x04type\x12\x14\n\x05value\x18\x02\x20\x01(\x0cR\x05value\"(\n\x07MacTy\
+    pe\x12\x0f\n\x0bMAC_UNKNOWN\x10\0\x12\x0c\n\x08MAC_WEB3\x10\x01\"$\n\x0c\
+    GlobalKeyRef\x12\x14\n\x05nonce\x18\x01\x20\x01(\x0cR\x05nonce\"7\n\tGlo\
+    balKey\x12*\n\x03key\x18\x01\x20\x01(\x0b2\x18.emerald.vault.EncryptedR\
+    \x03key*/\n\x07PrfType\x12\x0f\n\x0bPRF_UNKNOWN\x10\0\x12\x13\n\x0fPRF_H\
+    MAC_SHA256\x10\x01J\x9d\x0f\n\x06\x12\x04\0\0@\x01\n\x08\n\x01\x0c\x12\
+    \x03\0\0\x12\n\x08\n\x01\x02\x12\x03\x01\0\x16\n\n\n\x02\x04\0\x12\x04\
+    \x03\0\t\x01\n\n\n\x03\x04\0\x01\x12\x03\x03\x08\x11\n\x0b\n\x04\x04\0\
+    \x02\0\x12\x03\x04\x04\x15\n\x0c\n\x05\x04\0\x02\0\x05\x12\x03\x04\x04\n\
+    \n\x0c\n\x05\x04\0\x02\0\x01\x12\x03\x04\x0b\x10\n\x0c\n\x05\x04\0\x02\0\
+    \x03\x12\x03\x04\x13\x14\n\x0b\n\x04\x04\0\x02\x01\x12\x03\x05\x04\x13\n\
+    \x0c\n\x05\x04\0\x02\x01\x05\x12\x03\x05\x04\t\n\x0c\n\x05\x04\0\x02\x01\
+    \x01\x12\x03\x05\n\x0e\n\x0c\n\x05\x04\0\x02\x01\x03\x12\x03\x05\x11\x12\
+    \n\x0b\n\x04\x04\0\x02\x02\x12\x03\x06\x04\x11\n\x0c\n\x05\x04\0\x02\x02\
+    \x05\x12\x03\x06\x04\n\n\x0c\n\x05\x04\0\x02\x02\x01\x12\x03\x06\x0b\x0c\
+    \n\x0c\n\x05\x04\0\x02\x02\x03\x12\x03\x06\x0f\x10\n\x0b\n\x04\x04\0\x02\
+    \x03\x12\x03\x07\x04\x11\n\x0c\n\x05\x04\0\x02\x03\x05\x12\x03\x07\x04\n\
+    \n\x0c\n\x05\x04\0\x02\x03\x01\x12\x03\x07\x0b\x0c\n\x0c\n\x05\x04\0\x02\
+    \x03\x03\x12\x03\x07\x0f\x10\n\x0b\n\x04\x04\0\x02\x04\x12\x03\x08\x04\
+    \x11\n\x0c\n\x05\x04\0\x02\x04\x05\x12\x03\x08\x04\n\n\x0c\n\x05\x04\0\
+    \x02\x04\x01\x12\x03\x08\x0b\x0c\n\x0c\n\x05\x04\0\x02\x04\x03\x12\x03\
+    \x08\x0f\x10\n\n\n\x02\x04\x01\x12\x04\x0b\0\x10\x01\n\n\n\x03\x04\x01\
+    \x01\x12\x03\x0b\x08\x0e\n\x0b\n\x04\x04\x01\x02\0\x12\x03\x0c\x04\x15\n\
+    \x0c\n\x05\x04\x01\x02\0\x05\x12\x03\x0c\x04\n\n\x0c\n\x05\x04\x01\x02\0\
+    \x01\x12\x03\x0c\x0b\x10\n\x0c\n\x05\x04\x01\x02\0\x03\x12\x03\x0c\x13\
+    \x14\n\x0b\n\x04\x04\x01\x02\x01\x12\x03\r\x04\x11\n\x0c\n\x05\x04\x01\
+    \x02\x01\x05\x12\x03\r\x04\n\n\x0c\n\x05\x04\x01\x02\x01\x01\x12\x03\r\
+    \x0b\x0c\n\x0c\n\x05\x04\x01\x02\x01\x03\x12\x03\r\x0f\x10\n\x0b\n\x04\
+    \x04\x01\x02\x02\x12\x03\x0e\x04\x14\n\x0c\n\x05\x04\x01\x02\x02\x06\x12\
+    \x03\x0e\x04\x0b\n\x0c\n\x05\x04\x01\x02\x02\x01\x12\x03\x0e\x0c\x0f\n\
+    \x0c\n\x05\x04\x01\x02\x02\x03\x12\x03\x0e\x12\x13\n\x0b\n\x04\x04\x01\
+    \x02\x03\x12\x03\x0f\x04\x13\n\x0c\n\x05\x04\x01\x02\x03\x05\x12\x03\x0f\
+    \x04\t\n\x0c\n\x05\x04\x01\x02\x03\x01\x12\x03\x0f\n\x0e\n\x0c\n\x05\x04\
+    \x01\x02\x03\x03\x12\x03\x0f\x11\x12\n\n\n\x02\x04\x02\x12\x04\x12\0\x17\
+    \x01\n\n\n\x03\x04\x02\x01\x12\x03\x12\x08\x0e\n\x0b\n\x04\x04\x02\x02\0\
+    \x12\x03\x13\x04\x13\n\x0c\n\x05\x04\x02\x02\0\x05\x12\x03\x13\x04\n\n\
+    \x0c\n\x05\x04\x02\x02\0\x01\x12\x03\x13\x0b\x0e\n\x0c\n\x05\x04\x02\x02\
+    \0\x03\x12\x03\x13\x11\x12\n\x0b\n\x04\x04\x02\x02\x01\x12\x03\x14\x04\
+    \x1a\n\x0c\n\x05\x04\x02\x02\x01\x05\x12\x03\x14\x04\n\n\x0c\n\x05\x04\
+    \x02\x02\x01\x01\x12\x03\x14\x0b\x15\n\x0c\n\x05\x04\x02\x02\x01\x03\x12\
+    \x03\x14\x18\x19\n\x0b\n\x04\x04\x02\x02\x02\x12\x03\x15\x04\x18\n\x0c\n\
+    \x05\x04\x02\x02\x02\x05\x12\x03\x15\x04\n\n\x0c\n\x05\x04\x02\x02\x02\
+    \x01\x12\x03\x15\x0b\x13\n\x0c\n\x05\x04\x02\x02\x02\x03\x12\x03\x15\x16\
+    \x17\n\x0b\n\x04\x04\x02\x02\x03\x12\x03\x16\x04\x13\n\x0c\n\x05\x04\x02\
+    \x02\x03\x05\x12\x03\x16\x04\t\n\x0c\n\x05\x04\x02\x02\x03\x01\x12\x03\
+    \x16\n\x0e\n\x0c\n\x05\x04\x02\x02\x03\x03\x12\x03\x16\x11\x12\n\n\n\x02\
+    \x05\0\x12\x04\x19\0\x1c\x01\n\n\n\x03\x05\0\x01\x12\x03\x19\x05\x0c\n\
+    \x0b\n\x04\x05\0\x02\0\x12\x03\x1a\x04\x14\n\x0c\n\x05\x05\0\x02\0\x01\
+    \x12\x03\x1a\x04\x0f\n\x0c\n\x05\x05\0\x02\0\x02\x12\x03\x1a\x12\x13\n\
+    \x0b\n\x04\x05\0\x02\x01\x12\x03\x1b\x04\x18\n\x0c\n\x05\x05\0\x02\x01\
+    \x01\x12\x03\x1b\x04\x13\n\x0c\n\x05\x05\0\x02\x01\x02\x12\x03\x1b\x16\
+    \x17\n\n\n\x02\x04\x03\x12\x04\x1e\0.\x01\n\n\n\x03\x04\x03\x01\x12\x03\
+    \x1e\x08\x11\n\x0b\n\x04\x04\x03\x02\0\x12\x03\x1f\x04\x18\n\x0c\n\x05\
+    \x04\x03\x02\0\x06\x12\x03\x1f\x04\x0e\n\x0c\n\x05\x04\x03\x02\0\x01\x12\
+    \x03\x1f\x0f\x13\n\x0c\n\x05\x04\x03\x02\0\x03\x12\x03\x1f\x16\x17\n\x0b\
+    \n\x04\x04\x03\x02\x01\x12\x03\x20\x04\x15\n\x0c\n\x05\x04\x03\x02\x01\
+    \x05\x12\x03\x20\x04\t\n\x0c\n\x05\x04\x03\x02\x01\x01\x12\x03\x20\n\x10\
+    \n\x0c\n\x05\x04\x03\x02\x01\x03\x12\x03\x20\x13\x14\n\x0b\n\x04\x04\x03\
+    \x02\x02\x12\x03!\x04\x11\n\x0c\n\x05\x04\x03\x02\x02\x05\x12\x03!\x04\t\
+    \n\x0c\n\x05\x04\x03\x02\x02\x01\x12\x03!\n\x0c\n\x0c\n\x05\x04\x03\x02\
+    \x02\x03\x12\x03!\x0f\x10\n\x0b\n\x04\x04\x03\x02\x03\x12\x03\"\x04\x10\
+    \n\x0c\n\x05\x04\x03\x02\x03\x06\x12\x03\"\x04\x07\n\x0c\n\x05\x04\x03\
+    \x02\x03\x01\x12\x03\"\x08\x0b\n\x0c\n\x05\x04\x03\x02\x03\x03\x12\x03\"\
+    \x0e\x0f\n\x0c\n\x04\x04\x03\x08\0\x12\x04#\x04'\x05\n\x0c\n\x05\x04\x03\
+    \x08\0\x01\x12\x03#\n\x12\n\x0b\n\x04\x04\x03\x02\x04\x12\x03$\x08!\n\
+    \x0c\n\x05\x04\x03\x02\x04\x06\x12\x03$\x08\x11\n\x0c\n\x05\x04\x03\x02\
+    \x04\x01\x12\x03$\x12\x1c\n\x0c\n\x05\x04\x03\x02\x04\x03\x12\x03$\x1f\
+    \x20\n\x0b\n\x04\x04\x03\x02\x05\x12\x03%\x08\x1d\n\x0c\n\x05\x04\x03\
+    \x02\x05\x06\x12\x03%\x08\x0e\n\x0c\n\x05\x04\x03\x02\x05\x01\x12\x03%\
+    \x0f\x18\n\x0c\n\x05\x04\x03\x02\x05\x03\x12\x03%\x1b\x1c\n\x0b\n\x04\
+    \x04\x03\x02\x06\x12\x03&\x08\x1d\n\x0c\n\x05\x04\x03\x02\x06\x06\x12\
+    \x03&\x08\x0e\n\x0c\n\x05\x04\x03\x02\x06\x01\x12\x03&\x0f\x18\n\x0c\n\
+    \x05\x04\x03\x02\x06\x03\x12\x03&\x1b\x1c\n\x0b\n\x04\x04\x03\x02\x07\
+    \x12\x03(\x04\x20\n\x0c\n\x05\x04\x03\x02\x07\x06\x12\x03(\x04\x10\n\x0c\
+    \n\x05\x04\x03\x02\x07\x01\x12\x03(\x11\x1b\n\x0c\n\x05\x04\x03\x02\x07\
+    \x03\x12\x03(\x1e\x1f\n\x0c\n\x04\x04\x03\x04\0\x12\x04*\x04-\x05\n\x0c\
+    \n\x05\x04\x03\x04\0\x01\x12\x03*\t\x13\n\r\n\x06\x04\x03\x04\0\x02\0\
+    \x12\x03+\x08\x1b\n\x0e\n\x07\x04\x03\x04\0\x02\0\x01\x12\x03+\x08\x16\n\
+    \x0e\n\x07\x04\x03\x04\0\x02\0\x02\x12\x03+\x19\x1a\n\r\n\x06\x04\x03\
+    \x04\0\x02\x01\x12\x03,\x08\x1e\n\x0e\n\x07\x04\x03\x04\0\x02\x01\x01\
+    \x12\x03,\x08\x19\n\x0e\n\x07\x04\x03\x04\0\x02\x01\x02\x12\x03,\x1c\x1d\
+    \n\n\n\x02\x04\x04\x12\x040\08\x01\n\n\n\x03\x04\x04\x01\x12\x030\x08\
+    \x0b\n\x0b\n\x04\x04\x04\x02\0\x12\x031\x04\x15\n\x0c\n\x05\x04\x04\x02\
+    \0\x06\x12\x031\x04\x0b\n\x0c\n\x05\x04\x04\x02\0\x01\x12\x031\x0c\x10\n\
+    \x0c\n\x05\x04\x04\x02\0\x03\x12\x031\x13\x14\n\x0b\n\x04\x04\x04\x02\
+    \x01\x12\x032\x04\x14\n\x0c\n\x05\x04\x04\x02\x01\x05\x12\x032\x04\t\n\
+    \x0c\n\x05\x04\x04\x02\x01\x01\x12\x032\n\x0f\n\x0c\n\x05\x04\x04\x02\
+    \x01\x03\x12\x032\x12\x13\n\x0c\n\x04\x04\x04\x04\0\x12\x044\x047\x05\n\
+    \x0c\n\x05\x04\x04\x04\0\x01\x12\x034\t\x10\n\r\n\x06\x04\x04\x04\0\x02\
+    \0\x12\x035\x08\x18\n\x0e\n\x07\x04\x04\x04\0\x02\0\x01\x12\x035\x08\x13\
+    \n\x0e\n\x07\x04\x04\x04\0\x02\0\x02\x12\x035\x16\x17\n\r\n\x06\x04\x04\
+    \x04\0\x02\x01\x12\x036\x08\x15\n\x0e\n\x07\x04\x04\x04\0\x02\x01\x01\
+    \x12\x036\x08\x10\n\x0e\n\x07\x04\x04\x04\0\x02\x01\x02\x12\x036\x13\x14\
+    \n\n\n\x02\x04\x05\x12\x04:\0<\x01\n\n\n\x03\x04\x05\x01\x12\x03:\x08\
+    \x14\n\x0b\n\x04\x04\x05\x02\0\x12\x03;\x04\x14\n\x0c\n\x05\x04\x05\x02\
+    \0\x05\x12\x03;\x04\t\n\x0c\n\x05\x04\x05\x02\0\x01\x12\x03;\n\x0f\n\x0c\
+    \n\x05\x04\x05\x02\0\x03\x12\x03;\x12\x13\n\n\n\x02\x04\x06\x12\x04>\0@\
+    \x01\n\n\n\x03\x04\x06\x01\x12\x03>\x08\x11\n\x0b\n\x04\x04\x06\x02\0\
+    \x12\x03?\x04\x16\n\x0c\n\x05\x04\x06\x02\0\x06\x12\x03?\x04\r\n\x0c\n\
+    \x05\x04\x06\x02\0\x01\x12\x03?\x0e\x11\n\x0c\n\x05\x04\x06\x02\0\x03\
+    \x12\x03?\x14\x15b\x06proto3\
 ";
 
 static file_descriptor_proto_lazy: ::protobuf::rt::LazyV2<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::rt::LazyV2::INIT;

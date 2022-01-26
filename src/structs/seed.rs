@@ -8,6 +8,7 @@ use hdpath::StandardHDPath;
 use sha2::Digest;
 use std::convert::TryFrom;
 use uuid::Uuid;
+use crate::structs::crypto::GlobalKey;
 
 byte_array_struct!(
     pub struct Bytes256(32);
@@ -68,8 +69,9 @@ impl HasUuid for Seed {
 }
 
 impl SeedSource {
-    pub fn create_bytes(seed: Vec<u8>, password: &str) -> Result<Self, CryptoError> {
-        let value = Encrypted::encrypt(seed, password)?;
+    #[cfg(test)]
+    pub fn test_create_bytes(seed: Vec<u8>, password: &[u8]) -> Result<Self, CryptoError> {
+        let value = Encrypted::encrypt(seed, password, None)?;
         Ok(SeedSource::Bytes(value))
     }
 }
@@ -84,11 +86,13 @@ impl SeedRef {
 }
 
 impl Default for Seed {
+    /// Note that the _default_ value must be used to fill missing fields and should never use it as is, because the default seed key is empty
     fn default() -> Self {
         Seed {
             id: Uuid::new_v4(),
             source: SeedSource::Bytes(
-                Encrypted::encrypt(vec![], "NONE").unwrap()
+                // empty key because it should never be used in real situation
+                Encrypted::encrypt(vec![], "NONE".as_bytes(), None).unwrap()
             ),
             label: None,
             created_at: Utc::now(),

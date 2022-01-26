@@ -215,7 +215,7 @@ impl TryFrom<&CoreCryptoV2> for Encrypted {
             mac: MacType::Web3(mac.to_vec()),
         });
         let kdf = Kdf::from(value);
-        let result = Encrypted { cipher, kdf };
+        let result = Encrypted { cipher, kdf, global_key: None };
         Ok(result)
     }
 }

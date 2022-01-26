@@ -10,18 +10,18 @@ use crate::structs::crypto::Argon2;
 
 /// Key Derivation source
 pub trait KeyDerive {
-    fn derive(&self, password: &str) -> Result<Vec<u8>, CryptoError>;
+    fn derive(&self, password: &[u8]) -> Result<Vec<u8>, CryptoError>;
 }
 
 impl KeyDerive for Pbkdf2 {
-    fn derive(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
+    fn derive(&self, password: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let mut key = vec![0u8; self.dklen as usize];
         match self.prf {
             PrfType::HmacSha256 => {
-                pbkdf2::<Hmac<Sha256>>(password.as_bytes(), &self.salt, self.c, &mut key)
+                pbkdf2::<Hmac<Sha256>>(password, &self.salt, self.c, &mut key)
             }
             PrfType::HmacSha512 => {
-                pbkdf2::<Hmac<Sha512>>(password.as_bytes(), &self.salt, self.c, &mut key)
+                pbkdf2::<Hmac<Sha512>>(password, &self.salt, self.c, &mut key)
             }
         };
         Ok(key.to_vec())
@@ -29,17 +29,17 @@ impl KeyDerive for Pbkdf2 {
 }
 
 impl KeyDerive for ScryptKdf {
-    fn derive(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
+    fn derive(&self, password: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let log_n = (self.n as f64).log2().round() as u8;
         let mut key = vec![0u8; self.dklen as usize];
         let params = ScryptParams::new(log_n, self.r, self.p)?;
-        scrypt(password.as_bytes(), &self.salt, &params, &mut key)?;
+        scrypt(password, &self.salt, &params, &mut key)?;
         Ok(key)
     }
 }
 
 impl KeyDerive for Argon2 {
-    fn derive(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
+    fn derive(&self, password: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let kdf = argon2::Argon2::new(
             argon2::Algorithm::Argon2id,
             argon2::Version::default(),
@@ -51,13 +51,13 @@ impl KeyDerive for Argon2 {
             )?,
         );
         let mut key = vec![0u8; 32];
-        kdf.hash_password_into(password.as_bytes(), self.salt.as_slice(), &mut key)?;
+        kdf.hash_password_into(password, self.salt.as_slice(), &mut key)?;
         Ok(key)
     }
 }
 
 impl KeyDerive for Kdf {
-    fn derive(&self, password: &str) -> Result<Vec<u8>, CryptoError> {
+    fn derive(&self, password: &[u8]) -> Result<Vec<u8>, CryptoError> {
         match &self {
             Kdf::Scrypt(v) => v.derive(password),
             Kdf::Pbkdf2(v) => v.derive(password),
@@ -105,7 +105,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("testpassword").unwrap()),
+            hex::encode(kdf.derive("testpassword".as_bytes()).unwrap()),
             "031dc7e0f4f375f6d6fdab7ad8d71834d844e39a6b62f9fb98d942bab76db0f9"
         );
     }
@@ -122,7 +122,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("testpassword").unwrap()),
+            hex::encode(kdf.derive("testpassword".as_bytes()).unwrap()),
             "f06d69cdc7da0faffb1008270bca38f5e31891a3a773950e6d0fea48a7188551"
         );
     }
@@ -138,7 +138,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("test").unwrap()),
+            hex::encode(kdf.derive("test".as_bytes()).unwrap()),
             "392e7c4eef16f9b76db1ffe581c6a15a636df41ba8ff29c5f87ee1d394ed5dc4",
         );
     }
@@ -154,7 +154,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("test").unwrap()),
+            hex::encode(kdf.derive("test".as_bytes()).unwrap()),
             "392e7c4eef16f9b76db1ffe581c6a15a636df41ba8ff29c5f87ee1d394ed5dc41e5f9635e2e31508584fbd96074f65491d70e2461c350857caa380c26f197efd"
         );
     }
@@ -170,7 +170,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("test").unwrap()),
+            hex::encode(kdf.derive("test".as_bytes()).unwrap()),
             "c4a572112f57cf020fdc7825b5cb251667ce3f8dc5d06b6ca98b75e40f805f9e"
         );
     }
@@ -187,7 +187,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("1234567890").unwrap()),
+            hex::encode(kdf.derive("1234567890".as_bytes()).unwrap()),
             "52a5dacfcf80e5111d2c7fbed177113a1b48a882b066a017f2c856086680fac7"
         );
     }
@@ -204,7 +204,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("testtest").unwrap()),
+            hex::encode(kdf.derive("testtest".as_bytes()).unwrap()),
             "dae0d1db4b5d5885db2a0a3f245b83923945d593277bbf4aa840fa497eb20026"
         );
     }
@@ -221,7 +221,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("testtest").unwrap()),
+            hex::encode(kdf.derive("testtest".as_bytes()).unwrap()),
             "dae0d1db4b5d5885db2a0a3f245b83923945d593277bbf4aa840fa497eb20026cb90e037fb92ed2d81195666d1fb9c15d4a4c0975786d126f0a7b22942887212"
         );
     }
@@ -238,7 +238,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("testtest").unwrap()),
+            hex::encode(kdf.derive("testtest".as_bytes()).unwrap()),
             "41db5e54866d6d8be8a9576786f53e5ae2c1a85e334709a8f190236ce4e4f1a5"
         );
     }
@@ -255,7 +255,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("testtest").unwrap()),
+            hex::encode(kdf.derive("testtest".as_bytes()).unwrap()),
             "41db5e54866d6d8be8a9576786f53e5ae2c1a85e334709a8f190236ce4e4f1a585fdb308a2930bfb6ed1d88b6e898c95dbda24a359d68278e4148a60642fa6e3"
         );
     }
@@ -272,7 +272,7 @@ mod tests {
         };
 
         assert_eq!(
-            hex::encode(kdf.derive("test12345678").unwrap()),
+            hex::encode(kdf.derive("test12345678".as_bytes()).unwrap()),
             "04b4115dc5134213bf6d2af6632b9f0352777f40fdaa4543bccd7d4573f52868"
         );
     }
@@ -284,7 +284,7 @@ mod tests {
         );
 
         assert_eq!(
-            hex::encode(kdf.derive("1234567890").unwrap()),
+            hex::encode(kdf.derive("1234567890".as_bytes()).unwrap()),
             "9e56e4faa4b75909c74e4e3e73726254864411542a04dc236f712b7801b651a4"
         );
     }

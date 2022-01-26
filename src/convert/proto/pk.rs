@@ -135,7 +135,7 @@ mod tests {
         assert!(b.len() > 0);
         let act = PrivateKeyHolder::try_from(b).unwrap();
         assert_eq!(act.id.to_string(), "18ba0447-81f3-40d7-bab1-e74de07a1001");
-        assert!(act.decrypt("test").is_ok());
+        assert!(act.decrypt("test".as_bytes(), None).is_ok());
         assert_eq!(act.created_at, Utc.timestamp_millis(1592624592679));
     }
 
