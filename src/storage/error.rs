@@ -22,6 +22,7 @@ pub enum VaultError {
     PublicKeyUnavailable,
     CryptoFailed(CryptoError),
     HWKeyFailed(HWKeyError),
+    GlobalKeyRequired,
 }
 
 impl std::convert::From<ConversionError> for VaultError {
