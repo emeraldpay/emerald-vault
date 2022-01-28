@@ -3,7 +3,7 @@ use rand::RngCore;
 use rand::rngs::OsRng;
 use crate::crypto::error::CryptoError;
 use crate::storage::error::VaultError;
-use crate::structs::types::{IsVerified, UsesGlobalKey};
+use crate::structs::types::{IsVerified, UsesOddKey};
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct ScryptKdf {
@@ -109,9 +109,9 @@ impl Encrypted {
     }
 }
 
-impl UsesGlobalKey for Encrypted {
-    fn is_using_global(&self) -> bool {
-        self.global_key.is_some()
+impl UsesOddKey for Encrypted {
+    fn is_odd_key(&self) -> bool {
+        self.global_key.is_none()
     }
 }
 

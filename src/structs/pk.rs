@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use crate::crypto::error::CryptoError;
 use crate::structs::crypto::GlobalKey;
-use crate::structs::types::UsesGlobalKey;
+use crate::structs::types::UsesOddKey;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct PrivateKeyHolder {
@@ -55,10 +55,10 @@ impl PrivateKeyHolder {
     }
 }
 
-impl UsesGlobalKey for PrivateKeyHolder {
-    fn is_using_global(&self) -> bool {
+impl UsesOddKey for PrivateKeyHolder {
+    fn is_odd_key(&self) -> bool {
         match &self.pk {
-            PrivateKeyType::EthereumPk(e) => e.key.is_using_global()
+            PrivateKeyType::EthereumPk(e) => e.key.is_odd_key()
         }
     }
 }

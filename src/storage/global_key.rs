@@ -7,7 +7,7 @@ use crate::storage::error::VaultError;
 use crate::storage::vault::VaultStorage;
 use crate::structs::crypto::{GlobalKey, GlobalKeyRef};
 use crate::proto::crypto::{GlobalKey as proto_GlobalKey};
-use crate::structs::types::UsesGlobalKey;
+use crate::structs::types::UsesOddKey;
 
 ///
 /// Manage storage for a Global Key
@@ -89,13 +89,13 @@ impl VaultStorage {
         let seeds: Vec<LegacyEntryRef> = self.seeds()
             .list_entries()?
             .iter()
-            .filter(|seed| !seed.is_using_global())
+            .filter(|seed| seed.is_odd_key())
             .map(|seed| LegacyEntryRef::Seed(seed.id))
             .collect();
         let keys: Vec<LegacyEntryRef> = self.keys()
             .list_entries()?
             .iter()
-            .filter(|key| !key.is_using_global())
+            .filter(|key| key.is_odd_key())
             .map(|key| LegacyEntryRef::PrivateKey(key.id))
             .collect();
 
@@ -115,7 +115,7 @@ mod tests {
     use crate::EthereumAddress;
     use crate::storage::vault::VaultStorage;
     use crate::structs::pk::PrivateKeyHolder;
-    use crate::structs::seed::Seed;
+    use crate::structs::seed::{Seed, SeedSource, LedgerSource};
     use crate::storage::global_key::LegacyEntryRef;
 
     #[test]
@@ -301,5 +301,36 @@ mod tests {
         assert!(unused.contains(&LegacyEntryRef::Seed(seed_id_1)));
         assert!(unused.contains(&LegacyEntryRef::PrivateKey(key_id_1)));
         assert!(unused.contains(&LegacyEntryRef::PrivateKey(key_id_3)));
+    }
+
+    #[test]
+    fn doesnt_report_ledger() {
+        let tmp_dir = TempDir::new("emerald-global-key-test").unwrap();
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let seed_id_1 = vault.seeds().add(
+            Seed::test_generate(None, "test-1".as_bytes(), None).unwrap()
+        ).unwrap();
+
+        let seed_id_2 = vault.seeds().add(
+            Seed {
+                source: SeedSource::Ledger(LedgerSource::default()),
+                ..Seed::default()
+            }
+        ).unwrap();
+
+        println!("init: {:?}, {:?}", seed_id_1, seed_id_2);
+
+        let global_store = vault.global_key();
+        global_store.create("test-g").unwrap();
+        let global = Some(global_store.get().unwrap());
+
+        let unused = vault.get_global_key_missing().unwrap();
+
+        println!("{:?}", unused);
+
+        assert_eq!(unused.len(), 1);
+
+        assert!(unused.contains(&LegacyEntryRef::Seed(seed_id_1)));
     }
 }

@@ -9,7 +9,7 @@ use sha2::Digest;
 use std::convert::TryFrom;
 use uuid::Uuid;
 use crate::structs::crypto::GlobalKey;
-use crate::structs::types::UsesGlobalKey;
+use crate::structs::types::UsesOddKey;
 
 byte_array_struct!(
     pub struct Bytes256(32);
@@ -119,18 +119,18 @@ impl SeedSource {
     }
 }
 
-impl UsesGlobalKey for SeedSource {
-    fn is_using_global(&self) -> bool {
+impl UsesOddKey for SeedSource {
+    fn is_odd_key(&self) -> bool {
         match self {
             SeedSource::Ledger(_) => false,
-            SeedSource::Bytes(e) => e.is_using_global()
+            SeedSource::Bytes(e) => e.is_odd_key()
         }
     }
 }
 
-impl UsesGlobalKey for Seed {
-    fn is_using_global(&self) -> bool {
-        self.source.is_using_global()
+impl UsesOddKey for Seed {
+    fn is_odd_key(&self) -> bool {
+        self.source.is_odd_key()
     }
 }
 

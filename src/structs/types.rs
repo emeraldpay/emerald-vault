@@ -13,7 +13,9 @@ pub trait IsVerified {
 }
 
 /// For vault items that may use a Global Key
-pub trait UsesGlobalKey {
-    /// Check if it's currently encrypted with a Global Key
-    fn is_using_global(&self) -> bool;
+pub trait UsesOddKey {
+
+    ///
+    /// Check if it's currently encrypted with an individual key, i.e., is not using Global Key
+    fn is_odd_key(&self) -> bool;
 }

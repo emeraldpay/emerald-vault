@@ -3,7 +3,7 @@ use crate::storage::archive::{Archive, ArchiveType};
 use crate::storage::vault::VaultStorage;
 use crate::structs::pk::PrivateKeyHolder;
 use crate::structs::seed::Seed;
-use crate::structs::types::UsesGlobalKey;
+use crate::structs::types::UsesOddKey;
 
 ///
 /// Utility operations to administrate the Vault Storage
@@ -41,7 +41,7 @@ impl VaultAdmin {
         self.vault.seeds()
             .list_entries().unwrap_or(vec![])
             .iter()
-            .filter(|seed| !seed.is_using_global())
+            .filter(|seed| seed.is_odd_key())
             .for_each(|seed| {
                 let id = seed.id;
                 let updated = seed.clone().source.reencrypt(legacy_password.as_bytes(), global_password.as_bytes(), global.clone());
@@ -59,7 +59,7 @@ impl VaultAdmin {
         self.vault.keys()
             .list_entries().unwrap_or(vec![])
             .iter()
-            .filter(|key| !key.is_using_global())
+            .filter(|key| key.is_odd_key())
             .for_each(|key| {
                 let id = key.id;
                 let updated = key.clone().reencrypt(legacy_password.as_bytes(), global_password.as_bytes(), global.clone());
@@ -83,7 +83,7 @@ mod tests {
     use crate::storage::vault::VaultStorage;
     use crate::structs::pk::PrivateKeyHolder;
     use crate::structs::seed::Seed;
-    use crate::structs::types::UsesGlobalKey;
+    use crate::structs::types::UsesOddKey;
 
     #[test]
     fn try_all_upgrades() {
@@ -119,20 +119,20 @@ mod tests {
         let upgraded = admin.upgrade_all_legacy("test-1", "test-g");
         println!("Upgraded: {:?}", upgraded);
         assert_eq!(upgraded.len(), 1);
-        assert!(vault.seeds().get(seed_id_1).unwrap().is_using_global());
+        assert!(!vault.seeds().get(seed_id_1).unwrap().is_odd_key());
 
         let upgraded = admin.upgrade_all_legacy("test-2", "test-g");
         println!("Upgraded: {:?}", upgraded);
         assert_eq!(upgraded.len(), 2);
-        assert!(vault.keys().get(key_id_1).unwrap().is_using_global());
-        assert!(!vault.keys().get(key_id_2).unwrap().is_using_global());
-        assert!(vault.keys().get(key_id_3).unwrap().is_using_global());
+        assert!(!vault.keys().get(key_id_1).unwrap().is_odd_key());
+        assert!(vault.keys().get(key_id_2).unwrap().is_odd_key());
+        assert!(!vault.keys().get(key_id_3).unwrap().is_odd_key());
 
         let upgraded = admin.upgrade_all_legacy("test-3", "test-g");
         println!("Upgraded: {:?}", upgraded);
         assert_eq!(upgraded.len(), 1);
-        assert!(vault.keys().get(key_id_1).unwrap().is_using_global());
-        assert!(vault.keys().get(key_id_2).unwrap().is_using_global());
-        assert!(vault.keys().get(key_id_3).unwrap().is_using_global());
+        assert!(!vault.keys().get(key_id_1).unwrap().is_odd_key());
+        assert!(!vault.keys().get(key_id_2).unwrap().is_odd_key());
+        assert!(!vault.keys().get(key_id_3).unwrap().is_odd_key());
     }
 }
