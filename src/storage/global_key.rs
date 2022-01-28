@@ -76,21 +76,27 @@ impl VaultGlobalKey {
     }
 }
 
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum LegacyEntryRef {
+    Seed(Uuid),
+    PrivateKey(Uuid)
+}
+
 impl VaultStorage {
     ///
     /// Get list of items in the Vault that use individual passwords. Such item may be a Seed or an individual Key
-    pub fn get_global_key_missing(&self) -> Result<Vec<Uuid>, VaultError> {
-        let seeds: Vec<Uuid> = self.seeds()
+    pub fn get_global_key_missing(&self) -> Result<Vec<LegacyEntryRef>, VaultError> {
+        let seeds: Vec<LegacyEntryRef> = self.seeds()
             .list_entries()?
             .iter()
             .filter(|seed| !seed.is_using_global())
-            .map(|seed| seed.id)
+            .map(|seed| LegacyEntryRef::Seed(seed.id))
             .collect();
-        let keys: Vec<Uuid> = self.keys()
+        let keys: Vec<LegacyEntryRef> = self.keys()
             .list_entries()?
             .iter()
             .filter(|key| !key.is_using_global())
-            .map(|key| key.id)
+            .map(|key| LegacyEntryRef::PrivateKey(key.id))
             .collect();
 
         let mut result = Vec::with_capacity(seeds.len() + keys.len());
@@ -110,6 +116,7 @@ mod tests {
     use crate::storage::vault::VaultStorage;
     use crate::structs::pk::PrivateKeyHolder;
     use crate::structs::seed::Seed;
+    use crate::storage::global_key::LegacyEntryRef;
 
     #[test]
     fn create_when_unset() {
@@ -291,8 +298,8 @@ mod tests {
 
         assert_eq!(unused.len(), 3);
 
-        assert!(unused.contains(&seed_id_1));
-        assert!(unused.contains(&key_id_1));
-        assert!(unused.contains(&key_id_3));
+        assert!(unused.contains(&LegacyEntryRef::Seed(seed_id_1)));
+        assert!(unused.contains(&LegacyEntryRef::PrivateKey(key_id_1)));
+        assert!(unused.contains(&LegacyEntryRef::PrivateKey(key_id_3)));
     }
 }
