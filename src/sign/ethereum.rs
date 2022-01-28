@@ -301,9 +301,8 @@ mod tests {
 
         let seed = Seed {
             id: Uuid::new_v4(),
-            source: SeedSource::test_create_bytes(
+            source: SeedSource::create_raw(
                 hex::decode("0c0727514fe0c87460ddc2bff08075174e1b45283db9d6d34ae23fb877dd12da98d6235f56d9cc4ce3ec245ffe226176338569c59db502ccebfb5c6cd6a264b4").unwrap(),
-                "test1234".as_bytes(),
             ).unwrap(),
             label: None,
             created_at: Utc::now(),
@@ -322,7 +321,7 @@ mod tests {
         };
 
         let pk = entry
-            .export_ethereum_pk("test1234".to_string(), &vault)
+            .export_ethereum_pk(SeedSource::nokey(), &vault)
             .unwrap();
         assert_eq!(
             hex::encode(pk.0),

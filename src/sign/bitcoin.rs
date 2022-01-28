@@ -344,7 +344,7 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
         ).unwrap();
-        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
+        let seed = SeedSource::create_raw(phrase.seed(None)).unwrap();
         let seed_id = Uuid::new_v4();
 
         let value_1 = 120_000u64;
@@ -382,7 +382,7 @@ mod tests {
                 label: None,
                 created_at: Utc.timestamp_millis(0),
             }],
-            keys: KeyMapping::single(seed_id.clone(), "test".to_string()),
+            keys: KeyMapping::single(seed_id.clone(), SeedSource::nokey()),
             input: vec![from],
             output: vec![TxOut {
                 value: value_1 - fee,
@@ -399,7 +399,7 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
         ).unwrap();
-        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
+        let seed = SeedSource::create_raw(phrase.seed(None)).unwrap();
         let seed_id = Uuid::new_v4();
 
         let value_1 = 120_000u64;
@@ -437,7 +437,7 @@ mod tests {
                 label: None,
                 created_at: Utc.timestamp_millis(0),
             }],
-            keys: KeyMapping::single(seed_id.clone(), "test".to_string()),
+            keys: KeyMapping::single(seed_id.clone(), SeedSource::nokey()),
             input: vec![from],
             output: vec![TxOut {
                 value: value_1 - fee,
@@ -471,7 +471,7 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "next script sight verify truly filter snake size sea video cream palace cruise glory furnace second host ordinary strike wasp crystal",
         ).unwrap();
-        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
+        let seed = SeedSource::create_raw(phrase.seed(None)).unwrap();
         let seed_id = Uuid::new_v4();
 
         let value_1 = 1_120_000u64;
@@ -524,7 +524,7 @@ mod tests {
                 label: None,
                 created_at: Utc.timestamp_millis(0),
             }],
-            keys: KeyMapping::single(seed_id.clone(), "test".to_string()),
+            keys: KeyMapping::single(seed_id.clone(), SeedSource::nokey()),
             input: vec![
                 from1, from2
             ],

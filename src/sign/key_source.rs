@@ -251,10 +251,10 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "often impact pistol seminar park example foil urge bird balance reopen uphold enforce protect pear",
         ).unwrap();
-        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
+        let seed = SeedSource::create_raw(phrase.seed(None)).unwrap();
 
         let addresses = seed.get_addresses::<EthereumAddress>(
-            Some("test".to_string()),
+            Some(SeedSource::nokey()),
             None,
             &vec![
                 StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(),
@@ -279,10 +279,10 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "often impact pistol seminar park example foil urge bird balance reopen uphold enforce protect pear",
         ).unwrap();
-        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
+        let seed = SeedSource::create_raw(phrase.seed(None)).unwrap();
 
         let addresses = seed.get_addresses::<Address>(
-            Some("test".to_string()),
+            Some(SeedSource::nokey()),
             None,
             &vec![
                 StandardHDPath::from_str("m/84'/0'/0'/0/0").unwrap(),
@@ -307,10 +307,10 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "often impact pistol seminar park example foil urge bird balance reopen uphold enforce protect pear",
         ).unwrap();
-        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
+        let seed = SeedSource::create_raw(phrase.seed(None)).unwrap();
 
         let addresses = seed.get_xpub(
-            Some("test".to_string()),
+            Some(SeedSource::nokey()),
             &None,
             &vec![
                 AccountHDPath::from_str("m/84'/0'/0'").unwrap(),
@@ -341,10 +341,10 @@ mod tests {
         let phrase = Mnemonic::try_from(Language::English,
                                         "often impact pistol seminar park example foil urge bird balance reopen uphold enforce protect pear",
         ).unwrap();
-        let seed = SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap();
+        let seed = SeedSource::create_raw(phrase.seed(None)).unwrap();
 
         let addresses = seed.get_xpub(
-            Some("test".to_string()),
+            Some(SeedSource::nokey()),
             &None,
             &vec![
                 AccountHDPath::from_str("m/84'/1'/0'").unwrap(),

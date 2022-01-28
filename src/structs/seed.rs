@@ -15,6 +15,8 @@ byte_array_struct!(
     pub struct Bytes256(32);
 );
 
+const NONE_SEED_KEY: &str = "NONE";
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Seed {
     pub id: Uuid,
@@ -70,9 +72,40 @@ impl HasUuid for Seed {
 }
 
 impl SeedSource {
-    #[cfg(test)]
-    pub fn test_create_bytes(seed: Vec<u8>, password: &[u8]) -> Result<Self, CryptoError> {
-        let value = Encrypted::encrypt(seed, password, None)?;
+
+    ///
+    /// Ecnryption key used to encrypt test seed created with #create_raw()
+    pub fn nokey() -> String {
+        return NONE_SEED_KEY.to_string()
+    }
+
+    ///
+    /// Create Seed Source that is supposed to be used in-memory. Ex. to check addresses, etc.
+    /// It doesn't use a Global Key and should not be saved in this form.
+    /// The encryption password is always `NONE` (use #nokey() to get it)
+    ///
+    /// ```
+    /// use emerald_vault::mnemonic::{Mnemonic, Language};
+    /// use emerald_vault::structs::seed::SeedSource;
+    /// use hdpath::StandardHDPath;
+    /// # use std::str::FromStr;
+    ///
+    /// let phrase = Mnemonic::try_from(
+    ///     Language::English,
+    ///     "quote ivory blast onion below kangaroo tonight spread awkward decide farm gun exact wood brown",
+    /// ).unwrap();
+    /// let seed = SeedSource::create_raw(phrase.seed(None)).unwrap();
+    /// seed.get_pk(
+    ///     // use _nokey_ to decrypt the seed
+    ///     Some(SeedSource::nokey()),
+    ///     // Global Key is not used, threfore None
+    ///     &None,
+    ///     // ....
+    ///     &StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap()
+    /// );
+    /// ```
+    pub fn create_raw(seed: Vec<u8>) -> Result<Self, CryptoError> {
+        let value = Encrypted::encrypt(seed, NONE_SEED_KEY.as_bytes(), None)?;
         Ok(SeedSource::Bytes(value))
     }
 

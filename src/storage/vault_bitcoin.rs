@@ -171,7 +171,7 @@ mod tests {
         ).unwrap();
         let seed_id = vault.seeds().add(
             Seed {
-                source: SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap(),
+                source: SeedSource::create_raw(phrase.seed(None)).unwrap(),
                 ..Default::default()
             }
         ).unwrap();
@@ -183,7 +183,7 @@ mod tests {
             seed_id,
             AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
             Blockchain::Bitcoin,
-            AddEntryOptions::with_seed_password("test"),
+            AddEntryOptions::with_seed_password(SeedSource::nokey().as_str()),
         ).expect("entry not created");
 
         let wallet = vault.wallets().get(wallet_id).unwrap();
@@ -219,7 +219,7 @@ mod tests {
         ).unwrap();
         let seed_id = vault.seeds().add(
             Seed {
-                source: SeedSource::test_create_bytes(phrase.seed(None), "test".as_bytes()).unwrap(),
+                source: SeedSource::create_raw(phrase.seed(None)).unwrap(),
                 ..Default::default()
             }
         ).unwrap();
@@ -231,7 +231,7 @@ mod tests {
             seed_id,
             AccountHDPath::from_str("m/84'/1'/0'").unwrap(),
             Blockchain::BitcoinTestnet,
-            AddEntryOptions::with_seed_password("test"),
+            AddEntryOptions::with_seed_password(SeedSource::nokey().as_str()),
         ).expect("entry not created");
 
         let wallet = vault.wallets().get(wallet_id).unwrap();
