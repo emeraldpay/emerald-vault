@@ -61,6 +61,7 @@ impl VaultStorage {
     }
     pub fn create_new(&self) -> CreateWallet {
         CreateWallet {
+            storage: Arc::new(self.clone()),
             keys: self.keys(),
             wallets: self.wallets(),
             seeds: self.seeds(),
@@ -379,6 +380,7 @@ fn try_vault_file(file: &Path, suffix: &str) -> Result<Uuid, ()> {
 }
 
 pub struct CreateWallet {
+    storage: Arc<VaultStorage>,
     keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
     #[allow(dead_code)]
@@ -387,34 +389,6 @@ pub struct CreateWallet {
 }
 
 impl CreateWallet {
-    ///Create a new Wallet with the the specified Ethereum JSON Private Key. All fields for the wallet are set
-    ///with default or empty values. The labels is set from JSON name field, if available.
-    ///
-    ///Returns UUID of the newly created wallet
-    #[deprecated] // require password and encrypt key with global key
-    pub fn ethereum(
-        &self,
-        json: &EthereumJsonV3File,
-        blockchain: Blockchain,
-    ) -> Result<Uuid, VaultError> {
-        let mut pk = PrivateKeyHolder::try_from(json)?;
-        pk.generate_id();
-        let wallet = Wallet {
-            label: json.name.clone(),
-            entries: vec![WalletEntry {
-                id: 0,
-                blockchain,
-                address: json.address.map(|a| AddressRef::EthereumAddress(a)),
-                key: PKType::PrivateKeyRef(pk.get_id()),
-                ..WalletEntry::default()
-            }],
-            ..Wallet::default()
-        };
-        let result = wallet.get_id();
-        self.keys.add(pk)?;
-        self.wallets.add(wallet)?;
-        Ok(result)
-    }
 
     ///Create a new Wallet with the the specified Private Key. All fields for the wallet are set
     ///with default or empty values.
@@ -426,24 +400,38 @@ impl CreateWallet {
         password: &str,
         blockchain: Blockchain,
     ) -> Result<Uuid, VaultError> {
-        let pk = PrivateKeyHolder::create_ethereum_raw(pk, password, self.global.clone())
-            .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let wallet = Wallet {
-            entries: vec![WalletEntry {
-                id: 0,
-                blockchain,
-                address: pk
-                    .get_ethereum_address()
-                    .map(|a| AddressRef::EthereumAddress(a)),
-                key: PKType::PrivateKeyRef(pk.get_id()),
-                ..WalletEntry::default()
-            }],
             ..Wallet::default()
         };
-        let result = wallet.get_id();
-        self.keys.add(pk)?;
-        self.wallets.add(wallet)?;
-        Ok(result)
+        let wallet_id = self.wallets.add(wallet)?;
+        let _ = self.storage
+            .add_ethereum_entry(wallet_id)
+            .raw_pk(pk, password, blockchain)?;
+        Ok(wallet_id)
+    }
+
+    ///Create a new Wallet with the the specified Ethereum JSON Private Key. All fields for the wallet are set
+    ///with default or empty values. The labels is set from JSON name field, if available.
+    ///
+    ///Returns UUID of the newly created wallet
+    pub fn ethereum(
+        &self,
+        json: &EthereumJsonV3File,
+        json_password: &str,
+        blockchain: Blockchain,
+        global_password: &str
+    ) -> Result<Uuid, VaultError> {
+        let wallet = Wallet {
+            label: json.name.clone(),
+            ..Wallet::default()
+        };
+        let wallet_id = self.wallets.add(wallet)?;
+
+        let _ = self.storage
+            .add_ethereum_entry(wallet_id)
+            .json(json, json_password, blockchain, global_password)?;
+
+        Ok(wallet_id)
     }
 }
 

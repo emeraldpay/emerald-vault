@@ -997,4 +997,37 @@ mod tests {
             "7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
         );
     }
+
+    #[test]
+    fn can_decrypt_web3_scrypt() {
+        //password: just-a-test-wallet-100
+        let json = r#"{
+                "version": 3,
+                "id": "038a3f29-58c2-4b04-af6f-82d419a5b99a",
+                "address": "f079f4dc353c8c60d21507bab994c9bb8b422559",
+                "crypto": {
+                    "ciphertext": "73188dc1ead6f9b1d938c932a8ac32e2f79b255ee61c8ccf7ceca56c7942f72a",
+                    "cipherparams": {"iv": "875e43cf3bc53752ed4f3b8493668cce"},
+                    "cipher": "aes-128-ctr",
+                    "kdf": "scrypt",
+                    "kdfparams": {
+                        "dklen": 32,
+                        "salt": "ac1f1c9461c79310966af141009f0e97c13bf2d076810c46dcd209a31811f503",
+                        "n": 8192,
+                        "r": 8,
+                        "p": 1
+                    },
+                    "mac": "0fa24647af1a077aecfa3ca3fc22bdb24de9b527ec4b581e8ab848dbf9086e92"
+                }
+            }"#;
+
+
+        let json = EthereumJsonV3File::try_from(json.to_string()).unwrap();
+        let pk = Encrypted::try_from(&json).unwrap();
+        let result = pk.decrypt("just-a-test-wallet-100".as_bytes(), None);
+        assert!(result.is_ok());
+
+        let pk = EthereumPrivateKey::try_from(result.unwrap().as_slice()).unwrap();
+        assert_eq!(pk.to_address().to_string(), "0xf079f4dc353c8c60d21507bab994c9bb8b422559".to_string())
+    }
 }

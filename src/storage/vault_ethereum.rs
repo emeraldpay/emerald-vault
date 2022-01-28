@@ -51,15 +51,20 @@ impl AddEthereumEntry {
         }
     }
 
-    // deprecate just direct import. require a password and reencrypt it with global key
-    #[deprecated]
     pub fn json(
         &self,
         json: &EthereumJsonV3File,
+        json_password: &str,
         blockchain: Blockchain,
+        global_password: &str
     ) -> Result<usize, VaultError> {
+        if self.global.is_none() {
+            return Err(VaultError::GlobalKeyRequired)
+        }
+
         let mut wallet = self.wallets.get(self.wallet_id.clone())?;
         let mut pk = PrivateKeyHolder::try_from(json)?;
+        pk = pk.reencrypt(json_password.as_bytes(), global_password.as_bytes(), self.global.clone().unwrap())?;
         let pk_id = pk.generate_id();
         self.keys.add(pk)?;
         let id = wallet.next_entry_id();
@@ -270,5 +275,43 @@ mod tests {
 
         let list = vault_pk.list().unwrap();
         assert_eq!(0, list.len());
+    }
+
+    #[test]
+    fn import_json() {
+        //password: just-a-test-wallet-100
+        let json = r#"
+            {
+                "version": 3,
+                "id": "038a3f29-58c2-4b04-af6f-82d419a5b99a",
+                "address": "f079f4dc353c8c60d21507bab994c9bb8b422559",
+                "crypto": {
+                    "ciphertext": "73188dc1ead6f9b1d938c932a8ac32e2f79b255ee61c8ccf7ceca56c7942f72a",
+                    "cipherparams": {"iv": "875e43cf3bc53752ed4f3b8493668cce"},
+                    "cipher": "aes-128-ctr",
+                    "kdf": "scrypt",
+                    "kdfparams": {
+                        "dklen": 32,
+                        "salt": "ac1f1c9461c79310966af141009f0e97c13bf2d076810c46dcd209a31811f503",
+                        "n": 8192,
+                        "r": 8,
+                        "p": 1
+                    },
+                    "mac": "0fa24647af1a077aecfa3ca3fc22bdb24de9b527ec4b581e8ab848dbf9086e92"
+                }
+            }
+        "#;
+        let json = EthereumJsonV3File::try_from(json.to_string()).expect("JSON not parsed");
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+        vault.global_key().create("test").unwrap();
+
+        let wallet_id = vault.create_new()
+            .ethereum(&json, "just-a-test-wallet-100", Blockchain::Ethereum, "test")
+            .unwrap();
+
+        let wallet = vault.wallets().get(wallet_id).unwrap();
+        assert_eq!(wallet.entries.len(), 1);
     }
 }
