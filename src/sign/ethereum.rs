@@ -165,11 +165,41 @@ mod tests {
         let key = EthereumPrivateKey::from_str(
             "0x7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d",
         )
-        .unwrap();
+            .unwrap();
         let act = entry.sign_tx_by_pk(tx, key).unwrap();
         assert_eq!(
             hex::encode(act),
             "f8b1018504a817c80082520894008aeeda4d805471df9b2a5b0f38a0c3bcba786b880de0b6b3a7640000b844095ea7b300000000000000000000000036a8ce9b0b86361a02070e4303d5e24d6c63b3f10000000000000000000000000000000000000000033b2e3c9fd0803ce800000026a08675b401448f7a82e8738e35fa09fb2e2a2acaa83caaa5d81abadfa99f4d174ca063b2e9d977a4d6c4a41492b72b0d9933d835ddfdaf299fde6327389485db04c1"
+        )
+    }
+
+    #[test]
+    fn sign_weth_deposit() {
+        let entry = WalletEntry {
+            id: 0,
+            blockchain: Blockchain::Ethereum,
+            address: Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
+            )),
+            key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
+            ..WalletEntry::default()
+        };
+        let tx = EthereumTransaction {
+            nonce: 1,
+            gas_price: to_32bytes("04a817c800"),
+            gas_limit: 50000,
+            to: Some(EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap()),
+            value: to_32bytes("0de0b6b3a7640000"),
+            data: hex::decode("d0e30db0").unwrap(),
+        };
+        let key = EthereumPrivateKey::from_str(
+            "0x7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d",
+        )
+            .unwrap();
+        let act = entry.sign_tx_by_pk(tx, key).unwrap();
+        assert_eq!(
+            hex::encode(act),
+            "f870018504a817c80082c35094c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2880de0b6b3a764000084d0e30db025a00f1e12799f687fcf135730cff44f3fd34d3bd86e794d059c8fdffb29c8aca37da0190f13cfca41d88cdfc7c730adfc50f73d23c13a246c4bd31114312e5e9c8c3a"
         )
     }
 
