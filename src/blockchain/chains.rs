@@ -10,6 +10,8 @@ pub enum EthereumChainId {
     EthereumClassic,
     /// Kovan Testnet
     Kovan,
+    /// Goerli Testnet
+    Goerli,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -25,13 +27,14 @@ pub enum Blockchain {
     Ethereum = 100,
     EthereumClassic = 101,
     KovanTestnet = 10002,
+    GoerliTestnet = 10005
 }
 
 impl Blockchain {
     pub fn get_type(&self) -> BlockchainType {
         match self {
             Blockchain::BitcoinTestnet | Blockchain::Bitcoin => BlockchainType::Bitcoin,
-            Blockchain::Ethereum | Blockchain::EthereumClassic | Blockchain::KovanTestnet => {
+            Blockchain::Ethereum | Blockchain::EthereumClassic | Blockchain::KovanTestnet | Blockchain::GoerliTestnet => {
                 BlockchainType::Ethereum
             }
         }
@@ -59,6 +62,7 @@ impl From<Blockchain> for EthereumChainId {
             Blockchain::Ethereum => EthereumChainId::Ethereum,
             Blockchain::EthereumClassic => EthereumChainId::EthereumClassic,
             Blockchain::KovanTestnet => EthereumChainId::Kovan,
+            Blockchain::GoerliTestnet => EthereumChainId::Goerli,
             _ => panic!("not an ethereum blockchain"),
         }
     }
@@ -72,6 +76,7 @@ impl TryFrom<EthereumChainId> for Blockchain {
             EthereumChainId::Ethereum => Ok(Blockchain::Ethereum),
             EthereumChainId::EthereumClassic => Ok(Blockchain::EthereumClassic),
             EthereumChainId::Kovan => Ok(Blockchain::KovanTestnet),
+            EthereumChainId::Goerli => Ok(Blockchain::GoerliTestnet),
         }
     }
 }
@@ -86,6 +91,7 @@ impl TryFrom<u32> for Blockchain {
             100 => Ok(Blockchain::Ethereum),
             101 => Ok(Blockchain::EthereumClassic),
             10002 => Ok(Blockchain::KovanTestnet),
+            10005 => Ok(Blockchain::GoerliTestnet),
             _ => Err(()),
         }
     }
@@ -102,6 +108,7 @@ impl FromStr for EthereumChainId {
             "etc-mainnet" | "etc" | "ethereum-classic" | "ethereum classic" => {
                 Ok(EthereumChainId::EthereumClassic)
             }
+            "goerli" => Ok(EthereumChainId::Goerli),
             _ => Err(()),
         }
     }
@@ -114,6 +121,7 @@ impl EthereumChainId {
             EthereumChainId::Ethereum => 1,
             EthereumChainId::Kovan => 42,
             EthereumChainId::EthereumClassic => 61,
+            EthereumChainId::Goerli => 5,
         }
     }
 }
