@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use protobuf::Message;
 use uuid::Uuid;
 use crate::storage::error::VaultError;
-use crate::storage::vault::VaultStorage;
-use crate::structs::crypto::{GlobalKey, GlobalKeyRef};
+use crate::storage::vault::{safe_update, VaultStorage};
+use crate::structs::crypto::{Encrypted, GlobalKey, GlobalKeyRef};
 use crate::proto::crypto::{GlobalKey as proto_GlobalKey};
 use crate::structs::types::UsesOddKey;
 
@@ -73,6 +73,24 @@ impl VaultGlobalKey {
         // may fail to read/decode and return just a Err(VaultError)
         let global = self.get()?;
         Ok(Some(global))
+    }
+
+    ///
+    /// Change password for the global key.
+    /// Note that it doesn't change the actual secret value which used to derive keys for dependent objects
+    pub fn change_password(self, current_password: &str, new_password: &str) -> Result<(), VaultError> {
+        if !self.is_set() {
+            return Err(VaultError::GlobalKeyRequired)
+        }
+
+        let mut g = self.get()?;
+        let key_value = g.key.decrypt(current_password.as_bytes(), None)?;
+        g.key = Encrypted::encrypt(key_value, new_password.as_bytes(), None)?;
+
+        let encoded: Vec<u8> = proto_GlobalKey::try_from(&g).unwrap().write_to_bytes()?;
+        // NOTE it doesn't make a copy of the old key in archive, because if the reason to change
+        // password is that the previous one is unsecure the copy make the change completely bogus
+        safe_update(self.get_path(), encoded, None)
     }
 }
 
@@ -219,6 +237,86 @@ mod tests {
         println!("Result: {:?}", get_w_global);
 
         assert!(get_w_global.is_ok());
+    }
+
+    #[test]
+    fn can_change_password() {
+        let tmp_dir = TempDir::new("emerald-global-key-test").unwrap();
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let global_store = vault.global_key();
+        global_store.create("test-1").unwrap();
+        let global = Some(global_store.get().unwrap());
+
+        let seed_id = vault.seeds().add(
+            Seed::test_generate(None, "test-1".as_bytes(), global.clone()).unwrap()
+        ).unwrap();
+
+        let changed = global_store.change_password("test-1", "test-2");
+        assert!(changed.is_ok());
+
+        // don't forget to read it from disk
+        let global = Some(vault.global_key().get().unwrap());
+
+        let seed_source = vault.seeds().get(seed_id).unwrap().source;
+
+        let get_old_password = seed_source.get_addresses::<EthereumAddress>(
+            Some("test-1".to_string()),
+            global.clone(),
+            &vec![StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap()],
+            Blockchain::Ethereum,
+        );
+        assert!(get_old_password.is_err());
+
+        let get_new_password = seed_source.get_addresses::<EthereumAddress>(
+            Some("test-2".to_string()),
+            global,
+            &vec![StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap()],
+            Blockchain::Ethereum,
+        );
+
+        println!("Result: {:?}", get_new_password);
+
+        assert!(get_new_password.is_ok());
+    }
+
+    #[test]
+    fn doesnt_change_wrong_password() {
+        let tmp_dir = TempDir::new("emerald-global-key-test").unwrap();
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let global_store = vault.global_key();
+        global_store.create("test-1").unwrap();
+        let global = Some(global_store.get().unwrap());
+
+        let seed_id = vault.seeds().add(
+            Seed::test_generate(None, "test-1".as_bytes(), global.clone()).unwrap()
+        ).unwrap();
+
+        let changed = global_store.change_password("test-1-wrong", "test-2");
+        assert!(changed.is_err());
+
+        // don't forget to read it from disk
+        let global = Some(vault.global_key().get().unwrap());
+
+        let seed_source = vault.seeds().get(seed_id).unwrap().source;
+
+        let get_old_password = seed_source.get_addresses::<EthereumAddress>(
+            Some("test-1".to_string()),
+            global.clone(),
+            &vec![StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap()],
+            Blockchain::Ethereum,
+        );
+        assert!(get_old_password.is_ok());
+
+        let get_new_password = seed_source.get_addresses::<EthereumAddress>(
+            Some("test-2".to_string()),
+            global,
+            &vec![StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap()],
+            Blockchain::Ethereum,
+        );
+
+        assert!(get_new_password.is_err());
     }
 
     #[test]

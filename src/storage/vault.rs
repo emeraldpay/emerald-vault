@@ -285,7 +285,7 @@ impl VaultStorage {
 /// Safe update of a file, with making a .bak copy of the existing file, writing new content and
 /// only then removing initial data. If it fails at some point, or backup is already exists, it
 /// returns error
-fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(
+pub(crate) fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(
     file: P,
     new_content: C,
     archive: Option<&Archive>,
