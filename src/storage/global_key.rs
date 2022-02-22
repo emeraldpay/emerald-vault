@@ -92,6 +92,19 @@ impl VaultGlobalKey {
         // password is that the previous one is unsecure the copy make the change completely bogus
         safe_update(self.get_path(), encoded, None)
     }
+
+    ///
+    /// Verify that password can decrypt the Global Key.
+    /// May return Err if the Global Key is not set, or IO/conversion/etc errors while reading it
+    pub fn verify_password(self, password: &str) -> Result<bool, VaultError> {
+        if !self.is_set() {
+            return Err(VaultError::GlobalKeyRequired)
+        }
+
+        let mut g = self.get()?;
+        g.key.decrypt(password.as_bytes(), None)
+            .map_or(Ok(false), |_| Ok(true))
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -188,6 +201,34 @@ mod tests {
 
         assert!(value.is_ok());
         assert!(value.unwrap().is_some());
+    }
+
+    #[test]
+    fn verify_correct() {
+        let tmp_dir = TempDir::new("emerald-global-key-test").unwrap();
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let global = vault.global_key();
+        global.create("test-1").unwrap();
+
+        let value = global.verify_password("test-1");
+
+        assert!(value.is_ok());
+        assert!(value.unwrap());
+    }
+
+    #[test]
+    fn verify_wrong() {
+        let tmp_dir = TempDir::new("emerald-global-key-test").unwrap();
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let global = vault.global_key();
+        global.create("test-1").unwrap();
+
+        let value = global.verify_password("test-2");
+
+        assert!(value.is_ok());
+        assert!(!value.unwrap());
     }
 
     #[test]
