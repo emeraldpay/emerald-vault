@@ -17,7 +17,13 @@ use std::{
     io::Read,
     path::{Path, PathBuf},
 };
+use std::str::FromStr;
+use hdpath::StandardHDPath;
 use tempdir::TempDir;
+use emerald::crypto::kdf::KeyDerive;
+use emerald::mnemonic::{Language, Mnemonic};
+use emerald::structs::crypto::{Argon2, GlobalKey, Kdf};
+use emerald::structs::seed::SeedSource;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");
 
@@ -56,7 +62,22 @@ fn bench_decrypt_scrypt(b: &mut Bencher) {
     let keyfile = EthereumJsonV3File::try_from(file_content(path)).unwrap();
     let pk = PrivateKeyHolder::try_from(&keyfile).unwrap();
 
-    b.iter(|| pk.decrypt("1234567890"));
+    b.iter(|| pk.decrypt("1234567890".as_bytes(), None));
+}
+
+fn bench_decrypt_argon_global(b: &mut Bencher) {
+    b.iter(|| {
+        let kdf = Argon2::new_global(hex::decode("0102030405060708").unwrap());
+        kdf.derive("1234567890".as_bytes()).expect("Failed to derive")
+    });
+}
+
+fn bench_decrypt_argon_subkey(b: &mut Bencher) {
+    b.iter(|| {
+        let kdf = Argon2::new_subkey(hex::decode("0102030405060708").unwrap());
+        kdf.derive("1234567890".as_bytes()).expect("Failed to derive")
+        // println!("x: {:}", hex::encode(x));
+    });
 }
 
 fn bench_decrypt_pbkdf2(b: &mut Bencher) {
@@ -64,11 +85,38 @@ fn bench_decrypt_pbkdf2(b: &mut Bencher) {
     let keyfile = EthereumJsonV3File::try_from(file_content(path)).unwrap();
     let pk = PrivateKeyHolder::try_from(&keyfile).unwrap();
 
-    b.iter(|| pk.decrypt("1234567890"));
+    b.iter(|| pk.decrypt("1234567890".as_bytes(), None));
 }
 
 fn bench_encrypt_message(b: &mut Bencher) {
-    b.iter(|| Encrypted::encrypt("test".as_bytes().to_vec(), "1234567890"));
+    b.iter(|| Encrypted::encrypt("test".as_bytes().to_vec(), "1234567890".as_bytes(), None));
+}
+
+fn bench_seed_access(b: &mut Bencher) {
+    let password = "testtesttest";
+    let global = GlobalKey::generate(password.as_bytes()).expect("Global key not generated");
+    let phrase = Mnemonic::try_from(
+        Language::English,
+        "quote ivory blast onion below kangaroo tonight spread awkward decide farm gun exact wood brown",
+    ).unwrap();
+    let seed = SeedSource::Bytes(
+        Encrypted::encrypt(
+            phrase.seed(None),
+            password.as_bytes(),
+            Some(global.clone()),
+        ).unwrap()
+    );
+
+    b.iter(|| {
+        seed.get_pk(
+            // use _nokey_ to decrypt the seed
+            Some(password.to_string()),
+            // Global Key is not used, threfore None
+            &Some(global.clone()),
+            // ....
+            &StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(),
+        ).expect("Failed to get PK");
+    });
 }
 
 benchmark_group!(
@@ -76,5 +124,8 @@ benchmark_group!(
     bench_decrypt_scrypt,
     bench_decrypt_pbkdf2,
     bench_encrypt_message,
+    bench_seed_access,
+    bench_decrypt_argon_global,
+    bench_decrypt_argon_subkey,
 );
 benchmark_main!(benches);

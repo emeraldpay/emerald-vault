@@ -79,11 +79,27 @@ impl ScryptKdf {
 }
 
 impl Argon2 {
-    pub fn create_with_salt(salt: Vec<u8>) -> Self {
+    /// Argon2 config for a global password. I.e., for a secret that should be harder to crack.
+    /// With M=256K + i=2 + P=2 it takes about 500ms to derive a key.
+    /// NOTE: it's extremely slow in debug mode
+    pub fn new_global(salt: Vec<u8>) -> Self {
         Argon2 {
-            mem: 4096,
-            iterations: 4,
-            parallel: 4,
+            mem: 256 * 1024,
+            iterations: 2,
+            parallel: 2,
+            salt,
+        }
+    }
+
+    /// Argon2 config for a final password, after decrypting a parent global key. I.e., for a secret
+    /// that fully depends on the parent's random 256-bit key so it very unlikely to be bruteforced anyway.
+    /// With M=32K + i=2 + P=2 it takes about 50ms to derive a key
+    /// NOTE: it's extremely slow in debug mode
+    pub fn new_subkey(salt: Vec<u8>) -> Self {
+        Argon2 {
+            mem: 32 * 1024,
+            iterations: 2,
+            parallel: 2,
             salt,
         }
     }
@@ -279,13 +295,13 @@ mod tests {
 
     #[test]
     fn derive_argon2() {
-        let kdf = Argon2::create_with_salt(
+        let kdf = Argon2::new_subkey(
             hex::decode("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4").unwrap()
         );
 
         assert_eq!(
             hex::encode(kdf.derive("1234567890".as_bytes()).unwrap()),
-            "9e56e4faa4b75909c74e4e3e73726254864411542a04dc236f712b7801b651a4"
+            "c48e0cd3f438505db7b72b5395497e21a1973637fe171c5afb4992ba9dc4be0d"
         );
     }
 }

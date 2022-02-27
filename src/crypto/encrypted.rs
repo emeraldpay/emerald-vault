@@ -38,7 +38,7 @@ impl Encrypted {
             return Err(CryptoError::InvalidKey);
         }
 
-        let actual_password = match global {
+        let actual_password = match &global {
             Some(global) => {
                 let key_ref = GlobalKeyRef::new()?;
                 let msg_password = global.get_password(password, &key_ref.nonce)?;
@@ -55,7 +55,11 @@ impl Encrypted {
         thread_rng()
             .try_fill(&mut salt)
             .map_err(|_| CryptoError::NoEntropy)?;
-        let kdf = Argon2::create_with_salt(salt.to_vec());
+        let kdf = match global {
+            Some(_) => Argon2::new_subkey(salt.to_vec()),
+            None => Argon2::new_global(salt.to_vec())
+        };
+        // println!("Use KDF: {:} {:} {:}", kdf.mem, kdf.iterations, kdf.parallel);
         let key = kdf.derive(actual_password.0.as_slice())?;
 
         let mut iv: [u8; 16] = [0; 16];
@@ -232,6 +236,9 @@ impl GlobalKey {
         let kdf = argon2::Argon2::new(
             argon2::Algorithm::Argon2id,
             argon2::Version::default(),
+            // use a very basic KDF options because this one is used only to produce different base key,
+            // which in its turn uses a more advanced KDF for encryption. I.e. both Global Key and Secret keys
+            // use different Argon2 or other KDF.
             argon2::Params::new(
                 128,
                 2,
