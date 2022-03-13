@@ -122,7 +122,7 @@ impl AddEthereumEntry {
             return Err(VaultError::IncorrectBlockchainError)
         }
         let seed = self.seeds.get(seed_id)?;
-        let address = match seed.source {
+        let actual_address = match seed.source {
             SeedSource::Bytes(seed) => {
                 if password.is_none() {
                     return Err(VaultError::PasswordRequired);
@@ -134,19 +134,23 @@ impl AddEthereumEntry {
             }
             SeedSource::Ledger(_) => {
                 // try to verify address if Ledger is currently connected
-                let manager = LedgerKey::new_connected().map_err(|_| VaultError::PrivateKeyUnavailable)?;
-                let ethereum_app = EthereumApp::new(&manager);
-                if ethereum_app.is_open().is_none() {
-                    None
-                } else {
-                    ethereum_app.get_address(&hd_path, false)
-                        .ok()
-                        .and_then(|a| EthereumAddress::from_str(a.address.as_str()).ok())
+                match LedgerKey::new_connected() {
+                    Ok(manager) => {
+                        let ethereum_app = EthereumApp::new(&manager);
+                        if ethereum_app.is_open().is_none() {
+                            None
+                        } else {
+                            ethereum_app.get_address(&hd_path, false)
+                                .ok()
+                                .and_then(|a| EthereumAddress::from_str(a.address.as_str()).ok())
+                        }
+                    }
+                    Err(_) => None
                 }
             }
         };
 
-        if expected_address.is_some() && address.is_some() && address != expected_address {
+        if expected_address.is_some() && actual_address.is_some() && actual_address != expected_address {
             return Err(VaultError::InvalidDataError(
                 "Different address".to_string(),
             ));
@@ -157,7 +161,7 @@ impl AddEthereumEntry {
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
-            address: address
+            address: actual_address
                 .or(expected_address)
                 .map(|a| AddressRef::EthereumAddress(a)),
             key: PKType::SeedHd(SeedRef {
