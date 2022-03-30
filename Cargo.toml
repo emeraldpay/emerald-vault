@@ -10,7 +10,7 @@ keywords = ["ethereum", "bitcoin", "blockchain", "cryptocurrency"]
 categories = ["cryptography"]
 readme = "crates.md"
 license = "Apache-2.0"
-edition = "2018"
+edition = "2021"
 autobenches = false
 
 [lib]
@@ -60,6 +60,7 @@ bitcoin_hashes = "0.9.0"
 #emerald-hwkey = { path = "../emerald-hwkey" }
 #emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
 emerald-hwkey = "^0.1.2"
+num-bigint = "^0.4"
 
 [dev-dependencies]
 tempdir = "0.3.7"

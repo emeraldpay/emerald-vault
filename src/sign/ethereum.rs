@@ -139,6 +139,8 @@ mod tests {
     use chrono::Utc;
     use hdpath::StandardHDPath;
     use std::{convert::TryFrom, str::FromStr};
+    use num::Num;
+    use num_bigint::BigUint;
     use tempdir::TempDir;
     use uuid::Uuid;
     use crate::tests::{is_ledger_enabled, read_test_txes};
@@ -156,10 +158,10 @@ mod tests {
         };
         let tx = EthereumTransaction {
             nonce: 1,
-            gas_price: to_32bytes("04a817c800"),
+            gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 21000,
             to: Some(EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap()),
-            value: to_32bytes("0de0b6b3a7640000"),
+            value: BigUint::from_str_radix("0de0b6b3a7640000", 16).unwrap(),
             data: hex::decode("095ea7b300000000000000000000000036a8ce9b0b86361a02070e4303d5e24d6c63b3f10000000000000000000000000000000000000000033b2e3c9fd0803ce8000000").unwrap(),
         };
         let key = EthereumPrivateKey::from_str(
@@ -186,10 +188,10 @@ mod tests {
         };
         let tx = EthereumTransaction {
             nonce: 1,
-            gas_price: to_32bytes("04a817c800"),
+            gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 50000,
             to: Some(EthereumAddress::from_str("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2").unwrap()),
-            value: to_32bytes("0de0b6b3a7640000"),
+            value: BigUint::from_str_radix("0de0b6b3a7640000", 16).unwrap(),
             data: hex::decode("d0e30db0").unwrap(),
         };
         let key = EthereumPrivateKey::from_str(
@@ -216,12 +218,12 @@ mod tests {
         };
         let tx = EthereumTransaction {
             nonce: 1,
-            gas_price: to_32bytes("04a817c800"),
+            gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 21000,
             to: Some(
                 EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
             ),
-            value: to_32bytes("0de0b6b3a7640000"),
+            value: BigUint::from_str_radix("0de0b6b3a7640000", 16).unwrap(),
             data: vec![],
         };
         let key = EthereumPrivateKey::from_str(
@@ -267,12 +269,12 @@ mod tests {
         };
         let tx = EthereumTransaction {
             nonce: 1,
-            gas_price: to_32bytes("04a817c800"),
+            gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 21000,
             to: Some(
                 EthereumAddress::from_str("0x008aeeda4d805471df9b2a5b0f38a0c3bcba786b").unwrap(),
             ),
-            value: to_32bytes("0de0b6b3a7640000"),
+            value: BigUint::from_str_radix("0de0b6b3a7640000", 16).unwrap(),
             data: vec![],
         };
 
@@ -394,12 +396,12 @@ mod tests {
 
         let tx = EthereumTransaction {
             nonce: 0,
-            gas_price: to_32bytes("04e3b29200"),
+            gas_price: BigUint::from_str_radix("04e3b29200", 16).unwrap(),
             gas_limit: 21000,
             to: Some(
                 EthereumAddress::from_str("0x78296F1058dD49C5D6500855F59094F0a2876397").unwrap(),
             ),
-            value: to_32bytes("0de0b6b3a7640000"),
+            value: BigUint::from_str_radix("0de0b6b3a7640000", 16).unwrap(),
             data: vec![],
         };
 

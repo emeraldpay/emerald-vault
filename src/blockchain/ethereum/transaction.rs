@@ -16,6 +16,7 @@ limitations under the License.
 */
 //! # Account transaction
 
+use num_bigint::BigUint;
 use super::{super::error::Error, EthereumAddress, EthereumPrivateKey, EthereumSignature};
 use crate::{
     blockchain::chains::EthereumChainId,
@@ -30,7 +31,7 @@ pub struct EthereumTransaction {
     pub nonce: u64,
 
     /// Gas Price
-    pub gas_price: [u8; 32], //TODO why 32??? why slice?
+    pub gas_price: BigUint,
 
     /// Gas Limit
     pub gas_limit: u64,
@@ -39,7 +40,7 @@ pub struct EthereumTransaction {
     pub to: Option<EthereumAddress>,
 
     /// Value transferred with transaction
-    pub value: [u8; 32], //TODO why 32??? why slice?
+    pub value: BigUint,
 
     /// Data transferred with transaction
     pub data: Vec<u8>,
@@ -96,7 +97,7 @@ impl EthereumTransaction {
         data.begin_unbounded_list();
 
         data.append(&self.nonce);
-        data.append(&trim_bytes(&self.gas_price));
+        data.append(&trim_bytes(&self.gas_price.to_bytes_be()));
         data.append(&self.gas_limit);
 
         match self.to {
@@ -104,7 +105,7 @@ impl EthereumTransaction {
             _ => data.append_empty_data(),
         };
 
-        data.append(&trim_bytes(&self.value));
+        data.append(&trim_bytes(&self.value.to_bytes_be()));
         if self.data.is_empty() {
             data.append_empty_data();
         } else {
@@ -131,6 +132,8 @@ impl EthereumTransaction {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+    use num::{Num, Zero};
     use super::*;
     use crate::{blockchain::ethereum::EthereumAddress, tests::*};
 
@@ -138,16 +141,16 @@ mod tests {
     fn encode_tx() {
         let tx = EthereumTransaction {
             nonce: 1,
-            gas_price: to_32bytes(
-                "00000000000000000000000000000000000000000000000000000004e3b29200",
-            ),
+            gas_price: BigUint::from_str_radix(
+                "00000000000000000000000000000000000000000000000000000004e3b29200", 16
+            ).unwrap(),
             gas_limit: 21000,
             to: Some(
                 "0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
                     .parse::<EthereumAddress>()
                     .unwrap(),
             ),
-            value: to_32bytes("00000000000000000000000000000000000000000000000000DE0B6B3A764000"),
+            value: BigUint::from_str_radix("00000000000000000000000000000000000000000000000000DE0B6B3A764000", 16).unwrap(),
             data: Vec::new(),
         };
         let rlp = tx.to_rlp(Some(0x25));
@@ -173,16 +176,14 @@ mod tests {
     fn encode_tx_with_small_gassprice() {
         let tx = EthereumTransaction {
             nonce: 0,
-            gas_price: to_32bytes(
-                "0000000000000000000000000000000000000000000000000000000000000001",
-            ),
+            gas_price: BigUint::from(1u32),
             gas_limit: 21000,
             to: Some(
                 "0x3eaf0b987b49c4d782ee134fdc1243fd0ccdfdd3"
                     .parse::<EthereumAddress>()
                     .unwrap(),
             ),
-            value: to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
+            value: BigUint::zero(),
             data: Vec::new(),
         };
         let rlp = tx.to_rlp(Some(0x25));
@@ -209,15 +210,13 @@ mod tests {
         let tx = EthereumTransaction {
             nonce: 0,
             gas_price: /* 21000000000 */
-            to_32bytes("0000000000000000000000000000000\
-                              0000000000000000000000004e3b29200"),
+            BigUint::from_str_radix("04e3b29200", 16).unwrap(),
             gas_limit: 21000,
             to: Some("0x3f4E0668C20E100d7C2A27D4b177Ac65B2875D26"
                 .parse::<EthereumAddress>()
                 .unwrap()),
             value: /* 1 ETC */
-            to_32bytes("00000000000000000000000000000000\
-                              00000000000000000de0b6b3a7640000"),
+            BigUint::from_str_radix("0de0b6b3a7640000", 16).unwrap(),
             data: Vec::new(),
         };
 
@@ -264,15 +263,15 @@ mod tests {
         let tx = EthereumTransaction {
             nonce: 1048585,
             gas_price: /* 20000000000 */
-            to_32bytes("00000000000000000000000000000\
-                        000000000000000000000000004a817c800"),
+            BigUint::from_str_radix("00000000000000000000000000000\
+                        000000000000000000000000004a817c800", 16).unwrap(),
             gas_limit: 21000,
             to: Some("0x163b454d1ccdd0a12e88341b12afb2c98044c599"
                 .parse::<EthereumAddress>()
                 .unwrap()),
             value: /* 562 ETC */
-            to_32bytes("000000000000000000000000000000\
-                        00000000000000001e7751166579880000"),
+            BigUint::from_str_radix("000000000000000000000000000000\
+                        00000000000000001e7751166579880000", 16).unwrap(),
             data: Vec::new(),
         };
 
@@ -304,14 +303,14 @@ mod tests {
         let tx = EthereumTransaction {
             nonce: 9,
             gas_price: /* 20,000,000,000 */
-            to_32bytes("00000000000000000000000000000\
-                        000000000000000000000000004a817c800"),
+            BigUint::from_str_radix("00000000000000000000000000000\
+                        000000000000000000000000004a817c800", 16).unwrap(),
             gas_limit: 21000,
             to: Some("0x3535353535353535353535353535353535353535"
                 .parse::<EthereumAddress>()
                 .unwrap()),
-            value: to_32bytes("000000000000000000000000000000\
-                0000000000000000000de0b6b3a7640000"),
+            value: BigUint::from_str_radix("000000000000000000000000000000\
+                0000000000000000000de0b6b3a7640000", 16).unwrap(),
             data: Vec::new(),
         };
 
@@ -342,13 +341,13 @@ mod tests {
         let tx = EthereumTransaction {
             nonce: 0,
             gas_price: /* 234,567,897,654,321 */
-            to_32bytes("0000000000000000000000000000000000000000000000000000D55698372431"),
+            BigUint::from_str_radix("0000000000000000000000000000000000000000000000000000D55698372431", 16).unwrap(),
             gas_limit: 2000000,
             to: Some("0xF0109fC8DF283027b6285cc889F5aA624EaC1F55"
                 .parse::<EthereumAddress>()
                 .unwrap()),
             value:
-            to_32bytes("000000000000000000000000000000000000000000000000000000003B9ACA00"),
+            BigUint::from_str_radix("000000000000000000000000000000000000000000000000000000003B9ACA00", 16).unwrap(),
             data: Vec::new(),
         };
 
@@ -370,13 +369,13 @@ mod tests {
         let tx = EthereumTransaction {
             nonce: 0,
             gas_price: /* 234,567,897,654,321 */
-            to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
+            BigUint::from_str_radix("0000000000000000000000000000000000000000000000000000000000000000", 16).unwrap(),
             gas_limit: 31853,
             to: Some("0xF0109fC8DF283027b6285cc889F5aA624EaC1F55"
                 .parse::<EthereumAddress>()
                 .unwrap()),
             value:
-            to_32bytes("0000000000000000000000000000000000000000000000000000000000000000"),
+            BigUint::from_str_radix("0000000000000000000000000000000000000000000000000000000000000000", 16).unwrap(),
             data: Vec::new(),
         };
 
