@@ -20,5 +20,5 @@ pub mod transaction;
 pub use self::{
     address::EthereumAddress,
     signature::{EthereumPrivateKey, EthereumSignature},
-    transaction::EthereumTransaction,
+    transaction::EthereumLegacyTransaction,
 };

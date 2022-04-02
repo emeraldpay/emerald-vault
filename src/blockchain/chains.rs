@@ -12,6 +12,7 @@ pub enum EthereumChainId {
     Kovan,
     /// Goerli Testnet
     Goerli,
+    Custom(u8)
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -77,6 +78,7 @@ impl TryFrom<EthereumChainId> for Blockchain {
             EthereumChainId::EthereumClassic => Ok(Blockchain::EthereumClassic),
             EthereumChainId::Kovan => Ok(Blockchain::KovanTestnet),
             EthereumChainId::Goerli => Ok(Blockchain::GoerliTestnet),
+            _ => panic!("custom ethereum blockchain"),
         }
     }
 }
@@ -122,6 +124,7 @@ impl EthereumChainId {
             EthereumChainId::Kovan => 42,
             EthereumChainId::EthereumClassic => 61,
             EthereumChainId::Goerli => 5,
+            EthereumChainId::Custom(v) => *v
         }
     }
 }

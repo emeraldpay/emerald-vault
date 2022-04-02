@@ -6,8 +6,6 @@ use crate::{
         wallet::{PKType, WalletEntry},
     },
     EthereumPrivateKey,
-    EthereumTransaction,
-    EthereumSignature,
 };
 use hdpath::StandardHDPath;
 use std::convert::TryFrom;
@@ -15,28 +13,28 @@ use uuid::Uuid;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::LedgerApp;
-use futures::stream::iter;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use rand::rngs::OsRng;
+use crate::ethereum::signature::EthereumBasicSignature;
+use crate::ethereum::transaction::EthereumTransaction;
 
 impl WalletEntry {
-    fn sign_tx_by_pk(
+    fn sign_tx_by_pk<TX>(
         &self,
-        tx: EthereumTransaction,
+        tx: TX,
         key: EthereumPrivateKey,
-    ) -> Result<Vec<u8>, VaultError> {
-        let chain_id = EthereumChainId::from(self.blockchain);
-        tx.to_signed_raw(key, chain_id)
+    ) -> Result<Vec<u8>, VaultError> where TX: EthereumTransaction {
+        tx.sign(key)
             .map_err(|_| VaultError::InvalidPrivateKey)
     }
 
-    fn sign_tx_with_hardware(
+    fn sign_tx_with_hardware<TX>(
         &self,
-        tx: EthereumTransaction,
+        tx: TX,
         _: Uuid, //not used yet
         hd_path: StandardHDPath,
-    ) -> Result<Vec<u8>, VaultError> {
+    ) -> Result<Vec<u8>, VaultError> where TX: EthereumTransaction {
         let hd_path = StandardHDPath::try_from(hd_path.to_string().as_str())
             .map_err(|_| VaultError::InvalidDataError("HDPath".to_string()))?;
 
@@ -47,19 +45,19 @@ impl WalletEntry {
             return Err(VaultError::PrivateKeyUnavailable);
         }
         let chain_id = EthereumChainId::from(self.blockchain);
-        let rlp = tx.to_rlp(Some(chain_id.as_chainid()));
+        let rlp = tx.encode_unsigned();
         let sign = ethereum_app
             .sign_transaction(&rlp, &hd_path)
             .map_err(|_| VaultError::InvalidPrivateKey)?;
-        let sign = EthereumSignature::from(sign);
-        let raw = tx.raw_from_sig(Some(chain_id.as_chainid()), &sign);
+        let sign = EthereumBasicSignature::from(sign);
+        let raw = tx.encode_signed(Some(chain_id), &sign);
         //TODO verify that signature is from the entry's address
         Ok(raw)
     }
 
-    pub fn sign_tx(
+    pub fn sign_tx<TX: EthereumTransaction>(
         &self,
-        tx: EthereumTransaction,
+        tx: TX,
         password: Option<String>,
         vault: &VaultStorage,
     ) -> Result<Vec<u8>, VaultError> {
@@ -76,7 +74,7 @@ impl WalletEntry {
             return Err(VaultError::PasswordRequired);
         }
         let key = self.key.get_ethereum_pk(&vault, password.clone(), vault.global_key().get_if_exists()?)?;
-        self.sign_tx_by_pk(tx, key)
+        self.sign_tx_by_pk::<TX>(tx, key)
     }
 
     pub fn export_ethereum_pk(
@@ -134,7 +132,7 @@ mod tests {
         to_32bytes,
         EthereumAddress,
         EthereumPrivateKey,
-        EthereumTransaction,
+        EthereumLegacyTransaction,
     };
     use chrono::Utc;
     use hdpath::StandardHDPath;
@@ -143,6 +141,7 @@ mod tests {
     use num_bigint::BigUint;
     use tempdir::TempDir;
     use uuid::Uuid;
+    use crate::chains::EthereumChainId;
     use crate::tests::{is_ledger_enabled, read_test_txes};
 
     #[test]
@@ -156,7 +155,8 @@ mod tests {
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
             ..WalletEntry::default()
         };
-        let tx = EthereumTransaction {
+        let tx = EthereumLegacyTransaction {
+            chain_id: Some(EthereumChainId::Ethereum),
             nonce: 1,
             gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 21000,
@@ -186,7 +186,8 @@ mod tests {
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
             ..WalletEntry::default()
         };
-        let tx = EthereumTransaction {
+        let tx = EthereumLegacyTransaction {
+            chain_id: Some(EthereumChainId::Ethereum),
             nonce: 1,
             gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 50000,
@@ -216,7 +217,8 @@ mod tests {
             key: PKType::PrivateKeyRef(Uuid::default()), // not used by the test
             ..WalletEntry::default()
         };
-        let tx = EthereumTransaction {
+        let tx = EthereumLegacyTransaction {
+            chain_id: Some(EthereumChainId::Ethereum),
             nonce: 1,
             gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 21000,
@@ -267,7 +269,8 @@ mod tests {
             key: PKType::PrivateKeyRef(key_id),
             ..WalletEntry::default()
         };
-        let tx = EthereumTransaction {
+        let tx = EthereumLegacyTransaction {
+            chain_id: Some(EthereumChainId::Ethereum),
             nonce: 1,
             gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 21000,
@@ -394,7 +397,8 @@ mod tests {
             ..WalletEntry::default()
         };
 
-        let tx = EthereumTransaction {
+        let tx = EthereumLegacyTransaction {
+            chain_id: Some(EthereumChainId::Ethereum),
             nonce: 0,
             gas_price: BigUint::from_str_radix("04e3b29200", 16).unwrap(),
             gas_limit: 21000,

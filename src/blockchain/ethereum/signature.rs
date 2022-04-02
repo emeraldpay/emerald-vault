@@ -17,11 +17,7 @@ limitations under the License.
 //! # Account ECDSA signatures using the SECG curve secp256k1
 
 use super::{super::Error, EthereumAddress};
-use crate::{
-    convert::error::ConversionError,
-    storage::error::VaultError,
-    util::{keccak256, to_arr, KECCAK256_BYTES},
-};
+use crate::{convert::error::ConversionError, storage::error::VaultError, trim_bytes, util::{keccak256, to_arr, KECCAK256_BYTES}};
 use hex;
 use rand::{rngs::OsRng, Rng};
 use secp256k1::{
@@ -31,6 +27,8 @@ use secp256k1::{
     SignOnly,
 };
 use std::{convert::TryFrom, fmt, ops, str};
+use rlp::RlpStream;
+use crate::chains::EthereumChainId;
 
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;
@@ -44,7 +42,7 @@ lazy_static! {
 
 /// Transaction sign data (see Appendix F. "Signing Transactions" from Yellow Paper)
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct EthereumSignature {
+pub struct EthereumBasicSignature {
     /// ‘recovery id’, a 1 byte value specifying the sign and finiteness of the curve point
     pub v: u8,
 
@@ -55,25 +53,72 @@ pub struct EthereumSignature {
     pub s: [u8; 32],
 }
 
-impl From<[u8; ECDSA_SIGNATURE_BYTES]> for EthereumSignature {
-    fn from(data: [u8; ECDSA_SIGNATURE_BYTES]) -> Self {
-        let mut sign = EthereumSignature::default();
+///
+/// Signature for EIP-2930 type of transactions
+///
+/// See: https://eips.ethereum.org/EIPS/eip-2930
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct EthereumEIP2930Signature {
+    /// Y-coord bit on the curve
+    pub y_parity: u8,
 
+    /// ECDSA signature first point (0 < r < secp256k1n)
+    pub r: [u8; 32],
+
+    /// ECDSA signature second point (0 < s < secp256k1n ÷ 2 + 1)
+    pub s: [u8; 32],
+}
+
+pub trait EthereumSignature {
+    ///
+    /// Append the signature to an rlp-encoded transaction
+    fn append_to_rlp(&self, chain: Option<EthereumChainId>, rlp: &mut RlpStream);
+}
+
+impl EthereumSignature for EthereumBasicSignature {
+    fn append_to_rlp(&self, chain: Option<EthereumChainId>, rlp: &mut RlpStream) {
+        let mut v = u16::from(self.v);
+        if let Some(chain_id) = chain {
+            // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
+            // Can be already applied by HD wallet.
+            // TODO: refactor to avoid this check
+            let stamp = u16::from(chain_id.as_chainid() * 2 + 35 - 27);
+            if v + stamp <= 0xff {
+                v += stamp;
+            }
+        }
+
+        rlp.append(&(v as u8));
+        rlp.append(&trim_bytes(&self.r[..]));
+        rlp.append(&trim_bytes(&self.s[..]));
+    }
+}
+
+impl EthereumSignature for EthereumEIP2930Signature {
+    fn append_to_rlp(&self, _chain: Option<EthereumChainId>, rlp: &mut RlpStream) {
+        rlp.append(&self.y_parity);
+        rlp.append(&trim_bytes(&self.r[..]));
+        rlp.append(&trim_bytes(&self.s[..]));
+    }
+}
+
+impl From<[u8; ECDSA_SIGNATURE_BYTES]> for EthereumBasicSignature {
+    fn from(data: [u8; ECDSA_SIGNATURE_BYTES]) -> Self {
+        let mut sign = EthereumBasicSignature::default();
         sign.v = data[0];
         sign.r.copy_from_slice(&data[1..(1 + 32)]);
         sign.s.copy_from_slice(&data[(1 + 32)..(1 + 32 + 32)]);
-
         sign
     }
 }
 
-impl Into<(u8, [u8; 32], [u8; 32])> for EthereumSignature {
+impl Into<(u8, [u8; 32], [u8; 32])> for EthereumBasicSignature {
     fn into(self) -> (u8, [u8; 32], [u8; 32]) {
         (self.v, self.r, self.s)
     }
 }
 
-impl Into<String> for EthereumSignature {
+impl Into<String> for EthereumBasicSignature {
     fn into(self) -> String {
         format!(
             "0x{:X}{}{}",
@@ -105,29 +150,58 @@ impl EthereumPrivateKey {
         EthereumAddress::from(key)
     }
 
-    /// Sign message
-    pub fn sign_message(&self, msg: &str) -> Result<EthereumSignature, Error> {
-        self.sign_hash(message_hash(msg))
-    }
-
-    /// Sign a slice of bytes
-    pub fn sign_bytes(&self, data: &[u8]) -> Result<EthereumSignature, Error> {
-        self.sign_hash(bytes_hash(data))
-    }
-
     /// Sign hash from message (Keccak-256)
-    pub fn sign_hash(&self, hash: [u8; KECCAK256_BYTES]) -> Result<EthereumSignature, Error> {
+    pub fn sign_hash<S>(&self, hash: [u8; KECCAK256_BYTES]) -> Result<S, Error> where S: SignatureMaker<S> {
         let msg = Message::from_slice(&hash)?;
         let key = SecretKey::from_slice(self)?;
 
-        let s = ECDSA.sign_recoverable(&msg, &key);
+        S::sign(msg, key)
+    }
+}
+
+pub trait SignatureMaker<T> {
+    fn sign(msg: Message, sk: SecretKey) -> Result<T, Error>;
+}
+
+impl SignatureMaker<EthereumBasicSignature> for EthereumBasicSignature {
+    fn sign(msg: Message, sk: SecretKey) -> Result<EthereumBasicSignature, Error> {
+        let s = ECDSA.sign_recoverable(&msg, &sk);
         let (rid, sig) = s.serialize_compact();
 
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
         buf[0] = (rid.to_i32() + 27) as u8;
         buf[1..65].copy_from_slice(&sig[0..64]);
 
-        Ok(EthereumSignature::from(buf))
+        Ok(EthereumBasicSignature::from(buf))
+    }
+}
+
+impl SignatureMaker<EthereumEIP2930Signature> for EthereumEIP2930Signature {
+    fn sign(msg: Message, sk: SecretKey) -> Result<EthereumEIP2930Signature, Error> {
+        let s = ECDSA.sign_recoverable(&msg, &sk);
+        let (rid, sig) = s.serialize_compact();
+
+        let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
+        buf[0] = (rid.to_i32() + 27) as u8;
+        buf[1..65].copy_from_slice(&sig[0..64]);
+
+        let mut r = [0u8; 32];
+        r.copy_from_slice(&sig[0..32]);
+        let mut s = [0u8; 32];
+        s.copy_from_slice(&sig[32..64]);
+
+        let sig = EthereumEIP2930Signature {
+            y_parity: rid.to_i32() as u8,
+            r, s
+        };
+
+        if sig.y_parity > 1 {
+            // technically it's y-coord side, so can have only two possible values.
+            // if we've got something different we did something completely wrong
+            panic!("y_parity can be only 0 or 1. Found: {:}", sig.y_parity)
+        }
+
+        Ok(sig)
     }
 }
 
@@ -232,7 +306,7 @@ mod tests {
         ));
 
         let s = key
-            .sign_hash(to_32bytes(
+            .sign_hash::<EthereumBasicSignature>(to_32bytes(
                 "82ff40c0a986c6a5cfad4ddf4c3aa6996f1a7837f9c398e17e5de5cbd5a12b28",
             ))
             .unwrap();
@@ -255,4 +329,53 @@ mod tests {
             to_32bytes("8144a6fa26be252b86456491fbcd43c1de7e022241845ffea1c3df066f7cfede",)
         );
     }
+
+    #[test]
+    fn sign_eip2930() {
+        let key = to_32bytes(
+            "4646464646464646464646464646464646464646464646464646464646464646",
+        );
+        let hash = to_32bytes("57c3588c6ef4be66e68464a5364cef58fe154f57b2ff8d8d89909ac10cd0527b");
+        let sig = EthereumEIP2930Signature::sign(
+            Message::from_slice(hash.as_ref()).unwrap(), SecretKey::from_slice(key.as_ref()).unwrap()
+        );
+        assert!(sig.is_ok());
+        let sig = sig.unwrap();
+        assert_eq!(sig.y_parity, 1);
+        assert_eq!(hex::encode(sig.r), "38c8eb279a4b6c4b806258389e1b5906b28418e3eff9e0fc81173f54fa37a255");
+        assert_eq!(hex::encode(sig.s), "3acaa2b6d5e4edb561b918b4cb49cf1dbae9972ca90df7af6364598353a2c125");
+    }
+
+    #[test]
+    fn sign_eip2930_2() {
+        let key = to_32bytes(
+            "4646464646464646464646464646464646464646464646464646464646464646",
+        );
+        let hash = to_32bytes("aef1156bbd124793e5d76bdf9fe9464e9ef79f2432abbaf0385e57e8ae8e8d5c");
+        let sig = EthereumEIP2930Signature::sign(
+            Message::from_slice(hash.as_ref()).unwrap(), SecretKey::from_slice(key.as_ref()).unwrap()
+        );
+        assert!(sig.is_ok());
+        let sig = sig.unwrap();
+        assert_eq!(sig.y_parity, 0);
+        assert_eq!(hex::encode(sig.r), "b935047bf9b8464afec5bda917281610b2aaabd8de4b01d2eba6e876c934ca7a");
+        assert_eq!(hex::encode(sig.s), "431b406eb13aefca05a0320c3595700b9375df6fac8cc8ec5603ac2e42af4894");
+    }
+
+    #[test]
+    fn sign_eip2930_3() {
+        let key = to_32bytes(
+            "4646464646464646464646464646464646464646464646464646464646464646",
+        );
+        let hash = to_32bytes("68fe011ba5be4a03369d51810e7943abab15fbaf757f9296711558aee8ab772b");
+        let sig = EthereumEIP2930Signature::sign(
+            Message::from_slice(hash.as_ref()).unwrap(), SecretKey::from_slice(key.as_ref()).unwrap()
+        );
+        assert!(sig.is_ok());
+        let sig = sig.unwrap();
+        assert_eq!(sig.y_parity, 1);
+        assert_eq!(hex::encode(sig.r), "f0b3347ec48e78bf5ef6075b332334518ebc2f90d2bf0fea080623179936382e");
+        assert_eq!(hex::encode(sig.s), "5c58c5beeafb2398d5e79b40b320421112a9672167f27e7fc55e76d2d7d11062");
+    }
+
 }

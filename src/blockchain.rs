@@ -32,6 +32,6 @@ pub use self::{
             ECDSA_SIGNATURE_BYTES,
             PRIVATE_KEY_BYTES,
         },
-        transaction::EthereumTransaction,
+        transaction::EthereumLegacyTransaction,
     },
 };
