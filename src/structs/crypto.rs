@@ -2,7 +2,7 @@ use std::convert::TryInto;
 use rand::RngCore;
 use rand::rngs::OsRng;
 use crate::crypto::error::CryptoError;
-use crate::storage::error::VaultError;
+use crate::error::VaultError;
 use crate::structs::types::{IsVerified, UsesOddKey};
 
 #[derive(Clone, PartialEq, Eq, Debug)]

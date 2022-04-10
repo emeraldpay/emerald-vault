@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::{
     convert::error::ConversionError,
-    storage::error::VaultError,
+    error::VaultError,
     structs::{seed::Seed, wallet::WalletEntry},
     sign::bitcoin::DEFAULT_SECP256K1
 };

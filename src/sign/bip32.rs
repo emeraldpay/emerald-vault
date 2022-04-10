@@ -19,7 +19,7 @@ limitations under the License.
 //!
 
 use crate::{
-    storage::error::VaultError,
+    error::VaultError,
 };
 use bitcoin::{
     network::constants::Network,

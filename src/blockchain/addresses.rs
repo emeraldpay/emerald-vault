@@ -1,5 +1,5 @@
 use crate::blockchain::bitcoin::{XPub, AddressType};
-use crate::storage::error::VaultError;
+use crate::error::VaultError;
 use bitcoin::{Address as BitcoinAddress, PublicKey, Network};
 use crate::blockchain::ethereum::EthereumAddress;
 use crate::sign::bitcoin::DEFAULT_SECP256K1;

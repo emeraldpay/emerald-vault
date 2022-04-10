@@ -9,7 +9,7 @@ use crate::blockchain::{
 };
 use crate::convert::error::ConversionError;
 use crate::sign::bip32::generate_key;
-use crate::storage::error::VaultError;
+use crate::error::VaultError;
 use crate::storage::vault::{VaultAccessByFile};
 use crate::structs::book::AddressRef;
 use crate::structs::seed::{Seed, SeedRef, SeedSource};

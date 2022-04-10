@@ -3,7 +3,7 @@ use crate::storage::vault::VaultAccessByFile;
 use crate::structs::seed::{Seed, SeedSource, SeedRef};
 use crate::structs::wallet::{Wallet, WalletEntry, PKType};
 use uuid::Uuid;
-use crate::storage::error::VaultError;
+use crate::error::VaultError;
 use hdpath::{AccountHDPath, PathValue};
 use crate::blockchain::chains::{Blockchain, BlockchainType};
 use bitcoin::util::bip32::{ExtendedPrivKey, ExtendedPubKey, DerivationPath};

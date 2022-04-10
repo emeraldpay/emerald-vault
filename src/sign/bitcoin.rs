@@ -8,7 +8,7 @@ use crate::{
         },
         chains::Blockchain,
     },
-    storage::error::VaultError,
+    error::VaultError,
     structs::{book::AddressRef, wallet::WalletEntry},
 };
 use bitcoin::{

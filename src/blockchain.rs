@@ -19,11 +19,9 @@ limitations under the License.
 pub mod addresses;
 pub mod bitcoin;
 pub mod chains;
-pub mod error;
 pub mod ethereum;
 
 pub use self::{
-    error::Error,
     ethereum::{
         address::{EthereumAddress, ETHEREUM_ADDRESS_BYTES},
         signature::{

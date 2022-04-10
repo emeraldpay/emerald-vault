@@ -1,7 +1,8 @@
 use crate::{
     blockchain::chains::EthereumChainId,
     convert::json::keyfile::EthereumJsonV3File,
-    storage::{error::VaultError, vault::VaultStorage},
+    storage::vault::VaultStorage,
+    error::VaultError,
     structs::{
         wallet::{PKType, WalletEntry},
     },

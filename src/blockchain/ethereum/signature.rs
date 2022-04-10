@@ -16,8 +16,8 @@ limitations under the License.
 */
 //! # Account ECDSA signatures using the SECG curve secp256k1
 
-use super::{super::Error, EthereumAddress};
-use crate::{convert::error::ConversionError, storage::error::VaultError, trim_bytes, util::{keccak256, to_arr, KECCAK256_BYTES}};
+use super::{EthereumAddress};
+use crate::{convert::error::ConversionError, error::VaultError, trim_bytes, util::{keccak256, to_arr, KECCAK256_BYTES}};
 use hex;
 use rand::{rngs::OsRng, Rng};
 use secp256k1::{
@@ -149,7 +149,7 @@ impl EthereumPrivateKey {
     }
 
     /// Sign hash from message (Keccak-256)
-    pub fn sign_hash<S>(&self, hash: [u8; KECCAK256_BYTES]) -> Result<S, Error> where S: SignatureMaker<S> {
+    pub fn sign_hash<S>(&self, hash: [u8; KECCAK256_BYTES]) -> Result<S, VaultError> where S: SignatureMaker<S> {
         let msg = Message::from_slice(&hash)?;
         let key = SecretKey::from_slice(self)?;
 
@@ -158,11 +158,11 @@ impl EthereumPrivateKey {
 }
 
 pub trait SignatureMaker<T> {
-    fn sign(msg: Message, sk: SecretKey) -> Result<T, Error>;
+    fn sign(msg: Message, sk: SecretKey) -> Result<T, VaultError>;
 }
 
 impl SignatureMaker<EthereumBasicSignature> for EthereumBasicSignature {
-    fn sign(msg: Message, sk: SecretKey) -> Result<EthereumBasicSignature, Error> {
+    fn sign(msg: Message, sk: SecretKey) -> Result<EthereumBasicSignature, VaultError> {
         let s = ECDSA.sign_recoverable(&msg, &sk);
         let (rid, sig) = s.serialize_compact();
 
@@ -175,7 +175,7 @@ impl SignatureMaker<EthereumBasicSignature> for EthereumBasicSignature {
 }
 
 impl SignatureMaker<EthereumEIP2930Signature> for EthereumEIP2930Signature {
-    fn sign(msg: Message, sk: SecretKey) -> Result<EthereumEIP2930Signature, Error> {
+    fn sign(msg: Message, sk: SecretKey) -> Result<EthereumEIP2930Signature, VaultError> {
         let s = ECDSA.sign_recoverable(&msg, &sk);
         let (rid, sig) = s.serialize_compact();
 

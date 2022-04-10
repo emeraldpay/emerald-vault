@@ -43,7 +43,6 @@ limitations under the License.
 
 pub mod addressbook;
 pub mod archive;
-pub mod error;
 pub mod entry;
 mod vault_ethereum;
 mod vault_bitcoin;

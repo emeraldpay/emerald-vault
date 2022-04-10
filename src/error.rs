@@ -1,5 +1,4 @@
 use crate::{
-    blockchain,
     convert::error::ConversionError,
     crypto::error::CryptoError,
 };
@@ -55,20 +54,21 @@ impl std::convert::From<String> for VaultError {
     }
 }
 
-impl std::convert::From<blockchain::error::Error> for VaultError {
-    fn from(err: blockchain::error::Error) -> Self {
-        match err {
-            blockchain::error::Error::InvalidHexLength(_) => {
-                VaultError::InvalidDataError("Invalid input length".to_string())
-            }
-            _ => VaultError::InvalidDataError("Invalid data".to_string()),
-        }
-    }
-}
-
 impl std::convert::From<()> for VaultError {
     fn from(_: ()) -> Self {
         VaultError::UnrecognizedError
+    }
+}
+
+impl From<hex::FromHexError> for VaultError {
+    fn from(err: hex::FromHexError) -> Self {
+        VaultError::ConversionError(ConversionError::from(err))
+    }
+}
+
+impl From<secp256k1::Error> for VaultError {
+    fn from(err: secp256k1::Error) -> Self {
+        VaultError::CryptoFailed(CryptoError::from(err))
     }
 }
 
@@ -81,12 +81,6 @@ impl std::convert::From<std::convert::Infallible> for VaultError {
 impl std::convert::From<csv::Error> for VaultError {
     fn from(_: csv::Error) -> Self {
         VaultError::ConversionError(ConversionError::CSVError)
-    }
-}
-
-impl std::convert::From<hex::FromHexError> for VaultError {
-    fn from(_: hex::FromHexError) -> Self {
-        VaultError::ConversionError(ConversionError::InvalidHex)
     }
 }
 

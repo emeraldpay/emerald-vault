@@ -3,7 +3,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use protobuf::Message;
 use uuid::Uuid;
-use crate::storage::error::VaultError;
+use crate::error::VaultError;
 use crate::storage::vault::{safe_update, VaultStorage};
 use crate::structs::crypto::{Encrypted, GlobalKey, GlobalKeyRef};
 use crate::proto::crypto::{GlobalKey as proto_GlobalKey};

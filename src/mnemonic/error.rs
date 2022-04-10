@@ -16,7 +16,6 @@ limitations under the License.
 */
 //! # Mnemonic sentence generation errors
 
-use crate::blockchain;
 use std::{error, fmt, io};
 
 /// `Mnemonic` generation errors
@@ -27,12 +26,6 @@ pub enum Error {
 
     /// BIP32 key generation error
     KeyGenerationError(String),
-}
-
-impl From<blockchain::Error> for Error {
-    fn from(err: blockchain::Error) -> Self {
-        Error::MnemonicError(err.to_string())
-    }
 }
 
 impl From<io::Error> for Error {

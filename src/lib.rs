@@ -69,6 +69,7 @@ pub mod proto;
 pub mod sign;
 pub mod storage;
 pub mod structs;
+pub mod error;
 
 pub use self::{blockchain::*, util::*};
 

@@ -1,6 +1,7 @@
 use crate::{
     sign::bip32::generate_key,
-    storage::{error::VaultError, vault::VaultStorage},
+    storage::vault::VaultStorage,
+    error::VaultError,
     structs::{seed::SeedSource, wallet::PKType},
     EthereumPrivateKey,
     EthereumAddress,

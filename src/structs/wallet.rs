@@ -1,7 +1,8 @@
 use crate::{
     blockchain::chains::Blockchain,
     convert::error::ConversionError,
-    storage::{error::VaultError, vault::VaultStorage},
+    storage::vault::VaultStorage,
+    error::VaultError,
     structs::{
         book::AddressRef,
         seed::{SeedRef, SeedSource},

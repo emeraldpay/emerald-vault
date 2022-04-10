@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 #[derive(Debug, Clone, Eq, PartialEq, Display)]
 pub enum CryptoError {
+    CryptoFailed(String),
     InvalidParams(String),
     InvalidKey,
     WrongKey,
@@ -35,3 +36,12 @@ impl From<rand::Error> for CryptoError {
     }
 }
 
+impl From<secp256k1::Error> for CryptoError {
+    fn from(err: secp256k1::Error) -> Self {
+        match err {
+            secp256k1::Error::InvalidSecretKey => CryptoError::InvalidKey,
+            secp256k1::Error::InvalidTweak => CryptoError::InvalidParams(format!("{}", err)),
+            _ => CryptoError::CryptoFailed(format!("{}", err))
+        }
+    }
+}

@@ -18,7 +18,8 @@ limitations under the License.
 
 use crate::{
     convert::error::ConversionError,
-    storage::{error::VaultError, vault::VaultAccess},
+    storage::vault::VaultAccess,
+    error::VaultError,
     structs::{book::BookmarkDetails, types::HasUuid},
 };
 use csv::{StringRecord, Writer};

@@ -1,4 +1,4 @@
-use crate::storage::error::VaultError;
+use crate::error::VaultError;
 use std::path::Path;
 use uuid::Uuid;
 

@@ -16,15 +16,15 @@ limitations under the License.
 */
 //! # Account address (20 bytes)
 
-use super::super::Error;
 use crate::util::to_arr;
 use hex;
 use std::{fmt, ops, str::FromStr};
 use crate::{EthereumPrivateKey, PRIVATE_KEY_BYTES, keccak256};
 use bitcoin::util::bip32::ExtendedPrivKey;
 use std::convert::TryFrom;
-use crate::storage::error::VaultError;
+use crate::error::VaultError;
 use secp256k1::PublicKey;
+use crate::convert::error::ConversionError;
 
 /// Fixed bytes number to represent `Address`
 pub const ETHEREUM_ADDRESS_BYTES: usize = 20;
@@ -46,9 +46,9 @@ impl EthereumAddress {
     /// let addr = emerald_vault::blockchain::EthereumAddress::try_from(&[0u8; emerald_vault::blockchain::ETHEREUM_ADDRESS_BYTES]).unwrap();
     /// assert_eq!(addr.to_string(), "0x0000000000000000000000000000000000000000");
     /// ```
-    pub fn try_from(data: &[u8]) -> Result<Self, Error> {
+    pub fn try_from(data: &[u8]) -> Result<Self, ConversionError> {
         if data.len() != ETHEREUM_ADDRESS_BYTES {
-            return Err(Error::InvalidLength(data.len()));
+            return Err(ConversionError::InvalidLength);
         }
 
         Ok(EthereumAddress(to_arr(data)))
@@ -76,11 +76,11 @@ impl AsRef<[u8]> for EthereumAddress {
 }
 
 impl FromStr for EthereumAddress {
-    type Err = Error;
+    type Err = ConversionError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.len() != ETHEREUM_ADDRESS_BYTES * 2 && !s.starts_with("0x") {
-            return Err(Error::InvalidHexLength(s.to_string()));
+            return Err(ConversionError::InvalidLength);
         }
 
         let value = if s.starts_with("0x") {

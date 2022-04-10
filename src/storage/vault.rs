@@ -4,9 +4,9 @@ use crate::{
     storage::{
         addressbook::AddressbookStorage,
         archive::{Archive, ArchiveType},
-        error::VaultError,
         global_key::VaultGlobalKey
     },
+    error::VaultError,
     structs::{
         book::AddressRef,
         pk::PrivateKeyHolder,

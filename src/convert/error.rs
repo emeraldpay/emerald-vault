@@ -1,4 +1,3 @@
-use crate::error;
 use std::fmt::Display;
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Display)]
@@ -42,13 +41,6 @@ impl From<protobuf::ProtobufError> for ConversionError {
         }
     }
 }
-
-impl From<error::Error> for ConversionError {
-    fn from(_: error::Error) -> Self {
-        ConversionError::OtherError
-    }
-}
-
 
 impl From<std::convert::Infallible> for ConversionError {
     fn from(_: std::convert::Infallible) -> Self {

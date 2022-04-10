@@ -17,12 +17,13 @@ limitations under the License.
 //! # Account transaction
 
 use num_bigint::BigUint;
-use super::{super::error::Error, EthereumAddress, EthereumPrivateKey, EthereumSignature};
+use super::{EthereumAddress, EthereumPrivateKey, EthereumSignature};
 use crate::{
     blockchain::chains::EthereumChainId,
     util::{keccak256, trim_bytes, KECCAK256_BYTES},
 };
 use rlp::RlpStream;
+use crate::error::VaultError;
 use crate::ethereum::signature::{EthereumBasicSignature, EthereumEIP2930Signature};
 
 /// Transaction data
@@ -82,7 +83,7 @@ pub trait EthereumTransaction {
     fn sign(
         &self,
         pk: EthereumPrivateKey
-    ) -> Result<Vec<u8>, Error>;
+    ) -> Result<Vec<u8>, VaultError>;
 
     ///
     /// Encode the transaction to the provided RPL Stream
@@ -135,7 +136,7 @@ impl EthereumTransaction for EthereumLegacyTransaction {
     fn sign(
         &self,
         pk: EthereumPrivateKey
-    ) -> Result<Vec<u8>, Error> {
+    ) -> Result<Vec<u8>, VaultError> {
         let sig = pk.sign_hash::<EthereumBasicSignature>(self.hash())?;
         Ok(self.encode_signed(&sig))
     }
@@ -174,7 +175,7 @@ impl EthereumTransaction for EthereumLegacyTransaction {
 }
 
 impl EthereumTransaction for EthereumEIP1559Transaction {
-    fn sign(&self, pk: EthereumPrivateKey) -> Result<Vec<u8>, Error> {
+    fn sign(&self, pk: EthereumPrivateKey) -> Result<Vec<u8>, VaultError> {
         let sig = pk.sign_hash::<EthereumEIP2930Signature>(self.hash())?;
         Ok(self.encode_signed(&sig))
     }
