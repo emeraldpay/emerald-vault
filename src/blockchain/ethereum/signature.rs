@@ -72,20 +72,18 @@ pub struct EthereumEIP2930Signature {
 pub trait EthereumSignature {
     ///
     /// Append the signature to an rlp-encoded transaction
-    fn append_to_rlp(&self, chain: Option<EthereumChainId>, rlp: &mut RlpStream);
+    fn append_to_rlp(&self, chain: EthereumChainId, rlp: &mut RlpStream);
 }
 
 impl EthereumSignature for EthereumBasicSignature {
-    fn append_to_rlp(&self, chain: Option<EthereumChainId>, rlp: &mut RlpStream) {
+    fn append_to_rlp(&self, chain_id: EthereumChainId, rlp: &mut RlpStream) {
         let mut v = u16::from(self.v);
-        if let Some(chain_id) = chain {
-            // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-            // Can be already applied by HD wallet.
-            // TODO: refactor to avoid this check
-            let stamp = u16::from(chain_id.as_chainid() * 2 + 35 - 27);
-            if v + stamp <= 0xff {
-                v += stamp;
-            }
+        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
+        // Can be already applied by HD wallet.
+        // TODO: refactor to avoid this check
+        let stamp = u16::from(chain_id.as_chainid() * 2 + 35 - 27);
+        if v + stamp <= 0xff {
+            v += stamp;
         }
 
         rlp.append(&(v as u8));
@@ -95,7 +93,7 @@ impl EthereumSignature for EthereumBasicSignature {
 }
 
 impl EthereumSignature for EthereumEIP2930Signature {
-    fn append_to_rlp(&self, _chain: Option<EthereumChainId>, rlp: &mut RlpStream) {
+    fn append_to_rlp(&self, _chain: EthereumChainId, rlp: &mut RlpStream) {
         rlp.append(&self.y_parity);
         rlp.append(&trim_bytes(&self.r[..]));
         rlp.append(&trim_bytes(&self.s[..]));

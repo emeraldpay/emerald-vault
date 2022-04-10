@@ -44,13 +44,12 @@ impl WalletEntry {
         if ethereum_app.is_open().is_none() {
             return Err(VaultError::PrivateKeyUnavailable);
         }
-        let chain_id = EthereumChainId::from(self.blockchain);
         let rlp = tx.encode_unsigned();
         let sign = ethereum_app
             .sign_transaction(&rlp, &hd_path)
             .map_err(|_| VaultError::InvalidPrivateKey)?;
         let sign = EthereumBasicSignature::from(sign);
-        let raw = tx.encode_signed(Some(chain_id), &sign);
+        let raw = tx.encode_signed(&sign);
         //TODO verify that signature is from the entry's address
         Ok(raw)
     }
@@ -156,7 +155,7 @@ mod tests {
             ..WalletEntry::default()
         };
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Ethereum),
+            chain_id: EthereumChainId::Ethereum,
             nonce: 1,
             gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 21000,
@@ -187,7 +186,7 @@ mod tests {
             ..WalletEntry::default()
         };
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Ethereum),
+            chain_id: EthereumChainId::Ethereum,
             nonce: 1,
             gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 50000,
@@ -218,7 +217,7 @@ mod tests {
             ..WalletEntry::default()
         };
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Ethereum),
+            chain_id: EthereumChainId::Ethereum,
             nonce: 1,
             gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 21000,
@@ -270,7 +269,7 @@ mod tests {
             ..WalletEntry::default()
         };
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Ethereum),
+            chain_id: EthereumChainId::Ethereum,
             nonce: 1,
             gas_price: BigUint::from_str_radix("04a817c800", 16).unwrap(),
             gas_limit: 21000,
@@ -398,7 +397,7 @@ mod tests {
         };
 
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Ethereum),
+            chain_id: EthereumChainId::Ethereum,
             nonce: 0,
             gas_price: BigUint::from_str_radix("04e3b29200", 16).unwrap(),
             gas_limit: 21000,

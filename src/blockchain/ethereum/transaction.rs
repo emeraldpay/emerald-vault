@@ -26,11 +26,10 @@ use rlp::RlpStream;
 use crate::ethereum::signature::{EthereumBasicSignature, EthereumEIP2930Signature};
 
 /// Transaction data
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct EthereumLegacyTransaction {
-    /// Chain ID, optional. When doesn't exist the transaction is _valid_ for every Ethereum chain,
-    /// which may not be desired
-    pub chain_id: Option<EthereumChainId>,
+    /// Chain ID
+    pub chain_id: EthereumChainId,
     /// Nonce
     pub nonce: u64,
     /// Gas Price
@@ -94,7 +93,7 @@ pub trait EthereumTransaction {
 
     ///
     /// Chain Id, if specified. `None` is possible only for legacy transactions without EIP-155
-    fn get_chain(&self) -> Option<EthereumChainId>;
+    fn get_chain(&self) -> EthereumChainId;
 
     ///
     /// RLP encoded transaction without signature
@@ -108,11 +107,11 @@ pub trait EthereumTransaction {
     ///
     /// RLP encode transaction with provided `Signature`
     /// chain MUST NOT be specified for transactions signed by Ledger
-    fn encode_signed(&self, chain: Option<EthereumChainId>, sig: &dyn EthereumSignature) -> Vec<u8> {
+    fn encode_signed(&self, sig: &dyn EthereumSignature) -> Vec<u8> {
         let mut rlp = RlpStream::new();
         self.encode_into(&mut rlp, false);
 
-        sig.append_to_rlp(chain, &mut rlp);
+        sig.append_to_rlp(self.get_chain(), &mut rlp);
 
         rlp.finalize_unbounded_list();
         rlp.out().to_vec()
@@ -138,7 +137,7 @@ impl EthereumTransaction for EthereumLegacyTransaction {
         pk: EthereumPrivateKey
     ) -> Result<Vec<u8>, Error> {
         let sig = pk.sign_hash::<EthereumBasicSignature>(self.hash())?;
-        Ok(self.encode_signed(self.chain_id, &sig))
+        Ok(self.encode_signed(&sig))
     }
 
     fn encode_into(&self, rlp: &mut RlpStream, empty_sig: bool) {
@@ -162,15 +161,13 @@ impl EthereumTransaction for EthereumLegacyTransaction {
 
         // put no-signature values to show it's an unsigned transaction. for a signed transaction there goes a signature values
         if empty_sig {
-            if let Some(id) = self.chain_id {
-                rlp.append(&id.as_chainid());
-            }
+            rlp.append(&self.chain_id.as_chainid());
             rlp.append_empty_data();
             rlp.append_empty_data();
         }
     }
 
-    fn get_chain(&self) -> Option<EthereumChainId> {
+    fn get_chain(&self) -> EthereumChainId {
         self.chain_id
     }
 
@@ -179,7 +176,7 @@ impl EthereumTransaction for EthereumLegacyTransaction {
 impl EthereumTransaction for EthereumEIP1559Transaction {
     fn sign(&self, pk: EthereumPrivateKey) -> Result<Vec<u8>, Error> {
         let sig = pk.sign_hash::<EthereumEIP2930Signature>(self.hash())?;
-        Ok(self.encode_signed(Some(self.chain_id), &sig))
+        Ok(self.encode_signed(&sig))
     }
 
     fn encode_into(&self, rlp: &mut RlpStream, _empty_sig: bool) {
@@ -215,8 +212,8 @@ impl EthereumTransaction for EthereumEIP1559Transaction {
         rlp.finalize_unbounded_list();
     }
 
-    fn get_chain(&self) -> Option<EthereumChainId> {
-        return Some(self.chain_id)
+    fn get_chain(&self) -> EthereumChainId {
+        return self.chain_id
     }
 
 }
@@ -231,7 +228,7 @@ mod tests {
     #[test]
     fn encode_tx() {
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Custom(0x25)),
+            chain_id: EthereumChainId::Custom(0x25),
             nonce: 1,
             gas_price: BigUint::from_str_radix(
                 "00000000000000000000000000000000000000000000000000000004e3b29200", 16
@@ -267,7 +264,7 @@ mod tests {
     #[test]
     fn encode_tx_with_small_gassprice() {
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Custom(0x25)),
+            chain_id: EthereumChainId::Custom(0x25),
             nonce: 0,
             gas_price: BigUint::from(1u32),
             gas_limit: 21000,
@@ -301,7 +298,7 @@ mod tests {
     #[test]
     fn should_sign_transaction_for_mainnet() {
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::EthereumClassic),
+            chain_id: EthereumChainId::EthereumClassic,
             nonce: 0,
             gas_price: /* 21000000000 */
             BigUint::from_str_radix("04e3b29200", 16).unwrap(),
@@ -355,7 +352,7 @@ mod tests {
     #[test]
     fn should_sign_transaction_for_testnet() {
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Kovan),
+            chain_id: EthereumChainId::Kovan,
             nonce: 1048585,
             gas_price: /* 20000000000 */
             BigUint::from_str_radix("00000000000000000000000000000\
@@ -396,7 +393,7 @@ mod tests {
     #[test]
     fn should_sign_transaction_eip155() {
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Ethereum),
+            chain_id: EthereumChainId::Ethereum,
             nonce: 9,
             gas_price: /* 20,000,000,000 */
             BigUint::from_str_radix("00000000000000000000000000000\
@@ -453,7 +450,7 @@ mod tests {
             s: to_32bytes("347c933f78131995c1abd07c1d0be67d8f04c2cf99cd79510657e97ead8c1a9f")
         };
 
-        let encoded = tx.encode_signed(None, &sig);
+        let encoded = tx.encode_signed(&sig);
 
         assert_eq!(
             hex::encode(encoded),
@@ -465,7 +462,7 @@ mod tests {
     fn rs_should_be_quantity_1() {
         // ref https://github.com/ethereum/web3.js/issues/1170
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Ethereum),
+            chain_id: EthereumChainId::Ethereum,
             nonce: 0,
             gas_price: /* 234,567,897,654,321 */
             BigUint::from_str_radix("0000000000000000000000000000000000000000000000000000D55698372431", 16).unwrap(),
@@ -494,7 +491,7 @@ mod tests {
     fn rs_should_be_quantity_2() {
         // ref https://github.com/ethereum/web3.js/issues/1170
         let tx = EthereumLegacyTransaction {
-            chain_id: Some(EthereumChainId::Ethereum),
+            chain_id: EthereumChainId::Ethereum,
             nonce: 0,
             gas_price: /* 234,567,897,654,321 */
             BigUint::from_str_radix("0000000000000000000000000000000000000000000000000000000000000000", 16).unwrap(),
