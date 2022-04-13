@@ -75,7 +75,7 @@ jobs:
       - name: Install Tarpaulin
         uses: actions-rs/cargo@v1
         with:
-          command: cargo-tarpaulin
+          command: install cargo-tarpaulin
 
       - name: Run Coverage Test
         uses: actions-rs/cargo@v1
