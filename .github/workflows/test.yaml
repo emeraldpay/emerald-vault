@@ -28,12 +28,16 @@ jobs:
           toolchain: stable
           override: true
 
-      - name: Instal system libs
+      - name: Instal system libs (Linux)
         run: sudo apt-get install libusb-1.0-0-dev
         if: runner.os == 'Linux'
 
-      - name: Instal LLVM
+      - name: Instal LLVM (Windows)
         run: choco install -y llvm
+        if: runner.os == 'Windows'
+
+      - name: Instal system libs (Windows)
+        run: vcpkg install libusb
         if: runner.os == 'Windows'
 
       - name: Build
