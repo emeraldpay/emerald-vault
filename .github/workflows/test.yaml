@@ -76,11 +76,11 @@ jobs:
       - name: Install Tarpaulin
         run: cargo install cargo-tarpaulin
 
-      - name: Run Coverage Test
+      - name: Generate Code Coverage
         uses: actions-rs/cargo@v1
         with:
           command: tarpaulin
-          args: --release -v
+          args: --release --no-fail-fast --out Lcov
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@master
