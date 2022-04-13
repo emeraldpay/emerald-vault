@@ -72,27 +72,21 @@ jobs:
           toolchain: nightly
           override: true
 
-      - name: Test
+      # https://github.com/xd009642/tarpaulin
+      - name: Install Tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Generate Code Coverage
         uses: actions-rs/cargo@v1
         with:
-          command: test
-          args: --no-fail-fast
-        env:
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-
-      - name: Coverage Report
-        id: coverage
-        uses: actions-rs/grcov@v0.1
+          command: tarpaulin
+          args: --release --no-fail-fast --out Lcov --output-dir ./coverage
+          # coverage report is in ./coverage/lcov.info and ./target/tarpaulin/emerald-vault-coverage.json
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ${{ steps.coverage.outputs.report }}
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v1
-        with:
-          file: ${{ steps.coverage.outputs.report }}
