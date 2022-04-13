@@ -81,9 +81,7 @@ jobs:
         with:
           command: tarpaulin
           args: --release --no-fail-fast --out Lcov --output-dir ./coverage
-
-      - name: Check
-        run: ls -l . && ls -l coverage
+          # coverage report is in ./coverage/lcov.info and ./target/tarpaulin/emerald-vault-coverage.json
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@master
