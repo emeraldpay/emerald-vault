@@ -72,27 +72,21 @@ jobs:
           toolchain: nightly
           override: true
 
-      - name: Test
+      - name: Install Tarpaulin
         uses: actions-rs/cargo@v1
         with:
-          command: test
-          args: --no-fail-fast --release
-        env:
-          CARGO_INCREMENTAL: '0'
-          RUSTFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
-          RUSTDOCFLAGS: '-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests'
+          command: cargo-tarpaulin
 
-      - name: Coverage Report
-        id: coverage
-        uses: actions-rs/grcov@v0.1
+      - name: Run Coverage Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: tarpaulin
+          args: --release -v
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ${{ steps.coverage.outputs.report }}
 
       - name: Upload to Codecov
         uses: codecov/codecov-action@v1
-        with:
-          file: ${{ steps.coverage.outputs.report }}
