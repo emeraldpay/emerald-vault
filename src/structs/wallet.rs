@@ -301,15 +301,17 @@ mod tests {
         EthereumAddress,
     };
     use chrono::Utc;
-    use hdpath::StandardHDPath;
+    use hdpath::{AccountHDPath, StandardHDPath};
     use std::{convert::TryFrom, str::FromStr};
     use tempdir::TempDir;
     use uuid::Uuid;
-    use crate::blockchain::bitcoin::XPub;
+    use crate::blockchain::bitcoin::{AddressType, XPub};
+    use crate::storage::vault_bitcoin::get_address;
     use crate::structs::wallet::{AddressRole, EntryAddress};
     use bitcoin::Address;
     use crate::structs::book::AddressRef;
     use crate::convert::error::ConversionError;
+    use crate::mnemonic::{Language, Mnemonic};
 
     #[test]
     fn encode_decode_role() {
@@ -402,12 +404,20 @@ mod tests {
 
     #[test]
     fn get_xpub_addresses_bitcoin() {
+        let phrase = Mnemonic::try_from(
+            Language::English,
+            "anchor badge zone antique book leader cupboard wolf confirm average unable nut tortoise dinner private",
+        ).unwrap();
+        let seed = phrase.seed(None);
+        let xpub = get_address(&Blockchain::Bitcoin, AddressType::P2WPKH, 4, seed).unwrap();
+        assert_eq!(
+            "zpub6rebv42D4si3tnSFoZAtR1YjcpzJphTYzUB5eQkLtgGDMrzPjGZZwCx2q4vJntPb39EH1swwDkmUKR2hF9xbFm3icNCZiyywcTE32Axuxe3".to_string(),
+            xpub.to_string()
+        );
+
         let entry = WalletEntry {
             blockchain: Blockchain::Bitcoin,
-            address: Some(AddressRef::ExtendedPub(
-                // seed: anchor badge zone antique book leader cupboard wolf confirm average unable nut tortoise dinner private
-                XPub::from_str("zpub6rebv42D4si3ibWtrRoeS3qvEaRWBuLfwq1SXZt6UMVU9CH8snBWeFFMSMvWsv5WFGVRhqr8gg2AR751SrKteeX9bq57HbTyQvqPznSpZex").unwrap()
-            )),
+            address: Some(AddressRef::ExtendedPub(xpub)),
             key: PKType::SeedHd(SeedRef {
                 seed_id: Uuid::new_v4(),
                 hd_path: StandardHDPath::from_str("m/84'/0'/4'/0/0").unwrap(),
@@ -420,27 +430,27 @@ mod tests {
             vec![
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1q8redwn9d9qr0nkp7ah367u56ufxjprf0lvp7an").unwrap(),
+                    address: Address::from_str("bc1qrezwju94ma8j6lgh9nzr7hx5fd6jek428pv699").unwrap(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/0").unwrap()),
                 },
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1q8lv69l5lnnpals79jqn78a3fy2eh8t9uls828y").unwrap(),
+                    address: Address::from_str("bc1q5urae4xldljrly5mjvendfsm8h84f2rzw5hqzs").unwrap(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/1").unwrap()),
                 },
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1q0pat93taakyswlt8gsxsru3a3x6e5k59arukmu").unwrap(),
+                    address: Address::from_str("bc1q36ect6q9z2w7wxz7l6ajfgec7fhse448w4p3vg").unwrap(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/2").unwrap()),
                 },
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1q4zxhcd25qqpxrdrf6d3p0qtg3vcjavajujw8rd").unwrap(),
+                    address: Address::from_str("bc1qy9vk2xwwysg4l8uugcrkj7lwa89dz50vp4jsst").unwrap(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/3").unwrap()),
                 },
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1qzzve7js08mhsewg2jy6kkkj7fs298k9kz2snhs").unwrap(),
+                    address: Address::from_str("bc1qjt668v40dhwm939749z0lagj267xq4me60cdgy").unwrap(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/4").unwrap()),
                 },
             ],
@@ -453,7 +463,7 @@ mod tests {
             vec![
                 EntryAddress {
                     role: AddressRole::Change,
-                    address: Address::from_str("bc1q07937xm8m57yg9kq5u5569ajcvzgptlr42g8za").unwrap(),
+                    address: Address::from_str("bc1qg625gty7hkx3gdp8j84y3jfmjj805fa8rqnjah").unwrap(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/1/0").unwrap()),
                 },
             ],

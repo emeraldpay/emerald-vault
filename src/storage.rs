@@ -44,8 +44,8 @@ limitations under the License.
 pub mod addressbook;
 pub mod archive;
 pub mod entry;
-mod vault_ethereum;
-mod vault_bitcoin;
+pub(crate) mod vault_ethereum;
+pub(crate) mod vault_bitcoin;
 pub mod vault;
 pub mod global_key;
 pub mod admin;

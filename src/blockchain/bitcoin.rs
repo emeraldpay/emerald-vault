@@ -132,11 +132,19 @@ pub struct XPub {
 
 #[derive(Clone, PartialEq, Eq, Debug, Copy)]
 pub enum AddressType {
+    /// Pay To Public Key Hash
+    /// Legacy address, starts with 1
     P2PKH,
+    /// Pay To Script Hash
+    /// New type of address, starts with 3
     P2SH,
     P2WPKHinP2SH,
     P2WSHinP2SH,
+    /// Pay To Witness Public Key Hash
+    /// Bench32 address, with 20 bytes address
     P2WPKH,
+    /// Pay To Witness Script Hash
+    /// Bench32 address, with 32 bytes address
     P2WSH,
 }
 

@@ -32,7 +32,7 @@ pub struct AddBitcoinEntry {
     global: Option<GlobalKey>,
 }
 
-fn get_address(blockchain: &Blockchain, address_type: AddressType, account: u32, seed: Vec<u8>) -> Result<XPub, VaultError> {
+pub(crate) fn get_address(blockchain: &Blockchain, address_type: AddressType, account: u32, seed: Vec<u8>) -> Result<XPub, VaultError> {
     let network = blockchain.as_bitcoin_network();
     let master = ExtendedPrivKey::new_master(network.clone(), seed.as_slice())
         .map_err(|_| VaultError::InvalidPrivateKey)?;
