@@ -36,9 +36,9 @@ Can have multiple.
 * `addressbook.csv` is an Address Book of recipient addresses
 
 .Storage directory:
-* Windows: `%APPDATA%\.emerald`
-* OSX: `~/Library/Emerald`
-* Linux: `~/.emerald`
+* Windows: `%APPDATA%\.emerald\vault`
+* OSX: `~/Library/Emerald/vault`
+* Linux: `~/.emerald/vault`
 
 == Development
 

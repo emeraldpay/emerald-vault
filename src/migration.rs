@@ -6,6 +6,7 @@ use crate::migration::{
     types::Migrate,
 };
 use std::path::{Path, PathBuf};
+use crate::migration::source::v3::V3Storage;
 
 pub fn auto_migrate<P>(dir: P)
 where
@@ -23,6 +24,12 @@ where
     // V2 is skipped as too heavy.
     // The migration was supported by Emerald Wallet v2.2.0-v2.5.x
     //
+
+    let mut migration_v3 = V3Storage::create(path.clone());
+    let migrated_v3 = migration_v3.migrate(path.clone());
+    if migrated_v3.is_err() {
+        error!("Failed to migrate from Vault V3 {:?}", migrated_v3.err())
+    }
 }
 
 #[cfg(test)]

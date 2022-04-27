@@ -15,9 +15,11 @@ pub struct VaultGlobalKey {
     pub(crate) vault: PathBuf,
 }
 
+pub(crate) const KEY_FILE: &'static str = "global.key";
+
 impl VaultGlobalKey {
     fn get_path(&self) -> PathBuf {
-        self.vault.join("global.key")
+        self.vault.join(KEY_FILE)
     }
 
     ///

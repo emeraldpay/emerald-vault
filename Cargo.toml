@@ -70,6 +70,7 @@ bencher = "0.1.5"
 zip = { version = "0.5.3", default-features = false, features = ["deflate"] }
 # quickcheck_macros = "0.4"
 simple_logger = "1.6.0"
+itertools = "0.10"
 
 [features]
 default = []
