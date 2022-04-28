@@ -58,8 +58,8 @@ hdpath = { version = "0.6", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
 bitcoin_hashes = "0.9.0"
 #emerald-hwkey = { path = "../emerald-hwkey" }
-#emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
-emerald-hwkey = "^0.1.2"
+emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
+#emerald-hwkey = "^0.1.2"
 num-bigint = "^0.4"
 
 [dev-dependencies]
@@ -75,7 +75,7 @@ itertools = "0.10"
 [features]
 default = []
 dev = ["clippy"]
-fs-storage = []
+hwkey-emulate = ["emerald-hwkey/speculos"]
 
 [[bench]]
 name = "bench_crypto"
