@@ -10,7 +10,6 @@
 .vscode
 target
 wiki
-Cargo.lock
 
 rls/
 temp/
