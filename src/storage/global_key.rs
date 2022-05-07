@@ -103,9 +103,8 @@ impl VaultGlobalKey {
             return Err(VaultError::GlobalKeyRequired)
         }
 
-        let mut g = self.get()?;
-        g.key.decrypt(password.as_bytes(), None)
-            .map_or(Ok(false), |_| Ok(true))
+        let key = self.get()?;
+        key.verify_password(password).map_err(|e| VaultError::from(e))
     }
 }
 

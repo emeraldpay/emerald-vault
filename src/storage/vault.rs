@@ -4,6 +4,7 @@ use crate::{
     storage::{
         addressbook::AddressbookStorage,
         archive::{Archive, ArchiveType},
+        snapshot::Snapshots,
         global_key::VaultGlobalKey
     },
     error::VaultError,
@@ -23,6 +24,7 @@ use std::{
     str::FromStr,
     sync::Arc,
 };
+use std::ffi::OsStr;
 use uuid::Uuid;
 use crate::storage::vault_ethereum::AddEthereumEntry;
 use crate::storage::vault_bitcoin::AddBitcoinEntry;
@@ -50,6 +52,13 @@ struct StandardVaultFiles {
 
 /// Main interface to the Emerald Vault storage
 impl VaultStorage {
+
+    ///
+    /// Check if the extension (`ext`) is used by the vault main files
+    pub fn is_vault_ext(ext: &OsStr) -> bool {
+        ext == "key" || ext == "wallet" || ext == "seed" || ext == "bak"
+    }
+
     pub fn keys(&self) -> Arc<dyn VaultAccessByFile<PrivateKeyHolder>> {
         self.keys.clone()
     }
@@ -74,6 +83,12 @@ impl VaultStorage {
     pub fn global_key(&self) -> VaultGlobalKey {
         let dir = &self.dir;
         VaultGlobalKey { vault: dir.clone() }
+    }
+
+    ///
+    /// Manage snapshots for the current Vault
+    pub fn snapshots(&self) -> Snapshots {
+        Snapshots::open(self)
     }
 
     pub fn add_ethereum_entry(&self, wallet_id: Uuid) -> AddEthereumEntry {

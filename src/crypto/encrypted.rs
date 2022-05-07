@@ -260,6 +260,14 @@ impl GlobalKey {
             }
         )
     }
+
+    ///
+    /// Verify that password can decrypt the Global Key.
+    /// May return Err if the Global Key is not set, or IO/conversion/etc errors while reading it
+    pub fn verify_password(&self, password: &str) -> Result<bool, CryptoError> {
+        self.key.decrypt(password.as_bytes(), None)
+            .map_or(Ok(false), |_| Ok(true))
+    }
 }
 
 impl GlobalKeyRef {
