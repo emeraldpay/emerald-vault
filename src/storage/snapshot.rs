@@ -248,6 +248,22 @@ impl Snapshots {
             vault_dir: self.vault_dir.clone(),
         })
     }
+
+    ///
+    /// Open an existing snapshot to restore from it
+    pub fn open_restore(&self, id: Uuid) -> Result<SnapshotRestore, VaultError> {
+        let filename = self.get_filename_for(id)?;
+        let file = OpenOptions::new()
+            // only readable since we expect it only to access existing
+            .read(true)
+            .open(&filename)?;
+        Ok(SnapshotRestore {
+            id,
+            file,
+            filename,
+            vault_dir: self.vault_dir.clone(),
+        })
+    }
 }
 
 #[cfg(test)]
