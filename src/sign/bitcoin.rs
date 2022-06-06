@@ -328,6 +328,7 @@ mod tests {
             seed::{Seed, SeedSource},
             wallet::WalletEntry,
         },
+        storage::entry::AddEntryOptions,
     };
     use bitcoin::{Network, OutPoint, TxOut, Txid, Address};
     use chrono::{TimeZone, Utc};
@@ -669,7 +670,7 @@ mod tests {
         println!("RAW {:?}", hex::encode(signed));
     }
 
-    #[cfg(test_ledger_bitcoin_test)]
+    #[cfg(test_ledger_bitcoin)]
     #[test]
     fn sign_basic_ledger() {
         let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
@@ -688,7 +689,7 @@ mod tests {
             seed_id,
             AccountHDPath::from_str("m/84'/1'/0'").unwrap(),
             Blockchain::BitcoinTestnet,
-            None,
+            AddEntryOptions::default(),
         ).expect("entry not created");
 
         let entry = vault.wallets().get(wallet_id).unwrap().get_entry(entry_id).unwrap();

@@ -186,7 +186,7 @@ impl SeedSource {
                         }
                         for hd_path in hd_path_all {
                             let address = app.get_address(hd_path, false)
-                                .map(|a| format!("0x{:}", a.address))?;
+                                .map(|a| a.address)?;
                             if let Some(address) = T::from_ethereum_address(EthereumAddress::from_str(address.as_str())?) {
                                 result.push((hd_path.clone(), address));
                             }
