@@ -135,15 +135,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a41df6ad9642c5c15ae312dd3d074de38fd3eb7cc87ad4ce10f90292a83fe4d"
 dependencies = [
  "bech32",
- "bitcoin_hashes 0.10.0",
+ "bitcoin_hashes",
  "secp256k1",
 ]
-
-[[package]]
-name = "bitcoin_hashes"
-version = "0.9.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ce18265ec2324ad075345d5814fbeed4f41f0a660055dc78840b74d19b874b1"
 
 [[package]]
 name = "bitcoin_hashes"
@@ -515,14 +509,14 @@ dependencies = [
 
 [[package]]
 name = "emerald-vault"
-version = "0.30.0-dev"
+version = "0.30.0"
 dependencies = [
  "aes-ctr",
  "argon2",
  "base64 0.13.0",
  "bencher",
  "bitcoin",
- "bitcoin_hashes 0.9.7",
+ "bitcoin_hashes",
  "byte-array-struct",
  "byteorder",
  "chrono",
