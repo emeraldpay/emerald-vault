@@ -1,0 +1,32 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - ci/*
+
+jobs:
+  tests:
+    name: Prepare a release
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Instal system libs
+        run: sudo apt-get install libusb-1.0-0-dev
+
+      - name: Package
+        uses: actions-rs/cargo@v1
+        with:
+          command: package
+          args: --locked
+        env:
+          RUST_BACKTRACE: "1"
