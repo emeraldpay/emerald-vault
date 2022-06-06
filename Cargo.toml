@@ -37,7 +37,7 @@ getrandom = "0.2.4"
 byteorder = "1.4.3"
 ethabi = "2.0.0"
 num = "0.3.0"
-bitcoin = "0.27.1"
+bitcoin = "=0.27.1"
 aes-ctr = "0.6.0"
 sha2 = "0.10.1"
 sha3 = "0.10.0"
@@ -58,9 +58,9 @@ hdpath = { version = "0.6", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
 bitcoin_hashes = "0.9.0"
 #emerald-hwkey = { path = "../emerald-hwkey" }
-emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
-#emerald-hwkey = "^0.1.2"
-num-bigint = "^0.4"
+#emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
+emerald-hwkey = "0.2"
+num-bigint = "0.4"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
