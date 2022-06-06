@@ -79,10 +79,21 @@ impl ScryptKdf {
 }
 
 impl Argon2 {
+
+    #[cfg(not(debug_assertions))]
+    pub fn new_global(salt: Vec<u8>) -> Self {
+        Argon2::new_global_release(salt)
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn new_global(salt: Vec<u8>) -> Self {
+        Argon2::new_global_debug(salt)
+    }
+
     /// Argon2 config for a global password. I.e., for a secret that should be harder to crack.
     /// With M=256K + i=2 + P=2 it takes about 500ms to derive a key.
     /// NOTE: it's extremely slow in debug mode
-    pub fn new_global(salt: Vec<u8>) -> Self {
+    pub fn new_global_release(salt: Vec<u8>) -> Self {
         Argon2 {
             mem: 256 * 1024,
             iterations: 2,
@@ -91,15 +102,43 @@ impl Argon2 {
         }
     }
 
+    pub fn new_global_debug(salt: Vec<u8>) -> Self {
+        Argon2 {
+            mem: 64,
+            iterations: 1,
+            parallel: 1,
+            salt,
+        }
+    }
+
+    #[cfg(not(debug_assertions))]
+    pub fn new_subkey(salt: Vec<u8>) -> Self {
+        Argon2::new_subkey_release(salt)
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn new_subkey(salt: Vec<u8>) -> Self {
+        Argon2::new_subkey_debug(salt)
+    }
+
     /// Argon2 config for a final password, after decrypting a parent global key. I.e., for a secret
     /// that fully depends on the parent's random 256-bit key so it very unlikely to be bruteforced anyway.
     /// With M=32K + i=2 + P=2 it takes about 50ms to derive a key
     /// NOTE: it's extremely slow in debug mode
-    pub fn new_subkey(salt: Vec<u8>) -> Self {
+    pub fn new_subkey_release(salt: Vec<u8>) -> Self {
         Argon2 {
             mem: 32 * 1024,
             iterations: 2,
             parallel: 2,
+            salt,
+        }
+    }
+
+    pub fn new_subkey_debug(salt: Vec<u8>) -> Self {
+        Argon2 {
+            mem: 16,
+            iterations: 1,
+            parallel: 1,
             salt,
         }
     }
@@ -295,7 +334,7 @@ mod tests {
 
     #[test]
     fn derive_argon2() {
-        let kdf = Argon2::new_subkey(
+        let kdf = Argon2::new_subkey_release(
             hex::decode("fd4acb81182a2c8fa959d180967b374277f2ccf2f7f401cb08d042cc785464b4").unwrap()
         );
 
