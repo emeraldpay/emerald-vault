@@ -41,7 +41,7 @@ impl AddressCast<BitcoinAddress> for BitcoinAddress {
 
 impl AddressFromPub<EthereumAddress> for EthereumAddress {
     fn create(pubkey: PublicKey, _: &AddressType, _: bool) -> Result<EthereumAddress, ()> {
-        Ok(EthereumAddress::from(pubkey.key))
+        Ok(EthereumAddress::from(pubkey.inner))
     }
 }
 
@@ -62,7 +62,7 @@ impl XPub {
             .map_err(|_| VaultError::PublicKeyUnavailable)?;
         let pk = self.value.ckd_pub(&DEFAULT_SECP256K1, child)
             .map_err(|_| VaultError::PublicKeyUnavailable)?;
-        T::create(pk.public_key, &self.address_type, self.value.network == Network::Bitcoin)
+        T::create(PublicKey::new(pk.public_key), &self.address_type, self.value.network == Network::Bitcoin)
             .map_err(|_| VaultError::PublicKeyUnavailable)
     }
 }

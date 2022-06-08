@@ -21,7 +21,7 @@ use crate::{convert::error::ConversionError, error::VaultError, trim_bytes, util
 use hex;
 use rand::{rngs::OsRng, Rng};
 use secp256k1::{
-    key::{PublicKey, SecretKey},
+    PublicKey, SecretKey,
     Message,
     Secp256k1,
     SignOnly,

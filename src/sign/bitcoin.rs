@@ -12,6 +12,7 @@ use crate::{
     structs::{book::AddressRef, wallet::WalletEntry},
 };
 use bitcoin::{
+    Witness,
     consensus::serialize,
     util::{bip143::SighashComponents, bip32::ChildNumber, psbt::serialize::Serialize},
     Address,
@@ -84,7 +85,7 @@ impl WalletEntry {
 
                     match xpub.address_type {
                         AddressType::P2WPKH => {
-                            Address::p2wpkh(&pubkey.public_key, network.clone())
+                            Address::p2wpkh(&PublicKey::new(pubkey.public_key), network.clone())
                                 .map_err(|_| VaultError::PublicKeyUnavailable)
                         }
                         //TODO support other types
@@ -178,7 +179,7 @@ impl InputReference {
         let msg = Message::from_slice(hash.as_slice())
             .map_err(|_| VaultError::InvalidDataError("tx-hash".to_string()))?;
 
-        let signature = DEFAULT_SECP256K1.sign(&msg, &pk.key);
+        let signature = DEFAULT_SECP256K1.sign(&msg, &pk.inner);
         let signature = encode_signature(signature);
 
         tx.input[index] = TxIn {
@@ -193,11 +194,11 @@ impl InputReference {
         &self,
         proposal: &BitcoinTransferProposal,
         signature: &Vec<u8>,
-    ) -> Result<Vec<Vec<u8>>, VaultError> {
-        Ok(vec![
+    ) -> Result<Witness, VaultError> {
+        Ok(Witness::from_vec(vec![
             signature.clone(),
             self.get_pubkey(proposal)?.serialize(),
-        ])
+        ]))
     }
 
     pub fn to_input(&self) -> TxIn {
@@ -205,7 +206,7 @@ impl InputReference {
             previous_output: self.output,
             script_sig: Script::new(),
             sequence: self.sequence,
-            witness: vec![],
+            witness: Witness::default(),
         }
     }
 }
@@ -655,7 +656,7 @@ mod tests {
     fn witness_basic_tx() {
         let (_, proposal) = create_proposal_1();
         let signed_tx = proposal.seal().unwrap();
-        let signature = &signed_tx.input[0].witness[0];
+        let signature = &signed_tx.input[0].witness.to_vec()[0];
 
         assert_eq!(
             "3045022100cca7c37f875be0125c524593ce58f3ecbe279fc1c03dbc0258022ffd4a12bf5c02205dfebd69c41b92e30a57998acd81052e6c96421ded2ee11918f7feb7821c45e601",

@@ -109,7 +109,7 @@ impl TryFrom<ExtendedPrivKey> for EthereumPrivateKey {
     type Error = VaultError;
 
     fn try_from(value: ExtendedPrivKey) -> Result<Self, Self::Error> {
-        EthereumPrivateKey::try_from(&value.private_key.key[0..PRIVATE_KEY_BYTES])
+        EthereumPrivateKey::try_from(value.private_key.secret_bytes().as_ref())
             .map_err(|_| VaultError::InvalidPrivateKey)
     }
 }

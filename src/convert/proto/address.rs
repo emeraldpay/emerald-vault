@@ -47,7 +47,7 @@ impl From<&XPub> for proto_Bip32Public {
         ));
         result.set_child_number(xpub.value.child_number.into());
         result.set_chaincode(xpub.value.chain_code.as_bytes().to_vec());
-        result.set_point(xpub.value.public_key.to_bytes());
+        result.set_point(xpub.value.public_key.serialize_uncompressed().to_vec());
         result.set_address_type(xpub.address_type.into());
         result.set_network(match xpub.value.network {
             Network::Bitcoin => proto_BlockchainId::CHAIN_BITCOIN,
@@ -109,7 +109,8 @@ impl TryFrom<&proto_Bip32Public> for XPub {
             return Err(ConversionError::InvalidFieldValue("chain_code".to_string()));
         };
         let public_key = PublicKey::from_slice(value.point.as_slice())
-            .map_err(|_| ConversionError::InvalidFieldValue("public_key".to_string()))?;
+            .map_err(|_| ConversionError::InvalidFieldValue("public_key".to_string()))?
+            .inner;
         let address_type = value.address_type.try_into()?;
         let network = Blockchain::try_from(value.network.value() as u32)
             .map_err(|_| ConversionError::InvalidFieldValue("network".to_string()))?

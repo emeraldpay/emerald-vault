@@ -10,7 +10,7 @@ use crate::{
     blockchain::chains::{Blockchain, BlockchainType},
     sign::bip32::generate_pubkey,
 };
-use bitcoin::{util::bip32::ExtendedPrivKey, Network, PrivateKey};
+use bitcoin::{util::bip32::ExtendedPrivKey, Network, PrivateKey, PublicKey};
 use hdpath::{StandardHDPath, AccountHDPath};
 use secp256k1::SecretKey;
 use std::convert::TryFrom;
@@ -31,7 +31,7 @@ impl PrivateKeySource {
     pub fn into_secret(self) -> SecretKey {
         match self {
             PrivateKeySource::Base(sk) => sk,
-            PrivateKeySource::Extended(ext) => ext.private_key.key,
+            PrivateKeySource::Extended(ext) => ext.private_key,
         }
     }
 
@@ -40,9 +40,9 @@ impl PrivateKeySource {
             PrivateKeySource::Base(key) => PrivateKey {
                 compressed: true,
                 network: network.clone(),
-                key,
+                inner: key,
             },
-            PrivateKeySource::Extended(ext) => ext.private_key,
+            PrivateKeySource::Extended(ext) => PrivateKey::new(ext.private_key, network.clone()),
         }
     }
 }
@@ -153,7 +153,7 @@ impl SeedSource {
                     for hd_path in hd_path_all {
                         let pub_key = generate_pubkey(hd_path, &seed_key)?;
                         let address_type = AddressType::try_from(hd_path)?;
-                        let address = T::create(pub_key.public_key, &address_type, blockchain.is_mainnet())?;
+                        let address = T::create(PublicKey::new(pub_key.public_key), &address_type, blockchain.is_mainnet())?;
                         result.push((hd_path.clone(), address));
                     }
                     Ok(result)

@@ -358,7 +358,7 @@ impl FromStr for XPub {
             child_number: ChildNumber::from(child_num),
             chain_code: ChainCode::from(&data[13..45]),
             public_key: PublicKey::from_slice(&data[45..78])
-                .map_err(|_| ConversionError::OtherError)?,
+                .map_err(|_| ConversionError::OtherError)?.inner,
         };
         Ok(XPub {
             value,
@@ -376,7 +376,7 @@ impl ToString for XPub {
         data.extend_from_slice(self.value.parent_fingerprint.as_bytes());
         data.write_u32::<BigEndian>(self.value.child_number.into()).expect("Failed to write child_number");
         data.extend_from_slice(self.value.chain_code.as_bytes());
-        data.extend_from_slice(self.value.public_key.to_bytes().as_slice());
+        data.extend_from_slice(self.value.public_key.serialize().as_ref());
         base58::check_encode_slice(data.as_slice())
     }
 }
