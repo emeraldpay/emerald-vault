@@ -1,9 +1,13 @@
 use crate::blockchain::bitcoin::{XPub, AddressType};
 use crate::error::VaultError;
-use bitcoin::{Address as BitcoinAddress, PublicKey, Network};
+use bitcoin::{Address as BitcoinAddress, PublicKey, Network, Script};
+use bitcoin::blockdata::opcodes::all::{OP_PUSHBYTES_0};
+use bitcoin::blockdata::script::Builder;
+use bitcoin::psbt::serialize::Serialize;
 use crate::blockchain::ethereum::EthereumAddress;
 use crate::sign::bitcoin::DEFAULT_SECP256K1;
 use bitcoin::util::bip32::ChildNumber;
+use bitcoin_hashes::{Hash, hash160};
 
 pub trait AddressFromPub<T> {
     fn create(pubkey: PublicKey, address_type: &AddressType, mainnet: bool) -> Result<T, ()>;
@@ -12,6 +16,17 @@ pub trait AddressFromPub<T> {
 pub trait AddressCast<T> {
     fn from_ethereum_address(x: EthereumAddress) -> Option<T>;
     fn from_bitcoin_address(x: BitcoinAddress) -> Option<T>;
+}
+
+fn segwit_script(key: &PublicKey) -> Script {
+    //
+    // see https://github.com/bitcoin/bips/blob/master/bip-0049.mediawiki
+    //
+    let pubkey_hash = hash160::Hash::hash(&key.serialize());
+    Builder::new()
+        .push_opcode(OP_PUSHBYTES_0)
+        .push_slice(pubkey_hash.as_ref())
+        .into_script()
 }
 
 impl AddressFromPub<BitcoinAddress> for BitcoinAddress {
@@ -23,6 +38,8 @@ impl AddressFromPub<BitcoinAddress> for BitcoinAddress {
         };
         let address = match address_type {
             AddressType::P2WPKH => BitcoinAddress::p2wpkh(&pubkey, network).map_err(|_| ())?,
+            AddressType::P2WPKHinP2SH => BitcoinAddress::p2sh(&segwit_script(&pubkey), network).map_err(|_| ())?,
+            AddressType::P2PKH => BitcoinAddress::p2pkh(&pubkey, network),
             _ => return Err(())
         };
         Ok(address)
@@ -69,15 +86,17 @@ impl XPub {
 
 #[cfg(test)]
 mod tests {
-    use crate::blockchain::bitcoin::XPub;
+    use crate::blockchain::bitcoin::{AddressType, XPub};
     use std::str::FromStr;
-    use bitcoin::Address;
+    use bitcoin::{Address, PublicKey};
+    use crate::addresses::segwit_script;
     use crate::EthereumAddress;
+    use crate::blockchain::addresses::AddressFromPub;
 
     // test seed: anchor badge zone antique book leader cupboard wolf confirm average unable nut tortoise dinner private
 
     #[test]
-    fn gets_bitcoin_address() {
+    fn gets_bitcoin_address_p2wpkh() {
         //m/84'/0'/0'/0/0
         let xpub = XPub::from_str("zpub6sZND4YD5Xui5KDmcXf7sLccderNJ5fJvNXHrrUuTuoSPbccHgJmk8sDzSi1k2nTRG31VuVe6Ydf7BWHj1TxPPKQk8bGqN2S7uMqDxNL7LS").unwrap();
 
@@ -95,6 +114,84 @@ mod tests {
         );
         assert_eq!(
             Address::from_str("bc1q5gumd2vpylwt5swlmsuqewjr4vx2rwvqhf2jea").unwrap(),
+            xpub.get_address(101).unwrap()
+        );
+    }
+
+    #[test]
+    fn gets_bitcoin_address_p2pk() {
+        //m/44'/0'/0'/0/0
+        let xpub = XPub::from_str("xpub6Ea6xDJzr3fkWRvX9NE8QhgkoTacx2QutYxVHye1XKbxumtHWKpQ11ojaGdU1T31f1HhnqRHpZrPbM3nL9ZxvqxxiphE8PBtBfz1wBNUM93").unwrap();
+
+        assert_eq!(
+            Address::from_str("14tjEiXwvUTHSwi6QEBJ68DGT2M69kNceg").unwrap(),
+            xpub.get_address(0).unwrap()
+        );
+
+        assert_eq!(
+            Address::from_str("153B6dLR1Pdo39P3UKXscoC5Vx4CLRDcRm").unwrap(),
+            xpub.get_address(1).unwrap()
+        );
+
+        assert_eq!(
+            Address::from_str("16CyhX3fZsbnTkDdQoTFYBZJk38se3dH1p").unwrap(),
+            xpub.get_address(17).unwrap()
+        );
+
+        assert_eq!(
+            Address::from_str("1BnxciMhoVyjjESxaiV6qrzcPFsi1xsnTR").unwrap(),
+            xpub.get_address(101).unwrap()
+        );
+    }
+
+    #[test]
+    fn generate_segwit_script() {
+        // test vector from https://github.com/bitcoin/bips/blob/master/bip-0049.mediawiki
+
+        let pubkey = PublicKey::from_slice(
+            hex::decode("03a1af804ac108a8a51782198c2d034b28bf90c8803f5a53f76276fa69a4eae77f").unwrap().as_slice()
+        ).expect("invalid pk");
+
+        assert_eq!(
+            hex::encode(segwit_script(&pubkey).as_bytes()),
+            "001438971f73930f6c141d977ac4fd4a727c854935b3"
+        );
+    }
+
+    #[test]
+    fn segwit_address_from_pubkey() {
+        let pubkey = PublicKey::from_slice(
+            hex::decode("03dda55c85ca52a2cc6a132fa79bcea32bc96f109b0c81ab656bc66175d131de95").unwrap().as_slice()
+        ).expect("invalid pk");
+
+        assert_eq!(
+            Address::from_str("36rFv1P1PbnVz2VwhmNcJ9oP3CmWz3YycS").unwrap(),
+            Address::create(pubkey, &AddressType::P2WPKHinP2SH, true).expect("cannot create")
+        );
+    }
+
+    #[test]
+    fn gets_bitcoin_address_segwit() {
+        //m/49'/0'/0'/0/0
+        let xpub = XPub::from_str("ypub6ZkM2f39PDmJ7fXV5Zf4FDHpdsN42wwoEUV1NmmxqEjf1DcgwkTk2D7kxjaUx9FrzfoHCq3szX3v858mKuhfTSVjVi8igLwL7kD6QVn8BhL").unwrap();
+
+        assert_eq!(
+            Address::from_str("36rFv1P1PbnVz2VwhmNcJ9oP3CmWz3YycS").unwrap(),
+            xpub.get_address(0).unwrap()
+        );
+
+        assert_eq!(
+            Address::from_str("3MHwyisRg83ECfzo2kwxSpPbVfwAX3B9W4").unwrap(),
+            xpub.get_address(1).unwrap()
+        );
+
+        assert_eq!(
+            Address::from_str("3FV15ViXkw3vh4gcHBBAsYU6XzhnKb9ZjF").unwrap(),
+            xpub.get_address(17).unwrap()
+        );
+
+        assert_eq!(
+            Address::from_str("3C9bvGNvFePHpu7SRZfjz3rdFAaD9bCvQ1").unwrap(),
             xpub.get_address(101).unwrap()
         );
     }
