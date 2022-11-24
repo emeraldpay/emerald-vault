@@ -7,7 +7,7 @@ use aes_ctr::Aes128Ctr;
 use aes_ctr::cipher::{
     stream::{generic_array::GenericArray, NewStreamCipher, SyncStreamCipher},
 };
-use rand::{prelude::Rng, RngCore, thread_rng};
+use rand::{prelude::Rng, RngCore};
 use std::convert::TryFrom;
 use rand::rngs::OsRng;
 use crate::structs::crypto::{Argon2, GlobalKey, GlobalKeyRef};
@@ -52,8 +52,7 @@ impl Encrypted {
         // > applications, but can be reduced to 64 bits in the case of space
         // > constraints.
         let mut salt: [u8; 16] = [0; 16];
-        thread_rng()
-            .try_fill(&mut salt)
+        OsRng.try_fill_bytes(&mut salt)
             .map_err(|_| CryptoError::NoEntropy)?;
         let kdf = match global {
             Some(_) => Argon2::new_subkey(salt.to_vec()),
@@ -63,8 +62,7 @@ impl Encrypted {
         let key = kdf.derive(actual_password.0.as_slice())?;
 
         let mut iv: [u8; 16] = [0; 16];
-        OsRng::new()?
-            .try_fill(&mut iv)
+        OsRng.try_fill_bytes(&mut iv)
             .map_err(|_| CryptoError::NoEntropy)?;
         let key = Web3Key::try_from(key)?;
         let encrypted = encrypt_aes128(msg.as_slice(), &key.message_key, &iv);
@@ -111,15 +109,13 @@ impl Encrypted {
             return Err(CryptoError::InvalidKey);
         }
         let mut salt: [u8; 32] = [0; 32];
-        thread_rng()
-            .try_fill(&mut salt)
+        OsRng.try_fill_bytes(&mut salt)
             .map_err(|_| CryptoError::NoEntropy)?;
         let kdf = ScryptKdf::create_with_salt(salt);
         let key = kdf.derive(password)?;
 
         let mut iv: [u8; 16] = [0; 16];
-        thread_rng()
-            .try_fill(&mut iv)
+        OsRng.try_fill_bytes(&mut iv)
             .map_err(|_| CryptoError::NoEntropy)?;
         let key = Web3Key::try_from(key)?;
         let encrypted = encrypt_aes128(msg.as_slice(), &key.message_key, &iv);
@@ -253,7 +249,7 @@ impl GlobalKey {
 
     pub fn generate(base_password: &[u8]) -> Result<GlobalKey, CryptoError> {
         let mut key = [0u8; 32];
-        OsRng::new()?.fill_bytes(&mut key);
+        OsRng.fill_bytes(&mut key);
         Ok(
             GlobalKey {
                 key: Encrypted::encrypt(key.to_vec(), base_password, None)?
@@ -275,7 +271,7 @@ impl GlobalKeyRef {
     /// Create new Global Key Ref with a new randomly generated `nonce`
     pub fn new() -> Result<GlobalKeyRef, CryptoError> {
         let mut nonce = [0u8; 16];
-        OsRng::new()?.fill_bytes(&mut nonce);
+        OsRng.fill_bytes(&mut nonce);
 
         Ok(GlobalKeyRef {
             nonce

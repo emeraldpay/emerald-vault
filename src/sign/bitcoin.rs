@@ -205,7 +205,7 @@ impl InputReference {
         TxIn {
             previous_output: self.output,
             script_sig: Script::new(),
-            sequence: self.sequence,
+            sequence: bitcoin::Sequence(self.sequence),
             witness: Witness::default(),
         }
     }
@@ -227,7 +227,7 @@ impl BitcoinTransferProposal {
     fn unsigned(&self) -> Transaction {
         Transaction {
             version: 2,
-            lock_time: 0,
+            lock_time: bitcoin::PackedLockTime(0),
             input: self.input.iter().map(|ir| ir.to_input()).collect(),
             output: self.output.clone(),
         }

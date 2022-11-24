@@ -103,7 +103,7 @@ impl WalletEntry {
 
         // generate a new temp password for the exported PK
         // should never reuse the original password as it may be global or used by other wallets
-        let mut rnd = OsRng::new()?;
+        let mut rnd = OsRng::default();
         let password: String = std::iter::repeat(())
             .take(20)
             .map(|_| rnd.sample(Alphanumeric))

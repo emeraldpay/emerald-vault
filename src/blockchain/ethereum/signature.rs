@@ -134,11 +134,11 @@ pub struct EthereumPrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
 impl EthereumPrivateKey {
     /// Generate a new `PrivateKey` at random (`rand::OsRng`)
     pub fn gen() -> Self {
-        Self::gen_custom(&mut OsRng::new().expect("Randomness is not ready"))
+        Self::gen_custom(&mut OsRng::default())
     }
 
     /// Generate a new `PrivateKey` with given custom random generator
-    pub fn gen_custom<R: Rng + ?Sized + secp256k1::rand::RngCore>(rng: &mut R) -> Self {
+    pub fn gen_custom<R: Rng + ?Sized>(rng: &mut R) -> Self {
         EthereumPrivateKey::from(SecretKey::new(rng))
     }
 

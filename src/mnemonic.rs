@@ -286,8 +286,7 @@ impl Mnemonic {
 /// * `byte_length` - size of entropy in bytes
 ///
 pub fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
-    // let rng = StdRng::from_entropy();
-    let mut rng = OsRng::new()?;
+    let mut rng = OsRng::default();
     let bytes = rng.sample_iter(&Standard).take(byte_length).collect();
 
     Ok(bytes)
