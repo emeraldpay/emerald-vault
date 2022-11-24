@@ -500,7 +500,7 @@ dependencies = [
 
 [[package]]
 name = "emerald-vault"
-version = "0.32.0-dev"
+version = "0.32.0"
 dependencies = [
  "aes-ctr",
  "argon2",
