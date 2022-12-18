@@ -3,20 +3,21 @@ use crate::{
     keccak256,
     structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, Kdf, MacType, ScryptKdf},
 };
-use aes_ctr::Aes128Ctr;
-use aes_ctr::cipher::{
-    stream::{generic_array::GenericArray, NewStreamCipher, SyncStreamCipher},
-};
-use rand::{prelude::Rng, RngCore};
+use aes::Aes128;
+use aes::cipher::{generic_array::GenericArray, KeyIvInit, StreamCipher};
+use rand::{RngCore};
 use std::convert::TryFrom;
 use rand::rngs::OsRng;
 use crate::structs::crypto::{Argon2, GlobalKey, GlobalKeyRef};
+
+type Aes128Ctr = ctr::Ctr32BE<Aes128>;
 
 /// Encrypt given text with provided key and initial vector
 fn encrypt_aes128(data: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
     let key = GenericArray::from_slice(key);
     let iv = GenericArray::from_slice(iv);
     let mut buf = data.to_vec();
+
     let mut ctr = Aes128Ctr::new(key, iv);
     ctr.apply_keystream(&mut buf);
     buf
@@ -289,7 +290,7 @@ mod tests {
         structs::crypto::{Aes128CtrCipher, Cipher, Encrypted, MacType},
     };
     use std::convert::TryFrom;
-    use crate::structs::crypto::{GlobalKey, GlobalKeyRef};
+    use crate::structs::crypto::{Argon2, GlobalKey, GlobalKeyRef, Kdf};
 
     #[test]
     fn verify_mac_1() {
@@ -419,6 +420,71 @@ mod tests {
         assert_eq!(
             "fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd",
             hex::encode(decrypted.unwrap())
+        )
+    }
+
+    #[test]
+    fn encrypt_decrypt_large() {
+        // NOTE it's not supposed to be used to encrypt large blobs, but test just to ensure if it was used that way nothing lost
+        let encrypted = Encrypted::encrypt(
+            hex::decode("40f87f936e4ed355e7f8f0d7ad929c395a81ec2337a1a95d8d34f2161ead720357210cfbf09fe7ce8733f119b64780d10e768b1c36d47d31d768903f0df60547ccaca37543f8d63570cd17f9529a3fd63e9f7eac04d93944a081bfdb0df91dd96155874423b8e7a5482f5f3e773579db481324d009b12df5e487104b47e321873a89ea08f53483078f401d0cefa6b5d7f81b0f2ac7217bc3ba67569ab364caccbe0d141dbf0bf12b84de14d4cc98abc438c56b506d3915adf00a6251eba0533522eecd136708b5b5636c731c962cd8185baa04d423e395638be4a26ed70fd1927c2c2f87efec9e4b01ca38e1270ec7450ff856a92267013901ce10a604a3a639")
+                .unwrap(),
+            "test".as_bytes(),
+            None,
+        );
+
+        assert!(encrypted.is_ok());
+
+        //
+        // dump for testing:
+        //
+        // match encrypted.clone().unwrap().cipher {
+        //     Cipher::Aes128Ctr(v) => {
+        //         println!("Encrypted: iv={:}, data={:}", hex::encode(&v.iv), hex::encode(&v.encrypted));
+        //         match &v.mac {
+        //             MacType::Web3(m) => {
+        //                 println!("mac {:}", hex::encode(&m))
+        //             }
+        //         }
+        //     }
+        // }
+        // match encrypted.unwrap().kdf {
+        //     Kdf::Argon2(a) => {
+        //         println!("kdf {}", hex::encode(a.salt))
+        //     }
+        //     _ => {}
+        // }
+
+
+        let decrypted = encrypted.unwrap().decrypt("test".as_bytes(), None);
+        assert!(decrypted.is_ok());
+        assert_eq!(
+            "40f87f936e4ed355e7f8f0d7ad929c395a81ec2337a1a95d8d34f2161ead720357210cfbf09fe7ce8733f119b64780d10e768b1c36d47d31d768903f0df60547ccaca37543f8d63570cd17f9529a3fd63e9f7eac04d93944a081bfdb0df91dd96155874423b8e7a5482f5f3e773579db481324d009b12df5e487104b47e321873a89ea08f53483078f401d0cefa6b5d7f81b0f2ac7217bc3ba67569ab364caccbe0d141dbf0bf12b84de14d4cc98abc438c56b506d3915adf00a6251eba0533522eecd136708b5b5636c731c962cd8185baa04d423e395638be4a26ed70fd1927c2c2f87efec9e4b01ca38e1270ec7450ff856a92267013901ce10a604a3a639",
+            hex::encode(decrypted.unwrap())
+        )
+    }
+
+    #[test]
+    fn decrypt_known_large() {
+        let encrypted = Encrypted {
+            cipher: Cipher::Aes128Ctr(Aes128CtrCipher {
+                encrypted: hex::decode("071cf8f588084148ca39149f754acf0c0b4fc3d47270d4fd03ae09c9e14a3b16117fad64a7397d41f7e527146b1d70d3596e0838c200d668894403044b356dac4eb2756590a5047089bd99fd32ff58d7c3b4e072e4e11c24fa1824556d1a3c846b95d9cf274540ddde42f4f230c5aecb76da7afa96a6c7e34c0dd2e881876345efe06154f295e08cae579b0373256e97e373f0784f59ffad41615ddf61f96d9a09f5e9ae4834615ec01bc6d30d63130a7f8a6e8abff48cd32da0e55ead50bcf5db0ba86a6c45c281b1e2a9c4c23edf775b564fbb3ce522914f3a29baae2f3b96c2ebc4e382d44bea4b29eba9fc166b41c3ccbc906a7bf2ff8ef56331468602c6").unwrap(),
+                iv: hex::decode("2458c9a81071d079500a7a40db6a9ed3").unwrap(),
+                mac: MacType::Web3(
+                    hex::decode("b28118fd4fe1a9e717f8b231c2398a68ac56edce6adf99a4d3c8377bb635c5ef").unwrap()
+                )
+            }),
+            kdf: Kdf::Argon2(Argon2::new_global(hex::decode("f14123a13d45a5dd473edbf8f32c0109").unwrap())),
+            global_key: None
+        };
+
+        let decrypted = encrypted.decrypt("test".as_bytes(), None);
+
+        assert!(decrypted.is_ok());
+
+        assert_eq!(
+            hex::encode(decrypted.unwrap()),
+            "e62f08be9852ba841d776fd41d091ca7fae16aa6d7fe1203e42f6f5c9a94e8dec93ff0223fc68780b6d92721ef79055fc355c92f4d3b71f3aae69d4105ceb38355327ce74151a307327cfae4d6d4ce1187ec5e77e602eee0743e8b0804679deef15fb1b1ab311875ca8b8090468d4664467daf3abadd42eec861fa6ed1b32576b2fced67b2ea27631645346e04dab3751f06fdd5bd2984339a86fb07ffc7e3c1ab7ebcfeb4d15a9eeb420121c14840eecdcd322ae61c8d1f8a7faa399ad8de9c2e77719081a354edee06fcb8cfe666bfa5534de9959c729d4b61e3290043c40ae6c23a189bb21b48079ce5a7d6edf31ec097adaaeb848ab499a64298809caa14"
         )
     }
 

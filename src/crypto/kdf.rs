@@ -4,7 +4,7 @@ use crate::{
 };
 use hmac::Hmac;
 use pbkdf2::pbkdf2;
-use scrypt::{scrypt, ScryptParams};
+use scrypt::{scrypt, Params as ScryptParams};
 use sha2::{Sha256, Sha512};
 use crate::structs::crypto::Argon2;
 
