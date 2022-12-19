@@ -21,3 +21,13 @@ pub enum AddressRef {
     ExtendedPub(XPub),
     BitcoinAddress(BitcoinAddress)
 }
+
+impl ToString for AddressRef {
+    fn to_string(&self) -> String {
+        match self {
+            AddressRef::EthereumAddress(v) => v.to_string(),
+            AddressRef::BitcoinAddress(v) => v.to_string(),
+            AddressRef::ExtendedPub(v) => v.to_string()
+        }
+    }
+}

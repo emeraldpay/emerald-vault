@@ -19,7 +19,7 @@ limitations under the License.
 use crate::util::to_arr;
 use hex;
 use std::{fmt, ops, str::FromStr};
-use crate::{EthereumPrivateKey, PRIVATE_KEY_BYTES, keccak256};
+use crate::{EthereumPrivateKey, keccak256};
 use bitcoin::util::bip32::ExtendedPrivKey;
 use std::convert::TryFrom;
 use crate::error::VaultError;

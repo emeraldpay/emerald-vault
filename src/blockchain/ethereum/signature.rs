@@ -27,8 +27,10 @@ use secp256k1::{
     SignOnly,
 };
 use std::{convert::TryFrom, fmt, ops, str};
+use std::str::FromStr;
 use rlp::RlpStream;
 use crate::chains::EthereumChainId;
+use crate::ethereum::hex::EthereumHex;
 
 /// Private key length in bytes
 pub const PRIVATE_KEY_BYTES: usize = 32;
@@ -116,14 +118,34 @@ impl Into<(u8, [u8; 32], [u8; 32])> for EthereumBasicSignature {
     }
 }
 
-impl Into<String> for EthereumBasicSignature {
-    fn into(self) -> String {
+impl ToString for EthereumBasicSignature {
+    fn to_string(&self) -> String {
         format!(
-            "0x{:X}{}{}",
-            self.v,
+            "0x{}{}{:x}",
             hex::encode(self.r),
-            hex::encode(self.s)
+            hex::encode(self.s),
+            self.v,
         )
+    }
+}
+
+impl FromStr for EthereumBasicSignature {
+    type Err = VaultError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let encoded = EthereumHex::decode(s)?;
+        if encoded.len() != 32 + 32 + 1 {
+            return Err(VaultError::InvalidDataError("Invalid length".to_string()))
+        }
+        let r = to_arr(&encoded[0..32]);
+        let s = to_arr(&encoded[32..64]);
+        let v = encoded[64];
+        let signature = EthereumBasicSignature {
+            v,
+            r,
+            s
+        };
+        Ok(signature)
     }
 }
 
@@ -148,6 +170,11 @@ impl EthereumPrivateKey {
         EthereumAddress::from(key)
     }
 
+    pub fn sign<S>(&self, data: &dyn Signable) -> Result<S, VaultError> where S: SignatureMaker<S> {
+        let hash = data.hash();
+        self.sign_hash(hash)
+    }
+
     /// Sign hash from message (Keccak-256)
     pub fn sign_hash<S>(&self, hash: [u8; KECCAK256_BYTES]) -> Result<S, VaultError> where S: SignatureMaker<S> {
         let msg = Message::from_slice(&hash)?;
@@ -161,9 +188,35 @@ pub trait SignatureMaker<T> {
     fn sign(msg: Message, sk: SecretKey) -> Result<T, VaultError>;
 }
 
+///
+/// For structures that can be signed. Those structure must be able to provide a bytes array that can be signed
+pub trait Signable {
+
+    ///
+    /// Produce a bytes array that can be signed. Note it's not the hash in the most cases, but a source message
+    /// before applying a hash which is a signature input.
+    fn as_sign_message(&self) -> Vec<u8>;
+}
+
+///
+/// To produce an Ethereum hash (Keccak256)
+pub trait SignableHash {
+    fn hash(&self) -> [u8; KECCAK256_BYTES];
+}
+
+///
+/// Standard implementation for any Signable structure
+impl SignableHash for dyn Signable + '_ {
+    fn hash(&self) -> [u8; KECCAK256_BYTES] {
+        let value = self.as_sign_message();
+        let hash = keccak256(value.as_slice());
+        hash
+    }
+}
+
 impl SignatureMaker<EthereumBasicSignature> for EthereumBasicSignature {
     fn sign(msg: Message, sk: SecretKey) -> Result<EthereumBasicSignature, VaultError> {
-        let s = ECDSA.sign_recoverable(&msg, &sk);
+        let s = ECDSA.sign_ecdsa_recoverable(&msg, &sk);
         let (rid, sig) = s.serialize_compact();
 
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
@@ -176,7 +229,7 @@ impl SignatureMaker<EthereumBasicSignature> for EthereumBasicSignature {
 
 impl SignatureMaker<EthereumEIP2930Signature> for EthereumEIP2930Signature {
     fn sign(msg: Message, sk: SecretKey) -> Result<EthereumEIP2930Signature, VaultError> {
-        let s = ECDSA.sign_recoverable(&msg, &sk);
+        let s = ECDSA.sign_ecdsa_recoverable(&msg, &sk);
         let (rid, sig) = s.serialize_compact();
 
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
@@ -248,36 +301,15 @@ impl str::FromStr for EthereumPrivateKey {
         if s.len() != PRIVATE_KEY_BYTES * 2 && !s.starts_with("0x") {
             return Err(VaultError::ConversionError(ConversionError::InvalidLength));
         }
-
-        let value = if s.starts_with("0x") {
-            s.split_at(2).1
-        } else {
-            s
-        };
-
-        EthereumPrivateKey::try_from(hex::decode(&value)?.as_slice())
+        let value = EthereumHex::decode(s)?;
+        EthereumPrivateKey::try_from(value.as_slice())
     }
 }
 
 impl fmt::Display for EthereumPrivateKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "0x{}", hex::encode(self.0))
+        write!(f, "{}", EthereumHex::encode(self.0))
     }
-}
-
-fn message_hash(msg: &str) -> [u8; KECCAK256_BYTES] {
-    bytes_hash(msg.as_bytes())
-}
-
-fn bytes_hash(data: &[u8]) -> [u8; KECCAK256_BYTES] {
-    let mut v = prefix(data).into_bytes();
-    v.extend_from_slice(data);
-    keccak256(&v)
-}
-
-/// [internal/ethapi: add personal sign method](https://github.com/ethereum/go-ethereum/pull/2940)
-fn prefix(data: &[u8]) -> String {
-    format!("\x19Ethereum Signed Message:\x0a{}", data.len())
 }
 
 #[cfg(test)]
@@ -321,10 +353,36 @@ mod tests {
     }
 
     #[test]
-    fn should_calculate_message_hash() {
+    fn encode_decode_signature_to_string() {
+        let key = EthereumPrivateKey(to_32bytes(
+            "3c9229289a6125f7fdf1885a77bb12c37a8d3b4962d936f7e3084dece32a3ca1",
+        ));
+
+        let s = key
+            .sign_hash::<EthereumBasicSignature>(to_32bytes(
+                "82ff40c0a986c6a5cfad4ddf4c3aa6996f1a7837f9c398e17e5de5cbd5a12b28",
+            ))
+            .unwrap();
+
+        let encoded = s.to_string();
+        let decoded = EthereumBasicSignature::from_str(encoded.as_str()).unwrap();
+
+        assert_eq!(decoded, s);
+    }
+
+    #[test]
+    fn decode_signature_from_string() {
+        let encoded = "0x99e71a99cb2270b8cac5254f9e99b6210c6c10224a1579cf389ef88b20a1abe9129ff05af364204442bdb53ab6f18a99ab48acc9326fa689f228040429e3ca661b";
+        let s = EthereumBasicSignature::from_str(encoded).unwrap();
+
+        assert_eq!(s.v, 27);
         assert_eq!(
-            message_hash("Hello world"),
-            to_32bytes("8144a6fa26be252b86456491fbcd43c1de7e022241845ffea1c3df066f7cfede",)
+            s.r,
+            to_32bytes("99e71a99cb2270b8cac5254f9e99b6210c6c10224a1579cf389ef88b20a1abe9",)
+        );
+        assert_eq!(
+            s.s,
+            to_32bytes("129ff05af364204442bdb53ab6f18a99ab48acc9326fa689f228040429e3ca66",)
         );
     }
 

@@ -24,7 +24,7 @@ use crate::{
 };
 use rlp::RlpStream;
 use crate::error::VaultError;
-use crate::ethereum::signature::{EthereumBasicSignature, EthereumEIP2930Signature};
+use crate::ethereum::signature::{EthereumBasicSignature, EthereumEIP2930Signature, Signable};
 
 /// Transaction data
 #[derive(Clone, Debug)]
@@ -120,7 +120,7 @@ pub trait EthereumTransaction {
 
 
     ///
-    /// Hash of the transaction. Used as TX ID and to make a signature
+    /// Hash of the transaction. Used as TX ID
     fn hash(&self) -> [u8; KECCAK256_BYTES] {
         let mut rlp = RlpStream::new();
         self.encode_into(&mut rlp, true);
@@ -137,7 +137,7 @@ impl EthereumTransaction for EthereumLegacyTransaction {
         &self,
         pk: EthereumPrivateKey
     ) -> Result<Vec<u8>, VaultError> {
-        let sig = pk.sign_hash::<EthereumBasicSignature>(self.hash())?;
+        let sig = pk.sign::<EthereumBasicSignature>(self)?;
         Ok(self.encode_signed(&sig))
     }
 
@@ -176,7 +176,7 @@ impl EthereumTransaction for EthereumLegacyTransaction {
 
 impl EthereumTransaction for EthereumEIP1559Transaction {
     fn sign(&self, pk: EthereumPrivateKey) -> Result<Vec<u8>, VaultError> {
-        let sig = pk.sign_hash::<EthereumEIP2930Signature>(self.hash())?;
+        let sig = pk.sign::<EthereumEIP2930Signature>(self)?;
         Ok(self.encode_signed(&sig))
     }
 
@@ -217,6 +217,24 @@ impl EthereumTransaction for EthereumEIP1559Transaction {
         return self.chain_id
     }
 
+}
+
+impl Signable for EthereumEIP1559Transaction {
+    fn as_sign_message(&self) -> Vec<u8> {
+        let mut rlp = RlpStream::new();
+        self.encode_into(&mut rlp, true);
+        rlp.finalize_unbounded_list();
+        rlp.out().to_vec()
+    }
+}
+
+impl Signable for EthereumLegacyTransaction {
+    fn as_sign_message(&self) -> Vec<u8> {
+        let mut rlp = RlpStream::new();
+        self.encode_into(&mut rlp, true);
+        rlp.finalize_unbounded_list();
+        rlp.out().to_vec()
+    }
 }
 
 #[cfg(test)]

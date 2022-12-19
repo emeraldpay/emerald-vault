@@ -116,6 +116,29 @@ impl WalletEntry {
     }
 }
 
+impl WalletEntry {
+
+    pub fn sign_message<M: ToString>(&self,
+                                     msg: M,
+                                     password: Option<String>,
+                                     vault: &VaultStorage) -> Result<String, VaultError> {
+        if self.is_hardware(vault)? {
+            //TODO
+            return Err(VaultError::UnsupportedDataError("Hardware Signing is not available".to_string()));
+        }
+        // Continue with using a key stored in the vault, it's always encrypted with a password, so it's required
+        if password.is_none() {
+            return Err(VaultError::PasswordRequired);
+        }
+        let key = self.key.get_ethereum_pk(&vault, password.clone(), vault.global_key().get_if_exists()?)?;
+
+
+        let signature = key.sign::<EthereumBasicSignature>(&msg.to_string())?;
+        Ok(signature.to_string())
+    }
+
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -127,7 +150,7 @@ mod tests {
             pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
             seed::{LedgerSource, Seed, SeedRef, SeedSource},
             types::HasUuid,
-            wallet::{PKType, WalletEntry},
+            wallet::{PKType, WalletEntry, Wallet},
         },
         to_32bytes,
         EthereumAddress,
@@ -142,6 +165,7 @@ mod tests {
     use tempdir::TempDir;
     use uuid::Uuid;
     use crate::chains::EthereumChainId;
+    use crate::mnemonic::{Language, Mnemonic};
     use crate::tests::{is_ledger_enabled, read_test_txes};
 
     #[test]
@@ -428,5 +452,53 @@ mod tests {
         ));
 
         assert_eq!(exp.raw, signed);
+    }
+
+    #[test]
+    fn sign_erc191_message() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let global_store = vault.global_key();
+        global_store.create("test-1").unwrap();
+        let global = Some(global_store.get().unwrap());
+
+        let phrase = Mnemonic::try_from(Language::English,
+                                        "often impact pistol seminar park example foil urge bird balance reopen uphold enforce protect pear",
+        ).unwrap();
+
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::create_raw(phrase.seed(None)).unwrap()
+                .reencrypt(SeedSource::nokey().as_bytes(), "test-1".as_bytes(), global.unwrap()).unwrap(),
+            label: None,
+            created_at: Utc::now(),
+        };
+        let seed_id = vault.seeds().add(seed).unwrap();
+
+        let entry = WalletEntry {
+            id: 0,
+            blockchain: Blockchain::Ethereum,
+            address: Some(AddressRef::EthereumAddress(
+                EthereumAddress::from_str("0x23B851d476a3E523d52269746C95bD13bAB81690").unwrap(),
+            )),
+            key: PKType::SeedHd(SeedRef { seed_id, hd_path: StandardHDPath::from_str("m/44'/60'/0'/0/2").unwrap()}),
+            ..WalletEntry::default()
+        };
+
+        let wallet_id = vault.wallets()
+            .add(Wallet {
+                entries: vec![],
+                ..Wallet::default()
+            }).unwrap();
+
+
+        let signed = entry.sign_message(
+            "test test test", Some("test-1".to_string()), &vault
+        );
+
+        assert!(signed.is_ok());
+        let signed = signed.unwrap();
+        assert_eq!(signed, "0xc7be6a5bf16f3e8af73ef954e17a7988346201f1b5563aaff66e2fd16d0cb13268cd7ac4095da896a78b002f693086287fc7894f99661c69972b6cbf402ca72a1c".to_string());
     }
 }

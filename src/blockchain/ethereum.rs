@@ -16,6 +16,8 @@ limitations under the License.
 pub mod address;
 pub mod signature;
 pub mod transaction;
+pub mod eip191;
+pub mod hex;
 
 pub use self::{
     address::EthereumAddress,
