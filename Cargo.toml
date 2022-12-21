@@ -38,6 +38,8 @@ byteorder = "1.4.3"
 ethabi = "18.0.0"
 num = "0.4.0"
 bitcoin = ">=0.29"
+ethers-core = { version = "1.0.2", default-features = false, features = ["eip712", "macros"] }
+ethers-derive-eip712 = "1.0.2"
 aes = "0.8.2"
 ctr = "0.9.2"
 block-modes = "0.9.1"

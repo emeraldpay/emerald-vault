@@ -17,7 +17,7 @@ use emerald_hwkey::ledger::traits::LedgerApp;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use rand::rngs::OsRng;
-use crate::ethereum::signature::EthereumBasicSignature;
+use crate::ethereum::signature::{EthereumBasicSignature, SignableHash};
 use crate::ethereum::transaction::EthereumTransaction;
 
 impl WalletEntry {
@@ -118,10 +118,10 @@ impl WalletEntry {
 
 impl WalletEntry {
 
-    pub fn sign_message<M: ToString>(&self,
-                                     msg: M,
-                                     password: Option<String>,
-                                     vault: &VaultStorage) -> Result<String, VaultError> {
+    pub fn sign_message(&self,
+                         msg: &dyn SignableHash,
+                         password: Option<String>,
+                         vault: &VaultStorage) -> Result<String, VaultError> {
         if self.is_hardware(vault)? {
             //TODO
             return Err(VaultError::UnsupportedDataError("Hardware Signing is not available".to_string()));
@@ -133,7 +133,7 @@ impl WalletEntry {
         let key = self.key.get_ethereum_pk(&vault, password.clone(), vault.global_key().get_if_exists()?)?;
 
 
-        let signature = key.sign::<EthereumBasicSignature>(&msg.to_string())?;
+        let signature = key.sign::<EthereumBasicSignature>(msg)?;
         Ok(signature.to_string())
     }
 
@@ -494,7 +494,7 @@ mod tests {
 
 
         let signed = entry.sign_message(
-            "test test test", Some("test-1".to_string()), &vault
+            &"test test test".to_string(), Some("test-1".to_string()), &vault
         );
 
         assert!(signed.is_ok());

@@ -170,8 +170,9 @@ impl EthereumPrivateKey {
         EthereumAddress::from(key)
     }
 
-    pub fn sign<S>(&self, data: &dyn Signable) -> Result<S, VaultError> where S: SignatureMaker<S> {
-        let hash = data.hash();
+    pub fn sign<S>(&self, data: &dyn SignableHash) -> Result<S, VaultError>
+        where S: SignatureMaker<S> {
+        let hash = data.hash()?;
         self.sign_hash(hash)
     }
 
@@ -201,16 +202,16 @@ pub trait Signable {
 ///
 /// To produce an Ethereum hash (Keccak256)
 pub trait SignableHash {
-    fn hash(&self) -> [u8; KECCAK256_BYTES];
+    fn hash(&self) -> Result<[u8; KECCAK256_BYTES], VaultError>;
 }
 
 ///
 /// Standard implementation for any Signable structure
-impl SignableHash for dyn Signable + '_ {
-    fn hash(&self) -> [u8; KECCAK256_BYTES] {
+impl<T: ?Sized + Signable>  SignableHash for T {
+    fn hash(&self) -> Result<[u8; KECCAK256_BYTES], VaultError> {
         let value = self.as_sign_message();
         let hash = keccak256(value.as_slice());
-        hash
+        Ok(hash)
     }
 }
 

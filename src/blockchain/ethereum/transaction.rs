@@ -553,7 +553,7 @@ mod tests {
             access: vec![]
         };
 
-        let hash = hex::encode(tx.hash());
+        let hash = hex::encode(EthereumTransaction::hash(&tx));
         assert_eq!(hash, "68fe011ba5be4a03369d51810e7943abab15fbaf757f9296711558aee8ab772b");
 
         let pk = EthereumPrivateKey(to_32bytes(

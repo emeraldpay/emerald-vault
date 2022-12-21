@@ -18,6 +18,7 @@ pub mod signature;
 pub mod transaction;
 pub mod eip191;
 pub mod hex;
+pub mod eip712;
 
 pub use self::{
     address::EthereumAddress,

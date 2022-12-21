@@ -110,7 +110,7 @@ mod tests {
     #[test]
     fn should_calculate_message_hash() {
         assert_eq!(
-            (&"Hello world".to_string() as &dyn Signable).hash(),
+            (&"Hello world".to_string() as &dyn Signable).hash().unwrap(),
             to_32bytes("8144a6fa26be252b86456491fbcd43c1de7e022241845ffea1c3df066f7cfede",)
         );
     }
