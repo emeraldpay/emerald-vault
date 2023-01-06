@@ -19,12 +19,13 @@ limitations under the License.
 use super::{EthereumAddress};
 use crate::{convert::error::ConversionError, error::VaultError, trim_bytes, util::{keccak256, to_arr, KECCAK256_BYTES}};
 use hex;
+use num::ToPrimitive;
 use rand::{rngs::OsRng, Rng};
 use secp256k1::{
     PublicKey, SecretKey,
     Message,
     Secp256k1,
-    SignOnly,
+    All, ecdsa::{RecoverableSignature, RecoveryId},
 };
 use std::{convert::TryFrom, fmt, ops, str};
 use std::str::FromStr;
@@ -39,7 +40,7 @@ pub const PRIVATE_KEY_BYTES: usize = 32;
 pub const ECDSA_SIGNATURE_BYTES: usize = 65;
 
 lazy_static! {
-    static ref ECDSA: Secp256k1<SignOnly> = Secp256k1::signing_only();
+    static ref ECDSA: Secp256k1<All> = Secp256k1::gen_new();
 }
 
 /// Transaction sign data (see Appendix F. "Signing Transactions" from Yellow Paper)
@@ -53,6 +54,47 @@ pub struct EthereumBasicSignature {
 
     /// ECDSA signature second point (0 < s < secp256k1n ÷ 2 + 1)
     pub s: [u8; 32],
+}
+
+impl TryFrom<&EthereumBasicSignature> for RecoverableSignature {
+
+    type Error = VaultError;
+
+    fn try_from(value: &EthereumBasicSignature) -> Result<Self, Self::Error> {
+        let rid = RecoveryId::from_i32(&value.v.to_i32().expect("not i32") - 27i32)
+            .map_err(|_| VaultError::InvalidDataError("Invalid Signature RecID".to_string()))?;
+
+        let mut buf = [0u8; 64];
+        buf[0..32].copy_from_slice(&value.r);
+        buf[32..64].copy_from_slice(&value.s);
+
+        RecoverableSignature::from_compact(&buf, rid)
+            .map_err(|_| VaultError::InvalidDataError("Invalid Signature Data".to_string()))
+    }
+
+}
+
+impl EthereumBasicSignature {
+
+    ///
+    /// Verify that the current signature is indeed produced by the specified `address` for the original `msg`.
+    ///
+    pub fn verify(&self, msg: &dyn SignableHash, address: &EthereumAddress) -> Result<bool, VaultError> {
+        let act_address = self.extract_signer(msg)?;
+        Ok(act_address == *address)
+    }
+
+    ///
+    /// Extract the signer address which is produced the current signature (`self`) for the specified `msg`.
+    /// Return error if the signature is invalid
+    ///
+    pub fn extract_signer(&self, msg: &dyn SignableHash) -> Result<EthereumAddress, VaultError> {
+        let hash = msg.hash()?;
+        let msg = Message::from_slice(&hash)?;
+        let sig = RecoverableSignature::try_from(self)?;
+        let pk = ECDSA.recover_ecdsa(&msg, &sig)?;
+        Ok(EthereumAddress::from(pk))
+    }
 }
 
 ///
@@ -76,6 +118,7 @@ pub trait EthereumSignature {
     /// Append the signature to an rlp-encoded transaction
     fn append_to_rlp(&self, chain: EthereumChainId, rlp: &mut RlpStream);
 }
+
 
 impl EthereumSignature for EthereumBasicSignature {
     fn append_to_rlp(&self, chain_id: EthereumChainId, rlp: &mut RlpStream) {
@@ -218,20 +261,32 @@ impl<T: ?Sized + Signable>  SignableHash for T {
 impl SignatureMaker<EthereumBasicSignature> for EthereumBasicSignature {
     fn sign(msg: Message, sk: SecretKey) -> Result<EthereumBasicSignature, VaultError> {
         let s = ECDSA.sign_ecdsa_recoverable(&msg, &sk);
-        let (rid, sig) = s.serialize_compact();
-
-        let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
-        buf[0] = (rid.to_i32() + 27) as u8;
-        buf[1..65].copy_from_slice(&sig[0..64]);
-
-        Ok(EthereumBasicSignature::from(buf))
+        Ok(EthereumBasicSignature::from(s))
     }
 }
 
 impl SignatureMaker<EthereumEIP2930Signature> for EthereumEIP2930Signature {
     fn sign(msg: Message, sk: SecretKey) -> Result<EthereumEIP2930Signature, VaultError> {
         let s = ECDSA.sign_ecdsa_recoverable(&msg, &sk);
-        let (rid, sig) = s.serialize_compact();
+        Ok(EthereumEIP2930Signature::from(s))
+    }
+}
+
+impl From<RecoverableSignature> for EthereumBasicSignature {
+    fn from(value: RecoverableSignature) -> Self {
+        let (rid, sig) = value.serialize_compact();
+
+        let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
+        buf[0] = (rid.to_i32() + 27) as u8;
+        buf[1..65].copy_from_slice(&sig[0..64]);
+
+        EthereumBasicSignature::from(buf)
+    }
+}
+
+impl From<RecoverableSignature> for EthereumEIP2930Signature {
+    fn from(value: RecoverableSignature) -> Self {
+        let (rid, sig) = value.serialize_compact();
 
         let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
         buf[0] = (rid.to_i32() + 27) as u8;
@@ -242,18 +297,18 @@ impl SignatureMaker<EthereumEIP2930Signature> for EthereumEIP2930Signature {
         let mut s = [0u8; 32];
         s.copy_from_slice(&sig[32..64]);
 
-        let sig = EthereumEIP2930Signature {
-            y_parity: rid.to_i32() as u8,
-            r, s
-        };
+        let y_parity = rid.to_i32() as u8;
 
-        if sig.y_parity > 1 {
+        if y_parity > 1 {
             // technically it's y-coord side, so can have only two possible values.
             // if we've got something different we did something completely wrong
-            panic!("y_parity can be only 0 or 1. Found: {:}", sig.y_parity)
+            panic!("y_parity can be only 0 or 1. Found: {:}", y_parity)
         }
 
-        Ok(sig)
+        EthereumEIP2930Signature {
+            y_parity,
+            r, s
+        }
     }
 }
 
@@ -433,6 +488,19 @@ mod tests {
         assert_eq!(sig.y_parity, 1);
         assert_eq!(hex::encode(sig.r), "f0b3347ec48e78bf5ef6075b332334518ebc2f90d2bf0fea080623179936382e");
         assert_eq!(hex::encode(sig.s), "5c58c5beeafb2398d5e79b40b320421112a9672167f27e7fc55e76d2d7d11062");
+    }
+
+    #[test]
+    fn convert_to_secp256k1_format() {
+        let encoded = "0x99e71a99cb2270b8cac5254f9e99b6210c6c10224a1579cf389ef88b20a1abe9129ff05af364204442bdb53ab6f18a99ab48acc9326fa689f228040429e3ca661b";
+        let s = EthereumBasicSignature::from_str(encoded).unwrap();
+
+        let converted = RecoverableSignature::try_from(&s);
+        assert!(converted.is_ok());
+
+        let back = EthereumBasicSignature::from(converted.unwrap());
+
+        assert_eq!(encoded,back.to_string());
     }
 
 }

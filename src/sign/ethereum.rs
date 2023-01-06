@@ -1,5 +1,4 @@
 use crate::{
-    blockchain::chains::EthereumChainId,
     convert::json::keyfile::EthereumJsonV3File,
     storage::vault::VaultStorage,
     error::VaultError,
@@ -152,7 +151,6 @@ mod tests {
             types::HasUuid,
             wallet::{PKType, WalletEntry, Wallet},
         },
-        to_32bytes,
         EthereumAddress,
         EthereumPrivateKey,
         EthereumLegacyTransaction,
@@ -486,11 +484,11 @@ mod tests {
             ..WalletEntry::default()
         };
 
-        let wallet_id = vault.wallets()
+        vault.wallets()
             .add(Wallet {
                 entries: vec![],
                 ..Wallet::default()
-            }).unwrap();
+            }).expect("wallet not created");
 
 
         let signed = entry.sign_message(

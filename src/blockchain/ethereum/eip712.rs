@@ -37,8 +37,8 @@ impl SignableHash for TypedData {
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
-    use crate::ethereum::signature::{EthereumBasicSignature, Signable, SignableHash};
-    use crate::{EthereumPrivateKey, to_32bytes};
+    use crate::ethereum::signature::{EthereumBasicSignature};
+    use crate::{EthereumAddress, EthereumPrivateKey};
     use crate::ethereum::eip712::parse_eip712;
 
     #[test]
@@ -124,5 +124,85 @@ mod tests {
             "0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b915621c".to_string(),
             signature.unwrap().to_string()
         )
+    }
+
+    #[test]
+    fn verify_test_1() {
+        // test vector from the spec. the PK is sha3('cow')
+        let json = r#"
+            {
+            "types": {
+                "EIP712Domain": [
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "version",
+                        "type": "string"
+                    },
+                    {
+                        "name": "chainId",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "verifyingContract",
+                        "type": "address"
+                    }
+                ],
+                "Person": [
+                    {
+                        "name": "name",
+                        "type": "string"
+                    },
+                    {
+                        "name": "wallet",
+                        "type": "address"
+                    }
+                ],
+                "Mail": [
+                    {
+                        "name": "from",
+                        "type": "Person"
+                    },
+                    {
+                        "name": "to",
+                        "type": "Person"
+                    },
+                    {
+                        "name": "contents",
+                        "type": "string"
+                    }
+                ]
+            },
+            "primaryType": "Mail",
+            "domain": {
+                "name": "Ether Mail",
+                "version": "1",
+                "chainId": 1,
+                "verifyingContract": "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
+            },
+            "message": {
+                "from": {
+                    "name": "Cow",
+                    "wallet": "0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826"
+                },
+                "to": {
+                    "name": "Bob",
+                    "wallet": "0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB"
+                },
+                "contents": "Hello, Bob!"
+            }
+        }"#;
+
+        let msg = parse_eip712(json).unwrap();
+        let exp_address = EthereumAddress::from_str("0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826").unwrap();
+        let signature = EthereumBasicSignature::from_str(
+            "0x4355c47d63924e8a72e509b65029052eb6c299d53a04e167c5775fd466751c9d07299936d304c153f6443dfa05f40ff007d72911b6f72307f996231605b915621c"
+        ).unwrap();
+
+        let verify = signature.verify(&msg, &exp_address);
+        assert!(verify.is_ok());
+        assert_eq!(verify.unwrap(), true);
     }
 }
