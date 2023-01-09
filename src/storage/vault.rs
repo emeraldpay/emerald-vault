@@ -26,6 +26,8 @@ use std::{
 };
 use std::ffi::OsStr;
 use uuid::Uuid;
+use crate::storage::files::try_vault_file;
+use crate::storage::icons::Icons;
 use crate::storage::vault_ethereum::AddEthereumEntry;
 use crate::storage::vault_bitcoin::AddBitcoinEntry;
 use crate::structs::crypto::GlobalKey;
@@ -56,9 +58,14 @@ impl VaultStorage {
     ///
     /// Check if the extension (`ext`) is used by the vault main files
     pub fn is_vault_ext(ext: &OsStr) -> bool {
-        ext == "key" || ext == "wallet" || ext == "seed" || ext == "bak"
+        ext == "key" || ext == "wallet" || ext == "seed" || ext == "bak" || ext == "icon"
     }
 
+    pub fn icons(&self) -> Icons {
+        Icons {
+            dir: self.dir.clone()
+        }
+    }
     pub fn keys(&self) -> Arc<dyn VaultAccessByFile<PrivateKeyHolder>> {
         self.keys.clone()
     }
@@ -364,36 +371,6 @@ pub(crate) fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(
     Ok(())
 }
 
-fn try_vault_file(file: &Path, suffix: &str) -> Result<Uuid, ()> {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"(?P<id>[0-9a-f]{8}\-[0-9a-f]{4}\-[0-9a-f]{4}\-[0-9a-f]{4}\-[0-9a-f]{12})\.(?P<suffix>[a-z]+)").unwrap();
-    }
-
-    match file.file_name() {
-        Some(name) => {
-            let file_name = name.to_str().unwrap();
-            match RE.captures(file_name) {
-                Some(caps) => {
-                    let act_suffix = caps.name("suffix").unwrap().as_str();
-                    if act_suffix.eq(suffix) {
-                        let id: &str = caps.name("id").unwrap().as_str();
-                        let uuid = Uuid::from_str(id).unwrap();
-                        if format!("{}.{}", &uuid, suffix).eq(file_name) {
-                            Ok(uuid)
-                        } else {
-                            Err(())
-                        }
-                    } else {
-                        Err(())
-                    }
-                }
-                None => Err(()),
-            }
-        }
-        None => Err(()),
-    }
-}
-
 pub struct CreateWallet {
     storage: Arc<VaultStorage>,
     keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
@@ -673,51 +650,6 @@ mod tests {
     };
     use chrono::{TimeZone, Utc};
     use tempdir::TempDir;
-
-    #[test]
-    fn try_vault_file_from_standard() {
-        let act = try_vault_file(Path::new("3221aabc-b3ff-4235-829f-9599aba04cb5.key"), "key");
-        assert!(act.is_ok());
-        assert_eq!(
-            Uuid::from_str("3221aabc-b3ff-4235-829f-9599aba04cb5").unwrap(),
-            act.unwrap()
-        );
-    }
-
-    #[test]
-    fn try_vault_file_from_invalid_suffix() {
-        let act = try_vault_file(
-            Path::new("3221aabc-b3ff-4235-829f-9599aba04cb5.seed"),
-            "key",
-        );
-        assert!(act.is_err());
-    }
-
-    #[test]
-    fn try_vault_file_from_invalid_name() {
-        let act = try_vault_file(Path::new("9599aba04cb5.key"), "key");
-        assert!(act.is_err());
-        let act = try_vault_file(
-            Path::new("3221aabc-b3ff-4235-829f-9599aba04cb5.key.bak"),
-            "key",
-        );
-        assert!(act.is_err());
-        let act = try_vault_file(
-            Path::new("~3221aabc-b3ff-4235-829f-9599aba04cb5.key"),
-            "key",
-        );
-        assert!(act.is_err());
-        let act = try_vault_file(
-            Path::new("3221aabc-b3ff-4235-829f-9599aba04cb5.~key"),
-            "key",
-        );
-        assert!(act.is_err());
-        let act = try_vault_file(
-            Path::new("3221aabc-b3ff-4235-829f-9599aba04cb5.key~"),
-            "key",
-        );
-        assert!(act.is_err());
-    }
 
     #[test]
     fn creates_seed() {

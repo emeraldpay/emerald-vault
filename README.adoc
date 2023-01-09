@@ -33,7 +33,8 @@ Vault can have multiple wallets.
 Can have multiple.
 * `.seed` is a reference to a Hardware Key, or encrypted Seed bytes.
 Can have multiple.
-* `addressbook.csv` is an Address Book of recipient addresses
+* `addressbook.csv` is an Address Book of recipient addresses (DEPRECATED)
+* `.png` a custom image for the wallet or other entry.
 
 .Storage directory:
 * Windows: `%APPDATA%\.emerald\vault`

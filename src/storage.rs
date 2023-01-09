@@ -50,6 +50,8 @@ pub mod vault;
 pub mod global_key;
 pub mod admin;
 pub mod snapshot;
+pub mod icons;
+mod files;
 
 use std::{
     env,
