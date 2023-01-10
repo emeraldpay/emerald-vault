@@ -7,6 +7,7 @@ use uuid::Uuid;
 use crate::convert::error::ConversionError;
 use crate::error::VaultError;
 use crate::storage::files::try_vault_file;
+use std::fmt::Display;
 
 const PNG_SUFFIX: &str = "png";
 const SIZE_LIMIT: usize = 1 * 1024 * 1024;
@@ -17,12 +18,12 @@ pub struct Icons {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Icon {
-    id: Uuid,
-    entity_type: EntityType,
-    image_type: ImageType,
+    pub id: Uuid,
+    pub entity_type: EntityType,
+    pub image_type: ImageType,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Display)]
 pub enum EntityType {
     WALLET,
     SEED
