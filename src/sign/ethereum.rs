@@ -47,7 +47,7 @@ impl WalletEntry {
         let rlp = tx.encode_unsigned();
         let sign = ethereum_app
             .sign_transaction(&rlp, &hd_path)
-            .map_err(|_| VaultError::InvalidPrivateKey)?;
+            .map_err(VaultError::HWKeyFailed)?;
         let sign = EthereumBasicSignature::from(sign);
         let raw = tx.encode_signed(&sign);
         //TODO verify that signature is from the entry's address
