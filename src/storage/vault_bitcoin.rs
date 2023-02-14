@@ -43,7 +43,7 @@ pub(crate) fn get_address(blockchain: &Blockchain, address_type: AddressType, ac
     let account_dp: DerivationPath = account.into();
     let xprv = master.derive_priv(&DEFAULT_SECP256K1, &account_dp)
         .map_err(|_| VaultError::PrivateKeyUnavailable)?;
-    let xpub = ExtendedPubKey::from_private(&DEFAULT_SECP256K1, &xprv);
+    let xpub = ExtendedPubKey::from_priv(&DEFAULT_SECP256K1, &xprv);
     Ok(XPub {
         value: xpub,
         address_type,

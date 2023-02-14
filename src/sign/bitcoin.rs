@@ -11,21 +11,9 @@ use crate::{
     error::VaultError,
     structs::{book::AddressRef, wallet::WalletEntry},
 };
-use bitcoin::{
-    Witness,
-    consensus::serialize,
-    util::{bip143::SighashComponents, bip32::ChildNumber, psbt::serialize::Serialize},
-    Address,
-    Network,
-    PrivateKey,
-    PublicKey,
-    Script,
-    SigHashType,
-    Transaction,
-    TxIn,
-};
-use bitcoin_hashes::HashEngine;
-use secp256k1::{All, Message, Secp256k1, Signature};
+use bitcoin::{Witness, consensus::serialize, util::{sighash::SighashCache, bip32::ChildNumber, psbt::serialize::Serialize}, Address, Network, PrivateKey, PublicKey, Script, EcdsaSighashType, Transaction, TxIn};
+use secp256k1::{All, Message, Secp256k1};
+use secp256k1::ecdsa::Signature;
 use crate::structs::seed::SeedSource;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, BitcoinApps, SignTx, UnsignedInput};
@@ -43,7 +31,7 @@ fn encode_signature(sig: Signature) -> Vec<u8> {
     let sig = sig.serialize_der().to_vec();
     let mut result = Vec::with_capacity(sig.len() + 1);
     result.extend(sig);
-    result.push(SigHashType::All as u8);
+    result.push(EcdsaSighashType::All as u8);
     result
 }
 
@@ -170,16 +158,21 @@ impl InputReference {
     ) -> Result<(), VaultError> {
         let pk = self.get_pk(proposal)?;
         let script = self.to_sign_script(proposal)?;
-        let txin = &tx.input[index];
 
-        let hash = SighashComponents::new(tx)
-            .sighash_all(&txin, &script, self.expected_value)
+        let hash = SighashCache::new(&tx.clone())
+            .segwit_signature_hash(
+                index,
+                &script,
+                self.expected_value,
+                EcdsaSighashType::All
+            )
+            .map_err(|e| VaultError::InvalidDataError(e.to_string()))?
             .as_hash()
             .to_vec();
         let msg = Message::from_slice(hash.as_slice())
             .map_err(|_| VaultError::InvalidDataError("tx-hash".to_string()))?;
 
-        let signature = DEFAULT_SECP256K1.sign(&msg, &pk.inner);
+        let signature = DEFAULT_SECP256K1.sign_ecdsa(&msg, &pk.inner);
         let signature = encode_signature(signature);
 
         tx.input[index] = TxIn {
@@ -329,18 +322,13 @@ mod tests {
             seed::{Seed, SeedSource},
             wallet::WalletEntry,
         },
-        storage::entry::AddEntryOptions,
     };
     use bitcoin::{Network, OutPoint, TxOut, Txid, Address};
     use chrono::{TimeZone, Utc};
-    use hdpath::{StandardHDPath, AccountHDPath};
+    use hdpath::{StandardHDPath};
     use std::{convert::TryFrom, str::FromStr};
     use uuid::Uuid;
     use crate::sign::bitcoin::BitcoinTxError;
-    use tempdir::TempDir;
-    use crate::storage::vault::VaultStorage;
-    use crate::structs::seed::LedgerSource;
-    use crate::structs::wallet::Wallet;
 
     fn create_proposal_1() -> (WalletEntry, BitcoinTransferProposal) {
         let phrase = Mnemonic::try_from(Language::English,
@@ -628,6 +616,8 @@ mod tests {
 
     #[test]
     fn sign_basic_tx() {
+        // format!("{:x?}", enc.buffer)
+        //
         let (entry, proposal) = create_proposal_1();
 
         // sign raw tx from encode_basic_unsigned_tx() as:

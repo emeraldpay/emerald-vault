@@ -47,7 +47,7 @@ pub fn generate_key<P: HDPath>(path: &P, seed: &[u8]) -> Result<ExtendedPrivKey,
 
 pub fn generate_pubkey<P: HDPath>(path: &P, seed: &[u8]) -> Result<ExtendedPubKey, VaultError> {
     let sec_key = generate_key(path, &seed)?;
-    Ok(ExtendedPubKey::from_private(&DEFAULT_SECP256K1, &sec_key))
+    Ok(ExtendedPubKey::from_priv(&DEFAULT_SECP256K1, &sec_key))
 }
 
 #[cfg(test)]
