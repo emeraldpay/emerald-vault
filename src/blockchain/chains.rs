@@ -99,6 +99,12 @@ impl TryFrom<u32> for Blockchain {
     }
 }
 
+impl Into<u32> for Blockchain {
+    fn into(self) -> u32 {
+        (self as isize) as u32
+    }
+}
+
 impl FromStr for EthereumChainId {
     type Err = ();
 
@@ -126,5 +132,58 @@ impl EthereumChainId {
             EthereumChainId::Goerli => 5,
             EthereumChainId::Custom(v) => *v
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use crate::blockchain::chains::{Blockchain};
+    use std::convert::TryFrom;
+    use std::convert::Into;
+
+    #[test]
+    fn convert_blockchain_into_u32() {
+        assert_eq!(
+            100,
+            Into::<u32>::into(Blockchain::Ethereum)
+        );
+        assert_eq!(
+            101,
+            Into::<u32>::into(Blockchain::EthereumClassic)
+        );
+
+        assert_eq!(
+            1,
+            Into::<u32>::into(Blockchain::Bitcoin)
+        );
+    }
+
+    #[test]
+    fn convert_blockchain_into_u32_and_opposite() {
+        assert_eq!(
+            Blockchain::Ethereum,
+            Blockchain::try_from(Into::<u32>::into(Blockchain::Ethereum)).unwrap()
+        );
+
+        assert_eq!(
+            Blockchain::EthereumClassic,
+            Blockchain::try_from(Into::<u32>::into(Blockchain::EthereumClassic)).unwrap()
+        );
+
+        assert_eq!(
+            Blockchain::GoerliTestnet,
+            Blockchain::try_from(Into::<u32>::into(Blockchain::GoerliTestnet)).unwrap()
+        );
+
+        assert_eq!(
+            Blockchain::Bitcoin,
+            Blockchain::try_from(Into::<u32>::into(Blockchain::Bitcoin)).unwrap()
+        );
+
+        assert_eq!(
+            Blockchain::BitcoinTestnet,
+            Blockchain::try_from(Into::<u32>::into(Blockchain::BitcoinTestnet)).unwrap()
+        );
     }
 }
