@@ -25,11 +25,15 @@ use std::{
     sync::Arc,
 };
 use std::ffi::OsStr;
+use std::ops::Deref;
+use std::sync::mpsc::Receiver;
+use std::sync::Mutex;
 use uuid::Uuid;
 use crate::storage::files::try_vault_file;
 use crate::storage::icons::Icons;
 use crate::storage::vault_ethereum::AddEthereumEntry;
 use crate::storage::vault_bitcoin::AddBitcoinEntry;
+use crate::storage::watch::{WatchLoop, Watch, Request, Event};
 use crate::structs::crypto::GlobalKey;
 
 /// Compound trait for a vault entry which is stored in a separate file each
@@ -41,6 +45,7 @@ pub trait VaultAccessByFile<P>: VaultAccess<P> + SingleFileEntry
 #[derive(Clone)]
 pub struct VaultStorage {
     pub dir: PathBuf,
+    watch: Arc<Mutex<Watch>>,
 
     keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
@@ -302,6 +307,12 @@ impl VaultStorage {
         archive.finalize();
         Ok(errors == 0)
     }
+
+    // Watch avaialbility of a HW key
+    pub fn watch(&self, request: Request) -> Receiver<Event> {
+        let mut watch = self.watch.lock().unwrap();
+        (*watch).request(request)
+    }
 }
 
 /// Safe update of a file, with making a .bak copy of the existing file, writing new content and
@@ -480,6 +491,7 @@ impl VaultStorage {
         }
         Ok(VaultStorage {
             dir: path.clone(),
+            watch: Arc::new(Mutex::new(Watch::new())),
             keys: Arc::new(StandardVaultFiles {
                 dir: path.clone(),
                 suffix: "key".to_string(),

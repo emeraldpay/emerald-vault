@@ -52,6 +52,7 @@ pub mod admin;
 pub mod snapshot;
 pub mod icons;
 mod files;
+pub mod watch;
 
 use std::{
     env,
