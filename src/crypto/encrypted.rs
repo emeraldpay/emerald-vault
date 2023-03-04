@@ -481,7 +481,7 @@ mod tests {
         let decrypted = encrypted.decrypt("test".as_bytes(), None);
 
         if decrypted.is_err() {
-            println!("Err: {:?}", decrypted.err());
+            println!("Err: {:?}", decrypted.clone().err());
         }
         assert!(decrypted.is_ok());
 
