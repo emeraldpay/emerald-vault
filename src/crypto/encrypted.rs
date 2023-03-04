@@ -480,6 +480,9 @@ mod tests {
 
         let decrypted = encrypted.decrypt("test".as_bytes(), None);
 
+        if decrypted.is_err() {
+            println!("Err: {:?}", decrypted.err());
+        }
         assert!(decrypted.is_ok());
 
         assert_eq!(
