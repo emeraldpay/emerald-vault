@@ -466,23 +466,47 @@ mod tests {
 
     #[test]
     fn decrypt_known_large() {
+        //
+        // prepare and dump for testing:
+        //
+        // let encrypted = Encrypted::encrypt(
+        //     hex::decode("e62f08be9852ba841d776fd41d091ca7fae16aa6d7fe1203e42f6f5c9a94e8dec93ff0223fc68780b6d92721ef79055fc355c92f4d3b71f3aae69d4105ceb38355327ce74151a307327cfae4d6d4ce1187ec5e77e602eee0743e8b0804679deef15fb1b1ab311875ca8b8090468d4664467daf3abadd42eec861fa6ed1b32576b2fced67b2ea27631645346e04dab3751f06fdd5bd2984339a86fb07ffc7e3c1ab7ebcfeb4d15a9eeb420121c14840eecdcd322ae61c8d1f8a7faa399ad8de9c2e77719081a354edee06fcb8cfe666bfa5534de9959c729d4b61e3290043c40ae6c23a189bb21b48079ce5a7d6edf31ec097adaaeb848ab499a64298809caa14")
+        //         .unwrap(),
+        //     "test".as_bytes(),
+        //     None,
+        // );
+        // match encrypted.clone().unwrap().cipher {
+        //     Cipher::Aes128Ctr(v) => {
+        //         println!("Encrypted: iv={:}, data={:}", hex::encode(&v.iv), hex::encode(&v.encrypted));
+        //         match &v.mac {
+        //             MacType::Web3(m) => {
+        //                 println!("mac {:}", hex::encode(&m))
+        //             }
+        //         }
+        //     }
+        // }
+        // match encrypted.unwrap().kdf {
+        //     Kdf::Argon2(a) => {
+        //         println!("kdf {}", hex::encode(a.salt))
+        //     }
+        //     _ => {}
+        // }
+
         let encrypted = Encrypted {
             cipher: Cipher::Aes128Ctr(Aes128CtrCipher {
-                encrypted: hex::decode("071cf8f588084148ca39149f754acf0c0b4fc3d47270d4fd03ae09c9e14a3b16117fad64a7397d41f7e527146b1d70d3596e0838c200d668894403044b356dac4eb2756590a5047089bd99fd32ff58d7c3b4e072e4e11c24fa1824556d1a3c846b95d9cf274540ddde42f4f230c5aecb76da7afa96a6c7e34c0dd2e881876345efe06154f295e08cae579b0373256e97e373f0784f59ffad41615ddf61f96d9a09f5e9ae4834615ec01bc6d30d63130a7f8a6e8abff48cd32da0e55ead50bcf5db0ba86a6c45c281b1e2a9c4c23edf775b564fbb3ce522914f3a29baae2f3b96c2ebc4e382d44bea4b29eba9fc166b41c3ccbc906a7bf2ff8ef56331468602c6").unwrap(),
-                iv: hex::decode("2458c9a81071d079500a7a40db6a9ed3").unwrap(),
+                encrypted: hex::decode("78c9b73ab20f531c9902baf1c6f23659f3321a367ddbe8be22f4ecc0b48d7b44f2673e23d83088fddfd91baefd26583723fbf707963294ddf14e82c2c1f34b8b95dfc05ec39e9c5b3669e8053dd3c296c1bc6ee353f885e537977fa7a44fd5d49f31b8a39d40c628f4ede176fb9d1931a5649f9af5fdc1c9366cf7fc54255e33334e063e903a14562cdbfed80549e806073ad95b09125f286699b4f610c3450f8c9414b3b9a9f77b0afbb269d327c2b1b2a5b8743ecd2dae7d55e154c552fcc8ae47899f12365683e7ad9a3ea04d39a4700e6c73b546341d30cb14f4206fcd39d80c69fd755d480b0867d9d3407ca2bcace2bf0522e048ab22ab26c138a13c74").unwrap(),
+                iv: hex::decode("dc27e54fa4e62c5c16c986c538f61263").unwrap(),
                 mac: MacType::Web3(
-                    hex::decode("b28118fd4fe1a9e717f8b231c2398a68ac56edce6adf99a4d3c8377bb635c5ef").unwrap()
+                    hex::decode("6ebe94b46d820c78479a1bb74d6386f3b012d10e15bfdce9723af87221002b8b").unwrap()
                 )
             }),
-            kdf: Kdf::Argon2(Argon2::new_global(hex::decode("f14123a13d45a5dd473edbf8f32c0109").unwrap())),
+            // use the release type of argon config because the data was originally encrypted using it
+            kdf: Kdf::Argon2(Argon2::new_global_release(hex::decode("b40fc1fe089437e2a4ec1f7dd9c8b8b9").unwrap())),
             global_key: None
         };
 
         let decrypted = encrypted.decrypt("test".as_bytes(), None);
 
-        if decrypted.is_err() {
-            println!("Err: {:?}", decrypted.clone().err());
-        }
         assert!(decrypted.is_ok());
 
         assert_eq!(
