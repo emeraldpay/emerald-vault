@@ -184,7 +184,7 @@ impl WatchLoop {
             match app.name.as_str() {
                 "Ethereum" => vec![Blockchain::Ethereum],
                 "Ethereum Classic" => vec![Blockchain::EthereumClassic],
-                "Ethereum Goerli Test" => vec![Blockchain::GoerliTestnet],
+                "Goerli Testnet" => vec![Blockchain::GoerliTestnet],
                 "Bitcoin" => vec![Blockchain::Bitcoin],
                 "Bitcoin Test" => vec![Blockchain::BitcoinTestnet],
                 _ => vec![]
@@ -262,4 +262,3 @@ mod tests {
         assert_eq!(event.devices[0].blockchains[0], Blockchain::Ethereum);
     }
 }
-
