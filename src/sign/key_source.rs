@@ -50,7 +50,7 @@ impl PrivateKeySource {
 fn get_ledger_app<'a>(blockchain: BlockchainType, manager: &'a LedgerKey) -> Result<Box<dyn PubkeyAddressApp + 'a>, VaultError> {
     match blockchain {
         BlockchainType::Bitcoin => {
-            let app = BitcoinApp::new(manager);
+            let app = manager.access::<BitcoinApp>()?;
             if app.is_open().is_none() {
                 Err(VaultError::PublicKeyUnavailable)
             } else {
@@ -58,7 +58,7 @@ fn get_ledger_app<'a>(blockchain: BlockchainType, manager: &'a LedgerKey) -> Res
             }
         },
         BlockchainType::Ethereum => {
-            let app = EthereumApp::new(manager);
+            let app = manager.access::<EthereumApp>()?;
             if app.is_open().is_none() {
                 Err(VaultError::PublicKeyUnavailable)
             } else {
@@ -164,7 +164,7 @@ impl SeedSource {
                     .map_err(|_| VaultError::PublicKeyUnavailable)?;
                 match blockchain.get_type() {
                     BlockchainType::Bitcoin => {
-                        let app = BitcoinApp::new(&manager);
+                        let app = manager.access::<BitcoinApp>()?;
                         if app.is_open().is_none() {
                             return Err(VaultError::PublicKeyUnavailable);
                         }
@@ -180,7 +180,7 @@ impl SeedSource {
                         }
                     },
                     BlockchainType::Ethereum => {
-                        let app = EthereumApp::new(&manager);
+                        let app = manager.access::<EthereumApp>()?;
                         if app.is_open().is_none() {
                             return Err(VaultError::PrivateKeyUnavailable);
                         }

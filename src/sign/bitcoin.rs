@@ -251,7 +251,7 @@ impl BitcoinTransferProposal {
 
     fn seal_with_ledger(&self, tx: &mut Transaction) -> Result<(), VaultError> {
         let manager = LedgerKey::new_connected().map_err(|_| VaultError::PublicKeyUnavailable)?;
-        let bitcoin_app = BitcoinApp::new(&manager);
+        let bitcoin_app = manager.access::<BitcoinApp>()?;
         let exp_app = match self.network {
             Network::Bitcoin => BitcoinApps::Mainnet,
             Network::Testnet => BitcoinApps::Testnet,

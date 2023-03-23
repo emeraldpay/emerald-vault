@@ -93,7 +93,7 @@ impl AddBitcoinEntry {
             SeedSource::Ledger(_) => {
                 let manager = LedgerKey::new_connected();
                 if let Ok(manager) = manager {
-                    let bitcoin_app = BitcoinApp::new(&manager);
+                    let bitcoin_app = manager.access::<BitcoinApp>()?;
                     let exp_app = match blockchain {
                         Blockchain::Bitcoin => Some(BitcoinApps::Mainnet),
                         Blockchain::BitcoinTestnet => Some(BitcoinApps::Testnet),

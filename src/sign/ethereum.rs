@@ -40,7 +40,7 @@ impl WalletEntry {
 
         //TODO verify actual device, right now vault just uses a first currently available device
         let manager = LedgerKey::new_connected().map_err(|_| VaultError::PrivateKeyUnavailable)?;
-        let ethereum_app = EthereumApp::new(&manager);
+        let ethereum_app = manager.access::<EthereumApp>()?;
         if ethereum_app.is_open().is_none() {
             return Err(VaultError::PrivateKeyUnavailable);
         }
