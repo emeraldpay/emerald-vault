@@ -136,7 +136,7 @@ impl AddEthereumEntry {
                 // try to verify address if Ledger is currently connected
                 match LedgerKey::new_connected() {
                     Ok(manager) => {
-                        let ethereum_app = EthereumApp::new(&manager);
+                        let ethereum_app = manager.access::<EthereumApp>()?;
                         if ethereum_app.is_open().is_none() {
                             None
                         } else {
