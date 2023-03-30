@@ -24,6 +24,7 @@ use std::{
     cmp,
     convert::{TryFrom, TryInto},
 };
+use std::collections::HashSet;
 use uuid::Uuid;
 
 impl TryFrom<&proto_WalletEntry> for WalletEntry {
@@ -126,10 +127,21 @@ impl TryFrom<&[u8]> for Wallet {
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         let m = parse_from_bytes::<proto_Wallet>(value)?;
+        let mut active_addresses = HashSet::new();
         let mut entries: Vec<WalletEntry> = Vec::new();
         for m in m.entries.iter() {
             let acc = WalletEntry::try_from(m)?;
-            entries.push(acc);
+
+            // we want to have only uniq addresses in the Wallet to avoid any reference conflicts
+            // when displaying it, calculating balance, etc.
+            let uniq_address = if let Some(address) = &acc.address {
+                active_addresses.insert((acc.blockchain, address.clone()))
+            } else {
+                true
+            };
+            if uniq_address {
+                entries.push(acc);
+            }
         }
         let created_at = Utc
             .timestamp_millis_opt(m.get_created_at() as i64)

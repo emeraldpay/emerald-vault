@@ -124,13 +124,13 @@ impl BitcoinTransferProposal {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Hash, PartialEq, Eq, Debug)]
 pub struct XPub {
     pub value: ExtendedPubKey,
     pub address_type: AddressType,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Copy)]
+#[derive(Clone, Hash, PartialEq, Eq, Debug, Copy)]
 pub enum AddressType {
     /// Pay To Public Key Hash
     /// Legacy address, starts with 1

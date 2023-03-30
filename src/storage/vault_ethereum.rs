@@ -189,6 +189,7 @@ mod tests {
         tests::*,
     };
     use tempdir::TempDir;
+    use crate::mnemonic::{Language, Mnemonic};
     use crate::storage::vault::VaultStorage;
 
     #[test]
@@ -232,6 +233,93 @@ mod tests {
         assert_eq!(pk_id, list[0]);
 
         vault_pk.get(pk_id).unwrap();
+    }
+
+    #[test]
+    fn add_seed_entry() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let global = vault.global_key();
+        global.create("test-1").unwrap();
+
+        let phrase = Mnemonic::try_from(
+            Language::English,
+            "avoid midnight couch purchase truth segment sauce claim spell spring smoke renew term stem solve",
+        ).unwrap();
+        let seed_id = vault.seeds().add(
+            Seed {
+                source: SeedSource::create(phrase.seed(None), "test-1".as_bytes(), global.get().unwrap()).unwrap(),
+                ..Default::default()
+            }
+        ).unwrap();
+        let wallet_id = vault.wallets().add(Wallet {
+            ..Default::default()
+        }).unwrap();
+
+        let saved = vault.add_ethereum_entry(wallet_id)
+            .seed_hd(
+                seed_id,
+                StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(),
+                Blockchain::Ethereum,
+                Some("test-1".to_string()),
+                Some(EthereumAddress::from_str("0x6E5C207C3Ac240837831397910d2Ed8B6bfAFc38").unwrap())
+            );
+        println!("{:?}", saved);
+        assert!(saved.is_ok());
+
+        let list = vault.wallets().list_entries().unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].entries.len(), 1);
+        assert_eq!(list[0].entries[0].key, PKType::SeedHd(SeedRef{seed_id, hd_path: StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap()}));
+        assert_eq!(list[0].entries[0].address, Some(AddressRef::EthereumAddress(EthereumAddress::from_str("0x6E5C207C3Ac240837831397910d2Ed8B6bfAFc38").unwrap())));
+    }
+
+    #[test]
+    fn doesnt_create_duplicate_entry() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let global = vault.global_key();
+        global.create("test-1").unwrap();
+
+        let phrase = Mnemonic::try_from(
+            Language::English,
+            "avoid midnight couch purchase truth segment sauce claim spell spring smoke renew term stem solve",
+        ).unwrap();
+        let seed_id = vault.seeds().add(
+            Seed {
+                source: SeedSource::create(phrase.seed(None), "test-1".as_bytes(), global.get().unwrap()).unwrap(),
+                ..Default::default()
+            }
+        ).unwrap();
+        let wallet_id = vault.wallets().add(Wallet {
+            ..Default::default()
+        }).unwrap();
+
+        let saved_1 = vault.add_ethereum_entry(wallet_id)
+            .seed_hd(
+                seed_id,
+                StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(),
+                Blockchain::Ethereum,
+                Some("test-1".to_string()),
+                Some(EthereumAddress::from_str("0x6E5C207C3Ac240837831397910d2Ed8B6bfAFc38").unwrap())
+            );
+        assert!(saved_1.is_ok());
+        let saved_2 = vault.add_ethereum_entry(wallet_id)
+            .seed_hd(
+                seed_id,
+                StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(),
+                Blockchain::Ethereum,
+                Some("test-1".to_string()),
+                Some(EthereumAddress::from_str("0x6E5C207C3Ac240837831397910d2Ed8B6bfAFc38").unwrap())
+            );
+
+        let list = vault.wallets().list_entries().unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].entries.len(), 1);
+        assert_eq!(list[0].entries[0].key, PKType::SeedHd(SeedRef{seed_id, hd_path: StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap()}));
+        assert_eq!(list[0].entries[0].address, Some(AddressRef::EthereumAddress(EthereumAddress::from_str("0x6E5C207C3Ac240837831397910d2Ed8B6bfAFc38").unwrap())));
     }
 
     #[test]
