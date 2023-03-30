@@ -1355,7 +1355,7 @@ mod tests {
         let id2 = vault
             .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
-                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                hex::decode("a69e8bbb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118")
                     .unwrap(),
                 "test",
                 Blockchain::Ethereum,
@@ -1390,7 +1390,7 @@ mod tests {
         let id1 = vault
             .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
-                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                hex::decode("69e8bbb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118a")
                     .unwrap(),
                 "test",
                 Blockchain::Ethereum,
@@ -1447,7 +1447,7 @@ mod tests {
         let id2 = vault
             .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
-                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                hex::decode("9e8bbb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118a6")
                     .unwrap(),
                 "test",
                 Blockchain::Ethereum,
@@ -1603,7 +1603,7 @@ mod tests {
         let id2 = vault
             .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
-                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                hex::decode("bb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118a69e8b")
                     .unwrap(),
                 "test",
                 Blockchain::Ethereum,
@@ -1665,7 +1665,7 @@ mod tests {
         let id2 = vault
             .add_ethereum_entry(wallet_id.clone())
             .raw_pk(
-                hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
+                hex::decode("9e8bbb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118a6")
                     .unwrap(),
                 "test",
                 Blockchain::Ethereum,

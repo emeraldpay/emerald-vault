@@ -15,7 +15,7 @@ pub struct BookmarkDetails {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Hash, PartialEq, Eq, Debug)]
 pub enum AddressRef {
     EthereumAddress(EthereumAddress),
     ExtendedPub(XPub),

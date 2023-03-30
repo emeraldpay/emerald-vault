@@ -79,6 +79,14 @@ impl SeedSource {
         return NONE_SEED_KEY.to_string()
     }
 
+
+    ///
+    /// Create a Seed Source from the specified seed. Encrypt it using the global key
+    pub fn create(seed: Vec<u8>, global_password: &[u8], global: GlobalKey) -> Result<Self, CryptoError> {
+        let value = Encrypted::encrypt(seed, global_password, Some(global))?;
+        Ok(SeedSource::Bytes(value))
+    }
+
     ///
     /// Create Seed Source that is supposed to be used in-memory. Ex. to check addresses, etc.
     /// It doesn't use a Global Key and should not be saved in this form.
@@ -95,7 +103,7 @@ impl SeedSource {
     ///     "quote ivory blast onion below kangaroo tonight spread awkward decide farm gun exact wood brown",
     /// ).unwrap();
     /// let seed = SeedSource::create_raw(phrase.seed(None)).unwrap();
-    /// seed.get_pk(
+    /// let _ = seed.get_pk(
     ///     // use _nokey_ to decrypt the seed
     ///     Some(SeedSource::nokey()),
     ///     // Global Key is not used, threfore None

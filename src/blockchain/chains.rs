@@ -21,7 +21,7 @@ pub enum BlockchainType {
     Ethereum,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Hash, Copy, PartialEq, Eq, Debug)]
 pub enum Blockchain {
     Bitcoin = 1,
     BitcoinTestnet = 10003,
