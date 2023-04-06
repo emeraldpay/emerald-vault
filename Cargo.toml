@@ -67,7 +67,7 @@ emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = 
 #emerald-hwkey = "~0.4"
 num-bigint = "0.4"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
-png = "~0.17"
+image = { version = "0.24.6", default-features = false, features = ["png", "jpeg"] }
 itertools = "0.10"
 
 [dev-dependencies]
