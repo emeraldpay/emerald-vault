@@ -1,13 +1,14 @@
 use std::fs;
-use std::fs::File;
 use std::path::PathBuf;
-use png::Limits;
-use protobuf::Message;
 use uuid::Uuid;
 use crate::convert::error::ConversionError;
 use crate::error::VaultError;
 use crate::storage::files::try_vault_file;
 use std::fmt::Display;
+use std::io::Cursor;
+use image::{ImageFormat, ImageOutputFormat};
+use image::imageops::FilterType;
+use image::io::Reader;
 
 const PNG_SUFFIX: &str = "png";
 const SIZE_LIMIT: usize = 1 * 1024 * 1024;
@@ -98,25 +99,70 @@ impl Icons {
     }
 
     ///
-    /// Make simple checks that the image can be actually used.
-    ///
-    /// In short:
-    /// - it should be an image in PNG format
-    /// - square size (i.e., with equal to height)
-    /// - not too small, must not be smaller than 32px
-    /// - not too large, must not be larger that 1024px
-    fn validate_image(img: &Vec<u8>) -> Result<(), ConversionError> {
+    /// Tries to convert the image to a supported format:
+    /// - convert to PNG
+    /// - resize down to 1024px if larger
+    /// - return error if size is less than 32px
+    /// - cut sides to make it square
+    fn preprocess_image(img: Vec<u8>) -> Result<Vec<u8>, ConversionError> {
         if img.len() == 0 || img.len() > SIZE_LIMIT {
             return Err(ConversionError::InvalidLength)
         }
-        let decoder = png::Decoder::new_with_limits(img.as_slice(), Limits { bytes: SIZE_LIMIT });
-        let reader = decoder.read_info()
+
+        let reader = Reader::new(Cursor::new(&img))
+            .with_guessed_format()
+            .expect("Cursor io never fails");
+        let format = reader.format()
+            .ok_or(ConversionError::UnsupportedFormat)?;
+        let change_format = match format {
+            ImageFormat::Jpeg => true,
+            ImageFormat::Png => false,
+            _ => return Err(ConversionError::UnsupportedFormat)
+        };
+        let decoded = reader.decode()
             .map_err(|_| ConversionError::UnsupportedFormat)?;
-        let info = reader.info();
-        if info.width != info.height || info.width < 32 || info.width > 1024 {
+
+        if decoded.height() < 32 || decoded.width() < 32 {
             return Err(ConversionError::UnsupportedFormat)
         }
-        Ok(())
+
+        let downsize = decoded.height() > 1024 || decoded.width() > 1024;
+        let is_square = decoded.height() == decoded.width();
+
+        if !change_format && !downsize && is_square {
+            return Ok(img)
+        }
+
+        let square = if !is_square {
+            let cut = Icons::cut_square(decoded.width(), decoded.height());
+            decoded.crop_imm(cut.0, cut.1, cut.2, cut.3)
+        } else {
+            decoded
+        };
+
+        let right_size = if square.width() > 1024 {
+            square.resize(1024, 1024, FilterType::Triangle)
+        } else {
+            square
+        };
+
+        let mut target = Cursor::new(vec![]);
+        right_size.write_to(&mut target, ImageOutputFormat::Png)
+            .map_err(|_| ConversionError::UnsupportedFormat)?;
+
+        Ok(target.into_inner())
+    }
+
+    fn cut_square(width: u32, height: u32) -> (u32, u32, u32, u32) {
+        if width > height {
+            let xmargin = (width - height) / 2;
+            let size = height;
+            (xmargin, 0, size, size)
+        } else {
+            let ymargin = (height - width) / 2;
+            let size = width;
+            (0, ymargin, size, size)
+        }
     }
 
     ///
@@ -126,7 +172,7 @@ impl Icons {
         let path = self.dir.join(format!("{}.{}", id, PNG_SUFFIX));
         match image {
             Some(image) => {
-                let _ = Icons::validate_image(&image)?;
+                let image = Icons::preprocess_image(image)?;
                 if let Some(_) = self.find_entity_type(id) {
                     fs::write(path, image)
                         .map_err(|_| VaultError::FilesystemError("IO Error".to_string()))
@@ -151,7 +197,7 @@ mod tests {
     use std::path::PathBuf;
     use chrono::{TimeZone, Utc};
     use tempdir::TempDir;
-    use crate::storage::icons::EntityType;
+    use crate::storage::icons::{EntityType, Icons};
     use crate::storage::vault::VaultStorage;
     use crate::structs::seed::Seed;
     use crate::structs::types::HasUuid;
@@ -273,5 +319,51 @@ mod tests {
 
         let updated = icons.update(wallet_id, Some(image.clone()));
         assert!(updated.is_err());
+    }
+
+    #[test]
+    fn cut_to_size() {
+        assert_eq!(Icons::cut_square(100,  50), (25, 0, 50, 50));
+        assert_eq!(Icons::cut_square(50,  100), (0, 25, 50, 50));
+        assert_eq!(Icons::cut_square(100, 100), (0, 0, 100, 100));
+        assert_eq!(Icons::cut_square(70,  100), (0, 15, 70, 70));
+
+        assert_eq!(Icons::cut_square(101,  50), (25, 0, 50, 50));
+
+        assert_eq!(Icons::cut_square(101,  100), (0, 0, 100, 100));
+        assert_eq!(Icons::cut_square(102,  100), (1, 0, 100, 100));
+        assert_eq!(Icons::cut_square(103,  100), (1, 0, 100, 100));
+        assert_eq!(Icons::cut_square(104,  100), (2, 0, 100, 100));
+
+        assert_eq!(Icons::cut_square(102,  101), (0, 0, 101, 101));
+        assert_eq!(Icons::cut_square(102,  103), (0, 0, 102, 102));
+        assert_eq!(Icons::cut_square(102,  104), (0, 1, 102, 102));
+    }
+
+    #[test]
+    fn add_icon_as_jpeg() {
+        let tmp_dir = TempDir::new("emerald-vault-test").expect("Dir not created");
+        let vault = VaultStorage::create(tmp_dir.path()).unwrap();
+
+        let all = vault.seeds().list().unwrap();
+        assert_eq!(0, all.len());
+
+        let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
+        seed.created_at = Utc.timestamp_millis(0);
+        let id = seed.get_id();
+        vault.seeds().add(seed.clone()).unwrap();
+
+        let icons = vault.icons();
+
+        let image = fs::read(PathBuf::from("tests/emerald_icon.jpeg")).unwrap();
+
+        let updated = icons.update(id, Some(image.clone()));
+        assert!(updated.is_ok());
+
+        let current = icons.list().unwrap();
+        assert_eq!(current.len(), 1);
+        let image_stored = icons.get_image(id).unwrap();
+
+        assert!(image_stored.len() > 1_000);
     }
 }
