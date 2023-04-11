@@ -17,52 +17,65 @@ const RECHECK_TIME_MS: u64 = 500;
 
 #[derive(Clone)]
 pub enum Request {
-    // Just get the current state without actual subscription.
-    // Used to establish the starting point for the further subscriptions.
-    // Returns the resulting event immediatelly
+    /// Just get the current state without actual subscription.
+    /// Used to establish the starting point for the further subscriptions.
+    /// Returns the resulting event immediatelly
     GetCurrent,
-    // Subscribe to any chage after the specified version.
-    // If it's already withing a different version it immediatelly returns with a new state.
+    /// Subscribe to any chage after the specified version.
+    /// If it's already withing a different version it immediatelly returns with a new state.
     Change { version: usize },
-    // Wait until the specified blockchain is available
+    /// Wait until the specified blockchain is available
     Available {
         hw_key_id: Option<Uuid>,
         blockchain: Option<Blockchain>,
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Event {
-    // A monotonic increasing number meaning the current version of the state
+    /// A monotonic increasing number meaning the current version of the state
     pub version: usize,
-    // Available devices within the current state
+    /// Available devices within the current state
     pub devices: Vec<ConnectedDevice>,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum  DeviceDetails {
+    Ledger(LedgerDeviceDetails)
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LedgerDeviceDetails {
+    /// App Name as provided by the Ledger device
+    pub app: String,
+    /// App Version as provided by the Ledger device. Supposed to be a SemVer
+    pub app_version: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct ConnectedDevice {
-    // A uniq id for the device. It doesn't have any meaning and it's not a persistent id.
-    // Used only to distinguish two different devices connected at the same time.
+    /// A uniq id for the device. It doesn't have any meaning and it's not a persistent id.
+    /// Used only to distinguish two different devices connected at the same time.
     pub id: Uuid,
-
-    // Reference to a Seed Id if it's known for the device.
+    /// Reference to a Seed Id if it's known for the device.
     pub seed_id: Option<Uuid>,
-
-    // Blockchain that are currently availalbe through the device
+    /// Blockchain that are currently availalbe through the device
     pub blockchains: Vec<Blockchain>,
+    /// Device details
+    pub device: Option<DeviceDetails>,
 }
 
 pub struct WatchLoop {
-    // Current list of watch requests that a wating for an event.
+    /// Current list of watch requests that a wating for an event.
     requests: Vec<(Request, Sender<Event>)>,
-    // Version.
+    /// Version.
     version: usize,
-    // True if the Watch Loop in currently runing in a separate thread.
+    /// True if the Watch Loop in currently runing in a separate thread.
     launched: bool,
-    // Current connected devices
+    /// Current connected devices
     devices: Vec<ConnectedDevice>,
 
-    // INTERNAL: a default ID for ledger. TODO map to a figerprint
+    /// INTERNAL: a default ID for ledger. TODO map to a figerprint
     default_id: Uuid,
 }
 
@@ -180,23 +193,33 @@ impl WatchLoop {
     }
 
     fn connected_details(&self, ledger: &LedgerKey) -> ConnectedDevice {
-        let blockchains = if let Ok(app) = ledger.get_app_details() {
-            match app.name.as_str() {
+
+        let blockchains;
+        let device;
+        if let Ok(app) = ledger.get_app_details() {
+            blockchains = match app.name.as_str() {
                 "Ethereum" => vec![Blockchain::Ethereum],
                 "Ethereum Classic" => vec![Blockchain::EthereumClassic],
                 "Goerli Testnet" => vec![Blockchain::GoerliTestnet],
                 "Bitcoin" => vec![Blockchain::Bitcoin],
                 "Bitcoin Test" => vec![Blockchain::BitcoinTestnet],
                 _ => vec![]
-            }
+            };
+            let ledger_details = LedgerDeviceDetails {
+                app: app.name,
+                app_version: app.version
+            };
+            device = Some(DeviceDetails::Ledger(ledger_details));
         } else {
-            vec![]
+            blockchains = vec![];
+            device = None;
         };
 
         ConnectedDevice {
             id: self.default_id,
             seed_id: None, //TODO
             blockchains,
+            device,
         }
     }
 
