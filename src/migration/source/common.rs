@@ -104,7 +104,7 @@ pub fn add_to_vault(
                     };
                     let seed = Seed {
                         id: Uuid::new_v4(),
-                        source: SeedSource::Ledger(LedgerSource { fingerprints }),
+                        source: SeedSource::Ledger(LedgerSource { fingerprints, ..LedgerSource::default() }),
                         label: None,
                         created_at: Utc::now(),
                     };

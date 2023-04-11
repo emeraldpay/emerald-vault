@@ -5,7 +5,9 @@ fn main() {
     match env::var("EMRLD_TEST") {
         Ok(v) => {
             println!("cargo:rustc-cfg=integration_test");
-            println!("cargo:rustc-cfg={}", v);
+            for c in v.split(",") {
+                println!("cargo:rustc-cfg={}", c);
+            }
         },
         Err(_) => {},
     }

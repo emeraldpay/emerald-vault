@@ -21,6 +21,7 @@ use std::time::SystemTime;
 use crate::structs::types::HasUuid;
 use crate::blockchain::chains::BlockchainType;
 use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::errors::HWKeyError;
 use std::str::FromStr;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::LedgerApp;
@@ -132,7 +133,8 @@ impl AddEthereumEntry {
                 let ephemeral_pk = EthereumPrivateKey::try_from(key)?;
                 Some(ephemeral_pk.to_address())
             }
-            SeedSource::Ledger(_) => {
+            SeedSource::Ledger(r) => {
+                let _access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
                 // try to verify address if Ledger is currently connected
                 match LedgerKey::new_connected() {
                     Ok(manager) => {
@@ -306,7 +308,7 @@ mod tests {
                 Some(EthereumAddress::from_str("0x6E5C207C3Ac240837831397910d2Ed8B6bfAFc38").unwrap())
             );
         assert!(saved_1.is_ok());
-        let saved_2 = vault.add_ethereum_entry(wallet_id)
+        let _ = vault.add_ethereum_entry(wallet_id)
             .seed_hd(
                 seed_id,
                 StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(),

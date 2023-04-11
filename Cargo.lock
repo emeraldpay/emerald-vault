@@ -600,7 +600,7 @@ dependencies = [
 [[package]]
 name = "emerald-hwkey"
 version = "0.5.0-dev"
-source = "git+https://github.com/emeraldpay/emerald-hwkey?branch=master#95503c715dcc786a0492c7a5e36eafab166d2774"
+source = "git+https://github.com/emeraldpay/emerald-hwkey?branch=master#e7b98793095ed6d1f5b32747b817ddcf783f1ae0"
 dependencies = [
  "bitcoin",
  "byteorder",
@@ -1048,9 +1048,9 @@ checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 
 [[package]]
 name = "hdpath"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dafb09e5d85df264339ad786a147d9de1da13687a3697c52244297e5e7c32d9c"
+checksum = "09ae1615f843ce3981b47468f3f7c435ac17deb33c2261e64d7f1e87f5c11acc"
 dependencies = [
  "bitcoin",
  "byteorder",

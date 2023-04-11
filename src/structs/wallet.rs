@@ -5,7 +5,7 @@ use crate::{
     error::VaultError,
     structs::{
         book::AddressRef,
-        seed::{SeedRef, SeedSource},
+        seed::{SeedRef, SeedSource, Seed},
         types::HasUuid,
     },
 };
@@ -204,24 +204,39 @@ impl WalletEntry {
         EntryId::from(wallet, self)
     }
 
-    pub fn is_hardware(&self, vault: &VaultStorage) -> Result<bool, VaultError> {
+    ///
+    /// get a seed backing this Entry
+    pub fn get_seed(&self, vault: &VaultStorage) -> Result<Option<Seed>, VaultError> {
         match &self.key {
-            PKType::SeedHd(seed) => {
-                let seed_details = vault.seeds().get(seed.seed_id)?;
-                match seed_details.source {
-                    SeedSource::Ledger(_) => Ok(true),
-                    SeedSource::Bytes(_) => Ok(false),
-                }
+            PKType::SeedHd(seed) => vault.seeds().get(seed.seed_id).map(|v| Some(v)),
+            PKType::PrivateKeyRef(_) => Ok(None),
+        }
+    }
+
+    ///
+    /// Check if the Entry is backed by a hardware key (may be a Seed such as Ledger, or an individual private key)
+    pub fn is_hardware(&self, vault: &VaultStorage) -> Result<bool, VaultError> {
+        let result = if let Some(seed) = self.get_seed(vault)? {
+            match seed.source {
+                SeedSource::Ledger(_) => true,
+                SeedSource::Bytes(_) => false,
             }
-            PKType::PrivateKeyRef(_) => Ok(false),
+        } else {
+            false
+        };
+        Ok(result)
+    }
+
+    pub fn entry_hd(&self) -> Option<StandardHDPath> {
+        match &self.key {
+            PKType::SeedHd(seed) => Some(seed.hd_path.clone()),
+            PKType::PrivateKeyRef(_) => None
         }
     }
 
     pub fn account_hd(&self) -> Option<AccountHDPath> {
-        match &self.key {
-            PKType::SeedHd(seed) => Some(AccountHDPath::from(&seed.hd_path)),
-            PKType::PrivateKeyRef(_) => None
-        }
+        self.entry_hd()
+            .map(|hd| AccountHDPath::from(hd))
     }
 
     pub fn get_addresses<T>(&self, role: AddressRole, start: u32, limit: u32) -> Result<Vec<EntryAddress<T>>, VaultError>
@@ -301,11 +316,11 @@ mod tests {
         EthereumAddress,
     };
     use chrono::Utc;
-    use hdpath::{AccountHDPath, StandardHDPath};
+    use hdpath::{StandardHDPath};
     use std::{convert::TryFrom, str::FromStr};
     use tempdir::TempDir;
     use uuid::Uuid;
-    use crate::blockchain::bitcoin::{AddressType, XPub};
+    use crate::blockchain::bitcoin::{AddressType};
     use crate::storage::vault_bitcoin::get_address;
     use crate::structs::wallet::{AddressRole, EntryAddress};
     use bitcoin::Address;
@@ -345,6 +360,7 @@ mod tests {
             id: Uuid::new_v4(),
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
+                ..LedgerSource::default()
             }),
             label: None,
             created_at: Utc::now(),
