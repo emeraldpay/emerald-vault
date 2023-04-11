@@ -4,6 +4,7 @@ use crate::{
     error::VaultError,
     structs::{
         wallet::{PKType, WalletEntry},
+        seed::{SeedSource}
     },
     EthereumPrivateKey,
 };
@@ -13,6 +14,7 @@ use uuid::Uuid;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::LedgerApp;
+use emerald_hwkey::errors::HWKeyError;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use rand::rngs::OsRng;
@@ -60,14 +62,15 @@ impl WalletEntry {
         password: Option<String>,
         vault: &VaultStorage,
     ) -> Result<Vec<u8>, VaultError> {
-        if self.is_hardware(vault)? {
-            return match &self.key {
-                PKType::SeedHd(seed) => {
-                    Ok(self.sign_tx_with_hardware(tx, seed.seed_id, seed.hd_path.clone())?)
-                }
-                _ => Err(VaultError::UnsupportedDataError("NOT_SEED".to_string())),
-            };
+
+        if let Some(seed) = self.get_seed(vault)? {
+            if let SeedSource::Ledger(ledger) = seed.source {
+                let _access_lock = ledger.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
+                let hd_path = self.entry_hd().expect("No HDPath for Seed entry");
+                return self.sign_tx_with_hardware(tx, seed.id, hd_path)
+            }
         }
+
         // Continue with using a key stored in the vault, it's always encrypted with a password, so it's required
         if password.is_none() {
             return Err(VaultError::PasswordRequired);
@@ -164,7 +167,7 @@ mod tests {
     use uuid::Uuid;
     use crate::chains::EthereumChainId;
     use crate::mnemonic::{Language, Mnemonic};
-    use crate::tests::{is_ledger_enabled, read_test_txes};
+    use crate::tests::{read_test_txes};
 
     #[test]
     fn sign_erc20_approve() {
@@ -387,12 +390,8 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(integration_test, ledger))]
     fn sign_tx_with_ledger() {
-        if !is_ledger_enabled() {
-            warn!("Ledger test is disabled");
-            return;
-        }
-
         let test_txes = read_test_txes();
         let exp = &test_txes[0];
 

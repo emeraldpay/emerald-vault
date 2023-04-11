@@ -20,6 +20,7 @@ use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::{LedgerApp, PubkeyAddressApp};
 use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, GetAddressOpts};
+use emerald_hwkey::errors::HWKeyError;
 use crate::structs::crypto::GlobalKey;
 
 pub enum PrivateKeySource {
@@ -120,7 +121,8 @@ impl SeedSource {
                     Ok(result)
                 }
             }
-            SeedSource::Ledger(_) => {
+            SeedSource::Ledger(r) => {
+                let _access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
                 let manager = LedgerKey::new_connected()
                     .map_err(|_| VaultError::PublicKeyUnavailable)?;
                 let app = get_ledger_app(blockchain.get_type(), &manager)?;
@@ -159,7 +161,8 @@ impl SeedSource {
                     Ok(result)
                 }
             },
-            SeedSource::Ledger(_) => {
+            SeedSource::Ledger(r) => {
+                let _access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
                 let manager = LedgerKey::new_connected()
                     .map_err(|_| VaultError::PublicKeyUnavailable)?;
                 match blockchain.get_type() {
@@ -239,9 +242,12 @@ impl PKType {
 #[cfg(test)]
 mod tests {
     use crate::mnemonic::{Mnemonic, Language};
-    use crate::structs::seed::SeedSource;
+    use crate::structs::seed::{LedgerSource, SeedSource};
     use hdpath::{StandardHDPath, AccountHDPath};
     use std::str::FromStr;
+    use std::sync::{Arc, Mutex};
+    use std::thread;
+    use std::time::Duration;
     use crate::blockchain::chains::Blockchain;
     use crate::EthereumAddress;
     use bitcoin::Address;
@@ -357,5 +363,137 @@ mod tests {
         assert_eq!(addresses.len(), 1);
         assert_eq!(addresses[0].0, AccountHDPath::from_str("m/84'/1'/0'").unwrap());
         assert_eq!(addresses[0].1.to_string(), "vpub5YGWRLD8AtynzsPMdPwsjXPUUqoxb6LkgByZzaJ9TS2FECgogxA3CszeC16oiz2Uc7rCcSM9U2Drmv6A9dqBS6YpSuhUEi6LmWtCkVQXc1F".to_string());
+    }
+
+    #[test]
+    #[cfg(all(integration_test, speculos, feature = "hwkey-emulate"))]
+    fn get_ethereum_addresses_from_speculos() {
+        let seed = SeedSource::Ledger(LedgerSource {
+            fingerprints: vec![],
+            ..LedgerSource::default()
+        });
+
+        let addresses = seed.get_addresses::<EthereumAddress>(
+            None,
+            None,
+            &vec![
+                StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(),
+                StandardHDPath::from_str("m/44'/60'/0'/0/1").unwrap(),
+                StandardHDPath::from_str("m/44'/60'/0'/0/2").unwrap(),
+                StandardHDPath::from_str("m/44'/60'/0'/0/3").unwrap(),
+                StandardHDPath::from_str("m/44'/60'/0'/0/4").unwrap(),
+                StandardHDPath::from_str("m/44'/60'/0'/0/5").unwrap(),
+                StandardHDPath::from_str("m/44'/60'/0'/0/6").unwrap(),
+                StandardHDPath::from_str("m/44'/60'/0'/0/7").unwrap(),
+            ],
+            Blockchain::Ethereum,
+        );
+        println!("Addresses {:?}", &addresses);
+        assert!(addresses.is_ok());
+        let mut addresses = addresses.unwrap();
+        assert_eq!(addresses.len(), 8);
+
+        addresses.sort_by_key(|a| a.0.clone());
+
+        assert_eq!(addresses[0],
+                   (StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(), EthereumAddress::from_str("0xDad77910DbDFdE764fC21FCD4E74D71bBACA6D8D").unwrap()));
+        assert_eq!(addresses[1],
+                   (StandardHDPath::from_str("m/44'/60'/0'/0/1").unwrap(), EthereumAddress::from_str("0xd692Cb1346262F584D17B4B470954501f6715a82").unwrap()));
+        assert_eq!(addresses[2],
+                   (StandardHDPath::from_str("m/44'/60'/0'/0/2").unwrap(), EthereumAddress::from_str("0xfeb0594A0561d0DF76EA8b2F52271538e6704f75").unwrap()));
+        assert_eq!(addresses[3],
+                   (StandardHDPath::from_str("m/44'/60'/0'/0/3").unwrap(), EthereumAddress::from_str("0x5c886862AAbA7e342c8708190c42C14BD63e9058").unwrap()));
+        assert_eq!(addresses[4],
+                   (StandardHDPath::from_str("m/44'/60'/0'/0/4").unwrap(), EthereumAddress::from_str("0x766aedBf5FC4366Fe48D49604CAE12Ba11630A60").unwrap()));
+        assert_eq!(addresses[5],
+                   (StandardHDPath::from_str("m/44'/60'/0'/0/5").unwrap(), EthereumAddress::from_str("0xbC2F9a0F57d2EDD630f2327C5E0caBff565c6B13").unwrap()));
+        assert_eq!(addresses[6],
+                   (StandardHDPath::from_str("m/44'/60'/0'/0/6").unwrap(), EthereumAddress::from_str("0xF0eb55adF53795257118Af626206dAb7C43F8b04").unwrap()));
+        assert_eq!(addresses[7],
+                   (StandardHDPath::from_str("m/44'/60'/0'/0/7").unwrap(), EthereumAddress::from_str("0x2de8e81E02154D954547322e412e3A2b2eE96C82").unwrap()));
+    }
+
+    #[test]
+    #[cfg(all(integration_test, speculos, feature = "hwkey-emulate"))]
+    fn get_ethereum_addresses_from_speculos_parallel() {
+        let seed = SeedSource::Ledger(LedgerSource {
+            fingerprints: vec![],
+            ..LedgerSource::default()
+        });
+        let seed = Arc::new(seed);
+        let hd_path = vec![
+            StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(),
+            StandardHDPath::from_str("m/44'/60'/0'/0/1").unwrap(),
+            StandardHDPath::from_str("m/44'/60'/0'/0/2").unwrap(),
+            StandardHDPath::from_str("m/44'/60'/0'/0/3").unwrap(),
+            StandardHDPath::from_str("m/44'/60'/0'/0/4").unwrap(),
+            StandardHDPath::from_str("m/44'/60'/0'/0/5").unwrap(),
+            StandardHDPath::from_str("m/44'/60'/0'/0/6").unwrap(),
+            StandardHDPath::from_str("m/44'/60'/0'/0/7").unwrap(),
+        ];
+        let hd_path = Arc::new(hd_path);
+
+        let results: Vec<Vec<(StandardHDPath, EthereumAddress)>> = vec![];
+        let results_ref = Arc::new(Mutex::new(results));
+
+        let thread_hd_path = hd_path.clone();
+        let thread_seed = seed.clone();
+        let thread_results = results_ref.clone();
+        let t1 = thread::spawn(move || {
+            let addresses = thread_seed.get_addresses::<EthereumAddress>(
+                None,
+                None,
+                &thread_hd_path,
+                Blockchain::Ethereum,
+            );
+            let mut addresses = addresses.unwrap();
+            addresses.sort_by_key(|a| a.0.clone());
+            let mut results = thread_results.lock().unwrap();
+            results.push(addresses);
+        });
+
+        let thread_hd_path = hd_path.clone();
+        let thread_seed = seed.clone();
+        let thread_results = results_ref.clone();
+        let t2 = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(50));
+            let addresses = thread_seed.get_addresses::<EthereumAddress>(
+                None,
+                None,
+                &thread_hd_path,
+                Blockchain::Ethereum,
+            );
+            let mut addresses = addresses.unwrap();
+            addresses.sort_by_key(|a| a.0.clone());
+            let mut results = thread_results.lock().unwrap();
+            results.push(addresses);
+        });
+
+        let thread_hd_path = hd_path.clone();
+        let thread_seed = seed.clone();
+        let thread_results = results_ref.clone();
+        let t3 = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(25));
+            let addresses = thread_seed.get_addresses::<EthereumAddress>(
+                None,
+                None,
+                &thread_hd_path,
+                Blockchain::Ethereum,
+            );
+            let mut addresses = addresses.unwrap();
+            addresses.sort_by_key(|a| a.0.clone());
+            let mut results = thread_results.lock().unwrap();
+            results.push(addresses);
+        });
+
+        t1.join().unwrap();
+        t2.join().unwrap();
+        t3.join().unwrap();
+
+        let check_results = results_ref.clone();
+        let mut results = check_results.lock().unwrap();
+        assert_eq!(results.len(), 3);
+        assert_eq!(results[0], results[1]);
+        assert_eq!(results[0], results[2]);
     }
 }

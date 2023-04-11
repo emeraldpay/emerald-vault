@@ -7,6 +7,7 @@ use chrono::{DateTime, Utc};
 use hdpath::StandardHDPath;
 use sha2::Digest;
 use std::convert::TryFrom;
+use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 use crate::structs::crypto::GlobalKey;
 use crate::structs::types::UsesOddKey;
@@ -32,10 +33,21 @@ pub enum SeedSource {
     Ledger(LedgerSource),
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Clone, Debug)]
 pub struct LedgerSource {
     pub fingerprints: Vec<HDPathFingerprint>,
+    /// A LedgerKey is usually created when it's needed, and though it's synchonized inside it's implementation we don't want
+    /// to have multiple instances of it to avoid a thread race. So we lock it with this synthetic mutex.
+    pub(crate) access: Arc<Mutex<usize>>,
 }
+
+impl PartialEq for LedgerSource {
+    fn eq(&self, other: &LedgerSource) -> bool {
+        self.fingerprints.eq(&other.fingerprints)
+    }
+}
+
+impl Eq for LedgerSource {}
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct HDPathFingerprint {
@@ -170,7 +182,7 @@ ord_by_date_id!(Seed);
 
 impl Default for LedgerSource {
     fn default() -> Self {
-        LedgerSource { fingerprints: vec![] }
+        LedgerSource { fingerprints: vec![], access: Arc::new(Mutex::new(1)) }
     }
 }
 

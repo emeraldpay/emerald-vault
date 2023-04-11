@@ -18,7 +18,9 @@ use crate::structs::seed::SeedSource;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, BitcoinApps, SignTx, UnsignedInput};
 use emerald_hwkey::ledger::traits::LedgerApp;
+use emerald_hwkey::errors::HWKeyError;
 use hdpath::StandardHDPath;
+use itertools::Itertools;
 
 lazy_static! {
     pub static ref DEFAULT_SECP256K1: Secp256k1<All> = Secp256k1::new();
@@ -237,6 +239,21 @@ impl BitcoinTransferProposal {
 
     fn seal(&self) -> Result<Transaction, VaultError> {
         let mut tx = self.unsigned();
+
+        // get all mutexex that may be requred to lock during the sealing
+        let locks = self.seed.iter().flat_map(|seed| {
+            match &seed.source {
+                SeedSource::Ledger(l) => Some(l.access.clone()),
+                _ => None
+            }
+        }).collect_vec();
+
+        // just to keep the locks in scope if the main function
+        let mut locked = vec![];
+        for lock in &locks {
+            let access_lock = lock.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
+            locked.push(access_lock)
+        }
 
         if self.is_ledger() {
             self.seal_with_ledger(&mut tx)?;

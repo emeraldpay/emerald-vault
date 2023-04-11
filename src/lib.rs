@@ -87,7 +87,7 @@ mod tests {
     pub use hex::{FromHex, ToHex};
     use log::Level;
     pub use regex::Regex;
-    use std::{fs, fs::DirEntry, path::{Path, PathBuf}, env};
+    use std::{fs, fs::DirEntry, path::{Path, PathBuf}};
 
     #[derive(Deserialize)]
     pub struct TestAddress {
@@ -120,13 +120,6 @@ mod tests {
         }
         let arch_dir = in_arch.first().unwrap();
         Some(arch_dir.path())
-    }
-
-    pub fn is_ledger_enabled() -> bool {
-        match env::var("EMRLD_TEST_LEDGER") {
-            Ok(v) => v == "true",
-            Err(_) => false,
-        }
     }
 
     pub fn read_test_addresses() -> Vec<TestAddress> {

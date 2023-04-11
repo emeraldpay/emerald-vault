@@ -73,7 +73,7 @@ impl TryFrom<&proto_LedgerSeed> for LedgerSource {
             }
             fingerprints
         };
-        let result = LedgerSource { fingerprints };
+        let result = LedgerSource { fingerprints, ..LedgerSource::default() };
         Ok(result)
     }
 }
@@ -236,7 +236,7 @@ mod tests {
             label: None,
             created_at: Utc::now(),
         };
-        let seed_id = seed.id.clone();
+        let _ = seed.id.clone();
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 
@@ -256,6 +256,7 @@ mod tests {
             id: Uuid::new_v4(),
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
+                ..LedgerSource::default()
             }),
             label: None,
             created_at: Utc::now(),
@@ -277,6 +278,7 @@ mod tests {
             id: Uuid::new_v4(),
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
+                ..LedgerSource::default()
             }),
             label: Some("Hello World!".to_string()),
             created_at: Utc::now(),
@@ -293,6 +295,7 @@ mod tests {
             id: Uuid::new_v4(),
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
+                ..LedgerSource::default()
             }),
             label: Some("".to_string()),
             created_at: Utc::now(),
@@ -309,6 +312,7 @@ mod tests {
             id: Uuid::new_v4(),
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
+                ..LedgerSource::default()
             }),
             label: Some("Hello World!".to_string()),
             created_at: Utc.timestamp_millis(1592624592679),

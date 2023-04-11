@@ -20,7 +20,8 @@ use emerald_hwkey::{
             LedgerApp,
             PubkeyAddressApp
         }
-    }
+    },
+    errors::HWKeyError
 };
 use crate::storage::entry::AddEntryOptions;
 use crate::structs::crypto::GlobalKey;
@@ -90,7 +91,8 @@ impl AddBitcoinEntry {
                     None => return Err(VaultError::PasswordRequired)
                 }
             }
-            SeedSource::Ledger(_) => {
+            SeedSource::Ledger(r) => {
+                let access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
                 let manager = LedgerKey::new_connected();
                 if let Ok(manager) = manager {
                     let bitcoin_app = manager.access::<BitcoinApp>()?;
@@ -308,7 +310,7 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
         let seed_id = vault.seeds().add(Seed {
-            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] }),
+            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![], ..LedgerSource::default() }),
             ..Default::default()
         }).unwrap();
 
@@ -352,7 +354,7 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir.path()).expect("Vault not initialized");
 
         let seed_id = vault.seeds().add(Seed {
-            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![] }),
+            source: SeedSource::Ledger(LedgerSource { fingerprints: vec![], ..LedgerSource::default() }),
             ..Default::default()
         }).expect("No seed_id");
 
