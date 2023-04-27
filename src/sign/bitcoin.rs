@@ -240,7 +240,7 @@ impl BitcoinTransferProposal {
     fn seal(&self) -> Result<Transaction, VaultError> {
         let mut tx = self.unsigned();
 
-        // get all mutexex that may be requred to lock during the sealing
+        // get all mutexes that may be required to lock during the sealing
         let locks = self.seed.iter().flat_map(|seed| {
             match &seed.source {
                 SeedSource::Ledger(l) => Some(l.access.clone()),
@@ -288,6 +288,8 @@ impl BitcoinTransferProposal {
             }).collect()
         };
         bitcoin_app.sign_tx(tx, &conf)?;
+        //TODO here we should also verify that the expected from addresses are actually the same as provided with
+        // the signature. And in addition to that, add association to the seed if it doesn't have a right fingerprint
         Ok(())
     }
 

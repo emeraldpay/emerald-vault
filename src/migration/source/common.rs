@@ -6,7 +6,7 @@ use crate::{
         book::AddressRef,
         crypto::Encrypted,
         pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
-        seed::{HDPathFingerprint, LedgerSource, Seed, SeedRef, SeedSource},
+        seed::{LedgerSource, Seed, SeedRef, SeedSource},
         types::HasUuid,
         wallet::{PKType, Wallet, WalletEntry},
     },
@@ -91,17 +91,7 @@ pub fn add_to_vault(
             let seed_id = match &existing {
                 Some(seed) => seed.id.clone(),
                 None => {
-                    let fingerprints = match kf.address {
-                        Some(address) => {
-                            let f = HDPathFingerprint::from_address(
-                                StandardHDPath::try_from(data.hd_path.clone().as_str())
-                                    .map_err(|_| "Unsupported HDPath")?,
-                                &address,
-                            );
-                            vec![f]
-                        }
-                        None => Vec::new(),
-                    };
+                    let fingerprints = vec![];
                     let seed = Seed {
                         id: Uuid::new_v4(),
                         source: SeedSource::Ledger(LedgerSource { fingerprints, ..LedgerSource::default() }),

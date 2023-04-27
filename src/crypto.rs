@@ -4,3 +4,4 @@ pub mod kdf;
 pub mod pk;
 pub mod seed;
 pub mod util;
+pub mod fingerprint;

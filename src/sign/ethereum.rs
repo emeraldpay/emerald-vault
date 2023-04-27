@@ -1,15 +1,10 @@
-use crate::{
-    convert::json::keyfile::EthereumJsonV3File,
-    storage::vault::VaultStorage,
-    error::VaultError,
-    structs::{
-        wallet::{PKType, WalletEntry},
-        seed::{SeedSource}
-    },
-    EthereumPrivateKey,
-};
+use crate::{convert::json::keyfile::EthereumJsonV3File, storage::vault::VaultStorage, error::VaultError, structs::{
+    wallet::{PKType, WalletEntry},
+    seed::{SeedSource}
+}, EthereumPrivateKey, EthereumAddress};
 use hdpath::StandardHDPath;
 use std::convert::TryFrom;
+use std::str::FromStr;
 use uuid::Uuid;
 use emerald_hwkey::ledger::manager::LedgerKey;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
@@ -18,7 +13,7 @@ use emerald_hwkey::errors::HWKeyError;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use rand::rngs::OsRng;
-use crate::ethereum::signature::{EthereumBasicSignature, SignableHash};
+use crate::ethereum::signature::{EthereumBasicSignature, Signable, SignableHash};
 use crate::ethereum::transaction::EthereumTransaction;
 
 impl WalletEntry {
@@ -36,7 +31,7 @@ impl WalletEntry {
         tx: TX,
         _: Uuid, //not used yet
         hd_path: StandardHDPath,
-    ) -> Result<Vec<u8>, VaultError> where TX: EthereumTransaction {
+    ) -> Result<Vec<u8>, VaultError> where TX: EthereumTransaction + Signable {
         let hd_path = StandardHDPath::try_from(hd_path.to_string().as_str())
             .map_err(|_| VaultError::InvalidDataError("HDPath".to_string()))?;
 
@@ -46,28 +41,48 @@ impl WalletEntry {
         if ethereum_app.is_open().is_none() {
             return Err(VaultError::PrivateKeyUnavailable);
         }
+        let expected_from = ethereum_app.get_address(&hd_path, false).ok()
+            .map(|ar| ar.address)
+            .and_then(|addr| EthereumAddress::from_str(addr.as_str()).ok());
+
+        if expected_from.is_none() {
+            return Err(VaultError::PublicKeyUnavailable);
+        }
+        let expected_from = expected_from.unwrap();
+
         let rlp = tx.encode_unsigned();
         let sign = ethereum_app
             .sign_transaction(&rlp, &hd_path)
             .map_err(VaultError::HWKeyFailed)?;
         let sign = EthereumBasicSignature::from(sign);
         let raw = tx.encode_signed(&sign);
-        //TODO verify that signature is from the entry's address
+
+        let verified = sign.recover_eip155(tx.get_chain()).verify(&tx, &expected_from)?;
+        if !verified {
+            return Err(VaultError::InvalidPrivateKey);
+        }
         Ok(raw)
     }
 
-    pub fn sign_tx<TX: EthereumTransaction>(
+    pub fn sign_tx<TX: EthereumTransaction + Signable>(
         &self,
         tx: TX,
         password: Option<String>,
         vault: &VaultStorage,
     ) -> Result<Vec<u8>, VaultError> {
 
-        if let Some(seed) = self.get_seed(vault)? {
-            if let SeedSource::Ledger(ledger) = seed.source {
+        if let Some(mut seed) = self.get_seed(vault)? {
+            if let SeedSource::Ledger(ledger) = seed.clone().source {
                 let _access_lock = ledger.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
                 let hd_path = self.entry_hd().expect("No HDPath for Seed entry");
-                return self.sign_tx_with_hardware(tx, seed.id, hd_path)
+                let tx = self.sign_tx_with_hardware(tx, seed.id, hd_path);
+                if tx.is_ok() {
+                    // when signing we made sure that the expected address belongs to the current ledger
+                    if seed.associate() {
+                        let _ = vault.seeds().update(seed.clone());
+                    }
+                }
+                return tx
             }
         }
 

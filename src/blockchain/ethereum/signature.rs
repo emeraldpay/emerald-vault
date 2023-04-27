@@ -95,6 +95,17 @@ impl EthereumBasicSignature {
         let pk = ECDSA.recover_ecdsa(&msg, &sig)?;
         Ok(EthereumAddress::from(pk))
     }
+
+    ///
+    /// Recover a signature with original `v` for a EIP-155 type of signature.
+    /// Used to find a signature that can verify such EIP-155 transaction.
+    pub fn recover_eip155(&self, chain_id: EthereumChainId) -> EthereumBasicSignature {
+        EthereumBasicSignature {
+            v: self.v - chain_id.as_chainid() * 2 - 35 + 27,
+            r: self.r,
+            s: self.s,
+        }
+    }
 }
 
 ///
@@ -372,6 +383,9 @@ impl fmt::Display for EthereumPrivateKey {
 mod tests {
     use super::*;
     use crate::tests::*;
+    use num_bigint::BigUint;
+    use crate::num::Zero;
+    use crate::num::Num;
 
     #[test]
     fn should_convert_into_address() {
@@ -502,5 +516,60 @@ mod tests {
 
         assert_eq!(encoded,back.to_string());
     }
+
+    #[test]
+    fn extract_legacy_tx_signature() {
+        let tx = EthereumLegacyTransaction {
+            chain_id: EthereumChainId::Ethereum,
+            nonce: 1,
+            gas_price: BigUint::from_str("10000000").unwrap(),
+            gas_limit: 21_000,
+            // self transction
+            to: Some(EthereumAddress::from_str("0x3d66483b4cad3518861029ff86a387ebc4705172").unwrap()),
+            value: BigUint::zero(),
+            data: vec![],
+        };
+
+        let signature = EthereumBasicSignature::from_str("0x99a1d0271a0e3c3d2cd1f659b262675646653a0a3ca6adc6f1c3ec93a589572e39ea3005f6baaf56e03440254065cf5ae7020e7c31cdc3fbf305c7fbe262a3db26").unwrap();
+
+        println!("signature v: {}", signature.v);
+        let signature = signature.recover_eip155(EthereumChainId::Ethereum);
+        println!("signature v: {}", signature.v);
+
+        let from = signature.extract_signer(&tx);
+        if !from.is_ok() {
+            println!("{:}", from.clone().err().unwrap());
+        }
+        assert!(from.is_ok());
+        assert_eq!(from.unwrap(), EthereumAddress::from_str("0x3d66483b4cad3518861029ff86a387ebc4705172").unwrap());
+    }
+
+    #[test]
+    fn extract_legacy_tx_signature_existing_0a28d856() {
+        // tx 0x0a28d856bb9e954d2c203c63b7b083c593815c21c62213b4be627a6e734ec60a
+        let tx = EthereumLegacyTransaction {
+            chain_id: EthereumChainId::Ethereum,
+            nonce: 0xacb1b6,
+            gas_price: BigUint::from_str_radix("2540be400", 16).unwrap(),
+            gas_limit: 0xc350,
+            to: Some(EthereumAddress::from_str("0x04356be552e55bedea0644ed945b44e2007217ef").unwrap()),
+            value: BigUint::from_str_radix("1a82e6757100ed00", 16).unwrap(),
+            data: vec![],
+        };
+
+        let signature = EthereumBasicSignature::from_str("0xa9df7f5f8bfbf89d6e255ffed87e98c0fe1814314e599bddcd6b857b76967f546f56f56d2490f877c6a682cad1e757270203c0c4cde8e6c78545ad619058790425").unwrap();
+
+        println!("signature v: {}", signature.v);
+        let signature = signature.recover_eip155(EthereumChainId::Ethereum);
+        println!("signature v: {}", signature.v);
+
+        let from = signature.extract_signer(&tx);
+        if !from.is_ok() {
+            println!("{:}", from.clone().err().unwrap());
+        }
+        assert!(from.is_ok());
+        assert_eq!(from.unwrap(), EthereumAddress::from_str("0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5").unwrap());
+    }
+
 
 }

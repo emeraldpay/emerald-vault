@@ -75,13 +75,13 @@ impl AddBitcoinEntry {
         if blockchain.get_type() != BlockchainType::Bitcoin {
             return Err(VaultError::IncorrectBlockchainError)
         }
-        let seed = self.seeds.get(seed_id)?;
+        let mut seed = self.seeds.get(seed_id)?;
         let address_type = AddressType::P2WPKH;
         let account = address_type.get_hd_path(hd_path.account(), &blockchain.as_bitcoin_network());
         if account.purpose() != hd_path.purpose() {
             return Err(VaultError::UnsupportedDataError("Invalid HD Path purpose for address".to_string()))
         }
-        let xpub = match seed.source {
+        let xpub = match &seed.source {
             SeedSource::Bytes(seed) => {
                 match &opts.seed_password {
                     Some(seed_password) => {
@@ -92,7 +92,7 @@ impl AddBitcoinEntry {
                 }
             }
             SeedSource::Ledger(r) => {
-                let access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
+                let _access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
                 let manager = LedgerKey::new_connected();
                 if let Ok(manager) = manager {
                     let bitcoin_app = manager.access::<BitcoinApp>()?;
@@ -113,10 +113,18 @@ impl AddBitcoinEntry {
             }
         };
 
-        if opts.xpub.is_some() && xpub.is_some() && opts.xpub != xpub {
-            return Err(VaultError::InvalidDataError(
-                "Different xpub".to_string(),
-            ));
+        if opts.xpub.is_some() && xpub.is_some() {
+            // if we verified that the expected xpub and the actual xpub on ledger are the same
+            // then we can remember the association between the ledger and the seed.
+            if opts.xpub == xpub {
+                if seed.associate() {
+                    let _ = self.seeds.update(seed.clone());
+                }
+            } else {
+                return Err(VaultError::InvalidDataError(
+                    "Different xpub".to_string(),
+                ));
+            }
         }
 
         let xpub = xpub.or_else(|| {
