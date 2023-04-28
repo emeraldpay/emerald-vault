@@ -1,7 +1,6 @@
 use crate::{
     crypto::error::CryptoError,
     structs::{crypto::Encrypted, types::HasUuid},
-    EthereumAddress,
 };
 use chrono::{DateTime, Utc};
 use hdpath::StandardHDPath;
@@ -9,6 +8,7 @@ use sha2::Digest;
 use std::convert::TryFrom;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
+use crate::crypto::fingerprint::Fingerprints;
 use crate::structs::crypto::GlobalKey;
 use crate::structs::types::UsesOddKey;
 
@@ -51,30 +51,26 @@ impl Eq for LedgerSource {}
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct HDPathFingerprint {
-    pub hd_path: StandardHDPath,
     pub value: FingerprintType,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum FingerprintType {
-    AddressSha256(Bytes256),
+    PubkeySha256(Bytes256),
+}
+
+impl FingerprintType {
+    pub fn to_vec(&self) -> Vec<u8> {
+        match self {
+            FingerprintType::PubkeySha256(b) => b.0.to_vec()
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SeedRef {
     pub seed_id: Uuid,
     pub hd_path: StandardHDPath,
-}
-
-impl HDPathFingerprint {
-    pub fn from_address(hd_path: StandardHDPath, address: &EthereumAddress) -> HDPathFingerprint {
-        let hash = sha2::Sha256::digest(address);
-        let f = Bytes256::try_from(hash.as_slice()).unwrap();
-        HDPathFingerprint {
-            hd_path,
-            value: FingerprintType::AddressSha256(f),
-        }
-    }
 }
 
 impl HasUuid for Seed {
@@ -183,6 +179,59 @@ ord_by_date_id!(Seed);
 impl Default for LedgerSource {
     fn default() -> Self {
         LedgerSource { fingerprints: vec![], access: Arc::new(Mutex::new(1)) }
+    }
+}
+
+pub trait WithFingerprint {
+    fn is_same(&self, fp: &HDPathFingerprint) -> bool;
+}
+
+impl WithFingerprint for LedgerSource {
+    fn is_same(&self, fp: &HDPathFingerprint) -> bool {
+        self.fingerprints.iter().any(|c| c.value.eq(&fp.value))
+    }
+}
+
+impl WithFingerprint for SeedSource {
+    fn is_same(&self, fp: &HDPathFingerprint) -> bool {
+        match self {
+            SeedSource::Bytes(_) => false,
+            SeedSource::Ledger(ledger) => ledger.is_same(fp)
+        }
+    }
+}
+
+impl WithFingerprint for Seed {
+    fn is_same(&self, fp: &HDPathFingerprint) -> bool {
+        self.source.is_same(fp)
+    }
+}
+
+impl Seed {
+    ///
+    /// _Applicable for a Hardware Seed only_.
+    ///
+    /// Read information from the device and compares with known fingerprints. If it finds a new
+    /// fingerprint it updates the internal state and return `true` (i.e., needs to be saved with new info).
+    /// Returns `false` otherwise.
+    pub(crate) fn associate(&mut self) -> bool {
+        if let SeedSource::Ledger(ledger) = &mut self.source {
+            if let Ok(fingerprints) = ledger.find_fingerprints() {
+                let mut current = ledger.fingerprints.clone();
+                let mut updated = false;
+                for fp in fingerprints {
+                    if !current.contains(&fp) {
+                        current.push(fp);
+                        updated = true;
+                    }
+                }
+                if updated {
+                    ledger.fingerprints = current;
+                }
+                return updated
+            }
+        }
+        false
     }
 }
 

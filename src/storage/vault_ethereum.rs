@@ -122,8 +122,8 @@ impl AddEthereumEntry {
         if blockchain.get_type() != BlockchainType::Ethereum {
             return Err(VaultError::IncorrectBlockchainError)
         }
-        let seed = self.seeds.get(seed_id)?;
-        let actual_address = match seed.source {
+        let mut seed = self.seeds.get(seed_id)?;
+        let actual_address = match &seed.source {
             SeedSource::Bytes(seed) => {
                 if password.is_none() {
                     return Err(VaultError::PasswordRequired);
@@ -153,9 +153,17 @@ impl AddEthereumEntry {
         };
 
         if expected_address.is_some() && actual_address.is_some() && actual_address != expected_address {
-            return Err(VaultError::InvalidDataError(
-                "Different address".to_string(),
-            ));
+            // if we verified that the expected address and the actual address on ledger are the same
+            // then we can remember the association between the ledger and the seed.
+            if actual_address == expected_address {
+                if seed.associate() {
+                    let _ = self.seeds.update(seed.clone());
+                }
+            } else {
+                return Err(VaultError::InvalidDataError(
+                    "Different address".to_string(),
+                ));
+            }
         }
 
         let mut wallet = self.wallets.get(self.wallet_id.clone())?;

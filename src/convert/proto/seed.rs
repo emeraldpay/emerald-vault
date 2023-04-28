@@ -65,9 +65,7 @@ impl TryFrom<&proto_LedgerSeed> for LedgerSource {
                 let data = Bytes256::try_from(f.get_fingerprint())
                     .map_err(|_| ConversionError::InvalidFieldValue("fingerprint".to_string()))?;
                 let value = HDPathFingerprint {
-                    hd_path: StandardHDPath::try_from(f.get_path())
-                        .map_err(|_| ConversionError::InvalidFieldValue("hd_path".to_string()))?,
-                    value: FingerprintType::AddressSha256(data),
+                    value: FingerprintType::PubkeySha256(data),
                 };
                 fingerprints.push(value)
             }
@@ -84,20 +82,18 @@ impl TryFrom<LedgerSource> for proto_LedgerSeed {
 
     fn try_from(value: LedgerSource) -> Result<Self, Self::Error> {
         let mut m = proto_LedgerSeed::new();
-        if m.get_fingerprints().len() > 0 {
+        if !value.fingerprints.is_empty() {
             let fingerprings: Vec<proto_HDFingerprint> = value
                 .fingerprints
                 .iter()
                 .map(|f| {
                     let mut pf = proto_HDFingerprint::new();
-                    pf.set_path(f.hd_path.clone().into());
                     match f.value {
-                        FingerprintType::AddressSha256(b) => pf.set_fingerprint(b.into()),
+                        FingerprintType::PubkeySha256(b) => pf.set_fingerprint(b.into()),
                     }
                     pf
                 })
                 .collect();
-
             m.set_fingerprints(protobuf::RepeatedField::from_vec(fingerprings));
         }
         Ok(m)
@@ -164,10 +160,15 @@ impl TryFrom<Seed> for Vec<u8> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{EthereumAddress, proto::seed::{LedgerSeed as proto_LedgerSeed, Seed as proto_Seed}, structs::{
-        crypto::Encrypted,
-        seed::{LedgerSource, Seed, SeedSource},
-    }};
+    use crate::{
+        chains::Blockchain,
+        EthereumAddress,
+        proto::seed::{LedgerSeed as proto_LedgerSeed, Seed as proto_Seed},
+        structs::{
+            crypto::{GlobalKey, GlobalKeyRef, Encrypted},
+            seed::{LedgerSource, Seed, SeedSource, FingerprintType, Bytes256, HDPathFingerprint},
+        }
+    };
     use chrono::{TimeZone, Utc};
     use protobuf::{parse_from_bytes, Message, ProtobufEnum};
     use std::{
@@ -176,8 +177,6 @@ mod tests {
     };
     use hdpath::StandardHDPath;
     use uuid::Uuid;
-    use crate::chains::Blockchain;
-    use crate::structs::crypto::{GlobalKey, GlobalKeyRef};
 
     #[test]
     fn write_as_protobuf() {
@@ -268,6 +267,41 @@ mod tests {
         assert_eq!(seed_act.id, seed_id);
         match seed_act.source {
             SeedSource::Ledger(v) => v,
+            _ => panic!("Not ledger"),
+        };
+    }
+
+    #[test]
+    fn write_and_read_ledger_fingerprint() {
+        let seed = Seed {
+            id: Uuid::new_v4(),
+            source: SeedSource::Ledger(LedgerSource {
+                fingerprints: vec![
+                    HDPathFingerprint {
+                        value: FingerprintType::PubkeySha256(Bytes256::from_str("6ed78af1e50d9788d44ca335c44c6d95ae31c19658e06a6bf5fe8f3ff87cb34e").unwrap())
+                    }
+                ],
+                ..LedgerSource::default()
+            }),
+            label: None,
+            created_at: Utc::now(),
+        };
+        let seed_id = seed.id.clone();
+        let buf: Vec<u8> = seed.try_into().unwrap();
+        let seed_act = Seed::try_from(buf).unwrap();
+
+        assert_eq!(seed_act.id, seed_id);
+        match seed_act.source {
+            SeedSource::Ledger(v) => {
+                assert_eq!(v.fingerprints.len(), 1);
+                assert_eq!(v.fingerprints,
+                           vec![
+                               HDPathFingerprint {
+                                   value: FingerprintType::PubkeySha256(Bytes256::from_str("6ed78af1e50d9788d44ca335c44c6d95ae31c19658e06a6bf5fe8f3ff87cb34e").unwrap())
+                               }
+                           ]
+                )
+            },
             _ => panic!("Not ledger"),
         };
     }

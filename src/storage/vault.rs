@@ -21,11 +21,9 @@ use std::{
     convert::{TryFrom, TryInto},
     fs,
     path::{Path, PathBuf},
-    str::FromStr,
     sync::Arc,
 };
 use std::ffi::OsStr;
-use std::ops::Deref;
 use std::sync::mpsc::Receiver;
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -33,7 +31,7 @@ use crate::storage::files::try_vault_file;
 use crate::storage::icons::Icons;
 use crate::storage::vault_ethereum::AddEthereumEntry;
 use crate::storage::vault_bitcoin::AddBitcoinEntry;
-use crate::storage::watch::{WatchLoop, Watch, Request, Event};
+use crate::storage::watch::{Watch, Request, Event};
 use crate::structs::crypto::GlobalKey;
 
 /// Compound trait for a vault entry which is stored in a separate file each
@@ -52,6 +50,7 @@ pub struct VaultStorage {
     seeds: Arc<dyn VaultAccessByFile<Seed>>,
 }
 
+#[derive(Clone)]
 struct StandardVaultFiles {
     dir: PathBuf,
     suffix: String,
@@ -491,7 +490,11 @@ impl VaultStorage {
         }
         Ok(VaultStorage {
             dir: path.clone(),
-            watch: Arc::new(Mutex::new(Watch::new())),
+            // I know. Just don't look at it.
+            watch: Arc::new(Mutex::new(Watch::new(Arc::new(Mutex::new(StandardVaultFiles {
+                dir: path.clone(),
+                suffix: "seed".to_string(),
+            }))))),
             keys: Arc::new(StandardVaultFiles {
                 dir: path.clone(),
                 suffix: "key".to_string(),
@@ -662,6 +665,7 @@ mod tests {
     };
     use chrono::{TimeZone, Utc};
     use tempdir::TempDir;
+    use std::str::FromStr;
 
     #[test]
     fn creates_seed() {

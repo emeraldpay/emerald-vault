@@ -7,11 +7,14 @@
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use std::time::Duration;
+use chrono::{DateTime, Duration, NaiveDateTime, TimeZone, Utc};
 use emerald_hwkey::ledger::manager::LedgerKey;
 use itertools::Itertools;
 use uuid::Uuid;
 use crate::chains::Blockchain;
+use crate::storage::vault::{VaultAccess};
+use crate::structs::seed::{Seed, WithFingerprint};
+use crate::crypto::fingerprint::Fingerprints;
 
 const RECHECK_TIME_MS: u64 = 500;
 
@@ -77,29 +80,69 @@ pub struct WatchLoop {
 
     /// INTERNAL: a default ID for ledger. TODO map to a figerprint
     default_id: Uuid,
+    seeds: Mutex<CurrentSeeds>,
 }
 
-impl Default for WatchLoop {
-    fn default() -> Self {
+impl  WatchLoop {
+    fn create(seeds: Arc<Mutex<dyn VaultAccess<Seed> + Send>>) -> Self {
         WatchLoop {
             requests: vec![],
             devices: vec![],
             version: 0,
             launched: false,
             default_id: Uuid::new_v4(),
+            seeds: Mutex::new(CurrentSeeds::create(seeds))
         }
     }
 }
 
 pub(crate) struct Watch {
-    state: Arc<Mutex<WatchLoop>>
+    state: Arc<Mutex<WatchLoop>>,
+}
+
+///
+/// A memory cache for current seeds to avoid reloading them in loop each time we verify a device.
+/// Insteaf of reloading Seeds from disk each time we keep them in memory for up to a minute.
+#[derive(Clone)]
+struct CurrentSeeds {
+    last_refresh: DateTime<Utc>,
+    cache: Vec<Seed>,
+    seeds: Arc<Mutex<dyn VaultAccess<Seed> + Send>>,
+}
+
+impl CurrentSeeds {
+    fn create(seeds: Arc<Mutex<dyn VaultAccess<Seed> + Send>>) -> CurrentSeeds {
+        CurrentSeeds {
+            last_refresh: DateTime::from_utc(NaiveDateTime::from_timestamp(0, 0), Utc),
+            cache: vec![],
+            seeds,
+        }
+    }
+
+    ///
+    /// `true` if seeds must be reloaded from the disk. Code specified it as _every minute_ (applicable only when watch is active).
+    fn must_refresh(&self) -> bool {
+        let ttl = Utc::now() - Duration::seconds(60);
+        ttl > self.last_refresh
+    }
+
+    fn get(&mut self) -> Vec<Seed> {
+        if self.must_refresh() {
+            let seeds = &self.seeds.lock().unwrap();
+            if let Ok(seeds) = seeds.list_entries() {
+                self.cache = seeds;
+            }
+            self.last_refresh = Utc::now();
+        }
+        self.cache.clone()
+    }
 }
 
 impl Watch {
 
-    pub fn new() -> Watch {
+    pub fn new(seeds: Arc<Mutex<dyn VaultAccess<Seed> + Send>>) -> Watch {
         Watch {
-            state: Arc::new(Mutex::new(WatchLoop::default()))
+            state: Arc::new(Mutex::new(WatchLoop::create(seeds)))
         }
     }
 
@@ -125,7 +168,7 @@ impl Watch {
 
         // spawn a new thread that process this and all new incoming requests.
         // the thread finishes when all the requests are resolved
-        thread::spawn (|| {
+        thread::spawn (move || {
             Watch::in_loop(state)
         });
     }
@@ -141,7 +184,7 @@ impl Watch {
                 run = watch.launched;
             }
             if run {
-                thread::sleep(Duration::from_millis(RECHECK_TIME_MS));
+                thread::sleep(std::time::Duration::from_millis(RECHECK_TIME_MS));
             }
         }
     }
@@ -215,12 +258,27 @@ impl WatchLoop {
             device = None;
         };
 
+        let seed_id = self.find_seed_id(ledger);
         ConnectedDevice {
-            id: self.default_id,
-            seed_id: None, //TODO
+            id: self.default_id, //TODO should be uniq per device, ex. based on device S/N
+            seed_id,
             blockchains,
             device,
         }
+    }
+
+    fn find_seed_id(&self, ledger: &LedgerKey) -> Option<Uuid> {
+        if let Ok(fps) = ledger.find_fingerprints() {
+            let mut current_seeds = self.seeds.lock().unwrap();
+            let seeds = current_seeds.get();
+            let related_seed = seeds.iter().find(|seed| {
+                fps.iter().any(|fp| seed.is_same(fp))
+            });
+            if let Some(seed) = related_seed {
+                return Some(seed.id.clone());
+            }
+        }
+        None
     }
 
 }
@@ -246,7 +304,6 @@ impl WatchLoop {
 }
 
 #[cfg(test)]
-#[cfg(integration_test)]
 mod tests {
     use std::io::stdin;
     use tempdir::TempDir;
@@ -256,6 +313,7 @@ mod tests {
     use crate::tests::init_tests;
 
     #[test]
+    #[cfg(integration_test)]
     fn listen_disconnected_to_ethereum() {
         init_tests();
         let mut buffer = String::new();

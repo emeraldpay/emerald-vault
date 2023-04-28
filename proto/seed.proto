@@ -21,13 +21,13 @@ message LedgerSeed {
 }
 
 message HDPathFingerprint {
-    HDPath path = 1;
+    // Field #1 reserved by HDPath, which was never used
     Type type = 2;
     bytes fingerprint = 3;
 
     enum Type {
         UNKNOWN = 0;
-        ADDRESS_SHA256 = 1;
+        PUBKEY_SHA256 = 1;
     }
 }
 
