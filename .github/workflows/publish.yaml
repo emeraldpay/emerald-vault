@@ -1,0 +1,30 @@
+name: Publish
+on:
+  release:
+    types: [created]
+
+jobs:
+
+  publish-crates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install system libs (Linux)
+        run: sudo apt-get update && sudo apt-get install libusb-1.0-0-dev libudev-dev
+
+      - name: Publish to Crates
+        uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --token ${{ secrets.CRATES_TOKEN }}
+        env:
+          RUST_BACKTRACE: "1"
