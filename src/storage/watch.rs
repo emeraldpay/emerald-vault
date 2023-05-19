@@ -18,7 +18,7 @@ use crate::crypto::fingerprint::Fingerprints;
 
 const RECHECK_TIME_MS: u64 = 500;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Request {
     /// Just get the current state without actual subscription.
     /// Used to establish the starting point for the further subscriptions.
@@ -297,6 +297,7 @@ impl WatchLoop {
             } else {
                 true
             };
+            debug!("Available: {:?} {:?} -> {}", blockchain, id, ok_blockchain && ok_id);
             ok_blockchain && ok_id
         })
     }
