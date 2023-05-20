@@ -166,14 +166,21 @@ impl AddEthereumEntry {
             }
         }
 
+        let address = actual_address
+            .or(expected_address)
+            .map(|a| AddressRef::EthereumAddress(a));
+
+        // if we don't have an address, we shouldn't create an entry because it will be useless
+        if address.is_none() {
+            return Err(VaultError::PublicKeyUnavailable)
+        }
+
         let mut wallet = self.wallets.get(self.wallet_id.clone())?;
         let id = wallet.next_entry_id();
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
-            address: actual_address
-                .or(expected_address)
-                .map(|a| AddressRef::EthereumAddress(a)),
+            address,
             key: PKType::SeedHd(SeedRef {
                 seed_id: seed_id.clone(),
                 hd_path: StandardHDPath::try_from(hd_path.to_string().as_str()).map_err(|_| {
