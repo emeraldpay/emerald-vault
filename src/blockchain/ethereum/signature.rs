@@ -100,12 +100,31 @@ impl EthereumBasicSignature {
     /// Recover a signature with original `v` for a EIP-155 type of signature.
     /// Used to find a signature that can verify such EIP-155 transaction.
     pub fn recover_eip155(&self, chain_id: EthereumChainId) -> EthereumBasicSignature {
+        if self.v == 27 || self.v == 28 {
+            return  self.clone()
+        }
         EthereumBasicSignature {
             v: self.v - chain_id.as_chainid() * 2 - 35 + 27,
             r: self.r,
             s: self.s,
         }
     }
+
+    ///
+    ///  Convert (or ensure) the signature to EIP-155 format which includes chain_id as part of the V
+    pub fn to_eip155(&self, chain_id: EthereumChainId) -> EthereumBasicSignature {
+        if self.v == 27 || self.v == 28 {
+            EthereumBasicSignature {
+                v: self.v + chain_id.as_chainid() * 2 + 35 - 27,
+                r: self.r,
+                s: self.s,
+            }
+        } else {
+            // when it's already in EIP-155
+            self.clone()
+        }
+    }
+
 }
 
 ///
@@ -133,16 +152,7 @@ pub trait EthereumSignature {
 
 impl EthereumSignature for EthereumBasicSignature {
     fn append_to_rlp(&self, chain_id: EthereumChainId, rlp: &mut RlpStream) {
-        let mut v = u16::from(self.v);
-        // [Simple replay attack protection](https://github.com/ethereum/eips/issues/155)
-        // Can be already applied by HD wallet.
-        // TODO: refactor to avoid this check
-        let stamp = u16::from(chain_id.as_chainid() * 2 + 35 - 27);
-        if v + stamp <= 0xff {
-            v += stamp;
-        }
-
-        rlp.append(&(v as u8));
+        rlp.append(&self.v);
         rlp.append(&trim_bytes(&self.r[..]));
         rlp.append(&trim_bytes(&self.s[..]));
     }
@@ -571,5 +581,61 @@ mod tests {
         assert_eq!(from.unwrap(), EthereumAddress::from_str("0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5").unwrap());
     }
 
+    #[test]
+    fn encode_eip155_signature() {
+        let signature = EthereumBasicSignature {
+            v: 0x26,
+            r: to_32bytes("94b35e167d640006121ae3566fb877a8ed74a6e2d43160ed7abfa6571c0ce905"),
+            s: to_32bytes("6bd8835d7c611bfa6f279b843a7dd2145109a12b8bdfc71e636b49fa6fa3c81c"),
+        };
 
+        let mut rlp = RlpStream::new();
+        signature.append_to_rlp(EthereumChainId::Ethereum, &mut rlp);
+        // rlp.finalize_unbounded_list();
+        let act = rlp.out().to_vec();
+
+        assert_eq!(hex::encode(act), "26a094b35e167d640006121ae3566fb877a8ed74a6e2d43160ed7abfa6571c0ce905a06bd8835d7c611bfa6f279b843a7dd2145109a12b8bdfc71e636b49fa6fa3c81c");
+    }
+
+    #[test]
+    fn to_eip155_eth() {
+        let signature = EthereumBasicSignature {
+            v: 27,
+            r: to_32bytes("94b35e167d640006121ae3566fb877a8ed74a6e2d43160ed7abfa6571c0ce905"),
+            s: to_32bytes("6bd8835d7c611bfa6f279b843a7dd2145109a12b8bdfc71e636b49fa6fa3c81c"),
+        };
+
+        let eip155 = signature.to_eip155(EthereumChainId::Ethereum);
+        assert_eq!(eip155.v, 27 + 2 + 35 - 27);
+
+        let signature = EthereumBasicSignature {
+            v: 28,
+            r: to_32bytes("94b35e167d640006121ae3566fb877a8ed74a6e2d43160ed7abfa6571c0ce905"),
+            s: to_32bytes("6bd8835d7c611bfa6f279b843a7dd2145109a12b8bdfc71e636b49fa6fa3c81c"),
+        };
+
+        let eip155 = signature.to_eip155(EthereumChainId::Ethereum);
+        assert_eq!(eip155.v, 28 + 2 + 35 - 27);
+    }
+
+    #[test]
+    fn to_eip155_etc() {
+        let signature = EthereumBasicSignature {
+            v: 27,
+            r: to_32bytes("94b35e167d640006121ae3566fb877a8ed74a6e2d43160ed7abfa6571c0ce905"),
+            s: to_32bytes("6bd8835d7c611bfa6f279b843a7dd2145109a12b8bdfc71e636b49fa6fa3c81c"),
+        };
+
+        let eip155 = signature.to_eip155(EthereumChainId::EthereumClassic);
+        assert_eq!(eip155.v, 27 + 61 * 2 + 35 - 27);
+
+        let signature = EthereumBasicSignature {
+            v: 28,
+            r: to_32bytes("94b35e167d640006121ae3566fb877a8ed74a6e2d43160ed7abfa6571c0ce905"),
+            s: to_32bytes("6bd8835d7c611bfa6f279b843a7dd2145109a12b8bdfc71e636b49fa6fa3c81c"),
+        };
+
+        let eip155 = signature.to_eip155(EthereumChainId::EthereumClassic);
+        assert_eq!(eip155.v, 28 + 61 * 2 + 35 - 27);
+    }
 }

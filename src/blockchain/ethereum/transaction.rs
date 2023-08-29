@@ -137,7 +137,8 @@ impl EthereumTransaction for EthereumLegacyTransaction {
         &self,
         pk: EthereumPrivateKey
     ) -> Result<Vec<u8>, VaultError> {
-        let sig = pk.sign::<EthereumBasicSignature>(self)?;
+        let sig = pk.sign::<EthereumBasicSignature>(self)?
+            .to_eip155(self.chain_id);
         Ok(self.encode_signed(&sig))
     }
 
