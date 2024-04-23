@@ -28,6 +28,7 @@ use secp256k1::{
     All, ecdsa::{RecoverableSignature, RecoveryId},
 };
 use std::{convert::TryFrom, fmt, ops, str};
+use std::fmt::Display;
 use std::str::FromStr;
 use rlp::RlpStream;
 use crate::chains::EthereumChainId;
@@ -101,10 +102,14 @@ impl EthereumBasicSignature {
     /// Used to find a signature that can verify such EIP-155 transaction.
     pub fn recover_eip155(&self, chain_id: EthereumChainId) -> EthereumBasicSignature {
         if self.v == 27 || self.v == 28 {
-            return  self.clone()
+            return self.clone()
+        }
+        if chain_id.as_chainid() > 127 {
+            // Vault is supposed to use EIP-1559 for transactions on modern chains. Legacy chains do not have large chainId.
+            panic!("Large chainId are not supported with legacy signatures")
         }
         EthereumBasicSignature {
-            v: self.v - chain_id.as_chainid() * 2 - 35 + 27,
+            v: self.v - (chain_id.as_chainid() as u8) * 2 - 35 + 27,
             r: self.r,
             s: self.s,
         }
@@ -113,9 +118,13 @@ impl EthereumBasicSignature {
     ///
     ///  Convert (or ensure) the signature to EIP-155 format which includes chain_id as part of the V
     pub fn to_eip155(&self, chain_id: EthereumChainId) -> EthereumBasicSignature {
+        if chain_id.as_chainid() > 127 {
+            // Vault is supposed to use EIP-1559 for transactions on modern chains. Legacy chains do not have large chainId.
+            panic!("Large chainId are not supported with legacy signatures")
+        }
         if self.v == 27 || self.v == 28 {
             EthereumBasicSignature {
-                v: self.v + chain_id.as_chainid() * 2 + 35 - 27,
+                v: self.v + (chain_id.as_chainid() as u8) * 2 + 35 - 27,
                 r: self.r,
                 s: self.s,
             }
@@ -182,14 +191,15 @@ impl Into<(u8, [u8; 32], [u8; 32])> for EthereumBasicSignature {
     }
 }
 
-impl ToString for EthereumBasicSignature {
-    fn to_string(&self) -> String {
-        format!(
+impl Display for EthereumBasicSignature {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = format!(
             "0x{}{}{:x}",
             hex::encode(self.r),
             hex::encode(self.s),
             self.v,
-        )
+        );
+        write!(f, "{}", str)
     }
 }
 

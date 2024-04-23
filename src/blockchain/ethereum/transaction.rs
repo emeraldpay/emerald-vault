@@ -370,43 +370,28 @@ mod tests {
     }
 
     #[test]
-    fn should_sign_transaction_for_testnet() {
-        let tx = EthereumLegacyTransaction {
-            chain_id: EthereumChainId::Kovan,
-            nonce: 1048585,
-            gas_price: /* 20000000000 */
-            BigUint::from_str_radix("00000000000000000000000000000\
-                        000000000000000000000000004a817c800", 16).unwrap(),
-            gas_limit: 21000,
-            to: Some("0x163b454d1ccdd0a12e88341b12afb2c98044c599"
+    fn should_sign_transaction_for_sepolia_testnet() {
+        let tx = EthereumEIP1559Transaction {
+            chain_id: EthereumChainId::Sepolia,
+            nonce: 0x123,
+            max_gas_price: BigUint::from_str_radix("4A817C800", 16).unwrap(),
+            priority_gas_price: BigUint::from_str_radix("3B9ACA00", 16).unwrap(),
+            gas_limit: 0x249F0,
+            to: Some("0x3535353535353535353535353535353535353535"
                 .parse::<EthereumAddress>()
                 .unwrap()),
-            value: /* 562 ETC */
-            BigUint::from_str_radix("000000000000000000000000000000\
-                        00000000000000001e7751166579880000", 16).unwrap(),
+            value: BigUint::from_str_radix("DE0B6B3A7640000", 16).unwrap(), // 1 ether
             data: Vec::new(),
+            access: vec![]
         };
 
         let pk = EthereumPrivateKey(to_32bytes(
-            "28b469dc4b039ff63fcd4cb708c668545e644cb25f21df6920aac20e4bc743f7",
+            "4646464646464646464646464646464646464646464646464646464646464646",
         ));
 
         assert_eq!(
             hex::encode(tx.sign(pk).unwrap()),
-            // verified with MEW
-            "f870\
-             83\
-             100009\
-             85\
-             04a817c800\
-             82\
-             5208\
-             94\
-             163b454d1ccdd0a12e88341b12afb2c98044c599\
-             89\
-             1e7751166579880000\
-             8078a0bc2a17e673bcd60b621f02a2c2d6546a9e1f0c1a67d0e0a0acfcd3fd171a38\
-             30a0443b722a14da921f67a0b5aad9dd321483355b32d1fd3f01fb615be055416a58"
+            "02f87983aa36a7820123843b9aca008504a817c800830249f0943535353535353535353535353535353535353535880de0b6b3a764000080c001a0ea3705d1137256ba5078c2d97a8886ea78e3c9ea4d3ffaa4985220705fdf02e1a00f05771ac81ddb47283f592790db1205c6b321c3cdc5164b16d89898d0802647"
         );
     }
 

@@ -244,6 +244,8 @@ impl WatchLoop {
                 "Ethereum" => vec![Blockchain::Ethereum],
                 "Ethereum Classic" => vec![Blockchain::EthereumClassic],
                 "Goerli Testnet" => vec![Blockchain::GoerliTestnet],
+                "Holesky Testnet" => vec![Blockchain::HoleskyTestnet],
+                "Sepolia Testnet" => vec![Blockchain::SepoliaTestnet],
                 "Bitcoin" => vec![Blockchain::Bitcoin],
                 "Bitcoin Test" => vec![Blockchain::BitcoinTestnet],
                 _ => vec![]

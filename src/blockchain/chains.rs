@@ -12,7 +12,9 @@ pub enum EthereumChainId {
     Kovan,
     /// Goerli Testnet
     Goerli,
-    Custom(u8)
+    Holesky,
+    Sepolia,
+    Custom(u64)
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -28,14 +30,16 @@ pub enum Blockchain {
     Ethereum = 100,
     EthereumClassic = 101,
     KovanTestnet = 10002,
-    GoerliTestnet = 10005
+    GoerliTestnet = 10005,
+    HoleskyTestnet = 10008,
+    SepoliaTestnet = 10009,
 }
 
 impl Blockchain {
     pub fn get_type(&self) -> BlockchainType {
         match self {
             Blockchain::BitcoinTestnet | Blockchain::Bitcoin => BlockchainType::Bitcoin,
-            Blockchain::Ethereum | Blockchain::EthereumClassic | Blockchain::KovanTestnet | Blockchain::GoerliTestnet => {
+            Blockchain::Ethereum | Blockchain::EthereumClassic | Blockchain::KovanTestnet | Blockchain::GoerliTestnet | Blockchain::HoleskyTestnet | Blockchain::SepoliaTestnet => {
                 BlockchainType::Ethereum
             }
         }
@@ -64,6 +68,8 @@ impl From<Blockchain> for EthereumChainId {
             Blockchain::EthereumClassic => EthereumChainId::EthereumClassic,
             Blockchain::KovanTestnet => EthereumChainId::Kovan,
             Blockchain::GoerliTestnet => EthereumChainId::Goerli,
+            Blockchain::HoleskyTestnet => EthereumChainId::Holesky,
+            Blockchain::SepoliaTestnet => EthereumChainId::Sepolia,
             _ => panic!("not an ethereum blockchain"),
         }
     }
@@ -78,6 +84,8 @@ impl TryFrom<EthereumChainId> for Blockchain {
             EthereumChainId::EthereumClassic => Ok(Blockchain::EthereumClassic),
             EthereumChainId::Kovan => Ok(Blockchain::KovanTestnet),
             EthereumChainId::Goerli => Ok(Blockchain::GoerliTestnet),
+            EthereumChainId::Holesky => Ok(Blockchain::HoleskyTestnet),
+            EthereumChainId::Sepolia => Ok(Blockchain::SepoliaTestnet),
             _ => panic!("custom ethereum blockchain"),
         }
     }
@@ -94,6 +102,8 @@ impl TryFrom<u32> for Blockchain {
             101 => Ok(Blockchain::EthereumClassic),
             10002 => Ok(Blockchain::KovanTestnet),
             10005 => Ok(Blockchain::GoerliTestnet),
+            10008 => Ok(Blockchain::HoleskyTestnet),
+            10009 => Ok(Blockchain::SepoliaTestnet),
             _ => Err(()),
         }
     }
@@ -117,6 +127,8 @@ impl FromStr for EthereumChainId {
                 Ok(EthereumChainId::EthereumClassic)
             }
             "goerli" => Ok(EthereumChainId::Goerli),
+            "holesky" => Ok(EthereumChainId::Holesky),
+            "sepolia" => Ok(EthereumChainId::Sepolia),
             _ => Err(()),
         }
     }
@@ -124,13 +136,15 @@ impl FromStr for EthereumChainId {
 
 impl EthereumChainId {
     /// chain_id for current Chain
-    pub fn as_chainid(&self) -> u8 {
+    pub fn as_chainid(&self) -> u64 {
         match self {
             EthereumChainId::Ethereum => 1,
             EthereumChainId::Kovan => 42,
             EthereumChainId::EthereumClassic => 61,
             EthereumChainId::Goerli => 5,
-            EthereumChainId::Custom(v) => *v
+            EthereumChainId::Holesky => 17000,
+            EthereumChainId::Sepolia => 11155111,
+            EthereumChainId::Custom(v) => *v,
         }
     }
 }
@@ -174,6 +188,11 @@ mod tests {
         assert_eq!(
             Blockchain::GoerliTestnet,
             Blockchain::try_from(Into::<u32>::into(Blockchain::GoerliTestnet)).unwrap()
+        );
+
+        assert_eq!(
+            Blockchain::SepoliaTestnet,
+            Blockchain::try_from(Into::<u32>::into(Blockchain::SepoliaTestnet)).unwrap()
         );
 
         assert_eq!(
