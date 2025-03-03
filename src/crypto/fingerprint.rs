@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use emerald_hwkey::ledger::app_bitcoin::BitcoinApp;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
-use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
 use emerald_hwkey::ledger::traits::PubkeyAddressApp;
 use hdpath::{HDPath, StandardHDPath};
 use hmac::digest::Digest;
@@ -61,12 +61,12 @@ impl Fingerprints for LedgerSource {
     fn find_fingerprints(&self) -> Result<Vec<HDPathFingerprint>, VaultError> {
         // DO NOT LOCK LEDGER HERE. Because it's usually called from a context which already has a lock.
         // So the method spec tells the called to ensure an exclusive access
-        let manager = LedgerKey::new_connected().map_err(|_| VaultError::PrivateKeyUnavailable)?;
+        let manager = LedgerKeyShared::instance().map_err(|_| VaultError::PrivateKeyUnavailable)?;
         manager.find_fingerprints()
     }
 }
 
-impl Fingerprints for LedgerKey {
+impl Fingerprints for LedgerKeyShared {
     fn find_fingerprints(&self) -> Result<Vec<HDPathFingerprint>, VaultError> {
         let mut source = vec![];
         let app = self.get_app_details()?.name;

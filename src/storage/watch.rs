@@ -8,7 +8,7 @@ use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use chrono::{DateTime, Duration, NaiveDateTime, TimeZone, Utc};
-use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
 use itertools::Itertools;
 use uuid::Uuid;
 use crate::chains::Blockchain;
@@ -194,7 +194,7 @@ impl WatchLoop {
 
     fn process(&mut self) {
         let mut current_devices = vec![];
-        if let Ok(connected) = LedgerKey::new_connected() {
+        if let Ok(connected) = LedgerKeyShared::instance() {
             current_devices.push(self.connected_details(&connected));
         }
 
@@ -235,7 +235,7 @@ impl WatchLoop {
         self.launched = !self.requests.is_empty();
     }
 
-    fn connected_details(&self, ledger: &LedgerKey) -> ConnectedDevice {
+    fn connected_details(&self, ledger: &LedgerKeyShared) -> ConnectedDevice {
 
         let blockchains;
         let device;
@@ -269,7 +269,7 @@ impl WatchLoop {
         }
     }
 
-    fn find_seed_id(&self, ledger: &LedgerKey) -> Option<Uuid> {
+    fn find_seed_id(&self, ledger: &LedgerKeyShared) -> Option<Uuid> {
         if let Ok(fps) = ledger.find_fingerprints() {
             let mut current_seeds = self.seeds.lock().unwrap();
             let seeds = current_seeds.get();

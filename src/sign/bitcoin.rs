@@ -15,7 +15,7 @@ use bitcoin::{Witness, consensus::serialize, util::{sighash::SighashCache, bip32
 use secp256k1::{All, Message, Secp256k1};
 use secp256k1::ecdsa::Signature;
 use crate::structs::seed::SeedSource;
-use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
 use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, BitcoinApps, SignTx, UnsignedInput};
 use emerald_hwkey::ledger::traits::LedgerApp;
 use emerald_hwkey::errors::HWKeyError;
@@ -267,7 +267,7 @@ impl BitcoinTransferProposal {
     }
 
     fn seal_with_ledger(&self, tx: &mut Transaction) -> Result<(), VaultError> {
-        let manager = LedgerKey::new_connected().map_err(|_| VaultError::PublicKeyUnavailable)?;
+        let manager = LedgerKeyShared::instance().map_err(|_| VaultError::PublicKeyUnavailable)?;
         let bitcoin_app = manager.access::<BitcoinApp>()?;
         let exp_app = match self.network {
             Network::Bitcoin => BitcoinApps::Mainnet,

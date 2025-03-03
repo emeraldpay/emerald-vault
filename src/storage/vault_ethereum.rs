@@ -20,7 +20,7 @@ use crate::convert::json::keyfile::EthereumJsonV3File;
 use std::time::SystemTime;
 use crate::structs::types::HasUuid;
 use crate::blockchain::chains::BlockchainType;
-use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
 use emerald_hwkey::errors::HWKeyError;
 use std::str::FromStr;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
@@ -136,7 +136,7 @@ impl AddEthereumEntry {
             SeedSource::Ledger(r) => {
                 let _access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
                 // try to verify address if Ledger is currently connected
-                match LedgerKey::new_connected() {
+                match LedgerKeyShared::instance() {
                     Ok(manager) => {
                         let ethereum_app = manager.access::<EthereumApp>()?;
                         if ethereum_app.is_open().is_none() {

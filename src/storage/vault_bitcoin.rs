@@ -12,7 +12,7 @@ use crate::sign::bitcoin::DEFAULT_SECP256K1;
 use crate::structs::book::AddressRef;
 use emerald_hwkey::{
     ledger::{
-        manager::LedgerKey,
+        manager_mt::LedgerKeyShared,
         app_bitcoin::{
             BitcoinApp, BitcoinApps
         },
@@ -93,7 +93,7 @@ impl AddBitcoinEntry {
             }
             SeedSource::Ledger(r) => {
                 let _access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
-                let manager = LedgerKey::new_connected();
+                let manager = LedgerKeyShared::instance();
                 if let Ok(manager) = manager {
                     let bitcoin_app = manager.access::<BitcoinApp>()?;
                     let exp_app = match blockchain {

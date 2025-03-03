@@ -6,7 +6,7 @@ use hdpath::StandardHDPath;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use uuid::Uuid;
-use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::LedgerApp;
 use emerald_hwkey::errors::HWKeyError;
@@ -36,7 +36,7 @@ impl WalletEntry {
             .map_err(|_| VaultError::InvalidDataError("HDPath".to_string()))?;
 
         //TODO verify actual device, right now vault just uses a first currently available device
-        let manager = LedgerKey::new_connected().map_err(|_| VaultError::PrivateKeyUnavailable)?;
+        let manager = LedgerKeyShared::instance().map_err(|_| VaultError::PrivateKeyUnavailable)?;
         let ethereum_app = manager.access::<EthereumApp>()?;
         if ethereum_app.is_open().is_none() {
             return Err(VaultError::PrivateKeyUnavailable);

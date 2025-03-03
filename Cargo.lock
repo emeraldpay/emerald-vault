@@ -655,9 +655,8 @@ dependencies = [
 
 [[package]]
 name = "emerald-hwkey"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b43a24b67936d952274fb0ffd60d25a31fb32a6bcee692d934a18914dd9c376"
+version = "0.6.0-dev"
+source = "git+https://github.com/emeraldpay/emerald-hwkey?branch=master#6c0a476ab6445582bbe23024998690b501ecf045"
 dependencies = [
  "bitcoin",
  "byteorder",

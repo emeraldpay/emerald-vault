@@ -16,7 +16,7 @@ use secp256k1::SecretKey;
 use std::convert::TryFrom;
 use bitcoin::util::bip32::ExtendedPubKey;
 use std::str::FromStr;
-use emerald_hwkey::ledger::manager::LedgerKey;
+use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
 use emerald_hwkey::ledger::app_ethereum::EthereumApp;
 use emerald_hwkey::ledger::traits::{LedgerApp, PubkeyAddressApp};
 use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, GetAddressOpts};
@@ -48,7 +48,7 @@ impl PrivateKeySource {
     }
 }
 
-fn get_ledger_app<'a>(blockchain: BlockchainType, manager: &'a LedgerKey) -> Result<Box<dyn PubkeyAddressApp + 'a>, VaultError> {
+fn get_ledger_app<'a>(blockchain: BlockchainType, manager: &'a LedgerKeyShared) -> Result<Box<dyn PubkeyAddressApp + 'a>, VaultError> {
     match blockchain {
         BlockchainType::Bitcoin => {
             let app = manager.access::<BitcoinApp>()?;
@@ -123,7 +123,7 @@ impl SeedSource {
             }
             SeedSource::Ledger(r) => {
                 let _access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
-                let manager = LedgerKey::new_connected()
+                let manager = LedgerKeyShared::instance()
                     .map_err(|_| VaultError::PublicKeyUnavailable)?;
                 let app = get_ledger_app(blockchain.get_type(), &manager)?;
                 for hd_path in hd_path_all {
@@ -163,7 +163,7 @@ impl SeedSource {
             },
             SeedSource::Ledger(r) => {
                 let _access_lock = r.access.lock().map_err(|_| VaultError::HWKeyFailed(HWKeyError::Unavailable))?;
-                let manager = LedgerKey::new_connected()
+                let manager = LedgerKeyShared::instance()
                     .map_err(|_| VaultError::PublicKeyUnavailable)?;
                 match blockchain.get_type() {
                     BlockchainType::Bitcoin => {
