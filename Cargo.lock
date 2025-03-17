@@ -656,7 +656,7 @@ dependencies = [
 [[package]]
 name = "emerald-hwkey"
 version = "0.6.0-dev"
-source = "git+https://github.com/emeraldpay/emerald-hwkey?branch=master#6c0a476ab6445582bbe23024998690b501ecf045"
+source = "git+https://github.com/emeraldpay/emerald-hwkey?branch=master#3cd9bd8d6264556c5a523d03a76c95248808cddf"
 dependencies = [
  "bitcoin",
  "byteorder",

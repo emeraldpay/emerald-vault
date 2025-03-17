@@ -8,9 +8,10 @@ use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use chrono::{DateTime, Duration, NaiveDateTime, TimeZone, Utc};
-use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
+use emerald_hwkey::ledger::connect::LedgerKeyShared;
 use itertools::Itertools;
 use uuid::Uuid;
+use emerald_hwkey::ledger::connect::LedgerKey;
 use crate::chains::Blockchain;
 use crate::storage::vault::{VaultAccess};
 use crate::structs::seed::{Seed, WithFingerprint};
@@ -184,6 +185,7 @@ impl Watch {
                 run = watch.launched;
             }
             if run {
+                //TODO sleep only if no commands
                 thread::sleep(std::time::Duration::from_millis(RECHECK_TIME_MS));
             }
         }
@@ -235,7 +237,7 @@ impl WatchLoop {
         self.launched = !self.requests.is_empty();
     }
 
-    fn connected_details(&self, ledger: &LedgerKeyShared) -> ConnectedDevice {
+    fn connected_details<LK: LedgerKey + 'static>(&self, ledger: &LedgerKeyShared<LK>) -> ConnectedDevice {
 
         let blockchains;
         let device;
@@ -269,7 +271,7 @@ impl WatchLoop {
         }
     }
 
-    fn find_seed_id(&self, ledger: &LedgerKeyShared) -> Option<Uuid> {
+    fn find_seed_id<LK: LedgerKey + 'static>(&self, ledger: &LedgerKeyShared<LK>) -> Option<Uuid> {
         if let Ok(fps) = ledger.find_fingerprints() {
             let mut current_seeds = self.seeds.lock().unwrap();
             let seeds = current_seeds.get();

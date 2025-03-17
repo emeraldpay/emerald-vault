@@ -16,11 +16,12 @@ use secp256k1::SecretKey;
 use std::convert::TryFrom;
 use bitcoin::util::bip32::ExtendedPubKey;
 use std::str::FromStr;
-use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
-use emerald_hwkey::ledger::app_ethereum::EthereumApp;
-use emerald_hwkey::ledger::traits::{LedgerApp, PubkeyAddressApp};
-use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, GetAddressOpts};
+use emerald_hwkey::ledger::connect::LedgerKeyShared;
+use emerald_hwkey::ledger::app::ethereum::EthereumApp;
+use emerald_hwkey::ledger::app::{LedgerApp, PubkeyAddressApp};
+use emerald_hwkey::ledger::app::bitcoin::{BitcoinApp, GetAddressOpts};
 use emerald_hwkey::errors::HWKeyError;
+use emerald_hwkey::ledger::connect::LedgerKey;
 use crate::structs::crypto::GlobalKey;
 
 pub enum PrivateKeySource {
@@ -48,7 +49,7 @@ impl PrivateKeySource {
     }
 }
 
-fn get_ledger_app<'a>(blockchain: BlockchainType, manager: &'a LedgerKeyShared) -> Result<Box<dyn PubkeyAddressApp + 'a>, VaultError> {
+fn get_ledger_app<'a, LK: LedgerKey + 'static>(blockchain: BlockchainType, manager: &'a LedgerKeyShared<LK>) -> Result<Box<dyn PubkeyAddressApp + 'a>, VaultError> {
     match blockchain {
         BlockchainType::Bitcoin => {
             let app = manager.access::<BitcoinApp>()?;

@@ -1,13 +1,14 @@
 use std::str::FromStr;
-use emerald_hwkey::ledger::app_bitcoin::BitcoinApp;
-use emerald_hwkey::ledger::app_ethereum::EthereumApp;
-use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
-use emerald_hwkey::ledger::traits::PubkeyAddressApp;
+use emerald_hwkey::ledger::app::BitcoinApp;
+use emerald_hwkey::ledger::app::EthereumApp;
+use emerald_hwkey::ledger::connect::LedgerKeyShared;
+use emerald_hwkey::ledger::app::PubkeyAddressApp;
 use hdpath::{HDPath, StandardHDPath};
 use hmac::digest::Digest;
 use hmac::Hmac;
 use hmac::Mac;
 use sha2::Sha256;
+use emerald_hwkey::ledger::connect::LedgerKey;
 use crate::error::VaultError;
 use crate::structs::seed::{Bytes256, FingerprintType, HDPathFingerprint, LedgerSource};
 
@@ -66,7 +67,7 @@ impl Fingerprints for LedgerSource {
     }
 }
 
-impl Fingerprints for LedgerKeyShared {
+impl<LK: LedgerKey + 'static> Fingerprints for LedgerKeyShared<LK> {
     fn find_fingerprints(&self) -> Result<Vec<HDPathFingerprint>, VaultError> {
         let mut source = vec![];
         let app = self.get_app_details()?.name;

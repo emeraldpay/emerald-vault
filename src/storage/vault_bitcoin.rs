@@ -12,17 +12,17 @@ use crate::sign::bitcoin::DEFAULT_SECP256K1;
 use crate::structs::book::AddressRef;
 use emerald_hwkey::{
     ledger::{
-        manager_mt::LedgerKeyShared,
-        app_bitcoin::{
-            BitcoinApp, BitcoinApps
-        },
-        traits::{
+        connect::LedgerKeyShared,
+        app::bitcoin::BitcoinApps,
+        app::{
             LedgerApp,
+            BitcoinApp,
             PubkeyAddressApp
         }
     },
     errors::HWKeyError
 };
+use emerald_hwkey::ledger::connect::LedgerKey;
 use crate::storage::entry::AddEntryOptions;
 use crate::structs::crypto::GlobalKey;
 

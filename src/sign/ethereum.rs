@@ -6,13 +6,14 @@ use hdpath::StandardHDPath;
 use std::convert::TryFrom;
 use std::str::FromStr;
 use uuid::Uuid;
-use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
-use emerald_hwkey::ledger::app_ethereum::EthereumApp;
-use emerald_hwkey::ledger::traits::LedgerApp;
+use emerald_hwkey::ledger::connect::LedgerKeyShared;
+use emerald_hwkey::ledger::app::EthereumApp;
+use emerald_hwkey::ledger::app::LedgerApp;
 use emerald_hwkey::errors::HWKeyError;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use rand::rngs::OsRng;
+use emerald_hwkey::ledger::connect::LedgerKey;
 use crate::ethereum::signature::{EthereumBasicSignature, Signable, SignableHash};
 use crate::ethereum::transaction::EthereumTransaction;
 

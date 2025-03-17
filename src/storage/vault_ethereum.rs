@@ -20,11 +20,16 @@ use crate::convert::json::keyfile::EthereumJsonV3File;
 use std::time::SystemTime;
 use crate::structs::types::HasUuid;
 use crate::blockchain::chains::BlockchainType;
-use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
-use emerald_hwkey::errors::HWKeyError;
+use emerald_hwkey::{
+    errors::HWKeyError,
+    ledger::{
+        connect::LedgerKeyShared,
+        app::EthereumApp,
+        app::LedgerApp,
+        connect::LedgerKey
+    }
+};
 use std::str::FromStr;
-use emerald_hwkey::ledger::app_ethereum::EthereumApp;
-use emerald_hwkey::ledger::traits::LedgerApp;
 use crate::structs::crypto::GlobalKey;
 
 pub struct AddEthereumEntry {

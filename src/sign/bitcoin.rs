@@ -15,12 +15,13 @@ use bitcoin::{Witness, consensus::serialize, util::{sighash::SighashCache, bip32
 use secp256k1::{All, Message, Secp256k1};
 use secp256k1::ecdsa::Signature;
 use crate::structs::seed::SeedSource;
-use emerald_hwkey::ledger::manager_mt::LedgerKeyShared;
-use emerald_hwkey::ledger::app_bitcoin::{BitcoinApp, BitcoinApps, SignTx, UnsignedInput};
-use emerald_hwkey::ledger::traits::LedgerApp;
+use emerald_hwkey::ledger::connect::LedgerKeyShared;
+use emerald_hwkey::ledger::app::bitcoin::{BitcoinApp, BitcoinApps, SignTx, UnsignedInput};
+use emerald_hwkey::ledger::app::LedgerApp;
 use emerald_hwkey::errors::HWKeyError;
 use hdpath::StandardHDPath;
 use itertools::Itertools;
+use emerald_hwkey::ledger::connect::LedgerKey;
 
 lazy_static! {
     pub static ref DEFAULT_SECP256K1: Secp256k1<All> = Secp256k1::new();
