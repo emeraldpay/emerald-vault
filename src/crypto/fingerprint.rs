@@ -17,10 +17,11 @@ use crate::structs::seed::{Bytes256, FingerprintType, HDPathFingerprint, LedgerS
 pub trait Fingerprints {
     ///
     /// Find currently available fingerprints on the device.
-    /// Note that the list may change from time to time. For example, with Ledger, it depends on
-    /// what application is open b/c we can only get fingerprints specific to an app.
     ///
-    /// NOTE: If the seed must an exlusive lock to communicate it's reponsibility of the called to asquire a lock bofore calling this function
+    /// Note that the response may contain only part of the fingerprints and change depending on availability.
+    /// For example, with Ledger, it depends on the application which is currently open. Because we can only get a fingerprint specific to the current app.
+    /// So it supposed to be called periodically to get all fingerprints and compare with stored fingerprint if they intersect
+    ///
     fn find_fingerprints(&self) -> Result<Vec<HDPathFingerprint>, VaultError>;
 }
 
@@ -68,26 +69,27 @@ impl Fingerprints for LedgerSource {
 }
 
 impl<LK: LedgerKey + 'static> Fingerprints for LedgerKeyShared<LK> {
+
     fn find_fingerprints(&self) -> Result<Vec<HDPathFingerprint>, VaultError> {
+        // on Ledger, it uses m/44'/COIN'/0'/0/0.
+        // Initially we tried to use m/44'/COIN'/128'/0/0,
+        // but it's not easily accessible from the Ledger with latest firmware/app because it's a non-standard path
         let mut source = vec![];
         let app = self.get_app_details()?.name;
         if app.starts_with("Ethereum") {
             let app = self.access::<EthereumApp>()?;
-            if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/60'/128'/0/0").unwrap()) {
+            if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap()) {
                 source.push(fp)
             }
-            if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/61'/128'/0/0").unwrap()) {
-                source.push(fp)
-            }
-            if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/60'/160720'/0/0").unwrap()) {
+            if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/61'/0'/0/0").unwrap()) {
                 source.push(fp)
             }
         } else if app.starts_with("Bitcoin") {
             let app = self.access::<BitcoinApp>()?;
-            if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/0'/128'/0/0").unwrap()) {
+            if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/0'/0'/0/0").unwrap()) {
                 source.push(fp)
             }
-            if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/1'/128'/0/0").unwrap()) {
+            if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/1'/0'/0/0").unwrap()) {
                 source.push(fp)
             }
         } else {
@@ -112,11 +114,11 @@ mod tests {
 
     #[test]
     fn create_zero() {
-        let pk = (StandardHDPath::from_str("m/44'/60'/128'/0/0").unwrap(), [0u8; 33]);
+        let pk = (StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(), [0u8; 33]);
         let fingerprint = HDPathFingerprint::try_from(pk);
         assert!(fingerprint.is_ok());
         let fingerprint = fingerprint.unwrap();
-        assert_eq!(hex::encode(fingerprint.value.to_vec()), "392167666fe4fb34396fe1c73a58ec8cc2c67ae1493f6cb2ff3329091134298b")
+        assert_eq!(hex::encode(fingerprint.value.to_vec()), "8641f4987cdf650bc82a8f97596de5c9457c327662452cba2a1afe552e2ff170")
     }
 
 }
