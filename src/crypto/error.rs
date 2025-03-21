@@ -30,12 +30,6 @@ impl From<argon2::Error> for CryptoError {
     }
 }
 
-impl From<rand::Error> for CryptoError {
-    fn from(_: rand::Error) -> Self {
-        CryptoError::NoEntropy
-    }
-}
-
 impl From<secp256k1::Error> for CryptoError {
     fn from(err: secp256k1::Error) -> Self {
         match err {

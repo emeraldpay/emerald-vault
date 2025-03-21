@@ -6,9 +6,9 @@ use crate::error::VaultError;
 use crate::storage::files::try_vault_file;
 use std::fmt::Display;
 use std::io::Cursor;
-use image::{ImageFormat, ImageOutputFormat};
+use image::{ImageFormat};
 use image::imageops::FilterType;
-use image::io::Reader;
+use image::ImageReader;
 
 const PNG_SUFFIX: &str = "png";
 const SIZE_LIMIT: usize = 1 * 1024 * 1024;
@@ -109,7 +109,7 @@ impl Icons {
             return Err(ConversionError::InvalidLength)
         }
 
-        let reader = Reader::new(Cursor::new(&img))
+        let reader = ImageReader::new(Cursor::new(&img))
             .with_guessed_format()
             .expect("Cursor io never fails");
         let format = reader.format()
@@ -147,7 +147,7 @@ impl Icons {
         };
 
         let mut target = Cursor::new(vec![]);
-        right_size.write_to(&mut target, ImageOutputFormat::Png)
+        right_size.write_to(&mut target, ImageFormat::Png)
             .map_err(|_| ConversionError::UnsupportedFormat)?;
 
         Ok(target.into_inner())

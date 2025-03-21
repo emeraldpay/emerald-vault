@@ -1,21 +1,22 @@
-use crate::{
-    mnemonic::Mnemonic,
-    structs::{
-        crypto::Encrypted,
-        seed::{Seed, SeedSource},
-    },
-};
+use crate::structs::seed::Seed;
 use chrono::Utc;
 use uuid::Uuid;
-use crate::structs::crypto::GlobalKey;
 
 impl Seed {
     #[cfg(test)]
     pub fn test_generate(
         seed_password: Option<String>,
         global_password: &[u8],
-        global: Option<GlobalKey>,
+        global: Option<crate::structs::crypto::GlobalKey>,
     ) -> Result<Seed, ()> {
+        use crate::{
+            mnemonic::Mnemonic,
+            structs::{
+                crypto::Encrypted,
+                seed::SeedSource,
+            },
+        };
+
         let mnemonic = Mnemonic::default();
         let seed = mnemonic.seed(seed_password);
         let result = Seed {

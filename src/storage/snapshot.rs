@@ -191,7 +191,7 @@ impl Snapshots {
         let f = File::create(filename)?;
         let mut zip = zip::ZipWriter::new(f);
 
-        let options = zip::write::FileOptions::default()
+        let options = zip::write::FileOptions::<()>::default()
             .compression_method(zip::CompressionMethod::Deflated);
 
         let files = fs::read_dir(&self.vault_dir)?;

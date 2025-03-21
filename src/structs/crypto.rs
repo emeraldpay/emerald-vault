@@ -1,5 +1,4 @@
 use std::convert::TryInto;
-use rand::RngCore;
 use crate::error::VaultError;
 use crate::structs::types::{IsVerified, UsesOddKey};
 

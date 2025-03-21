@@ -16,7 +16,7 @@ pub trait KeyDerive {
 impl KeyDerive for Pbkdf2 {
     fn derive(&self, password: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let mut key = vec![0u8; self.dklen as usize];
-        match self.prf {
+        let is_derived = match self.prf {
             PrfType::HmacSha256 => {
                 pbkdf2::<Hmac<Sha256>>(password, &self.salt, self.c, &mut key)
             }
@@ -24,6 +24,7 @@ impl KeyDerive for Pbkdf2 {
                 pbkdf2::<Hmac<Sha512>>(password, &self.salt, self.c, &mut key)
             }
         };
+        is_derived.map_err(|e| CryptoError::CryptoFailed("Invalid Length".to_string()))?;
         Ok(key.to_vec())
     }
 }
@@ -32,7 +33,7 @@ impl KeyDerive for ScryptKdf {
     fn derive(&self, password: &[u8]) -> Result<Vec<u8>, CryptoError> {
         let log_n = (self.n as f64).log2().round() as u8;
         let mut key = vec![0u8; self.dklen as usize];
-        let params = ScryptParams::new(log_n, self.r, self.p)?;
+        let params = ScryptParams::new(log_n, self.r, self.p, self.dklen as usize)?;
         scrypt(password, &self.salt, &params, &mut key)?;
         Ok(key)
     }

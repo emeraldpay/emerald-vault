@@ -102,8 +102,3 @@ impl std::convert::From<hdpath::Error> for VaultError {
     }
 }
 
-impl std::convert::From<rand::Error> for VaultError {
-    fn from(err: rand::Error) -> Self {
-        Self::from(CryptoError::from(err))
-    }
-}

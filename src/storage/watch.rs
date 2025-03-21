@@ -7,7 +7,7 @@
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use chrono::{DateTime, Duration, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, NaiveDateTime, Utc};
 use emerald_hwkey::ledger::connect::LedgerKeyShared;
 use itertools::Itertools;
 use uuid::Uuid;

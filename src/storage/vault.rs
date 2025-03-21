@@ -254,7 +254,7 @@ impl VaultStorage {
             .wallets
             .list()?
             .iter()
-            .filter(|id| id.clone().ne(&wallet_id))
+            .filter(|id| wallet_id != **id)
             .map(|id| self.wallets.get(id.clone()))
             .filter_map(|r| r.ok())
             .collect();

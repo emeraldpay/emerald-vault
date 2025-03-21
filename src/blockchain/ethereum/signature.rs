@@ -20,7 +20,7 @@ use super::{EthereumAddress};
 use crate::{convert::error::ConversionError, error::VaultError, trim_bytes, util::{keccak256, to_arr, KECCAK256_BYTES}};
 use hex;
 use num::ToPrimitive;
-use rand::{rngs::OsRng, Rng};
+use rand::{rngs::OsRng, CryptoRng, RngCore};
 use secp256k1::{
     PublicKey, SecretKey,
     Message,
@@ -234,7 +234,7 @@ impl EthereumPrivateKey {
     }
 
     /// Generate a new `PrivateKey` with given custom random generator
-    pub fn gen_custom<R: Rng + ?Sized>(rng: &mut R) -> Self {
+    pub fn gen_custom<R: CryptoRng + RngCore + ?Sized>(rng: &mut R) -> Self {
         EthereumPrivateKey::from(SecretKey::new(rng))
     }
 
