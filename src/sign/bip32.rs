@@ -21,11 +21,7 @@ limitations under the License.
 use crate::{
     error::VaultError,
 };
-use bitcoin::{
-    network::constants::Network,
-    util::bip32::ExtendedPrivKey,
-    util::bip32::ExtendedPubKey,
-};
+use bitcoin::{ bip32::Xpriv as Bitcoin_Xpriv, bip32::Xpub as Bitcoin_Xpub, NetworkKind};
 use hdpath::HDPath;
 use secp256k1::Secp256k1;
 use crate::sign::bitcoin::DEFAULT_SECP256K1;
@@ -37,17 +33,17 @@ use crate::sign::bitcoin::DEFAULT_SECP256K1;
 ///  * path - key derivation path
 ///  * seed - seed data for master node
 ///
-pub fn generate_key<P: HDPath>(path: &P, seed: &[u8]) -> Result<ExtendedPrivKey, VaultError> {
+pub fn generate_key<P: HDPath>(path: &P, seed: &[u8]) -> Result<Bitcoin_Xpriv, VaultError> {
     let secp = Secp256k1::new();
-    let sk = ExtendedPrivKey::new_master(Network::Bitcoin, seed)
+    let sk = Bitcoin_Xpriv::new_master(NetworkKind::Main, seed)
         .and_then(|k| k.derive_priv(&secp, &path.as_bitcoin()))
         .map_err(|_| VaultError::InvalidPrivateKey)?;
     Ok(sk)
 }
 
-pub fn generate_pubkey<P: HDPath>(path: &P, seed: &[u8]) -> Result<ExtendedPubKey, VaultError> {
+pub fn generate_pubkey<P: HDPath>(path: &P, seed: &[u8]) -> Result<Bitcoin_Xpub, VaultError> {
     let sec_key = generate_key(path, &seed)?;
-    Ok(ExtendedPubKey::from_priv(&DEFAULT_SECP256K1, &sec_key))
+    Ok(Bitcoin_Xpub::from_priv(&DEFAULT_SECP256K1, &sec_key))
 }
 
 #[cfg(test)]

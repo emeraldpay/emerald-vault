@@ -1,5 +1,5 @@
 use std::{convert::TryFrom, str::FromStr};
-use bitcoin::Network;
+use bitcoin::{Network, NetworkKind};
 
 /// Ethereum Chain Id Reference
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -50,6 +50,14 @@ impl Blockchain {
             Blockchain::Bitcoin => Network::Bitcoin,
             Blockchain::BitcoinTestnet => Network::Testnet,
             _ => Network::Testnet
+        }
+    }
+
+    pub fn as_bitcoin_network_kind(&self) -> NetworkKind {
+        match self {
+            Blockchain::Bitcoin => NetworkKind::Main,
+            Blockchain::BitcoinTestnet => NetworkKind::Test,
+            _ => NetworkKind::Test
         }
     }
 

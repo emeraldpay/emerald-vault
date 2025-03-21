@@ -240,7 +240,7 @@ impl TryFrom<&GlobalKey> for proto_GlobalKey {
 
     fn try_from(value: &GlobalKey) -> Result<Self, Self::Error> {
         let mut msg = proto_GlobalKey::new();
-        let mut proto_key: proto_Encrypted = proto_Encrypted::try_from(&value.key)?;
+        let proto_key: proto_Encrypted = proto_Encrypted::try_from(&value.key)?;
         msg.set_key(proto_key);
         Ok(msg)
     }
@@ -270,7 +270,7 @@ impl TryFrom<&GlobalKeyRef> for proto_GlobalKeyRef {
 
 #[cfg(test)]
 mod tests {
-    use std::convert::{TryFrom, TryInto};
+    use std::convert::{TryFrom};
     use protobuf::Message;
     use crate::structs::crypto::{Encrypted, GlobalKey};
     use crate::proto::crypto::{GlobalKey as proto_GlobalKey};

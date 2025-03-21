@@ -4,7 +4,6 @@ use emerald_hwkey::ledger::app::EthereumApp;
 use emerald_hwkey::ledger::connect::LedgerKeyShared;
 use emerald_hwkey::ledger::app::PubkeyAddressApp;
 use hdpath::{HDPath, StandardHDPath};
-use hmac::digest::Digest;
 use hmac::Hmac;
 use hmac::Mac;
 use sha2::Sha256;

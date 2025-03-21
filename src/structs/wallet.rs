@@ -446,27 +446,27 @@ mod tests {
             vec![
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1qrezwju94ma8j6lgh9nzr7hx5fd6jek428pv699").unwrap(),
+                    address: Address::from_str("bc1qrezwju94ma8j6lgh9nzr7hx5fd6jek428pv699").unwrap().assume_checked(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/0").unwrap()),
                 },
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1q5urae4xldljrly5mjvendfsm8h84f2rzw5hqzs").unwrap(),
+                    address: Address::from_str("bc1q5urae4xldljrly5mjvendfsm8h84f2rzw5hqzs").unwrap().assume_checked(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/1").unwrap()),
                 },
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1q36ect6q9z2w7wxz7l6ajfgec7fhse448w4p3vg").unwrap(),
+                    address: Address::from_str("bc1q36ect6q9z2w7wxz7l6ajfgec7fhse448w4p3vg").unwrap().assume_checked(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/2").unwrap()),
                 },
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1qy9vk2xwwysg4l8uugcrkj7lwa89dz50vp4jsst").unwrap(),
+                    address: Address::from_str("bc1qy9vk2xwwysg4l8uugcrkj7lwa89dz50vp4jsst").unwrap().assume_checked(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/3").unwrap()),
                 },
                 EntryAddress {
                     role: AddressRole::Receive,
-                    address: Address::from_str("bc1qjt668v40dhwm939749z0lagj267xq4me60cdgy").unwrap(),
+                    address: Address::from_str("bc1qjt668v40dhwm939749z0lagj267xq4me60cdgy").unwrap().assume_checked(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/0/4").unwrap()),
                 },
             ],
@@ -479,7 +479,7 @@ mod tests {
             vec![
                 EntryAddress {
                     role: AddressRole::Change,
-                    address: Address::from_str("bc1qg625gty7hkx3gdp8j84y3jfmjj805fa8rqnjah").unwrap(),
+                    address: Address::from_str("bc1qg625gty7hkx3gdp8j84y3jfmjj805fa8rqnjah").unwrap().assume_checked(),
                     hd_path: Some(StandardHDPath::from_str("m/84'/0'/4'/1/0").unwrap()),
                 },
             ],

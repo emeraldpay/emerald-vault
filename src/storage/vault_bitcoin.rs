@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::error::VaultError;
 use hdpath::{AccountHDPath, PathValue};
 use crate::blockchain::chains::{Blockchain, BlockchainType};
-use bitcoin::util::bip32::{ExtendedPrivKey, ExtendedPubKey, DerivationPath};
+use bitcoin::bip32::{Xpriv as Bitcoin_Xpriv, Xpub as Bitcoin_Xpub, DerivationPath};
 use crate::blockchain::bitcoin::{AddressType, XPub};
 use crate::sign::bitcoin::DEFAULT_SECP256K1;
 use crate::structs::book::AddressRef;
@@ -34,8 +34,8 @@ pub struct AddBitcoinEntry {
 }
 
 pub(crate) fn get_address(blockchain: &Blockchain, address_type: AddressType, account: u32, seed: Vec<u8>) -> Result<XPub, VaultError> {
-    let network = blockchain.as_bitcoin_network();
-    let master = ExtendedPrivKey::new_master(network.clone(), seed.as_slice())
+    let network = blockchain.as_bitcoin_network_kind();
+    let master = Bitcoin_Xpriv::new_master(network.clone(), seed.as_slice())
         .map_err(|_| VaultError::InvalidPrivateKey)?;
     if !PathValue::is_ok(account) {
         return Err(VaultError::PrivateKeyUnavailable)
@@ -44,7 +44,7 @@ pub(crate) fn get_address(blockchain: &Blockchain, address_type: AddressType, ac
     let account_dp: DerivationPath = account.into();
     let xprv = master.derive_priv(&DEFAULT_SECP256K1, &account_dp)
         .map_err(|_| VaultError::PrivateKeyUnavailable)?;
-    let xpub = ExtendedPubKey::from_priv(&DEFAULT_SECP256K1, &xprv);
+    let xpub = Bitcoin_Xpub::from_priv(&DEFAULT_SECP256K1, &xprv);
     Ok(XPub {
         value: xpub,
         address_type,
@@ -77,7 +77,7 @@ impl AddBitcoinEntry {
         }
         let mut seed = self.seeds.get(seed_id)?;
         let address_type = AddressType::P2WPKH;
-        let account = address_type.get_hd_path(hd_path.account(), &blockchain.as_bitcoin_network());
+        let account = address_type.get_hd_path(hd_path.account(), &blockchain.as_bitcoin_network_kind());
         if account.purpose() != hd_path.purpose() {
             return Err(VaultError::UnsupportedDataError("Invalid HD Path purpose for address".to_string()))
         }
@@ -104,7 +104,7 @@ impl AddBitcoinEntry {
                     if exp_app.is_none() || bitcoin_app.is_open() != exp_app {
                         None
                     } else {
-                        let xpub = bitcoin_app.get_xpub(&account, blockchain.as_bitcoin_network())?;
+                        let xpub = bitcoin_app.get_xpub(&account, blockchain.as_bitcoin_network_kind())?;
                         Some(XPub::standard(xpub))
                     }
                 } else {
@@ -137,7 +137,7 @@ impl AddBitcoinEntry {
 
         let xpub = xpub.unwrap();
 
-        if xpub.value.network != blockchain.as_bitcoin_network() {
+        if xpub.value.network != blockchain.as_bitcoin_network_kind() {
             return Err(VaultError::IncorrectBlockchainError)
         }
 

@@ -5,7 +5,6 @@ use crate::{
 use chrono::{DateTime, Utc};
 use hdpath::StandardHDPath;
 use sha2::Digest;
-use std::convert::TryFrom;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 use crate::crypto::fingerprint::Fingerprints;

@@ -10,11 +10,16 @@ use crate::{
     blockchain::chains::{Blockchain, BlockchainType},
     sign::bip32::generate_pubkey,
 };
-use bitcoin::{util::bip32::ExtendedPrivKey, Network, PrivateKey, PublicKey};
+use bitcoin::{
+    bip32::Xpriv as Bitcoin_Xpriv,
+    NetworkKind,
+    PrivateKey,
+    PublicKey,
+    secp256k1::SecretKey,
+    bip32::Xpub as Bitcoin_XPub
+};
 use hdpath::{StandardHDPath, AccountHDPath};
-use secp256k1::SecretKey;
 use std::convert::TryFrom;
-use bitcoin::util::bip32::ExtendedPubKey;
 use std::str::FromStr;
 use emerald_hwkey::ledger::connect::LedgerKeyShared;
 use emerald_hwkey::ledger::app::ethereum::EthereumApp;
@@ -26,7 +31,7 @@ use crate::structs::crypto::GlobalKey;
 
 pub enum PrivateKeySource {
     Base(SecretKey),
-    Extended(ExtendedPrivKey),
+    Extended(Bitcoin_Xpriv),
 }
 
 impl PrivateKeySource {
@@ -37,7 +42,7 @@ impl PrivateKeySource {
         }
     }
 
-    pub fn into_bitcoin_key(self, network: &Network) -> PrivateKey {
+    pub fn into_bitcoin_key(self, network: &NetworkKind) -> PrivateKey {
         match self {
             PrivateKeySource::Base(key) => PrivateKey {
                 compressed: true,
@@ -101,9 +106,9 @@ impl SeedSource {
         }
         let mut result = Vec::with_capacity(hd_path_all.len());
         let network = match blockchain.get_type() {
-            BlockchainType::Bitcoin => blockchain.as_bitcoin_network(),
+            BlockchainType::Bitcoin => blockchain.as_bitcoin_network_kind(),
             // ethereum uses bitcoin network code
-            BlockchainType::Ethereum => Blockchain::Bitcoin.as_bitcoin_network()
+            BlockchainType::Ethereum => NetworkKind::Main
         };
 
         match self {
@@ -112,7 +117,7 @@ impl SeedSource {
                 Some(password) => {
                     let seed_key = bytes.decrypt(password.as_bytes(), global.clone())?;
                     for hd_path in hd_path_all {
-                        let pub_key = ExtendedPubKey {
+                        let pub_key = Bitcoin_XPub {
                             network,
                             ..generate_pubkey(hd_path, &seed_key)?
                         };
@@ -173,7 +178,7 @@ impl SeedSource {
                             return Err(VaultError::PublicKeyUnavailable);
                         }
                         let opts = GetAddressOpts {
-                            network: blockchain.as_bitcoin_network(),
+                            network: blockchain.as_bitcoin_network_kind(),
                             ..Default::default()
                         };
                         for hd_path in hd_path_all {
@@ -243,12 +248,9 @@ impl PKType {
 #[cfg(test)]
 mod tests {
     use crate::mnemonic::{Mnemonic, Language};
-    use crate::structs::seed::{LedgerSource, SeedSource};
+    use crate::structs::seed::{SeedSource};
     use hdpath::{StandardHDPath, AccountHDPath};
     use std::str::FromStr;
-    use std::sync::{Arc, Mutex};
-    use std::thread;
-    use std::time::Duration;
     use crate::blockchain::chains::Blockchain;
     use crate::EthereumAddress;
     use bitcoin::Address;
@@ -303,11 +305,11 @@ mod tests {
         let addresses = addresses.unwrap();
         assert_eq!(addresses.len(), 3);
         assert_eq!(addresses[0],
-                   (StandardHDPath::from_str("m/84'/0'/0'/0/0").unwrap(), Address::from_str("bc1qtjdjzmu30f32u8swgu3r7tf9u03t72r8pevmaw").unwrap()));
+                   (StandardHDPath::from_str("m/84'/0'/0'/0/0").unwrap(), Address::from_str("bc1qtjdjzmu30f32u8swgu3r7tf9u03t72r8pevmaw").unwrap().assume_checked()));
         assert_eq!(addresses[1],
-                   (StandardHDPath::from_str("m/84'/0'/0'/0/7").unwrap(), Address::from_str("bc1qx58fuq5dsa6yxeyzsz4djfdmn8xdkva3lfp0yc").unwrap()));
+                   (StandardHDPath::from_str("m/84'/0'/0'/0/7").unwrap(), Address::from_str("bc1qx58fuq5dsa6yxeyzsz4djfdmn8xdkva3lfp0yc").unwrap().assume_checked()));
         assert_eq!(addresses[2],
-                   (StandardHDPath::from_str("m/84'/0'/1'/0/1").unwrap(), Address::from_str("bc1q8yac70syq400tclzf9mx9r7682uudkddd9zpqw").unwrap()));
+                   (StandardHDPath::from_str("m/84'/0'/1'/0/1").unwrap(), Address::from_str("bc1q8yac70syq400tclzf9mx9r7682uudkddd9zpqw").unwrap().assume_checked()));
     }
 
     #[test]

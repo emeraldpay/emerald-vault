@@ -150,7 +150,7 @@ impl EthereumTransaction for EthereumLegacyTransaction {
         rlp.append(&self.gas_limit);
 
         match self.to {
-            Some(addr) => rlp.append(&addr.0.as_ref()),
+            Some(addr) => rlp.append(&addr.0.as_slice()),
             _ => rlp.append_empty_data(),
         };
 
@@ -191,7 +191,7 @@ impl EthereumTransaction for EthereumEIP1559Transaction {
         rlp.append(&trim_bytes(&self.max_gas_price.to_bytes_be()));
         rlp.append(&self.gas_limit);
         match self.to {
-            Some(addr) => rlp.append(&addr.0.as_ref()),
+            Some(addr) => rlp.append(&addr.0.as_slice()),
             _ => rlp.append_empty_data(),
         };
         rlp.append(&trim_bytes(&self.value.to_bytes_be()));
@@ -204,7 +204,7 @@ impl EthereumTransaction for EthereumEIP1559Transaction {
         rlp.begin_unbounded_list();
         for access in &self.access {
             rlp.begin_unbounded_list();
-            rlp.append(&access.address.0.as_ref());
+            rlp.append(&access.address.0.as_slice());
             rlp.begin_list(access.storage_keys.len());
             for storage in &access.storage_keys {
                 rlp.append_raw(storage, 32);

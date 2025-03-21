@@ -32,7 +32,6 @@ extern crate serde_derive;
 extern crate enum_display_derive;
 
 extern crate aes;
-extern crate bitcoin;
 extern crate byteorder;
 extern crate chrono;
 extern crate csv;
@@ -84,7 +83,6 @@ pub fn version() -> &'static str {
 mod tests {
     pub use super::*;
     use crate::storage::archive::ARCHIVE_DIR;
-    pub use hex::{FromHex, ToHex};
     use log::Level;
     pub use regex::Regex;
     use std::{fs, fs::DirEntry, path::{Path, PathBuf}};

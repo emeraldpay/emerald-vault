@@ -1,7 +1,6 @@
 use uuid::Uuid;
 use crate::storage::archive::{Archive, ArchiveType};
 use crate::storage::vault::VaultStorage;
-use crate::structs::pk::PrivateKeyHolder;
 use crate::structs::seed::Seed;
 use crate::structs::types::UsesOddKey;
 

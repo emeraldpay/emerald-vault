@@ -4,10 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use bitcoin::{util::{
-    base58,
-    bip32::{ChainCode, ChildNumber, ExtendedPubKey, Fingerprint},
-}, Network, OutPoint, PublicKey, TxOut, Address};
+use bitcoin::{base58, bip32::{ChainCode, ChildNumber, Xpub as Bitcoin_XPub, Fingerprint}, OutPoint, PublicKey, TxOut, Address, NetworkKind};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use hdpath::{StandardHDPath, Purpose, AccountHDPath};
 use uuid::Uuid;
@@ -36,7 +33,7 @@ pub enum InputScriptSource {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct BitcoinTransferProposal {
-    pub network: Network,
+    pub network: NetworkKind,
     pub seed: Vec<Seed>,
     pub keys: KeyMapping,
     pub input: Vec<InputReference>,
@@ -126,7 +123,7 @@ impl BitcoinTransferProposal {
 
 #[derive(Clone, Hash, PartialEq, Eq, Debug)]
 pub struct XPub {
-    pub value: ExtendedPubKey,
+    pub value: Bitcoin_XPub,
     pub address_type: AddressType,
 }
 
@@ -150,7 +147,7 @@ pub enum AddressType {
 
 impl XPub {
 
-    pub fn standard(xpub: ExtendedPubKey) -> XPub {
+    pub fn standard(xpub: Bitcoin_XPub) -> XPub {
         XPub {
             value: xpub,
             address_type: AddressType::P2WPKH
@@ -211,8 +208,8 @@ impl XPub {
     }
 }
 
-fn network_value<T>(network: &Network, mainnet: T, testnet: T) -> T {
-    if network.eq(&Network::Bitcoin) {
+fn network_value<T>(network: &NetworkKind, mainnet: T, testnet: T) -> T {
+    if network.eq(&NetworkKind::Main) {
         mainnet
     } else {
         testnet
@@ -224,7 +221,7 @@ impl AddressType {
     // versions: https://electrum.readthedocs.io/en/latest/xpub_version_bytes.html
     //
 
-    pub fn xpub_version(&self, network: &Network) -> u32 {
+    pub fn xpub_version(&self, network: &NetworkKind) -> u32 {
         match self {
             AddressType::P2PKH => network_value(network, 0x0488b21e, 0x043587cf), // xpub, tpub
             AddressType::P2SH => network_value(network, 0x0488b21e, 0x043587cf),  // xpub, tpub
@@ -235,7 +232,7 @@ impl AddressType {
         }
     }
 
-    pub fn xprv_version(&self, network: &Network) -> u32 {
+    pub fn xprv_version(&self, network: &NetworkKind) -> u32 {
         match self {
             AddressType::P2PKH => network_value(network, 0x0488ade4, 0x04358394), // xprv, tprv
             AddressType::P2SH => network_value(network, 0x0488ade4, 0x04358394),  // xprv, tprv
@@ -246,10 +243,10 @@ impl AddressType {
         }
     }
 
-    pub fn get_hd_path(&self, account: u32, network: &Network) -> AccountHDPath {
+    pub fn get_hd_path(&self, account: u32, network: &NetworkKind) -> AccountHDPath {
         let coin_type = match network {
-            Network::Bitcoin => 0,
-            Network::Testnet | Network::Regtest | Network::Signet => 1
+            NetworkKind::Main => 0,
+            NetworkKind::Test => 1,
         };
         match self {
             AddressType::P2PKH | AddressType::P2SH =>
@@ -300,36 +297,36 @@ impl TryFrom<&AccountHDPath> for AddressType {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct AddressTypeNetwork(Network, AddressType);
+pub struct AddressTypeNetwork(NetworkKind, AddressType);
 
 impl TryFrom<u32> for AddressTypeNetwork {
     type Error = ConversionError;
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
-            0x0488b21e => Ok(AddressTypeNetwork(Network::Bitcoin, AddressType::P2PKH)), //xpub
+            0x0488b21e => Ok(AddressTypeNetwork(NetworkKind::Main, AddressType::P2PKH)), //xpub
             0x049d7cb2 => Ok(AddressTypeNetwork(
-                Network::Bitcoin,
+                NetworkKind::Main,
                 AddressType::P2WPKHinP2SH,
             )), //ypub
             0x0295b43f => Ok(AddressTypeNetwork(
-                Network::Bitcoin,
+                NetworkKind::Main,
                 AddressType::P2WSHinP2SH,
             )), //Ypub
-            0x04b24746 => Ok(AddressTypeNetwork(Network::Bitcoin, AddressType::P2WPKH)), //zpub
-            0x02aa7ed3 => Ok(AddressTypeNetwork(Network::Bitcoin, AddressType::P2WSH)), //Zpub
+            0x04b24746 => Ok(AddressTypeNetwork(NetworkKind::Main, AddressType::P2WPKH)), //zpub
+            0x02aa7ed3 => Ok(AddressTypeNetwork(NetworkKind::Main, AddressType::P2WSH)), //Zpub
 
-            0x043587cf => Ok(AddressTypeNetwork(Network::Testnet, AddressType::P2PKH)), //tpub
+            0x043587cf => Ok(AddressTypeNetwork(NetworkKind::Test, AddressType::P2PKH)), //tpub
             0x044a5262 => Ok(AddressTypeNetwork(
-                Network::Testnet,
+                NetworkKind::Test,
                 AddressType::P2WPKHinP2SH,
             )), //upub
             0x024289ef => Ok(AddressTypeNetwork(
-                Network::Testnet,
+                NetworkKind::Test,
                 AddressType::P2WSHinP2SH,
             )), //Upub
-            0x045f1cf6 => Ok(AddressTypeNetwork(Network::Testnet, AddressType::P2WPKH)), //vpub
-            0x02575483 => Ok(AddressTypeNetwork(Network::Testnet, AddressType::P2WSH)), //Vpub
+            0x045f1cf6 => Ok(AddressTypeNetwork(NetworkKind::Test, AddressType::P2WPKH)), //vpub
+            0x02575483 => Ok(AddressTypeNetwork(NetworkKind::Test, AddressType::P2WSH)), //Vpub
 
             _ => Err(ConversionError::UnsupportedValue(hex::encode(
                 u32::to_be_bytes(value),
@@ -342,7 +339,7 @@ impl FromStr for XPub {
     type Err = ConversionError;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        let data = base58::from_check(value).map_err(|_| ConversionError::InvalidBase58)?;
+        let data = base58::decode_check(value).map_err(|_| ConversionError::InvalidBase58)?;
         if data.len() != 78 {
             return Err(ConversionError::InvalidLength);
         }
@@ -351,12 +348,12 @@ impl FromStr for XPub {
         let version: AddressTypeNetwork = version.try_into()?;
         let mut child_num_bytes = &data[9..13];
         let child_num: u32 = child_num_bytes.read_u32::<BigEndian>().unwrap();
-        let value = ExtendedPubKey {
+        let value = Bitcoin_XPub {
             network: version.0,
             depth: data[4],
-            parent_fingerprint: Fingerprint::from(&data[5..9]),
+            parent_fingerprint: Fingerprint::try_from(&data[5..9]).unwrap(),
             child_number: ChildNumber::from(child_num),
-            chain_code: ChainCode::from(&data[13..45]),
+            chain_code: ChainCode::try_from(&data[13..45]).unwrap(),
             public_key: PublicKey::from_slice(&data[45..78])
                 .map_err(|_| ConversionError::OtherError)?.inner,
         };
@@ -377,7 +374,7 @@ impl ToString for XPub {
         data.write_u32::<BigEndian>(self.value.child_number.into()).expect("Failed to write child_number");
         data.extend_from_slice(self.value.chain_code.as_bytes());
         data.extend_from_slice(self.value.public_key.serialize().as_ref());
-        base58::check_encode_slice(data.as_slice())
+        base58::encode_check(data.as_slice())
     }
 }
 
@@ -385,7 +382,7 @@ impl ToString for XPub {
 mod tests {
     use std::str::FromStr;
 
-    use bitcoin::{Network, Address};
+    use bitcoin::{Address, NetworkKind};
 
     use crate::blockchain::bitcoin::{AddressType, KeyMapping, XPub};
     use hdpath::{AccountHDPath, StandardHDPath, Purpose};
@@ -397,7 +394,7 @@ mod tests {
     fn parse_xpub_p2pkh() {
         let act = XPub::from_str("xpub6DfEZhR1ZBu33KzKqHPA1GCfKPpdB9HWFu5UsA54kB5VL3VN34JogQxYHWtSgrippZHp8s9hL9KrAfdYX1sU6cYRXMhGYuvwepFUooGAef5").unwrap();
         assert_eq!(act.value.depth, 4u8);
-        assert_eq!(act.value.network, Network::Bitcoin);
+        assert_eq!(act.value.network, NetworkKind::Main);
         assert_eq!(act.address_type, AddressType::P2PKH);
     }
 
@@ -405,7 +402,7 @@ mod tests {
     fn parse_xpub_p2wpkh() {
         let act = XPub::from_str("zpub6tGSDzdnLUJBBBanLhkcTqkc44WzxshiTBiCuZTgz198oQxPxx4kkdRAhQD3TBBieMPkFAfSUvKov7nKQX6cXJxZEU1BTeHVGjyR5EHubqb").unwrap();
         assert_eq!(act.value.depth, 4u8);
-        assert_eq!(act.value.network, Network::Bitcoin);
+        assert_eq!(act.value.network, NetworkKind::Main);
         assert_eq!(act.address_type, AddressType::P2WPKH);
     }
 
@@ -413,7 +410,7 @@ mod tests {
     fn parse_xpub_p2wpkh_p2sh() {
         let act = XPub::from_str("ypub6XKWqjEULzxUZ1AaNausD7JFWzg8jKCFmdycJpojoiRLDCNuLxKREUXnvTD26q3AAsiSBDymo2E21yhAiUY8Vrnu4UHQvfTrKRcvzyV2Pd2").unwrap();
         assert_eq!(act.value.depth, 3u8);
-        assert_eq!(act.value.network, Network::Bitcoin);
+        assert_eq!(act.value.network, NetworkKind::Main);
         assert_eq!(act.address_type, AddressType::P2WPKHinP2SH);
     }
 
@@ -429,7 +426,7 @@ mod tests {
     #[test]
     fn parse_xpub_p2pkh_testnet() {
         let act = XPub::from_str("tpubDFJnjeM57mHkG8LhyzfDwsWYJUWwta4Aq4nPo59hfVGhanWn7h98c2q6WoexVgkHx9Bg2vrAhCQi13tZozsZmrU8ca43c7em3RUvMXbSdHi").unwrap();
-        assert_eq!(act.value.network, Network::Testnet);
+        assert_eq!(act.value.network, NetworkKind::Test);
         assert_eq!(act.address_type, AddressType::P2PKH);
     }
 
@@ -455,39 +452,39 @@ mod tests {
 
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/0'/0'/0/0").unwrap()),
-            xpub.find_path(&account, &Address::from_str("bc1qll4sdpqfhj57aufzzvew7ckpvqfszux5ludhqk").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("bc1qll4sdpqfhj57aufzzvew7ckpvqfszux5ludhqk").unwrap().assume_checked(), 100)
         );
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/0'/0'/0/1").unwrap()),
-            xpub.find_path(&account, &Address::from_str("bc1q50nlkh0ml0ssmxhj8pwtsnvggr0zvgefsxtp0q").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("bc1q50nlkh0ml0ssmxhj8pwtsnvggr0zvgefsxtp0q").unwrap().assume_checked(), 100)
         );
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/0'/0'/0/10").unwrap()),
-            xpub.find_path(&account, &Address::from_str("bc1q29dcvzah8n4kvx62y4m5rakuu25n798686w8ze").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("bc1q29dcvzah8n4kvx62y4m5rakuu25n798686w8ze").unwrap().assume_checked(), 100)
         );
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/0'/0'/0/51").unwrap()),
-            xpub.find_path(&account, &Address::from_str("bc1qpykvymju08ej3tq43pfyp6lf3gucv6xnlhdasy").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("bc1qpykvymju08ej3tq43pfyp6lf3gucv6xnlhdasy").unwrap().assume_checked(), 100)
         );
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/0'/0'/0/99").unwrap()),
-            xpub.find_path(&account, &Address::from_str("bc1qgtq69f6pa8x5784ka3cvzc6zauhsw6m82galnv").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("bc1qgtq69f6pa8x5784ka3cvzc6zauhsw6m82galnv").unwrap().assume_checked(), 100)
         );
         assert_eq!(
             None,
-            xpub.find_path(&account, &Address::from_str("bc1q8t8mctklx4l8krp7y07l66vtrk3d0fgvjlm87g").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("bc1q8t8mctklx4l8krp7y07l66vtrk3d0fgvjlm87g").unwrap().assume_checked(), 100)
         );
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/0'/0'/1/0").unwrap()),
-            xpub.find_path(&account, &Address::from_str("bc1qre5f3j3w9qgjhjh20sljqz6dwyred2fpug4nhc").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("bc1qre5f3j3w9qgjhjh20sljqz6dwyred2fpug4nhc").unwrap().assume_checked(), 100)
         );
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/0'/0'/1/11").unwrap()),
-            xpub.find_path(&account, &Address::from_str("bc1qk82d259y5vd9zp4vc6r893qzgtms4tfm4gfwhy").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("bc1qk82d259y5vd9zp4vc6r893qzgtms4tfm4gfwhy").unwrap().assume_checked(), 100)
         );
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/0'/0'/1/77").unwrap()),
-            xpub.find_path(&account, &Address::from_str("bc1qf43gxudgwp7vknpeh4zlhwsv6cmqvrfk9djyed").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("bc1qf43gxudgwp7vknpeh4zlhwsv6cmqvrfk9djyed").unwrap().assume_checked(), 100)
         );
     }
 
@@ -499,11 +496,11 @@ mod tests {
 
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/1'/5'/0/2").unwrap()),
-            xpub.find_path(&account, &Address::from_str("tb1q7v6nnp057hdlwtu6uzqedd43q9zqc5w82sar5w").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("tb1q7v6nnp057hdlwtu6uzqedd43q9zqc5w82sar5w").unwrap().assume_checked(), 100)
         );
         assert_eq!(
             Some(StandardHDPath::from_str("m/84'/1'/5'/1/7").unwrap()),
-            xpub.find_path(&account, &Address::from_str("tb1q2p4yhftnwe4ft0nztadeqtn9wzequpwzv3puz0").unwrap(), 100)
+            xpub.find_path(&account, &Address::from_str("tb1q2p4yhftnwe4ft0nztadeqtn9wzequpwzv3puz0").unwrap().assume_checked(), 100)
         );
     }
 

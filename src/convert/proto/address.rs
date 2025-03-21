@@ -3,11 +3,7 @@ use std::{
     str::FromStr,
 };
 
-use bitcoin::{
-    util::bip32::{ChainCode, ChildNumber, ExtendedPubKey, Fingerprint},
-    Network,
-    PublicKey,
-};
+use bitcoin::{bip32::{ChainCode, ChildNumber, Xpub as Bitcoin_XPub, Fingerprint}, NetworkKind, PublicKey};
 use protobuf::ProtobufEnum;
 
 use crate::{
@@ -50,8 +46,8 @@ impl From<&XPub> for proto_Bip32Public {
         result.set_point(xpub.value.public_key.serialize_uncompressed().to_vec());
         result.set_address_type(xpub.address_type.into());
         result.set_network(match xpub.value.network {
-            Network::Bitcoin => proto_BlockchainId::CHAIN_BITCOIN,
-            Network::Testnet | Network::Regtest | Network::Signet => proto_BlockchainId::CHAIN_TESTNET_BITCOIN,
+            NetworkKind::Main => proto_BlockchainId::CHAIN_BITCOIN,
+            NetworkKind::Test => proto_BlockchainId::CHAIN_TESTNET_BITCOIN,
         });
         result
     }
@@ -101,10 +97,10 @@ impl TryFrom<&proto_Bip32Public> for XPub {
         } else {
             return Err(ConversionError::InvalidFieldValue("level".to_string()));
         };
-        let parent_fingerprint = Fingerprint::from(value.parent_fingerprint.to_be_bytes().as_ref());
+        let parent_fingerprint = Fingerprint::from(value.parent_fingerprint.to_be_bytes());
         let child_number = ChildNumber::from(value.child_number);
         let chain_code = if value.chaincode.len() == 32 {
-            ChainCode::from(value.chaincode.as_slice())
+            ChainCode::try_from(value.chaincode.as_slice()).unwrap()
         } else {
             return Err(ConversionError::InvalidFieldValue("chain_code".to_string()));
         };
@@ -114,11 +110,11 @@ impl TryFrom<&proto_Bip32Public> for XPub {
         let address_type = value.address_type.try_into()?;
         let network = Blockchain::try_from(value.network.value() as u32)
             .map_err(|_| ConversionError::InvalidFieldValue("network".to_string()))?
-            .as_bitcoin_network();
+            .as_bitcoin_network_kind();
 
         Ok(XPub {
             address_type,
-            value: ExtendedPubKey {
+            value: Bitcoin_XPub {
                 network,
                 depth,
                 parent_fingerprint,

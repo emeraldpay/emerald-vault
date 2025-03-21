@@ -166,7 +166,7 @@ mod tests {
             book::AddressRef,
             crypto::Encrypted,
             pk::{EthereumPk3, PrivateKeyHolder, PrivateKeyType},
-            seed::{LedgerSource, Seed, SeedRef, SeedSource},
+            seed::{Seed, SeedRef, SeedSource},
             types::HasUuid,
             wallet::{PKType, WalletEntry, Wallet},
         },

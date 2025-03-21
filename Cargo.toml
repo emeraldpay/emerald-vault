@@ -29,15 +29,15 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 glob = "0.3.0"
-uuid = { version = "1.2.2", features = ["serde", "v4"] }
-secp256k1 = { version = "~0.24", features = ["rand", "recovery"] }
+uuid = { version = "1.2", features = ["serde", "v4"] }
+secp256k1 = { version = "=0.29.1", features = ["rand", "recovery"] }
 # used by secp
 rand = "0.8.5"
 getrandom = "0.2.4"
 byteorder = "1.4.3"
 ethabi = "18.0.0"
 num = "0.4.0"
-bitcoin = "0.29"
+bitcoin = "0.32"
 ethers-core = { version = "1.0.2", default-features = false, features = ["eip712", "macros"] }
 ethers-derive-eip712 = "1.0.2"
 aes = "0.8.2"
@@ -58,10 +58,11 @@ fs_extra = "1.2.0"
 csv = "1.1.6"
 base64 = "0.13.0"
 rlp = "0.5.1"
-hdpath = { version = "0.6", features = ["with-bitcoin"] }
+#hdpath = { version = "0.6", features = ["with-bitcoin"] }
 #hdpath = { path = "../hdpath", features = ["with-bitcoin"] }
+hdpath = { git = "https://github.com/emeraldpay/hdpath-rs", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
-bitcoin_hashes = "0.11"
+bitcoin_hashes = "0.16"
 #emerald-hwkey = { path = "../emerald-hwkey" }
 emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
 #emerald-hwkey = "0.5"

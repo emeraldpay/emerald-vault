@@ -20,7 +20,7 @@ use crate::util::to_arr;
 use hex;
 use std::{fmt, ops, str::FromStr};
 use crate::{EthereumPrivateKey, keccak256};
-use bitcoin::util::bip32::ExtendedPrivKey;
+use bitcoin::bip32::Xpriv as Bitcoin_Xpriv;
 use std::convert::TryFrom;
 use crate::error::VaultError;
 use secp256k1::PublicKey;
@@ -105,10 +105,10 @@ impl fmt::Debug for EthereumAddress {
     }
 }
 
-impl TryFrom<ExtendedPrivKey> for EthereumPrivateKey {
+impl TryFrom<Bitcoin_Xpriv> for EthereumPrivateKey {
     type Error = VaultError;
 
-    fn try_from(value: ExtendedPrivKey) -> Result<Self, Self::Error> {
+    fn try_from(value: Bitcoin_Xpriv) -> Result<Self, Self::Error> {
         EthereumPrivateKey::try_from(value.private_key.secret_bytes().as_ref())
             .map_err(|_| VaultError::InvalidPrivateKey)
     }
@@ -117,6 +117,13 @@ impl TryFrom<ExtendedPrivKey> for EthereumPrivateKey {
 impl From<PublicKey> for EthereumAddress {
     fn from(value: PublicKey) -> Self {
         let hash = keccak256(&value.serialize_uncompressed()[1..] /* cut '04' */);
+        EthereumAddress(to_arr(&hash[12..]))
+    }
+}
+
+impl From<bitcoin::PublicKey> for EthereumAddress {
+    fn from(value: bitcoin::PublicKey) -> Self {
+        let hash = keccak256(&value.inner.serialize_uncompressed()[1..] /* cut '04' */);
         EthereumAddress(to_arr(&hash[12..]))
     }
 }

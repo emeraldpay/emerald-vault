@@ -67,7 +67,7 @@ mod test_commons {
     #[allow(dead_code)]
     pub fn show_dir<P: AsRef<Path>>(dir: P, parent: Option<PathBuf>) {
         if dir.as_ref().is_dir() {
-            for entry in fs::read_dir(dir.as_ref().clone()).unwrap() {
+            for entry in fs::read_dir(dir.as_ref()).unwrap() {
                 let entry = entry.unwrap();
                 let path = entry.path();
                 if path.is_dir() {

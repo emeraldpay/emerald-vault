@@ -1,11 +1,11 @@
 use std::convert::TryFrom;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 use protobuf::Message;
 use uuid::Uuid;
 use crate::error::VaultError;
 use crate::storage::vault::{safe_update, VaultStorage};
-use crate::structs::crypto::{Encrypted, GlobalKey, GlobalKeyRef};
+use crate::structs::crypto::{Encrypted, GlobalKey};
 use crate::proto::crypto::{GlobalKey as proto_GlobalKey};
 use crate::structs::types::UsesOddKey;
 
@@ -463,7 +463,7 @@ mod tests {
 
         let global_store = vault.global_key();
         global_store.create("test-g").unwrap();
-        let global = Some(global_store.get().unwrap());
+        let _global = Some(global_store.get().unwrap());
 
         let unused = vault.get_global_key_missing().unwrap();
 

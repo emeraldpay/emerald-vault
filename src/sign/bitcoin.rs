@@ -11,31 +11,45 @@ use crate::{
     error::VaultError,
     structs::{book::AddressRef, wallet::WalletEntry},
 };
-use bitcoin::{Witness, consensus::serialize, util::{sighash::SighashCache, bip32::ChildNumber, psbt::serialize::Serialize}, Address, Network, PrivateKey, PublicKey, Script, EcdsaSighashType, Transaction, TxIn};
+use bitcoin::{
+    Witness,
+    consensus::serialize,
+    sighash::SighashCache,
+    Network,
+    EcdsaSighashType,
+    Transaction,
+    TxIn,
+    bip32::ChildNumber,
+    Address,
+    CompressedPublicKey,
+    ScriptBuf,
+    ecdsa,
+    Amount,
+    NetworkKind,
+    KnownHrp,
+    absolute::LockTime,
+    consensus::Encodable,
+    hashes::Hash,
+    transaction::Version
+};
 use secp256k1::{All, Message, Secp256k1};
-use secp256k1::ecdsa::Signature;
 use crate::structs::seed::SeedSource;
-use emerald_hwkey::ledger::connect::LedgerKeyShared;
-use emerald_hwkey::ledger::app::bitcoin::{BitcoinApp, BitcoinApps, SignTx, UnsignedInput};
-use emerald_hwkey::ledger::app::LedgerApp;
-use emerald_hwkey::errors::HWKeyError;
+use emerald_hwkey::{
+    ledger::{
+        connect::{
+            LedgerKeyShared,
+            LedgerKey
+        },
+        app::bitcoin::{BitcoinApp, BitcoinApps, SignTx, UnsignedInput},
+        app::LedgerApp,
+    },
+    errors::HWKeyError,
+};
 use hdpath::StandardHDPath;
 use itertools::Itertools;
-use emerald_hwkey::ledger::connect::LedgerKey;
 
 lazy_static! {
     pub static ref DEFAULT_SECP256K1: Secp256k1<All> = Secp256k1::new();
-}
-
-// For reference:
-// - https://en.bitcoin.it/wiki/BIP_0143
-
-fn encode_signature(sig: Signature) -> Vec<u8> {
-    let sig = sig.serialize_der().to_vec();
-    let mut result = Vec::with_capacity(sig.len() + 1);
-    result.extend(sig);
-    result.push(EcdsaSighashType::All as u8);
-    result
 }
 
 impl From<Blockchain> for Network {
@@ -51,7 +65,10 @@ impl From<Blockchain> for Network {
 impl WalletEntry {
     pub fn sign_bitcoin(&self, tx: BitcoinTransferProposal) -> Result<Vec<u8>, VaultError> {
         let signed = tx.seal()?;
-        Ok(signed.serialize())
+        let mut buf = Vec::new();
+        signed.consensus_encode(&mut buf)
+            .map_err(|e| VaultError::InvalidDataError(format!("Failed to sing: {}", e)))?;
+        Ok(buf)
     }
 
     pub fn bitcoin_address(&self, change: u32, index: u32) -> Result<Address, VaultError> {
@@ -76,8 +93,9 @@ impl WalletEntry {
 
                     match xpub.address_type {
                         AddressType::P2WPKH => {
-                            Address::p2wpkh(&PublicKey::new(pubkey.public_key), network.clone())
-                                .map_err(|_| VaultError::PublicKeyUnavailable)
+                            let compressed = CompressedPublicKey::try_from(bitcoin::PublicKey::from(pubkey.public_key))
+                                .map_err(|_| VaultError::PublicKeyUnavailable)?;
+                            Ok(Address::p2wpkh(&compressed, network.clone()))
                         }
                         //TODO support other types
                         _ => Err(VaultError::InvalidDataError("address_type".to_string())),
@@ -98,7 +116,7 @@ impl InputScriptSource {
         }
     }
 
-    fn to_pk(&self, proposal: &BitcoinTransferProposal) -> Result<PrivateKey, VaultError> {
+    fn to_pk(&self, proposal: &BitcoinTransferProposal) -> Result<secp256k1::SecretKey, VaultError> {
         match self {
             InputScriptSource::HD(seed, hd_path) => {
                 let seed = proposal
@@ -109,7 +127,8 @@ impl InputScriptSource {
                 let pk = seed
                     .source
                     .get_pk(Some(password), &global, hd_path)?
-                    .into_bitcoin_key(&proposal.network);
+                    .into_bitcoin_key(&proposal.network)
+                    .inner;
                 Ok(pk)
             }
         }
@@ -118,24 +137,28 @@ impl InputScriptSource {
 
 
 impl InputReference {
-    pub fn get_pk(&self, proposal: &BitcoinTransferProposal) -> Result<PrivateKey, VaultError> {
+    pub fn get_pk(&self, proposal: &BitcoinTransferProposal) -> Result<secp256k1::SecretKey, VaultError> {
         self.script_source.to_pk(proposal)
     }
 
-    pub fn get_pubkey(&self, proposal: &BitcoinTransferProposal) -> Result<PublicKey, VaultError> {
+    pub fn get_pubkey(&self, proposal: &BitcoinTransferProposal) -> Result<secp256k1::PublicKey, VaultError> {
         Ok(self.get_pk(proposal)?.public_key(&DEFAULT_SECP256K1))
     }
 
     pub fn to_address(&self, proposal: &BitcoinTransferProposal) -> Result<Address, VaultError> {
-        let pubkey = self.get_pubkey(proposal)?;
-        let address = Address::p2wpkh(&pubkey, proposal.network.clone())
+        let pubkey = bitcoin::PublicKey::from(self.get_pubkey(proposal)?);
+        let compressed = CompressedPublicKey::try_from(pubkey)
             .map_err(|_| VaultError::PublicKeyUnavailable)?;
+        let hrp = match proposal.network {
+            NetworkKind::Main => KnownHrp::Mainnet,
+            NetworkKind::Test => KnownHrp::Testnets,
+        };
+        let address = Address::p2wpkh(&compressed, hrp);
         Ok(address)
     }
 
-    pub fn to_sign_script(&self, proposal: &BitcoinTransferProposal) -> Result<Script, VaultError> {
-        let pubkey = self.get_pubkey(proposal)?;
-        Ok(Address::p2pkh(&pubkey, proposal.network).script_pubkey())
+    pub fn to_sign_script(&self, proposal: &BitcoinTransferProposal) -> Result<ScriptBuf, VaultError> {
+        Ok(self.to_address(proposal)?.script_pubkey())
         //
         // SPEC:
         // >> For P2WPKH witness program, the scriptCode is 0x1976a914{20-byte-pubkey-hash}88ac
@@ -162,21 +185,20 @@ impl InputReference {
         let pk = self.get_pk(proposal)?;
         let script = self.to_sign_script(proposal)?;
 
-        let hash = SighashCache::new(&tx.clone())
-            .segwit_signature_hash(
+        let hash = SighashCache::new(tx.clone())
+            .p2wpkh_signature_hash(
                 index,
                 &script,
-                self.expected_value,
+                Amount::from_sat(self.expected_value),
                 EcdsaSighashType::All
             )
-            .map_err(|e| VaultError::InvalidDataError(e.to_string()))?
-            .as_hash()
-            .to_vec();
-        let msg = Message::from_slice(hash.as_slice())
+            .map_err(|e| VaultError::InvalidDataError(e.to_string()))?;
+        let hash = hash.as_raw_hash().as_byte_array();
+        let msg = Message::from_digest_slice(hash.as_slice())
             .map_err(|_| VaultError::InvalidDataError("tx-hash".to_string()))?;
 
-        let signature = DEFAULT_SECP256K1.sign_ecdsa(&msg, &pk.inner);
-        let signature = encode_signature(signature);
+        let signature = DEFAULT_SECP256K1.sign_ecdsa(&msg, &pk);
+        let signature = bitcoin::ecdsa::Signature { signature, sighash_type: EcdsaSighashType::All };
 
         tx.input[index] = TxIn {
             witness: self.witness(&proposal, &signature)?,
@@ -189,18 +211,15 @@ impl InputReference {
     pub fn witness(
         &self,
         proposal: &BitcoinTransferProposal,
-        signature: &Vec<u8>,
+        signature: &ecdsa::Signature,
     ) -> Result<Witness, VaultError> {
-        Ok(Witness::from_vec(vec![
-            signature.clone(),
-            self.get_pubkey(proposal)?.serialize(),
-        ]))
+        Ok(Witness::p2wpkh(signature, &self.get_pubkey(proposal)?))
     }
 
     pub fn to_input(&self) -> TxIn {
         TxIn {
             previous_output: self.output,
-            script_sig: Script::new(),
+            script_sig: ScriptBuf::new(),
             sequence: bitcoin::Sequence(self.sequence),
             witness: Witness::default(),
         }
@@ -209,7 +228,7 @@ impl InputReference {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum BitcoinTxError {
-    InsufficientFunds(u64, u64),
+    InsufficientFunds(Amount, Amount),
     LargeFee,
     IncorrectFee,
     NoOutputs,
@@ -217,13 +236,13 @@ pub enum BitcoinTxError {
 }
 
 /// Max fee, check during _optinal_ validation, is 0.05 BTC.
-const FEE_MAX: u64 = 5_000_000;
+const FEE_MAX: Amount = Amount::from_sat(5_000_000);
 
 impl BitcoinTransferProposal {
     fn unsigned(&self) -> Transaction {
         Transaction {
-            version: 2,
-            lock_time: bitcoin::PackedLockTime(0),
+            version: Version::TWO,
+            lock_time: LockTime::ZERO,
             input: self.input.iter().map(|ir| ir.to_input()).collect(),
             output: self.output.clone(),
         }
@@ -271,9 +290,8 @@ impl BitcoinTransferProposal {
         let manager = LedgerKeyShared::instance().map_err(|_| VaultError::PublicKeyUnavailable)?;
         let bitcoin_app = manager.access::<BitcoinApp>()?;
         let exp_app = match self.network {
-            Network::Bitcoin => BitcoinApps::Mainnet,
-            Network::Testnet => BitcoinApps::Testnet,
-            _ => return Err(VaultError::IncorrectBlockchainError)
+            NetworkKind::Main => BitcoinApps::Mainnet,
+            NetworkKind::Test => BitcoinApps::Testnet,
         };
         if bitcoin_app.is_open() != Some(exp_app) {
             return Err(VaultError::PublicKeyUnavailable)
@@ -297,18 +315,18 @@ impl BitcoinTransferProposal {
     /// Validates _structure_ of the transaction. I.e. that it has inputs, outputs, and amounts are
     /// agreed.
     pub fn validate(&self) -> Result<(), BitcoinTxError> {
-        let send: u64 = self.input.iter().map(|it| it.expected_value).sum();
-        if send == 0 {
+        let send: Amount = self.input.iter().map(|it| Amount::from_sat(it.expected_value)).sum();
+        if send.to_sat() == 0 {
             return Err(BitcoinTxError::NoInputs);
         }
-        let receive: u64 = self.output.iter().map(|it| it.value).sum();
-        if receive == 0 {
+        let receive: Amount = self.output.iter().map(|it| it.value).sum();
+        if receive.to_sat() == 0 {
             return Err(BitcoinTxError::NoOutputs);
         }
         if receive > send {
             return Err(BitcoinTxError::InsufficientFunds(send, receive));
         }
-        let fee = self.expected_fee;
+        let fee = Amount::from_sat(self.expected_fee);
         if fee != send - receive {
             return Err(BitcoinTxError::IncorrectFee);
         }
@@ -343,7 +361,7 @@ mod tests {
             wallet::WalletEntry,
         },
     };
-    use bitcoin::{Network, OutPoint, TxOut, Txid, Address};
+    use bitcoin::{OutPoint, TxOut, Txid, Address, Amount, NetworkKind};
     use chrono::{TimeZone, Utc};
     use hdpath::{StandardHDPath};
     use std::{convert::TryFrom, str::FromStr};
@@ -385,17 +403,17 @@ mod tests {
         };
 
         let proposal = BitcoinTransferProposal {
-            network: Network::Testnet,
+            network: NetworkKind::Test,
             seed: vec![Seed {
                 id: seed_id.clone(),
                 source: seed,
                 label: None,
-                created_at: Utc.timestamp_millis(0),
+                created_at: Utc.timestamp_millis_opt(0).unwrap(),
             }],
             keys: KeyMapping::single(seed_id.clone(), SeedSource::nokey()),
             input: vec![from],
             output: vec![TxOut {
-                value: value_1 - fee,
+                value: Amount::from_sat(value_1 - fee),
                 script_pubkey: entry.bitcoin_address(0, 0).unwrap().script_pubkey(),
             }],
             change: entry.clone(),
@@ -440,17 +458,17 @@ mod tests {
         };
 
         let proposal = BitcoinTransferProposal {
-            network: Network::Testnet,
+            network: NetworkKind::Test,
             seed: vec![Seed {
                 id: seed_id.clone(),
                 source: seed,
                 label: None,
-                created_at: Utc.timestamp_millis(0),
+                created_at: Utc.timestamp_millis_opt(0).unwrap(),
             }],
             keys: KeyMapping::single(seed_id.clone(), SeedSource::nokey()),
             input: vec![from],
             output: vec![TxOut {
-                value: value_1 - fee,
+                value: Amount::from_sat(value_1 - fee),
                 script_pubkey: entry.bitcoin_address(0, 0).unwrap().script_pubkey(),
             }],
             change: entry.clone(),
@@ -527,12 +545,12 @@ mod tests {
         };
 
         let proposal = BitcoinTransferProposal {
-            network: Network::Bitcoin,
+            network: NetworkKind::Main,
             seed: vec![Seed {
                 id: seed_id.clone(),
                 source: seed,
                 label: None,
-                created_at: Utc.timestamp_millis(0),
+                created_at: Utc.timestamp_millis_opt(0).unwrap(),
             }],
             keys: KeyMapping::single(seed_id.clone(), SeedSource::nokey()),
             input: vec![
@@ -540,19 +558,19 @@ mod tests {
             ],
             output: vec![
                 TxOut {
-                    value: value_1 + value_2 - 1_200_000 - 1_100_000 - fee,
+                    value: Amount::from_sat(value_1 + value_2 - 1_200_000 - 1_100_000 - fee),
                     script_pubkey: entry.bitcoin_address(1, 0).unwrap().script_pubkey(),
                 },
                 // next two are from: "ignore save system happy novel dance stool hen crater key misery draft ramp fox absorb"
                 TxOut {
-                    value: 1_200_000,
+                    value: Amount::from_sat(1_200_000),
                     // m/49'/0'/0'/0/0
-                    script_pubkey: Address::from_str("3MPSdemXQLHJmw1tAB9YTVa84LC24xJ6X3").unwrap().script_pubkey(),
+                    script_pubkey: Address::from_str("3MPSdemXQLHJmw1tAB9YTVa84LC24xJ6X3").unwrap().assume_checked().script_pubkey(),
                 },
                 TxOut {
-                    value: 1_100_000,
+                    value: Amount::from_sat(1_100_000),
                     // m/44'/0'/0'/0/0
-                    script_pubkey: Address::from_str("13TwUDiEthUop7FWoyZ6U9Jtd1oHAgabzg").unwrap().script_pubkey(),
+                    script_pubkey: Address::from_str("13TwUDiEthUop7FWoyZ6U9Jtd1oHAgabzg").unwrap().assume_checked().script_pubkey(),
                 }
             ],
             change: entry.clone(),
@@ -591,12 +609,12 @@ mod tests {
     #[test]
     fn invalidate_not_enough_sent() {
         let (_, mut proposal) = create_proposal_1();
-        proposal.output[0].value = 140_000;
-        assert_eq!(proposal.validate(), Err(BitcoinTxError::InsufficientFunds(120000, 140000)));
+        proposal.output[0].value = Amount::from_sat(140_000);
+        assert_eq!(proposal.validate(), Err(BitcoinTxError::InsufficientFunds(Amount::from_sat(120000), Amount::from_sat(140000))));
 
         let (_, mut proposal) = create_proposal_3();
-        proposal.output[2].value += 40_000;
-        assert_eq!(proposal.validate(), Err(BitcoinTxError::InsufficientFunds(1_120_000 + 2_000_000, 1_120_000 + 2_000_000 - 432 + 40_000)));
+        proposal.output[2].value += Amount::from_sat(40_000);
+        assert_eq!(proposal.validate(), Err(BitcoinTxError::InsufficientFunds(Amount::from_sat(1_120_000 + 2_000_000), Amount::from_sat(1_120_000 + 2_000_000 - 432 + 40_000))));
     }
 
     #[test]
