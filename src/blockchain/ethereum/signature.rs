@@ -31,6 +31,7 @@ use std::{convert::TryFrom, fmt, ops, str};
 use std::fmt::Display;
 use std::str::FromStr;
 use rlp::RlpStream;
+use emerald_hwkey::ledger::app::ethereum::SignatureBytes;
 use crate::chains::EthereumChainId;
 use crate::ethereum::hex::EthereumHex;
 
@@ -175,12 +176,13 @@ impl EthereumSignature for EthereumEIP2930Signature {
     }
 }
 
-impl From<[u8; ECDSA_SIGNATURE_BYTES]> for EthereumBasicSignature {
-    fn from(data: [u8; ECDSA_SIGNATURE_BYTES]) -> Self {
+impl From<SignatureBytes> for EthereumBasicSignature {
+    fn from(data: SignatureBytes) -> Self {
         let mut sign = EthereumBasicSignature::default();
-        sign.v = data[0];
-        sign.r.copy_from_slice(&data[1..(1 + 32)]);
-        sign.s.copy_from_slice(&data[(1 + 32)..(1 + 32 + 32)]);
+        let data = AsRef::<[u8; 65]>::as_ref(&data);
+        sign.v = data[64];
+        sign.r.copy_from_slice(&data[0..32]);
+        sign.s.copy_from_slice(&data[32..64]);
         sign
     }
 }
@@ -229,7 +231,7 @@ pub struct EthereumPrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
 
 impl EthereumPrivateKey {
     /// Generate a new `PrivateKey` at random (`rand::OsRng`)
-    pub fn gen() -> Self {
+    pub fn generate() -> Self {
         Self::gen_custom(&mut OsRng::default())
     }
 
@@ -307,11 +309,15 @@ impl From<RecoverableSignature> for EthereumBasicSignature {
     fn from(value: RecoverableSignature) -> Self {
         let (rid, sig) = value.serialize_compact();
 
-        let mut buf = [0u8; ECDSA_SIGNATURE_BYTES];
-        buf[0] = (rid.to_i32() + 27) as u8;
-        buf[1..65].copy_from_slice(&sig[0..64]);
+        let v = (rid.to_i32() + 27) as u8;
+        let r = to_arr(&sig[0..32]);
+        let s = to_arr(&sig[32..64]);
 
-        EthereumBasicSignature::from(buf)
+        EthereumBasicSignature {
+            v,
+            r,
+            s,
+        }
     }
 }
 

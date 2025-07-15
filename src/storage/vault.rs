@@ -1162,7 +1162,7 @@ mod tests {
         let wallet_id = vault
             .create_new()
             .raw_pk(
-                EthereumPrivateKey::gen().to_vec(),
+                EthereumPrivateKey::generate().to_vec(),
                 "test",
                 Blockchain::Ethereum,
             )
@@ -1194,7 +1194,7 @@ mod tests {
         let wallet_1_id = vault
             .create_new()
             .raw_pk(
-                EthereumPrivateKey::gen().to_vec(),
+                EthereumPrivateKey::generate().to_vec(),
                 "test",
                 Blockchain::Ethereum,
             )
@@ -1208,7 +1208,7 @@ mod tests {
         let wallet_2_id = vault
             .create_new()
             .raw_pk(
-                EthereumPrivateKey::gen().to_vec(),
+                EthereumPrivateKey::generate().to_vec(),
                 "test",
                 Blockchain::Ethereum,
             )
@@ -1248,7 +1248,7 @@ mod tests {
         let wallet_1_id = vault
             .create_new()
             .raw_pk(
-                EthereumPrivateKey::gen().to_vec(),
+                EthereumPrivateKey::generate().to_vec(),
                 "test",
                 Blockchain::Ethereum,
             )
@@ -1262,7 +1262,7 @@ mod tests {
         let wallet_2_id = vault
             .create_new()
             .raw_pk(
-                EthereumPrivateKey::gen().to_vec(),
+                EthereumPrivateKey::generate().to_vec(),
                 "test",
                 Blockchain::Ethereum,
             )

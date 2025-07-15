@@ -22,7 +22,7 @@ impl PrivateKeyHolder {
 
     #[cfg(test)]
     pub fn generate_ethereum_raw(password: &str) -> Result<PrivateKeyHolder, CryptoError> {
-        let pk = core_PK::gen();
+        let pk = core_PK::generate();
         PrivateKeyHolder::create_ethereum_raw(pk.0.to_vec(), password, None)
     }
 

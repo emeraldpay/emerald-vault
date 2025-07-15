@@ -10,7 +10,7 @@ keywords = ["ethereum", "bitcoin", "blockchain", "cryptocurrency"]
 categories = ["cryptography"]
 readme = "crates.md"
 license = "Apache-2.0"
-edition = "2021"
+edition = "2024"
 autobenches = false
 
 [lib]
@@ -60,9 +60,9 @@ hdpath = { version = "0.7", features = ["with-bitcoin"] }
 #hdpath = { git = "https://github.com/emeraldpay/hdpath-rs", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
 bitcoin_hashes = "0.16"
-#emerald-hwkey = { path = "../emerald-hwkey" }
-#emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
-emerald-hwkey = "0.6"
+#emerald-hwkey = { path = "../emerald-hwkey" } q
+emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
+#emerald-hwkey = "0.6"
 num-bigint = "0.4"
 zip = { version = "2.4", default-features = false, features = ["deflate"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }

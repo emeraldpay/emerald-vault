@@ -5,6 +5,7 @@ use crate::{convert::json::keyfile::EthereumJsonV3File, storage::vault::VaultSto
 use hdpath::StandardHDPath;
 use std::convert::TryFrom;
 use std::str::FromStr;
+use ethers_core::types::transaction::eip712::{Eip712, TypedData};
 use uuid::Uuid;
 use emerald_hwkey::ledger::connect::LedgerKeyShared;
 use emerald_hwkey::ledger::app::EthereumApp;
@@ -134,24 +135,68 @@ impl WalletEntry {
     }
 }
 
+pub enum SignMessage {
+    EIP191(String),
+    EIP712(TypedData),
+}
+
+impl SignableHash for SignMessage {
+    fn hash(&self) -> Result<[u8; 32], VaultError> {
+        match self {
+            SignMessage::EIP191(msg) => {
+                SignableHash::hash(msg)
+            }
+            SignMessage::EIP712(data) => {
+                SignableHash::hash(data)
+            }
+        }
+    }
+}
+
 impl WalletEntry {
 
     pub fn sign_message(&self,
-                         msg: &dyn SignableHash,
+                         msg: SignMessage,
                          password: Option<String>,
                          vault: &VaultStorage) -> Result<String, VaultError> {
-        if self.is_hardware(vault)? {
-            //TODO
-            return Err(VaultError::UnsupportedDataError("Hardware Signing is not available".to_string()));
-        }
-        // Continue with using a key stored in the vault, it's always encrypted with a password, so it's required
-        if password.is_none() {
-            return Err(VaultError::PasswordRequired);
-        }
-        let key = self.key.get_ethereum_pk(&vault, password.clone(), vault.global_key().get_if_exists()?)?;
+        let signature: EthereumBasicSignature = if self.is_hardware(vault)? {
+            let seed = self.get_seed(vault)?
+                .ok_or(VaultError::UnsupportedDataError("Hardware Key is unknown".to_string()))?;
+            match seed.source {
+                SeedSource::Ledger(_) => {
+                    let hd_path = self.entry_hd().expect("No HDPath for Seed entry");
+                    let manager = LedgerKeyShared::instance().map_err(|_| VaultError::PrivateKeyUnavailable)?;
+                    let ethereum_app = manager.access::<EthereumApp>()?;
+                    if ethereum_app.is_open().is_none() {
+                        return Err(VaultError::PrivateKeyUnavailable);
+                    }
+                    let signature = match msg {
+                        SignMessage::EIP191(msg) => {
+                            ethereum_app.sign_message_erc191(msg, &hd_path)?
+                        }
+                        SignMessage::EIP712(data) => {
+                            let domain_hash = data.domain.separator();
+                            let data_hash = data.struct_hash()
+                                .map_err(|_| VaultError::InvalidDataError("EIP-712 Format".to_string()))?;
+                            ethereum_app.sign_message_eip712(&domain_hash, &data_hash, &hd_path)?
+                        }
+                    };
+                    EthereumBasicSignature::from(signature)
+                }
+                SeedSource::Bytes(_) => {
+                    // should never happen since the top check ensures it's a hardware key
+                    return Err(VaultError::UnsupportedDataError("Invalid Hardware Key used for message signing".to_string()));
+                }
+            }
+        } else {
+            // Continue with using a key stored in the vault, it's always encrypted with a password, so it's required
+            if password.is_none() {
+                return Err(VaultError::PasswordRequired);
+            }
+            let key = self.key.get_ethereum_pk(&vault, password.clone(), vault.global_key().get_if_exists()?)?;
 
-
-        let signature = key.sign::<EthereumBasicSignature>(msg)?;
+            key.sign::<EthereumBasicSignature>(&msg)?
+        };
         Ok(signature.to_string())
     }
 
@@ -177,12 +222,15 @@ mod tests {
     use chrono::Utc;
     use hdpath::StandardHDPath;
     use std::{convert::TryFrom, str::FromStr};
+    use std::sync::{Arc, Mutex};
     use num::Num;
     use num_bigint::BigUint;
     use tempdir::TempDir;
     use uuid::Uuid;
     use crate::chains::EthereumChainId;
     use crate::mnemonic::{Language, Mnemonic};
+    use crate::sign::ethereum::SignMessage;
+    use crate::structs::seed::LedgerSource;
     use crate::tests::{read_test_txes};
 
     #[test]
@@ -507,11 +555,14 @@ mod tests {
 
 
         let signed = entry.sign_message(
-            &"test test test".to_string(), Some("test-1".to_string()), &vault
+            SignMessage::EIP191("test test test".to_string()), Some("test-1".to_string()), &vault
         );
 
-        assert!(signed.is_ok());
+        if signed.is_err() {
+            panic!("Signing failed: {:?}", signed.err());
+        }
         let signed = signed.unwrap();
         assert_eq!(signed, "0xc7be6a5bf16f3e8af73ef954e17a7988346201f1b5563aaff66e2fd16d0cb13268cd7ac4095da896a78b002f693086287fc7894f99661c69972b6cbf402ca72a1c".to_string());
     }
+
 }
