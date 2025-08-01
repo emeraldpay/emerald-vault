@@ -196,8 +196,13 @@ impl WatchLoop {
 
     fn process(&mut self) {
         let mut current_devices = vec![];
-        if let Ok(connected) = LedgerKeyShared::instance() {
-            current_devices.push(self.connected_details(&connected));
+        if let Ok(mut connected) = LedgerKeyShared::instance() {
+            // make sure we CONNECT here
+            if let Err(e) = connected.connect() {
+                warn!("Error connecting to LedgerKey instance: {:?}", e);
+            } else {
+                current_devices.push(self.connected_details(&connected));
+            }
         }
 
         let changed = current_devices.len() != self.devices.len()
@@ -209,7 +214,7 @@ impl WatchLoop {
             self.version = self.version + 1;
         }
 
-        // cheack all the current requests regardles the chage. some of them may come later and the current state may be a fit for them
+        // check all the current requests regardless the change. some of them may come later, and the current state may be a fit for them
         let mut left_requests = vec![];
         for req in &self.requests {
             let accepted = match req.0 {
@@ -318,7 +323,7 @@ mod tests {
     use crate::tests::init_tests;
 
     #[test]
-    #[cfg(integration_test)]
+    #[cfg(test_ledger)]
     fn listen_disconnected_to_ethereum() {
         init_tests();
         let mut buffer = String::new();
