@@ -369,7 +369,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(integration_test, speculos, feature = "hwkey-emulate"))]
+    #[cfg(all(integration_test, test_speculos, feature = "hwkey-emulate"))]
     fn get_ethereum_addresses_from_speculos() {
         let seed = SeedSource::Ledger(LedgerSource {
             fingerprints: vec![],
@@ -417,7 +417,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(integration_test, speculos, feature = "hwkey-emulate"))]
+    #[cfg(all(integration_test, test_speculos, feature = "hwkey-emulate"))]
     fn get_ethereum_addresses_from_speculos_parallel() {
         let seed = SeedSource::Ledger(LedgerSource {
             fingerprints: vec![],

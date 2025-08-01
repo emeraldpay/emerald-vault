@@ -454,7 +454,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(all(integration_test, ledger))]
+    #[cfg(all(integration_test, test_ledger))]
     fn sign_tx_with_ledger() {
         let test_txes = read_test_txes();
         let exp = &test_txes[0];
@@ -465,6 +465,7 @@ mod tests {
             id: Uuid::new_v4(),
             source: SeedSource::Ledger(LedgerSource {
                 fingerprints: vec![],
+                access: Arc::new(Mutex::new(0)),
             }),
             label: None,
             created_at: Utc::now(),

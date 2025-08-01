@@ -6,7 +6,7 @@ fn main() {
         Ok(v) => {
             println!("cargo:rustc-cfg=integration_test");
             for c in v.split(",") {
-                println!("cargo:rustc-cfg={}", c);
+                println!("cargo:rustc-cfg=test_{}", c);
             }
         },
         Err(_) => {},

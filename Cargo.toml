@@ -60,7 +60,7 @@ hdpath = { version = "0.7", features = ["with-bitcoin"] }
 #hdpath = { git = "https://github.com/emeraldpay/hdpath-rs", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
 bitcoin_hashes = "0.16"
-#emerald-hwkey = { path = "../emerald-hwkey" } q
+#emerald-hwkey = { path = "../emerald-hwkey" }
 emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
 #emerald-hwkey = "0.6"
 num-bigint = "0.4"
@@ -82,3 +82,6 @@ hwkey-emulate = ["emerald-hwkey/speculos"]
 [[bench]]
 name = "bench_crypto"
 harness = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(integration_test, test_ledger, test_speculos)'] }
