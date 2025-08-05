@@ -7,14 +7,14 @@
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use chrono::{DateTime, Duration, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, Utc};
 use emerald_hwkey::ledger::connect::LedgerKeyShared;
 use itertools::Itertools;
 use uuid::Uuid;
 use emerald_hwkey::ledger::connect::LedgerKey;
 use crate::chains::Blockchain;
 use crate::storage::vault::{VaultAccess};
-use crate::structs::seed::{HDPathFingerprint, Seed, WithFingerprint};
+use crate::structs::seed::{Seed, WithFingerprint};
 use crate::crypto::fingerprint::Fingerprints;
 
 const RECHECK_TIME_MS: u64 = 500;
@@ -130,7 +130,7 @@ struct CurrentSeeds {
 impl CurrentSeeds {
     fn create(seeds: Arc<Mutex<dyn VaultAccess<Seed> + Send>>) -> CurrentSeeds {
         CurrentSeeds {
-            last_refresh: DateTime::from_utc(NaiveDateTime::from_timestamp(0, 0), Utc),
+            last_refresh: DateTime::from_timestamp(0, 0).unwrap(),
             cache: vec![],
             seeds,
         }
@@ -382,11 +382,15 @@ impl WatchLoop {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(test_ledger)]
     use std::io::stdin;
+    #[cfg(test_ledger)]
     use tempdir::TempDir;
-    use crate::chains::Blockchain;
+    #[cfg(test_ledger)]
     use crate::storage::vault::VaultStorage;
+    #[cfg(test_ledger)]
     use crate::storage::watch::Request;
+    #[cfg(test_ledger)]
     use crate::tests::init_tests;
 
     #[test]

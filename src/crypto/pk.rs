@@ -9,7 +9,7 @@ use crate::{
 use chrono::Utc;
 use std::convert::TryFrom;
 use uuid::Uuid;
-use crate::structs::crypto::{GlobalKey, GlobalKeyRef};
+use crate::structs::crypto::GlobalKey;
 
 impl PrivateKeyHolder {
     pub fn create_ethereum_v3(pk3: EthereumPk3) -> PrivateKeyHolder {

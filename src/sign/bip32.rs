@@ -52,7 +52,6 @@ mod test {
     use super::*;
     use crate::blockchain::{
         EthereumPrivateKey,
-        PRIVATE_KEY_BYTES,
         EthereumAddress,
     };
     use hdpath::{Purpose, StandardHDPath};

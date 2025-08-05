@@ -92,7 +92,7 @@ impl EthereumBasicSignature {
     ///
     pub fn extract_signer(&self, msg: &dyn SignableHash) -> Result<EthereumAddress, VaultError> {
         let hash = msg.hash()?;
-        let msg = Message::from_slice(&hash)?;
+        let msg = Message::from_digest_slice(&hash)?;
         let sig = RecoverableSignature::try_from(self)?;
         let pk = ECDSA.recover_ecdsa(&msg, &sig)?;
         Ok(EthereumAddress::from(pk))
@@ -161,7 +161,7 @@ pub trait EthereumSignature {
 
 
 impl EthereumSignature for EthereumBasicSignature {
-    fn append_to_rlp(&self, chain_id: EthereumChainId, rlp: &mut RlpStream) {
+    fn append_to_rlp(&self, _chain_id: EthereumChainId, rlp: &mut RlpStream) {
         rlp.append(&self.v);
         rlp.append(&trim_bytes(&self.r[..]));
         rlp.append(&trim_bytes(&self.s[..]));
@@ -254,7 +254,7 @@ impl EthereumPrivateKey {
 
     /// Sign hash from message (Keccak-256)
     pub fn sign_hash<S>(&self, hash: [u8; KECCAK256_BYTES]) -> Result<S, VaultError> where S: SignatureMaker<S> {
-        let msg = Message::from_slice(&hash)?;
+        let msg = Message::from_digest_slice(&hash)?;
         let key = SecretKey::from_slice(self)?;
 
         S::sign(msg, key)
@@ -489,7 +489,7 @@ mod tests {
         );
         let hash = to_32bytes("57c3588c6ef4be66e68464a5364cef58fe154f57b2ff8d8d89909ac10cd0527b");
         let sig = EthereumEIP2930Signature::sign(
-            Message::from_slice(hash.as_ref()).unwrap(), SecretKey::from_slice(key.as_ref()).unwrap()
+            Message::from_digest_slice(hash.as_ref()).unwrap(), SecretKey::from_slice(key.as_ref()).unwrap()
         );
         assert!(sig.is_ok());
         let sig = sig.unwrap();
@@ -505,7 +505,7 @@ mod tests {
         );
         let hash = to_32bytes("aef1156bbd124793e5d76bdf9fe9464e9ef79f2432abbaf0385e57e8ae8e8d5c");
         let sig = EthereumEIP2930Signature::sign(
-            Message::from_slice(hash.as_ref()).unwrap(), SecretKey::from_slice(key.as_ref()).unwrap()
+            Message::from_digest_slice(hash.as_ref()).unwrap(), SecretKey::from_slice(key.as_ref()).unwrap()
         );
         assert!(sig.is_ok());
         let sig = sig.unwrap();
@@ -521,7 +521,7 @@ mod tests {
         );
         let hash = to_32bytes("68fe011ba5be4a03369d51810e7943abab15fbaf757f9296711558aee8ab772b");
         let sig = EthereumEIP2930Signature::sign(
-            Message::from_slice(hash.as_ref()).unwrap(), SecretKey::from_slice(key.as_ref()).unwrap()
+            Message::from_digest_slice(hash.as_ref()).unwrap(), SecretKey::from_slice(key.as_ref()).unwrap()
         );
         assert!(sig.is_ok());
         let sig = sig.unwrap();

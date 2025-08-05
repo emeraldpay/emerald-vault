@@ -1,5 +1,8 @@
 use crate::structs::seed::Seed;
+
+#[cfg(test)]
 use chrono::Utc;
+#[cfg(test)]
 use uuid::Uuid;
 
 impl Seed {

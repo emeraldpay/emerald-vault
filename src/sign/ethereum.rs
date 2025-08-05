@@ -222,7 +222,6 @@ mod tests {
     use chrono::Utc;
     use hdpath::StandardHDPath;
     use std::{convert::TryFrom, str::FromStr};
-    use std::sync::{Arc, Mutex};
     use num::Num;
     use num_bigint::BigUint;
     use tempdir::TempDir;
@@ -230,8 +229,6 @@ mod tests {
     use crate::chains::EthereumChainId;
     use crate::mnemonic::{Language, Mnemonic};
     use crate::sign::ethereum::SignMessage;
-    use crate::structs::seed::LedgerSource;
-    use crate::tests::{read_test_txes};
 
     #[test]
     fn sign_erc20_approve() {

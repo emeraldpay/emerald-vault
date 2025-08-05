@@ -27,10 +27,11 @@ use std::{
     cmp::Ordering,
     convert::{TryFrom, TryInto},
     fs,
-    fs::{File, OpenOptions},
+    fs::File,
     path::{Path, PathBuf},
 };
 use uuid::Uuid;
+use base64::Engine;
 use crate::storage::archive::Archive;
 
 const FORMAT: &str = "bookmark/base64";
@@ -81,7 +82,7 @@ impl TryFrom<CsvRecord> for AddressBookmark {
         if FORMAT != value.format {
             return Err(ConversionError::InvalidFieldValue("format".to_string()));
         }
-        let data = base64::decode(&value.data)
+        let data = base64::engine::general_purpose::STANDARD.decode(&value.data)
             .map_err(|_| ConversionError::InvalidFieldValue("data".to_string()))?;
         let details = BookmarkDetails::try_from(data)?;
         let result = AddressBookmark { id, details };
@@ -194,7 +195,7 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
                             CsvRecord {
                                 id: item.id.to_string(),
                                 format: FORMAT.to_string(),
-                                data: base64::encode(&data),
+                                data: base64::engine::general_purpose::STANDARD.encode(&data),
                             },
                         )?;
                     }
@@ -226,7 +227,7 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
         panic!("Address Book is deprecated. Can be used only to migrate data from it")
     }
 
-    fn update_multiple(&self, entry: AddressBookmark, archive: &Archive) -> Result<bool, VaultError> {
+    fn update_multiple(&self, entry: AddressBookmark, _archive: &Archive) -> Result<bool, VaultError> {
         self.update(entry)
     }
 }
@@ -236,15 +237,12 @@ mod tests {
     use crate::{
         blockchain::chains::Blockchain,
         storage::{
-            addressbook::{AddressBookmark, AddressbookStorage},
+            addressbook::AddressbookStorage,
             vault::VaultAccess,
         },
         structs::book::{AddressRef, BookmarkDetails},
-        EthereumAddress,
     };
-    use chrono::Utc;
-    use std::{fs, path::Path, str::FromStr};
-    use tempdir::TempDir;
+    use std::str::FromStr;
     use uuid::Uuid;
 
     fn extract_address_str(details: &BookmarkDetails) -> Option<String> {
@@ -252,14 +250,6 @@ mod tests {
             AddressRef::EthereumAddress(s) => Some(s.to_string()),
             _ => panic!("not implemented for ext"),
         }
-    }
-
-    fn dump_file<P>(path: P)
-    where
-        P: AsRef<Path>,
-    {
-        let f = fs::read(path.as_ref()).expect("read csv");
-        println!("{}", String::from_utf8(f).expect("Non UTF8 content"));
     }
 
     // ----

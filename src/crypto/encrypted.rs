@@ -100,11 +100,19 @@ impl Encrypted {
         Encrypted::encrypt(msg, global_password, Some(global))
     }
 
-    /*
-    For backward compatibility with ethereum keys provided as JSON. Such files are supposed to use Scrypt or PBKDF2 KDF
-     */
-    #[deprecated] // need to just decrypt them and import as normal
-    pub fn encrypt_ethereum(msg: Vec<u8>, password: &[u8]) -> Result<Encrypted, CryptoError> {
+    /// Creates an `Encrypted` instance from data using Ethereum JSON keystore format.
+    /// 
+    /// This method is specifically designed for compatibility with Ethereum keystore files,
+    /// which use Scrypt KDF and AES-128-CTR encryption with web3-style MAC computation.
+    /// It creates an encrypted instance that matches the format used by Ethereum wallets.
+    ///
+    /// # Parameters
+    /// * `msg` - The raw data to encrypt (typically a private key)
+    /// * `password` - The password to use for encryption
+    ///
+    /// # Returns
+    /// An `Encrypted` instance using Ethereum-compatible encryption format
+    pub fn from_encrypted_ethereum(msg: Vec<u8>, password: &[u8]) -> Result<Encrypted, CryptoError> {
         // for security reasons shouldn't allow empty passwords
         if password.len() == 0 {
             return Err(CryptoError::InvalidKey);

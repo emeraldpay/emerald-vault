@@ -212,7 +212,7 @@ mod tests {
         assert_eq!(0, all.len());
 
         let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
-        seed.created_at = Utc.timestamp_millis(0);
+        seed.created_at = Utc.timestamp_millis_opt(0).unwrap();
         let id = seed.get_id();
         vault.seeds().add(seed.clone()).unwrap();
 
@@ -349,7 +349,7 @@ mod tests {
         assert_eq!(0, all.len());
 
         let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
-        seed.created_at = Utc.timestamp_millis(0);
+        seed.created_at = Utc.timestamp_millis_opt(0).unwrap();
         let id = seed.get_id();
         vault.seeds().add(seed.clone()).unwrap();
 

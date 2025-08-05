@@ -24,7 +24,7 @@ impl KeyDerive for Pbkdf2 {
                 pbkdf2::<Hmac<Sha512>>(password, &self.salt, self.c, &mut key)
             }
         };
-        is_derived.map_err(|e| CryptoError::CryptoFailed("Invalid Length".to_string()))?;
+        is_derived.map_err(|_e| CryptoError::CryptoFailed("Invalid Length".to_string()))?;
         Ok(key.to_vec())
     }
 }

@@ -359,7 +359,7 @@ impl EthereumJsonV3File {
         pk: EthereumPrivateKey,
         password: String,
     ) -> Result<EthereumJsonV3File, CryptoError> {
-        let encrypted = Encrypted::encrypt_ethereum(pk.to_vec(), password.as_bytes())?;
+        let encrypted = Encrypted::from_encrypted_ethereum(pk.to_vec(), password.as_bytes())?;
         let crypto = CoreCryptoJson::try_from(&encrypted)
             .map_err(|_| CryptoError::UnsupportedSource("encrypted format".to_string()))?;
         let result = EthereumJsonV3File {

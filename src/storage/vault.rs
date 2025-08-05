@@ -9,7 +9,6 @@ use crate::{
     },
     error::VaultError,
     structs::{
-        book::AddressRef,
         pk::PrivateKeyHolder,
         seed::Seed,
         types::HasUuid,
@@ -383,10 +382,12 @@ pub(crate) fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(
 
 pub struct CreateWallet {
     storage: Arc<VaultStorage>,
+    #[allow(dead_code)]
     keys: Arc<dyn VaultAccessByFile<PrivateKeyHolder>>,
     wallets: Arc<dyn VaultAccessByFile<Wallet>>,
     #[allow(dead_code)]
     seeds: Arc<dyn VaultAccessByFile<Seed>>,
+    #[allow(dead_code)]
     global: Option<GlobalKey>,
 }
 
@@ -676,7 +677,7 @@ mod tests {
         assert_eq!(0, all.len());
 
         let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
-        seed.created_at = Utc.timestamp_millis(0);
+        seed.created_at = Utc.timestamp_millis_opt(0).unwrap();
         let id = seed.get_id();
         let added = vault.seeds.add(seed.clone());
         assert!(added.is_ok());
@@ -693,7 +694,7 @@ mod tests {
         let vault = VaultStorage::create(tmp_dir.path()).unwrap();
 
         let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
-        seed.created_at = Utc.timestamp_millis(0);
+        seed.created_at = Utc.timestamp_millis_opt(0).unwrap();
         let id = seed.get_id();
         let added = vault.seeds.add(seed.clone());
         assert!(added.is_ok());
@@ -718,23 +719,23 @@ mod tests {
         let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.id = Uuid::parse_str("13052693-c51c-4e8b-91b3-564d3cb78fb4").unwrap();
         // 2 jan 2020
-        seed.created_at = Utc.timestamp_millis(1577962800000);
+        seed.created_at = Utc.timestamp_millis_opt(1577962800000).unwrap();
         vault.seeds.add(seed.clone()).unwrap();
 
         let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.id = Uuid::parse_str("5e47360d-3dc2-4b39-b399-75fbdd4ac020").unwrap();
-        seed.created_at = Utc.timestamp_millis(0);
+        seed.created_at = Utc.timestamp_millis_opt(0).unwrap();
         vault.seeds.add(seed.clone()).unwrap();
 
         let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.id = Uuid::parse_str("36805dff-a6e0-434d-be7d-5ef7931522d0").unwrap();
         // 1 jan 2020
-        seed.created_at = Utc.timestamp_millis(1577876400000);
+        seed.created_at = Utc.timestamp_millis_opt(1577876400000).unwrap();
         vault.seeds.add(seed.clone()).unwrap();
 
         let mut seed = Seed::test_generate(None, "testtest".as_bytes(), None).unwrap();
         seed.id = Uuid::parse_str("067e14c4-85de-421e-9957-48a1cdef42ae").unwrap();
-        seed.created_at = Utc.timestamp_millis(0);
+        seed.created_at = Utc.timestamp_millis_opt(0).unwrap();
         vault.seeds.add(seed.clone()).unwrap();
 
         //first comes items without date
@@ -771,7 +772,7 @@ mod tests {
             .add(Wallet {
                 id: Uuid::parse_str("13052693-c51c-4e8b-91b3-564d3cb78fb4").unwrap(),
                 // 2 jan 2020
-                created_at: Utc.timestamp_millis(1577962800000),
+                created_at: Utc.timestamp_millis_opt(1577962800000).unwrap(),
                 ..Wallet::default()
             })
             .unwrap();
@@ -779,7 +780,7 @@ mod tests {
             .wallets
             .add(Wallet {
                 id: Uuid::parse_str("5e47360d-3dc2-4b39-b399-75fbdd4ac020").unwrap(),
-                created_at: Utc.timestamp_millis(0),
+                created_at: Utc.timestamp_millis_opt(0).unwrap(),
                 ..Wallet::default()
             })
             .unwrap();
@@ -788,7 +789,7 @@ mod tests {
             .add(Wallet {
                 id: Uuid::parse_str("36805dff-a6e0-434d-be7d-5ef7931522d0").unwrap(),
                 // 1 jan 2020
-                created_at: Utc.timestamp_millis(1577876400000),
+                created_at: Utc.timestamp_millis_opt(1577876400000).unwrap(),
                 ..Wallet::default()
             })
             .unwrap();
@@ -796,7 +797,7 @@ mod tests {
             .wallets
             .add(Wallet {
                 id: Uuid::parse_str("067e14c4-85de-421e-9957-48a1cdef42ae").unwrap(),
-                created_at: Utc.timestamp_millis(0),
+                created_at: Utc.timestamp_millis_opt(0).unwrap(),
                 ..Wallet::default()
             })
             .unwrap();

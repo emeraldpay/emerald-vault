@@ -41,6 +41,7 @@ const INDEX_BIT_SIZE: u32 = 11;
 /// Mnemonic phrase
 #[derive(Debug, Clone)]
 pub struct Mnemonic {
+    #[allow(dead_code)]
     language: Language,
     words: Vec<String>,
 }
@@ -238,7 +239,7 @@ impl Mnemonic {
         };
 
         let mut result = vec![0u8; 64];
-        pbkdf2::<Hmac<Sha512>>(
+        let _ = pbkdf2::<Hmac<Sha512>>(
             // password
             &self.sentence().as_str().as_bytes(),
             // salt
@@ -286,7 +287,7 @@ impl Mnemonic {
 /// * `byte_length` - size of entropy in bytes
 ///
 pub fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
-    let mut rng = OsRng::default();
+    let rng = OsRng::default();
     let bytes = rng.sample_iter(&Standard).take(byte_length).collect();
 
     Ok(bytes)

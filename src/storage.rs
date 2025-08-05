@@ -54,15 +54,14 @@ pub mod icons;
 mod files;
 pub mod watch;
 
-use std::{
-    env,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
+use home;
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
 #[derive(Debug, Clone)]
 pub struct Storages {
     /// base dir
+    #[allow(dead_code)]
     base_dir: PathBuf,
 }
 
@@ -74,7 +73,7 @@ pub struct Storages {
     not(target_os = "android")
 ))]
 pub fn default_path() -> PathBuf {
-    let mut config_dir = env::home_dir().expect("Expect path to home dir");
+    let mut config_dir = home::home_dir().expect("Expect path to home dir");
     config_dir.push(".emerald");
     config_dir.push("vault");
     config_dir
@@ -83,7 +82,7 @@ pub fn default_path() -> PathBuf {
 /// Default path (Mac OS X)
 #[cfg(target_os = "macos")]
 pub fn default_path() -> PathBuf {
-    let mut config_dir = env::home_dir().expect("Expect path to home dir");
+    let mut config_dir = home::home_dir().expect("Expect path to home dir");
     config_dir.push("Library");
     config_dir.push("Emerald");
     config_dir.push("vault");

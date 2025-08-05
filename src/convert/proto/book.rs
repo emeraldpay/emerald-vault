@@ -9,7 +9,7 @@ use crate::{
     util::none_if_empty,
 };
 use chrono::{TimeZone, Utc};
-use protobuf::{parse_from_bytes, Message};
+use protobuf::Message;
 use std::{convert::TryFrom};
 use std::convert::TryInto;
 
@@ -18,7 +18,7 @@ impl TryFrom<&[u8]> for BookmarkDetails {
     type Error = ConversionError;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        let m = parse_from_bytes::<proto_BookItem>(value)?;
+        let m = proto_BookItem::parse_from_bytes(value)?;
         let address = match &m.address.clone().into_option() {
             Some(address) => address.try_into()?,
             None => None,
@@ -35,7 +35,7 @@ impl TryFrom<&[u8]> for BookmarkDetails {
         let created_at = Utc
             .timestamp_millis_opt(m.get_created_at() as i64)
             .single()
-            .unwrap_or_else(|| Utc.timestamp_millis(0));
+            .unwrap_or_else(|| Utc.timestamp_millis_opt(0).unwrap());
         let result = BookmarkDetails {
             blockchain,
             label: none_if_empty(m.get_label()),
@@ -86,7 +86,7 @@ mod tests {
         EthereumAddress,
     };
     use chrono::{TimeZone, Utc};
-    use protobuf::{parse_from_bytes, Message};
+    use protobuf::Message;
     use std::{
         convert::{TryFrom, TryInto},
         str::FromStr,
@@ -102,12 +102,12 @@ mod tests {
             address: AddressRef::EthereumAddress(
                 EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
             ),
-            created_at: Utc.timestamp_millis(1592624592679),
+            created_at: Utc.timestamp_millis_opt(1592624592679).unwrap(),
         };
 
         let b: Vec<u8> = item.try_into().unwrap();
         assert!(b.len() > 0);
-        let act = parse_from_bytes::<proto_BootItem>(b.as_slice()).unwrap();
+        let act = proto_BootItem::parse_from_bytes(b.as_slice()).unwrap();
         assert_eq!(act.label, "Hello".to_string());
         assert!(act.has_address());
         assert_eq!(
@@ -126,7 +126,7 @@ mod tests {
             address: AddressRef::EthereumAddress(
                 EthereumAddress::from_str("0x6412c428fc02902d137b60dc0bd0f6cd1255ea99").unwrap(),
             ),
-            created_at: Utc.timestamp_millis(1592624592679),
+            created_at: Utc.timestamp_millis_opt(1592624592679).unwrap(),
         };
 
         let b: Vec<u8> = item.clone().try_into().unwrap();
@@ -144,7 +144,7 @@ mod tests {
             address: AddressRef::ExtendedPub(
                 XPub::from_str("zpub6tMBbzkLBxnSw8VSGXrnyBSY3r2j4KJRrxrMWm1pskuhbCnKS8R5SuHGjakEvf6efbqsM1NoPMxXZrPmQWTV7ZXZuK9dZcbEzkftLBDJHKj").unwrap(),
             ),
-            created_at: Utc.timestamp_millis(1592624592679),
+            created_at: Utc.timestamp_millis_opt(1592624592679).unwrap(),
         };
 
         let b: Vec<u8> = item.clone().try_into().unwrap();

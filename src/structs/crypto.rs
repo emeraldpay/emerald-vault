@@ -120,13 +120,13 @@ impl IsVerified for ScryptKdf {
         if self.dklen != 32 {
             return Err("dklen has invalid value".to_string());
         }
-        if self.p <= 0 {
+        if self.p == 0 {
             return Err("p is too small".to_string());
         }
-        if self.n <= 0 {
+        if self.n == 0 {
             return Err("n is too small".to_string());
         }
-        if self.r <= 0 {
+        if self.r == 0 {
             return Err("r is too small".to_string());
         }
         Ok(self)
@@ -136,6 +136,7 @@ impl IsVerified for ScryptKdf {
 impl GlobalKeyRef {
     ///
     /// Build Global Kye Ref with provided `nonce`
+    #[allow(dead_code)]
     pub(crate) fn create(nonce: Vec<u8>) -> Result<GlobalKeyRef, VaultError> {
         let nonce = nonce.try_into()
             .map_err(|_| VaultError::UnsupportedDataError("nonce size".to_string()))?;

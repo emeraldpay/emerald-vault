@@ -16,7 +16,7 @@ use crate::{
     },
 };
 use chrono::{TimeZone, Utc};
-use protobuf::{parse_from_bytes, Message};
+use protobuf::Message;
 use std::{convert::TryFrom, str::FromStr};
 use uuid::Uuid;
 
@@ -24,7 +24,7 @@ use uuid::Uuid;
 impl TryFrom<&[u8]> for PrivateKeyHolder {
     type Error = ConversionError;
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
-        let m = parse_from_bytes::<proto_PrivateKey>(data)?;
+        let m = proto_PrivateKey::parse_from_bytes(data)?;
         if m.has_ethereum() {
             let pk = m.get_ethereum();
             if pk.has_pk() {
@@ -42,7 +42,7 @@ impl TryFrom<&[u8]> for PrivateKeyHolder {
                 let created_at = Utc
                     .timestamp_millis_opt(m.get_created_at() as i64)
                     .single()
-                    .unwrap_or_else(|| Utc.timestamp_millis(0));
+                    .unwrap_or_else(|| Utc.timestamp_millis_opt(0).unwrap());
                 let result = PrivateKeyHolder {
                     id: Uuid::from_slice(m.get_id())
                         .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
@@ -100,7 +100,7 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
 mod tests {
     use crate::{proto::pk::PrivateKey as proto_PrivateKey, structs::pk::PrivateKeyHolder};
     use chrono::{TimeZone, Utc};
-    use protobuf::{parse_from_bytes, Message, ProtobufEnum};
+    use protobuf::{Message, ProtobufEnum};
     use std::{
         convert::{TryFrom, TryInto},
         str::FromStr,
@@ -111,11 +111,11 @@ mod tests {
     fn write_as_protobuf() {
         let mut pk = PrivateKeyHolder::generate_ethereum_raw("test").unwrap();
         pk.id = Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap();
-        pk.created_at = Utc.timestamp_millis(1592624592679);
+        pk.created_at = Utc.timestamp_millis_opt(1592624592679).unwrap();
 
         let b: Vec<u8> = pk.try_into().unwrap();
         assert!(b.len() > 0);
-        let act = parse_from_bytes::<proto_PrivateKey>(b.as_slice()).unwrap();
+        let act = proto_PrivateKey::parse_from_bytes(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 2);
         assert_eq!(
             Uuid::from_slice(act.get_id()).unwrap(),
@@ -129,21 +129,21 @@ mod tests {
     fn write_and_read() {
         let mut pk = PrivateKeyHolder::generate_ethereum_raw("test").unwrap();
         pk.id = Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap();
-        pk.created_at = Utc.timestamp_millis(1592624592679);
+        pk.created_at = Utc.timestamp_millis_opt(1592624592679).unwrap();
 
         let b: Vec<u8> = pk.try_into().unwrap();
         assert!(b.len() > 0);
         let act = PrivateKeyHolder::try_from(b).unwrap();
         assert_eq!(act.id.to_string(), "18ba0447-81f3-40d7-bab1-e74de07a1001");
         assert!(act.decrypt("test".as_bytes(), None).is_ok());
-        assert_eq!(act.created_at, Utc.timestamp_millis(1592624592679));
+        assert_eq!(act.created_at, Utc.timestamp_millis_opt(1592624592679).unwrap());
     }
 
     #[test]
     fn ignore_big_created_at() {
         let pk = PrivateKeyHolder::generate_ethereum_raw("test").unwrap();
         let tmp: Vec<u8> = pk.try_into().unwrap();
-        let mut m = parse_from_bytes::<proto_PrivateKey>(tmp.as_slice()).unwrap();
+        let mut m = proto_PrivateKey::parse_from_bytes(tmp.as_slice()).unwrap();
         m.set_created_at((i64::MAX as u64) + 100);
 
         let buf = m.write_to_bytes().unwrap();

@@ -19,7 +19,7 @@ use crate::{
 };
 use chrono::{TimeZone, Utc};
 use hdpath::{Purpose, StandardHDPath};
-use protobuf::{parse_from_bytes, Message};
+use protobuf::Message;
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 
@@ -104,7 +104,7 @@ impl TryFrom<LedgerSource> for proto_LedgerSeed {
 impl TryFrom<&[u8]> for Seed {
     type Error = ConversionError;
     fn try_from(data: &[u8]) -> Result<Self, Self::Error> {
-        let m = parse_from_bytes::<proto_Seed>(data)?;
+        let m = proto_Seed::parse_from_bytes(data)?;
         let source = match &m.seed_source {
             Some(source) => match source {
                 proto_SeedType::bytes(e) => SeedSource::Bytes(Encrypted::try_from(e)?),
@@ -117,7 +117,7 @@ impl TryFrom<&[u8]> for Seed {
         let created_at = Utc
             .timestamp_millis_opt(m.get_created_at() as i64)
             .single()
-            .unwrap_or_else(|| Utc.timestamp_millis(0));
+            .unwrap_or_else(|| Utc.timestamp_millis_opt(0).unwrap());
         let result = Seed {
             id: Uuid::from_slice(m.get_id())
                 .map_err(|_| ConversionError::InvalidFieldValue("id".to_string()))?,
@@ -165,12 +165,12 @@ mod tests {
         EthereumAddress,
         proto::seed::{LedgerSeed as proto_LedgerSeed, Seed as proto_Seed},
         structs::{
-            crypto::{GlobalKey, GlobalKeyRef, Encrypted},
+            crypto::{GlobalKey, Encrypted},
             seed::{LedgerSource, Seed, SeedSource, FingerprintType, Bytes256, HDPathFingerprint},
         }
     };
     use chrono::{TimeZone, Utc};
-    use protobuf::{parse_from_bytes, Message, ProtobufEnum};
+    use protobuf::{Message, ProtobufEnum};
     use std::{
         convert::{TryFrom, TryInto},
         str::FromStr,
@@ -184,12 +184,12 @@ mod tests {
             id: Uuid::from_str("18ba0447-81f3-40d7-bab1-e74de07a1001").unwrap(),
             source: SeedSource::Bytes(Encrypted::encrypt(b"test".to_vec(), "test".as_bytes(), None).unwrap()),
             label: None,
-            created_at: Utc.timestamp_millis(1592624592679),
+            created_at: Utc.timestamp_millis_opt(1592624592679).unwrap(),
         };
 
         let b: Vec<u8> = seed.clone().try_into().unwrap();
         assert!(b.len() > 0);
-        let act = parse_from_bytes::<proto_Seed>(b.as_slice()).unwrap();
+        let act = proto_Seed::parse_from_bytes(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 3);
         assert_eq!(
             Uuid::from_slice(act.get_id()).unwrap(),
@@ -349,12 +349,12 @@ mod tests {
                 ..LedgerSource::default()
             }),
             label: Some("Hello World!".to_string()),
-            created_at: Utc.timestamp_millis(1592624592679),
+            created_at: Utc.timestamp_millis_opt(1592624592679).unwrap(),
         };
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 
-        assert_eq!(seed_act.created_at, Utc.timestamp_millis(1592624592679));
+        assert_eq!(seed_act.created_at, Utc.timestamp_millis_opt(1592624592679).unwrap());
     }
 
     #[test]

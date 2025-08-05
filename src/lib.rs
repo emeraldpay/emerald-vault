@@ -87,19 +87,6 @@ mod tests {
     pub use regex::Regex;
     use std::{fs, fs::DirEntry, path::{Path, PathBuf}};
 
-    #[derive(Deserialize)]
-    pub struct TestAddress {
-        pub hdpath: String,
-        pub address: String,
-    }
-
-    #[derive(Deserialize)]
-    pub struct TestTx {
-        pub id: String,
-        pub description: Option<String>,
-        pub from: Option<String>,
-        pub raw: String,
-    }
 
     #[allow(dead_code)]
     pub fn init_tests() {
@@ -120,17 +107,4 @@ mod tests {
         Some(arch_dir.path())
     }
 
-    pub fn read_test_addresses() -> Vec<TestAddress> {
-        let json = fs::read_to_string("./tests/hdwallet/address.json")
-            .expect("./tests/hdwallet/address.json is not available");
-        let result: Vec<TestAddress> = serde_json::from_str(json.as_str()).expect("Invalid JSON");
-        result
-    }
-
-    pub fn read_test_txes() -> Vec<TestTx> {
-        let json = fs::read_to_string("./tests/hdwallet/tx.json")
-            .expect("./tests/hdwallet/tx.json is not available");
-        let result: Vec<TestTx> = serde_json::from_str(json.as_str()).expect("Invalid JSON");
-        result
-    }
 }

@@ -1,7 +1,7 @@
 use chrono::{DateTime, TimeZone, Utc};
 
 lazy_static! {
-    pub static ref ZERO_TS: DateTime<Utc> = Utc.timestamp_millis(100);
+    pub static ref ZERO_TS: DateTime<Utc> = Utc.timestamp_millis_opt(100).unwrap();
 }
 
 #[macro_export]
@@ -46,14 +46,13 @@ mod tests {
 
     #[test]
     fn ord_by_date() {
-        chrono::TimeZone::timestamp_millis(&Utc, 0);
         let value1 = TestData {
             id: Default::default(),
-            created_at: Utc.timestamp_millis(100),
+            created_at: Utc.timestamp_millis_opt(100).unwrap(),
         };
         let value2 = TestData {
             id: Default::default(),
-            created_at: Utc.timestamp_millis(200),
+            created_at: Utc.timestamp_millis_opt(200).unwrap(),
         };
 
         assert_eq!(value1.cmp(&value2), Ordering::Less);
@@ -64,11 +63,11 @@ mod tests {
     fn ord_greater_with_date() {
         let value1 = TestData {
             id: Default::default(),
-            created_at: Utc.timestamp_millis(0),
+            created_at: Utc.timestamp_millis_opt(0).unwrap(),
         };
         let value2 = TestData {
             id: Default::default(),
-            created_at: Utc.timestamp_millis(200),
+            created_at: Utc.timestamp_millis_opt(200).unwrap(),
         };
 
         assert_eq!(value1.cmp(&value2), Ordering::Less);
@@ -79,11 +78,11 @@ mod tests {
     fn ord_same_date_by_id() {
         let value1 = TestData {
             id: Uuid::parse_str("46805dff-a6e0-434d-be7d-5ef7931522d0").unwrap(),
-            created_at: Utc.timestamp_millis(0),
+            created_at: Utc.timestamp_millis_opt(0).unwrap(),
         };
         let value2 = TestData {
             id: Uuid::parse_str("36805dff-a6e0-434d-be7d-5ef7931522d0").unwrap(),
-            created_at: Utc.timestamp_millis(200),
+            created_at: Utc.timestamp_millis_opt(200).unwrap(),
         };
 
         assert_eq!(value1.cmp(&value2), Ordering::Less);

@@ -187,7 +187,6 @@ pub fn to_32bytes(hex: &str) -> [u8; 32] {
 }
 
 #[cfg(test)]
-pub use self::tests::*;
 
 #[cfg(test)]
 mod tests {
