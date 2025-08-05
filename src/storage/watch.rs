@@ -7,14 +7,14 @@
 use std::sync::{Arc, mpsc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{DateTime, Duration, NaiveDateTime, TimeZone, Utc};
 use emerald_hwkey::ledger::connect::LedgerKeyShared;
 use itertools::Itertools;
 use uuid::Uuid;
 use emerald_hwkey::ledger::connect::LedgerKey;
 use crate::chains::Blockchain;
 use crate::storage::vault::{VaultAccess};
-use crate::structs::seed::{Seed, WithFingerprint};
+use crate::structs::seed::{HDPathFingerprint, Seed, WithFingerprint};
 use crate::crypto::fingerprint::Fingerprints;
 
 const RECHECK_TIME_MS: u64 = 500;
@@ -69,6 +69,18 @@ pub struct ConnectedDevice {
     pub device: Option<DeviceDetails>,
 }
 
+///
+/// Currently known ID for a seed.
+/// Since the ID is extracted from the currently running Ledger app, we have to recheck it periodically and recheck on each new Ledger app launched.
+/// This struct is used to keep the last known ID with information needed to revalidate it.
+struct KnownId {
+    id: Uuid,
+    /// App that was used to get the fingerprint
+    app_name: String,
+    /// The time when the fingerprint was last checked
+    last_checked: DateTime<Utc>,
+}
+
 pub struct WatchLoop {
     /// Current list of watch requests that a wating for an event.
     requests: Vec<(Request, Sender<Event>)>,
@@ -82,6 +94,9 @@ pub struct WatchLoop {
     /// INTERNAL: a default ID for ledger. TODO map to a figerprint
     default_id: Uuid,
     seeds: Mutex<CurrentSeeds>,
+
+    /// Last known seed ID for the Ledger app.
+    seed_id: Option<KnownId>
 }
 
 impl  WatchLoop {
@@ -92,7 +107,8 @@ impl  WatchLoop {
             version: 0,
             launched: false,
             default_id: Uuid::new_v4(),
-            seeds: Mutex::new(CurrentSeeds::create(seeds))
+            seeds: Mutex::new(CurrentSeeds::create(seeds)),
+            seed_id: None,
         }
     }
 }
@@ -103,7 +119,7 @@ pub(crate) struct Watch {
 
 ///
 /// A memory cache for current seeds to avoid reloading them in loop each time we verify a device.
-/// Insteaf of reloading Seeds from disk each time we keep them in memory for up to a minute.
+/// Instead of reloading Seeds from the disk each time, we keep them in memory for up to a minute.
 #[derive(Clone)]
 struct CurrentSeeds {
     last_refresh: DateTime<Utc>,
@@ -201,7 +217,7 @@ impl WatchLoop {
             if let Err(e) = connected.connect() {
                 warn!("Error connecting to LedgerKey instance: {:?}", e);
             } else {
-                current_devices.push(self.connected_details(&connected));
+                current_devices.push(self.connected_details(&mut connected));
             }
         }
 
@@ -242,11 +258,12 @@ impl WatchLoop {
         self.launched = !self.requests.is_empty();
     }
 
-    fn connected_details<LK: LedgerKey + 'static>(&self, ledger: &LedgerKeyShared<LK>) -> ConnectedDevice {
-
+    fn connected_details<LK: LedgerKey + 'static>(&mut self, ledger: &LedgerKeyShared<LK>) -> ConnectedDevice {
         let blockchains;
         let device;
+        let app_name;
         if let Ok(app) = ledger.get_app_details() {
+            app_name = Some(app.name.clone());
             blockchains = match app.name.as_str() {
                 "Ethereum" => vec![Blockchain::Ethereum],
                 "Ethereum Classic" => vec![Blockchain::EthereumClassic],
@@ -263,16 +280,45 @@ impl WatchLoop {
             };
             device = Some(DeviceDetails::Ledger(ledger_details));
         } else {
+            app_name = None;
             blockchains = vec![];
             device = None;
         };
 
-        let seed_id = self.find_seed_id(ledger);
+        let seed_id = self.cached_seed_id(app_name, ledger);
         ConnectedDevice {
             id: self.default_id, //TODO should be uniq per device, ex. based on device S/N
             seed_id,
             blockchains,
             device,
+        }
+    }
+
+    ///
+    /// Returns the known (and actual) seed ID for the Ledger app, or extract from the device if not known.
+    ///
+    fn cached_seed_id<LK: LedgerKey + 'static>(&mut self, app_name: Option<String>, ledger: &LedgerKeyShared<LK>) -> Option<Uuid> {
+        if let Some(app_name) = app_name {
+            let need_to_check = if let Some(seed_id) = self.seed_id.as_ref() {
+                !seed_id.is_still_actual(&app_name)
+            } else {
+                true
+            };
+
+            if need_to_check {
+                // if we have a seed_id, but it's not actual, we try to find it by fingerprints
+                if let Some(seed_id) = self.find_seed_id(ledger) {
+                    self.seed_id = Some(KnownId::new(seed_id, app_name));
+                }
+            }
+
+            self.seed_id.as_ref().map(|v| v.id.clone())
+        } else if let Some(seed_id) = self.seed_id.as_ref() {
+            // if no app is launched, we still can return the last known seed_id (as it doesn't really matter as we cannot use the device without the app, so it potentially fits any id)
+            return Some(seed_id.id.clone());
+        } else {
+            // no app, no last seen app - no seed id yet
+            None
         }
     }
 
@@ -288,6 +334,27 @@ impl WatchLoop {
             }
         }
         None
+    }
+
+}
+
+impl KnownId {
+
+    pub fn new(id: Uuid, app_name: String) -> KnownId {
+        KnownId {
+            id,
+            app_name,
+            last_checked: Utc::now(),
+        }
+    }
+
+    pub fn is_expired(&self) -> bool {
+        let ttl = self.last_checked + Duration::seconds(60);
+        ttl < Utc::now()
+    }
+
+    pub fn is_still_actual(&self, app_name: &str) -> bool {
+        self.app_name == app_name && !self.is_expired()
     }
 
 }

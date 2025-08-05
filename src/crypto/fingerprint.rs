@@ -83,11 +83,14 @@ impl<LK: LedgerKey + 'static> Fingerprints for LedgerKeyShared<LK> {
             if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/61'/0'/0/0").unwrap()) {
                 source.push(fp)
             }
-        } else if app.starts_with("Bitcoin") {
+        } else if app == "Bitcoin" {
             let app = self.access::<BitcoinApp>()?;
+            // Bitcoin App actually verifies if it's called with the correct Coin Type and requires a confirmation if it's different; so make sure we don't check a Testnet path on Mainnet app
             if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/0'/0'/0/0").unwrap()) {
                 source.push(fp)
             }
+        } else if app == "Bitcoin Test" {
+            let app = self.access::<BitcoinApp>()?;
             if let Some(fp) = read(&app, StandardHDPath::from_str("m/44'/1'/0'/0/0").unwrap()) {
                 source.push(fp)
             }
