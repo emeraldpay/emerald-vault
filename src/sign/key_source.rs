@@ -46,10 +46,10 @@ impl PrivateKeySource {
         match self {
             PrivateKeySource::Base(key) => PrivateKey {
                 compressed: true,
-                network: network.clone(),
+                network: *network,
                 inner: key,
             },
-            PrivateKeySource::Extended(ext) => PrivateKey::new(ext.private_key, network.clone()),
+            PrivateKeySource::Extended(ext) => PrivateKey::new(ext.private_key, *network),
         }
     }
 }
@@ -217,7 +217,7 @@ impl PKType {
     ) -> Result<PrivateKeySource, VaultError> {
         match &self {
             PKType::PrivateKeyRef(pk) => {
-                let key = vault.keys().get(pk.clone())?;
+                let key = vault.keys().get(*pk)?;
                 let key = match password {
                     None => return Err(VaultError::PasswordRequired),
                     Some(password) => key.decrypt(password.as_bytes(), global)?,
@@ -227,7 +227,7 @@ impl PKType {
                 Ok(PrivateKeySource::Base(key))
             }
             PKType::SeedHd(seed) => {
-                let seed_details = vault.seeds().get(seed.seed_id.clone())?;
+                let seed_details = vault.seeds().get(seed.seed_id)?;
                 let hd_path = StandardHDPath::try_from(seed.hd_path.to_string().as_str())?;
                 seed_details.source.get_pk(password, &global, &hd_path)
             }

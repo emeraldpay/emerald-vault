@@ -36,7 +36,7 @@ impl HasUuid for PrivateKeyHolder {
 impl PrivateKeyHolder {
     pub fn generate_id(&mut self) -> Uuid {
         self.id = Uuid::new_v4();
-        self.id.clone()
+        self.id
     }
 
     pub(crate) fn reencrypt(self, password: &[u8], global_password: &[u8], global: GlobalKey) -> Result<Self, CryptoError> {

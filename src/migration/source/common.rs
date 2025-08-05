@@ -18,16 +18,10 @@ use uuid::Uuid;
 
 fn extract_label(kf: &KeyFileV2) -> Option<String> {
     let mut result = String::new();
-    match &kf.name {
-        Some(name) => result.push_str(name.as_str()),
-        None => {}
-    }
+    if let Some(name) = &kf.name { result.push_str(name.as_str()) }
     // kf.name may be None or Some(empty) value, on both cases it makes sense to use address as a name
-    if result.len() == 0 {
-        match kf.address {
-            Some(address) => result.push_str(address.to_string().as_str()),
-            None => {}
-        }
+    if result.is_empty() {
+        if let Some(address) = kf.address { result.push_str(address.to_string().as_str()) }
     }
     match &kf.visible {
         Some(visible) if !visible => {
@@ -70,7 +64,7 @@ pub fn add_to_vault(
             WalletEntry {
                 id: 0,
                 blockchain,
-                address: kf.address.map(|a| AddressRef::EthereumAddress(a)),
+                address: kf.address.map(AddressRef::EthereumAddress),
                 key: PKType::PrivateKeyRef(pk_id),
                 ..WalletEntry::default()
             }
@@ -82,14 +76,11 @@ pub fn add_to_vault(
                 .list_entries()
                 .map_err(|_| "Failed to read list of current Seeds".to_string())?
                 .iter()
-                .find(|s| match s.source {
-                    SeedSource::Ledger(_) => true,
-                    _ => false,
-                })
+                .find(|s| matches!(s.source, SeedSource::Ledger(_)))
                 .cloned();
 
             let seed_id = match &existing {
-                Some(seed) => seed.id.clone(),
+                Some(seed) => seed.id,
                 None => {
                     let fingerprints = vec![];
                     let seed = Seed {
@@ -98,7 +89,7 @@ pub fn add_to_vault(
                         label: None,
                         created_at: Utc::now(),
                     };
-                    let id = seed.id.clone();
+                    let id = seed.id;
                     seeds
                         .add(seed)
                         .map_err(|_| "Failed to add converted Ledger Seed to the Vault")?;
@@ -109,7 +100,7 @@ pub fn add_to_vault(
             WalletEntry {
                 id: 0,
                 blockchain,
-                address: kf.address.map(|a| AddressRef::EthereumAddress(a)),
+                address: kf.address.map(AddressRef::EthereumAddress),
                 key: PKType::SeedHd(SeedRef {
                     seed_id,
                     hd_path: StandardHDPath::try_from(data.hd_path.clone().as_str())

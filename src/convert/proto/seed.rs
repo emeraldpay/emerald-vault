@@ -154,7 +154,7 @@ impl TryFrom<Seed> for Vec<u8> {
             SeedSource::Ledger(s) => m.set_ledger(s.try_into()?),
         }
         m.set_created_at(value.created_at.timestamp_millis() as u64);
-        m.write_to_bytes().map_err(|e| ConversionError::from(e))
+        m.write_to_bytes().map_err(ConversionError::from)
     }
 }
 
@@ -188,7 +188,7 @@ mod tests {
         };
 
         let b: Vec<u8> = seed.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = proto_Seed::parse_from_bytes(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 3);
         assert_eq!(
@@ -208,7 +208,7 @@ mod tests {
             label: None,
             created_at: Utc::now(),
         };
-        let seed_id = seed.id.clone();
+        let seed_id = seed.id;
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 
@@ -235,7 +235,7 @@ mod tests {
             label: None,
             created_at: Utc::now(),
         };
-        let _ = seed.id.clone();
+        let _ = seed.id;
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 
@@ -246,7 +246,7 @@ mod tests {
             Blockchain::Ethereum,
         ).unwrap();
 
-        assert_eq!(addresses.get(0).unwrap().1.to_string(), "0xe8099e65a00286a2cce1c58945ad63e16e5cd6e6");
+        assert_eq!(addresses.first().unwrap().1.to_string(), "0xe8099e65a00286a2cce1c58945ad63e16e5cd6e6");
     }
 
     #[test]
@@ -260,7 +260,7 @@ mod tests {
             label: None,
             created_at: Utc::now(),
         };
-        let seed_id = seed.id.clone();
+        let seed_id = seed.id;
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 
@@ -286,7 +286,7 @@ mod tests {
             label: None,
             created_at: Utc::now(),
         };
-        let seed_id = seed.id.clone();
+        let seed_id = seed.id;
         let buf: Vec<u8> = seed.try_into().unwrap();
         let seed_act = Seed::try_from(buf).unwrap();
 

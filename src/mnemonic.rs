@@ -168,9 +168,9 @@ impl MnemonicSize {
             let mut mask: u8 = 0;
             for _i in 0..self.checksum_length {
                 mask |= 1;
-                mask = mask << 1;
+                mask <<= 1;
             }
-            mask = mask << (8 - self.checksum_length - 1) as u8;
+            mask <<= (8 - self.checksum_length - 1) as u8;
             let bits = full & mask;
             bits >> (8 - self.checksum_length) as u8
         }
@@ -220,7 +220,7 @@ impl Mnemonic {
         for (i, w) in self.words.iter().enumerate() {
             s.push_str(w);
             if i != self.words.len() - 1 {
-                s.push_str(" ");
+                s.push(' ');
             }
         }
         s
@@ -241,7 +241,7 @@ impl Mnemonic {
         let mut result = vec![0u8; 64];
         let _ = pbkdf2::<Hmac<Sha512>>(
             // password
-            &self.sentence().as_str().as_bytes(),
+            self.sentence().as_bytes(),
             // salt
             passphrase.as_bytes(),
             // size
@@ -281,13 +281,13 @@ impl Mnemonic {
 }
 
 /// Generate entropy
-
+///
 /// # Arguments:
 ///
 /// * `byte_length` - size of entropy in bytes
 ///
 pub fn gen_entropy(byte_length: usize) -> Result<Vec<u8>, Error> {
-    let rng = OsRng::default();
+    let rng = OsRng;
     let bytes = rng.sample_iter(&Standard).take(byte_length).collect();
 
     Ok(bytes)
@@ -510,7 +510,7 @@ mod tests {
         let mut indexes = res.unwrap();
         assert_eq!(indexes.len(), 12);
 
-        indexes = indexes.into_iter().filter(|v| *v > 2048).collect();
+        indexes.retain(|v| *v > 2048);
         assert_eq!(indexes.len(), 0);
     }
 
@@ -524,7 +524,7 @@ mod tests {
         let mut indexes = res.unwrap();
         assert_eq!(indexes.len(), 15);
 
-        indexes = indexes.into_iter().filter(|v| *v > 2048).collect();
+        indexes.retain(|v| *v > 2048);
         assert_eq!(indexes.len(), 0);
     }
 
@@ -538,7 +538,7 @@ mod tests {
         let mut indexes = res.unwrap();
         assert_eq!(indexes.len(), 18);
 
-        indexes = indexes.into_iter().filter(|v| *v > 2048).collect();
+        indexes.retain(|v| *v > 2048);
         assert_eq!(indexes.len(), 0);
     }
 
@@ -552,7 +552,7 @@ mod tests {
         let mut indexes = res.unwrap();
         assert_eq!(indexes.len(), 21);
 
-        indexes = indexes.into_iter().filter(|v| *v > 2048).collect();
+        indexes.retain(|v| *v > 2048);
         assert_eq!(indexes.len(), 0);
     }
 
@@ -566,13 +566,13 @@ mod tests {
         let mut indexes = res.unwrap();
         assert_eq!(indexes.len(), 24);
 
-        indexes = indexes.into_iter().filter(|v| *v > 2048).collect();
+        indexes.retain(|v| *v > 2048);
         assert_eq!(indexes.len(), 0);
     }
 
     #[test]
     fn should_fail_generate_indexes() {
-        let res = get_indexes(&vec![0u8, 1u8], StandardMnemonic::size24());
+        let res = get_indexes(&[0u8, 1u8], StandardMnemonic::size24());
         assert!(res.is_err())
     }
 

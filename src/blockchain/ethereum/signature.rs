@@ -187,9 +187,9 @@ impl From<SignatureBytes> for EthereumBasicSignature {
     }
 }
 
-impl Into<(u8, [u8; 32], [u8; 32])> for EthereumBasicSignature {
-    fn into(self) -> (u8, [u8; 32], [u8; 32]) {
-        (self.v, self.r, self.s)
+impl From<EthereumBasicSignature> for (u8, [u8; 32], [u8; 32]) {
+    fn from(val: EthereumBasicSignature) -> Self {
+        (val.v, val.r, val.s)
     }
 }
 
@@ -232,7 +232,7 @@ pub struct EthereumPrivateKey(pub [u8; PRIVATE_KEY_BYTES]);
 impl EthereumPrivateKey {
     /// Generate a new `PrivateKey` at random (`rand::OsRng`)
     pub fn generate() -> Self {
-        Self::gen_custom(&mut OsRng::default())
+        Self::gen_custom(&mut OsRng)
     }
 
     /// Generate a new `PrivateKey` with given custom random generator
@@ -369,9 +369,9 @@ impl From<SecretKey> for EthereumPrivateKey {
     }
 }
 
-impl Into<SecretKey> for EthereumPrivateKey {
-    fn into(self) -> SecretKey {
-        SecretKey::from_slice(&self).expect("Expect secret key")
+impl From<EthereumPrivateKey> for SecretKey {
+    fn from(val: EthereumPrivateKey) -> Self {
+        SecretKey::from_slice(&val).expect("Expect secret key")
     }
 }
 
@@ -563,7 +563,7 @@ mod tests {
         println!("signature v: {}", signature.v);
 
         let from = signature.extract_signer(&tx);
-        if !from.is_ok() {
+        if from.is_err() {
             println!("{:}", from.clone().err().unwrap());
         }
         assert!(from.is_ok());
@@ -590,7 +590,7 @@ mod tests {
         println!("signature v: {}", signature.v);
 
         let from = signature.extract_signer(&tx);
-        if !from.is_ok() {
+        if from.is_err() {
             println!("{:}", from.clone().err().unwrap());
         }
         assert!(from.is_ok());

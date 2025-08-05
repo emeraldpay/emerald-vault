@@ -11,7 +11,7 @@ use image::imageops::FilterType;
 use image::ImageReader;
 
 const PNG_SUFFIX: &str = "png";
-const SIZE_LIMIT: usize = 1 * 1024 * 1024;
+const SIZE_LIMIT: usize = 1024 * 1024;
 
 pub struct Icons {
     pub(crate) dir: PathBuf,
@@ -75,14 +75,11 @@ impl Icons {
                 let entry = entry?;
                 let path = entry.path();
                 if path.is_file() {
-                    match try_vault_file(&path, PNG_SUFFIX) {
-                        Ok(id) => {
-                            if let Some(t) = self.find_entity_type(id) {
-                                let icon = Icon::from((id, t));
-                                result.push(icon)
-                            }
+                    if let Ok(id) = try_vault_file(&path, PNG_SUFFIX) {
+                        if let Some(t) = self.find_entity_type(id) {
+                            let icon = Icon::from((id, t));
+                            result.push(icon)
                         }
-                        Err(_) => {}
                     }
                 }
             }
@@ -105,7 +102,7 @@ impl Icons {
     /// - return error if size is less than 32px
     /// - cut sides to make it square
     fn preprocess_image(img: Vec<u8>) -> Result<Vec<u8>, ConversionError> {
-        if img.len() == 0 || img.len() > SIZE_LIMIT {
+        if img.is_empty() || img.len() > SIZE_LIMIT {
             return Err(ConversionError::InvalidLength)
         }
 
@@ -173,7 +170,7 @@ impl Icons {
         match image {
             Some(image) => {
                 let image = Icons::preprocess_image(image)?;
-                if let Some(_) = self.find_entity_type(id) {
+                if self.find_entity_type(id).is_some() {
                     fs::write(path, image)
                         .map_err(|_| VaultError::FilesystemError("IO Error".to_string()))
                 } else {
@@ -182,7 +179,7 @@ impl Icons {
             },
             None => {
                 if path.is_file() {
-                    let _ = fs::remove_file(path)?;
+                    fs::remove_file(path)?;
                 }
                 Ok(())
             }
@@ -229,8 +226,8 @@ mod tests {
         let current = icons.list().unwrap();
         assert_eq!(current.len(), 1);
 
-        assert_eq!(current.get(0).unwrap().id, id);
-        assert_eq!(current.get(0).unwrap().entity_type, EntityType::SEED);
+        assert_eq!(current.first().unwrap().id, id);
+        assert_eq!(current.first().unwrap().entity_type, EntityType::SEED);
 
         let image_stored = icons.get_image(id).unwrap();
 
@@ -262,8 +259,8 @@ mod tests {
         let current = icons.list().unwrap();
         assert_eq!(current.len(), 1);
 
-        assert_eq!(current.get(0).unwrap().id, wallet_id);
-        assert_eq!(current.get(0).unwrap().entity_type, EntityType::WALLET);
+        assert_eq!(current.first().unwrap().id, wallet_id);
+        assert_eq!(current.first().unwrap().entity_type, EntityType::WALLET);
 
         let image_stored = icons.get_image(wallet_id).unwrap();
 

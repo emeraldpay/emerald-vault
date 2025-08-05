@@ -22,7 +22,7 @@ use hdpath::StandardHDPath;
 use tempdir::TempDir;
 use emerald::crypto::kdf::KeyDerive;
 use emerald::mnemonic::{Language, Mnemonic};
-use emerald::structs::crypto::{Argon2, GlobalKey, Kdf};
+use emerald::structs::crypto::{Argon2, GlobalKey};
 use emerald::structs::seed::SeedSource;
 
 const PRJ_DIR: Option<&'static str> = option_env!("CARGO_MANIFEST_DIR");

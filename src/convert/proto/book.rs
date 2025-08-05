@@ -73,7 +73,7 @@ impl TryFrom<BookmarkDetails> for Vec<u8> {
         }
         m.set_address((&value.address).into());
         m.set_created_at(value.created_at.timestamp_millis() as u64);
-        m.write_to_bytes().map_err(|e| ConversionError::from(e))
+        m.write_to_bytes().map_err(ConversionError::from)
     }
 }
 
@@ -106,7 +106,7 @@ mod tests {
         };
 
         let b: Vec<u8> = item.try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = proto_BootItem::parse_from_bytes(b.as_slice()).unwrap();
         assert_eq!(act.label, "Hello".to_string());
         assert!(act.has_address());
@@ -130,7 +130,7 @@ mod tests {
         };
 
         let b: Vec<u8> = item.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = BookmarkDetails::try_from(b).unwrap();
         assert_eq!(act, item);
     }
@@ -148,7 +148,7 @@ mod tests {
         };
 
         let b: Vec<u8> = item.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = BookmarkDetails::try_from(b).unwrap();
         assert_eq!(act, item);
     }

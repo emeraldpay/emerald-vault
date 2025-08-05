@@ -82,7 +82,7 @@ impl SeedSource {
     ///
     /// Ecnryption key used to encrypt test seed created with #create_raw()
     pub fn nokey() -> String {
-        return NONE_SEED_KEY.to_string()
+        NONE_SEED_KEY.to_string()
     }
 
 
@@ -150,10 +150,8 @@ impl UsesOddKey for Seed {
 
 impl SeedRef {
     /// extract Account from HDPath if it's structured as BIP-44. (m/purpose'/coin_type'/account'/change/address_index)
-    /// To do so the HDPath must be valid and starts with 3 hardened values (purpose'/coin_type'/account'),
-    /// otherwise the method returns Err
-    pub fn get_account_id(&self) -> Result<u32, ()> {
-        Ok(self.hd_path.account())
+    pub fn get_account_id(&self) -> u32 {
+        self.hd_path.account()
     }
 }
 
@@ -245,24 +243,24 @@ mod tests {
             seed_id: Default::default(),
             hd_path: StandardHDPath::try_from("m/44'/0'/0'/0/0").unwrap(),
         };
-        assert_eq!(Ok(0), seed.get_account_id());
+        assert_eq!(0, seed.get_account_id());
 
         let seed = SeedRef {
             seed_id: Default::default(),
             hd_path: StandardHDPath::try_from("m/44'/60'/0'/0/0").unwrap(),
         };
-        assert_eq!(Ok(0), seed.get_account_id());
+        assert_eq!(0, seed.get_account_id());
 
         let seed = SeedRef {
             seed_id: Default::default(),
             hd_path: StandardHDPath::try_from("m/44'/60'/3'/0/0").unwrap(),
         };
-        assert_eq!(Ok(3), seed.get_account_id());
+        assert_eq!(3, seed.get_account_id());
 
         let seed = SeedRef {
             seed_id: Default::default(),
             hd_path: StandardHDPath::try_from("m/44'/0'/1234'/0/0").unwrap(),
         };
-        assert_eq!(Ok(1234), seed.get_account_id());
+        assert_eq!(1234, seed.get_account_id());
     }
 }

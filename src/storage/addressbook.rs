@@ -110,7 +110,7 @@ impl AddressbookStorage {
             .from_path(&self.path)?;
         for (i, line) in rdr.records().enumerate() {
             let line = line?;
-            if i == 0 && line.len() > 0 && line.get(0) == Some("id") {
+            if i == 0 && !line.is_empty() && line.get(0) == Some("id") {
                 continue;
             }
             let record: CsvRecord = AddressbookStorage::read(line)?;
@@ -135,10 +135,7 @@ impl AddressbookStorage {
     }
 
     fn write(wrt: &mut Writer<File>, record: CsvRecord) -> Result<(), VaultError> {
-        let mut line = Vec::new();
-        line.push(record.id);
-        line.push(FORMAT.to_string());
-        line.push(record.data);
+        let line = vec![record.id, FORMAT.to_string(), record.data];
         wrt.write_record(&line)
             .map_err(|_| VaultError::FilesystemError("CSV record not written".to_string()))
     }
@@ -153,10 +150,10 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
     fn get(&self, id: Uuid) -> Result<AddressBookmark, VaultError> {
         let all = self.get_all()?;
         let found = all.iter().find(|b| b.id == id);
-        if found.is_none() {
-            Err(VaultError::IncorrectIdError)
+        if let Some(bookmark) = found {
+            Ok(bookmark.clone())
         } else {
-            Ok(found.unwrap().clone())
+            Err(VaultError::IncorrectIdError)
         }
     }
 
@@ -173,7 +170,7 @@ impl VaultAccess<AddressBookmark> for AddressbookStorage {
             ));
         }
 
-        if !fs::rename(&self.path, &bak_path).is_ok() {
+        if fs::rename(&self.path, &bak_path).is_err() {
             return Err(VaultError::FilesystemError(
                 "Failed to make a backup".to_string(),
             ));

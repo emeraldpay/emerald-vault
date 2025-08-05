@@ -62,10 +62,7 @@ impl Blockchain {
     }
 
     pub fn is_mainnet(&self) -> bool {
-        match self {
-            Blockchain::Bitcoin | Blockchain::Ethereum | Blockchain::EthereumClassic => true,
-            _ => false
-        }
+        matches!(self, Blockchain::Bitcoin | Blockchain::Ethereum | Blockchain::EthereumClassic)
     }
 }
 
@@ -117,9 +114,9 @@ impl TryFrom<u32> for Blockchain {
     }
 }
 
-impl Into<u32> for Blockchain {
-    fn into(self) -> u32 {
-        (self as isize) as u32
+impl From<Blockchain> for u32 {
+    fn from(val: Blockchain) -> Self {
+        (val as isize) as u32
     }
 }
 

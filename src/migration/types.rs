@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 /// Migration Results
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Default)]
 pub struct MigrationResult {
     /// Ids of newly created wallets
     pub wallets: Vec<Uuid>,
@@ -42,14 +43,6 @@ impl From<String> for MigrationError {
     }
 }
 
-impl Default for MigrationResult {
-    fn default() -> Self {
-        MigrationResult {
-            wallets: Vec::new(),
-            logs: Vec::new(),
-        }
-    }
-}
 
 impl LogMessage {
     fn get_msg(&self) -> &String {

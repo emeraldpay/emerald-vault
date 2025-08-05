@@ -22,12 +22,12 @@ pub enum AddressRef {
     BitcoinAddress(BitcoinAddress)
 }
 
-impl ToString for AddressRef {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for AddressRef {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AddressRef::EthereumAddress(v) => v.to_string(),
-            AddressRef::BitcoinAddress(v) => v.to_string(),
-            AddressRef::ExtendedPub(v) => v.to_string()
+            AddressRef::EthereumAddress(v) => write!(f, "{}", v),
+            AddressRef::BitcoinAddress(v) => write!(f, "{}", v),
+            AddressRef::ExtendedPub(v) => write!(f, "{}", v)
         }
     }
 }

@@ -35,7 +35,7 @@ pub struct AddBitcoinEntry {
 
 pub(crate) fn get_address(blockchain: &Blockchain, address_type: AddressType, account: u32, seed: Vec<u8>) -> Result<XPub, VaultError> {
     let network = blockchain.as_bitcoin_network_kind();
-    let master = Bitcoin_Xpriv::new_master(network.clone(), seed.as_slice())
+    let master = Bitcoin_Xpriv::new_master(network, seed.as_slice())
         .map_err(|_| VaultError::InvalidPrivateKey)?;
     if !PathValue::is_ok(account) {
         return Err(VaultError::PrivateKeyUnavailable)
@@ -58,7 +58,7 @@ impl AddBitcoinEntry {
                global: Option<GlobalKey>,
     ) -> AddBitcoinEntry {
         AddBitcoinEntry {
-            wallet_id: wallet_id.clone(),
+            wallet_id: *wallet_id,
             seeds,
             wallets,
             global,
@@ -143,14 +143,14 @@ impl AddBitcoinEntry {
 
         let address_ref = AddressRef::ExtendedPub(xpub);
 
-        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
+        let mut wallet = self.wallets.get(self.wallet_id)?;
         let id = wallet.next_entry_id();
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
             address: Some(address_ref),
             key: PKType::SeedHd(SeedRef {
-                seed_id: seed_id.clone(),
+                seed_id,
                 hd_path: account.address_at(0, 0).expect("Generate first address for account"),
             }),
             ..WalletEntry::default()
@@ -189,7 +189,7 @@ mod tests {
             ..Default::default()
         }).unwrap();
 
-        let _ = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+        let _ = vault.add_bitcoin_entry(wallet_id).seed_hd(
             seed_id,
             AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
             Blockchain::Bitcoin,
@@ -237,7 +237,7 @@ mod tests {
             ..Default::default()
         }).unwrap();
 
-        let _ = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+        let _ = vault.add_bitcoin_entry(wallet_id).seed_hd(
             seed_id,
             AccountHDPath::from_str("m/84'/1'/0'").unwrap(),
             Blockchain::BitcoinTestnet,
@@ -326,7 +326,7 @@ mod tests {
             ..Default::default()
         }).unwrap();
 
-        let _ = vault.add_bitcoin_entry(wallet_id.clone()).seed_hd(
+        let _ = vault.add_bitcoin_entry(wallet_id).seed_hd(
             seed_id,
             AccountHDPath::from_str("m/84'/0'/3'").unwrap(),
             Blockchain::Bitcoin,
@@ -382,7 +382,7 @@ mod tests {
         };
 
         let added = vault
-            .add_bitcoin_entry(wallet_id.clone())
+            .add_bitcoin_entry(wallet_id)
             .seed_hd(
                 seed_id,
                 account,

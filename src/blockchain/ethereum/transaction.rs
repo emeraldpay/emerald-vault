@@ -89,7 +89,7 @@ pub trait EthereumTransaction {
     /// Encode the transaction to the provided RPL Stream
     ///
     /// - `empty_sig` is a flag for default Ethereum Tx that specifies if RPL should include _signature placeholder values_,
-    /// i.e., when it should put an empty signature. For modern EIP-2930 signature the flag is not used
+    ///   i.e., when it should put an empty signature. For modern EIP-2930 signature the flag is not used
     fn encode_into(&self, rlp: &mut RlpStream, empty_sig: bool);
 
     ///
@@ -215,7 +215,7 @@ impl EthereumTransaction for EthereumEIP1559Transaction {
     }
 
     fn get_chain(&self) -> EthereumChainId {
-        return self.chain_id
+        self.chain_id
     }
 
 }

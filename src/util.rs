@@ -165,19 +165,16 @@ pub fn timestamp() -> String {
         .to_string()
 }
 
-///
 pub fn to_16bytes(hex: &str) -> [u8; 16] {
-    to_arr(Vec::from_hex(&hex).unwrap().as_slice())
+    to_arr(Vec::from_hex(hex).unwrap().as_slice())
 }
 
-///
 pub fn to_20bytes(hex: &str) -> [u8; 20] {
-    to_arr(Vec::from_hex(&hex).unwrap().as_slice())
+    to_arr(Vec::from_hex(hex).unwrap().as_slice())
 }
 
-///
 pub fn to_32bytes(hex: &str) -> [u8; 32] {
-    let parsed = Vec::from_hex(&hex).unwrap();
+    let parsed = Vec::from_hex(hex).unwrap();
     if parsed.len() != 32 {
         let aligned = align_bytes(parsed.as_slice(), 32);
         to_arr(aligned.as_slice())

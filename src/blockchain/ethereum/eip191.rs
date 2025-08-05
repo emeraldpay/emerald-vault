@@ -125,13 +125,13 @@ mod tests {
             "0x00003a1922d97e573db507e82cbace7b57e54106cc96d598d29ac16aabe48153313302cb629b7307baae0ae5e74f68e58564615ccfde0d03603381e1a233e0ed1c"
         ).unwrap();
         let verify = signature.verify(&msg, &exp_address);
-        assert!(!verify.is_ok());
+        assert!(verify.is_err());
 
         let signature = EthereumBasicSignature::from_str(
             "0x00003a1922d97e573db507e82cbace7b57e54106cc96d598d29ac16aabe48153313302cb629b7307baae0ae5e74f68e58564615ccfde0d03603381e1a233e0ed00"
         ).unwrap();
         let verify = signature.verify(&msg, &exp_address);
-        assert!(!verify.is_ok());
+        assert!(verify.is_err());
     }
 
     #[test]

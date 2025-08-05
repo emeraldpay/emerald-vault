@@ -62,10 +62,8 @@ impl VaultAdmin {
             .for_each(|key| {
                 let id = key.id;
                 let updated = key.clone().reencrypt(legacy_password.as_bytes(), global_password.as_bytes(), global.clone());
-                if updated.is_ok() {
-                    if self.vault.keys().update_multiple(updated.unwrap(), &archive).is_ok() {
-                        result.push(id.clone())
-                    }
+                if updated.is_ok() && self.vault.keys().update_multiple(updated.unwrap(), &archive).is_ok() {
+                    result.push(id)
                 }
             });
 

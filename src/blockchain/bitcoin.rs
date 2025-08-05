@@ -43,6 +43,7 @@ pub struct BitcoinTransferProposal {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
+#[derive(Default)]
 pub struct KeyMapping {
     pub keys: HashMap<Uuid, String>,
 
@@ -105,19 +106,10 @@ impl KeyMapping {
     }
 }
 
-impl Default for KeyMapping {
-    fn default() -> Self {
-        KeyMapping {
-            keys: HashMap::new(),
-            global: None,
-            global_password: None,
-        }
-    }
-}
 
 impl BitcoinTransferProposal {
     pub fn get_seed(&self, id: &Uuid) -> Option<Seed> {
-        self.seed.iter().find(|s| s.id.eq(id)).map(|x| x.clone())
+        self.seed.iter().find(|s| s.id.eq(id)).cloned()
     }
 }
 
@@ -164,7 +156,7 @@ impl XPub {
             value: self.value
                 .ckd_pub(&DEFAULT_SECP256K1,
                          ChildNumber::from_normal_idx(n)
-                             .expect(format!("Failed to get change: {:}", n).as_str()),
+                             .unwrap_or_else(|_| panic!("Failed to get change: {:}", n)),
                 )
                 .map_err(|_| VaultError::PublicKeyUnavailable)?,
         };
@@ -204,7 +196,7 @@ impl XPub {
             }
         }
 
-        return None
+        None
     }
 }
 
@@ -364,8 +356,8 @@ impl FromStr for XPub {
     }
 }
 
-impl ToString for XPub {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for XPub {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut data: Vec<u8> = Vec::with_capacity(78);
         let version = self.address_type.xpub_version(&self.value.network);
         data.write_u32::<BigEndian>(version).expect("Failed to write version");
@@ -374,7 +366,7 @@ impl ToString for XPub {
         data.write_u32::<BigEndian>(self.value.child_number.into()).expect("Failed to write child_number");
         data.extend_from_slice(self.value.chain_code.as_bytes());
         data.extend_from_slice(self.value.public_key.serialize().as_ref());
-        base58::encode_check(data.as_slice())
+        write!(f, "{}", base58::encode_check(data.as_slice()))
     }
 }
 

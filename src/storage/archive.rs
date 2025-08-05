@@ -41,7 +41,7 @@ impl Archive {
         if self.dir.exists() {
             return;
         }
-        if fs::create_dir_all(&self.dir.clone()).is_err() {
+        if fs::create_dir_all(self.dir.clone()).is_err() {
             error!("Failed to create archive directory");
         }
     }
@@ -82,16 +82,13 @@ impl Archive {
             }
             _ => None,
         };
-        match readme {
-            Some(description) => {
-                if self
-                    .write("README.txt", description.to_string().as_str())
-                    .is_err()
-                {
-                    warn!("Failed to create README.txt for archive")
-                }
+        if let Some(description) = readme {
+            if self
+                .write("README.txt", description.to_string().as_str())
+                .is_err()
+            {
+                warn!("Failed to create README.txt for archive")
             }
-            None => {}
         };
     }
 
@@ -105,14 +102,14 @@ impl Archive {
         from_vec.push(from);
         move_items(&from_vec, self.dir.clone(), &options)
             .map(|_| ())
-            .map_err(|e| format!("Failed to copy to archive. Error: {}", e.to_string()))
+            .map_err(|e| format!("Failed to copy to archive. Error: {}", e))
     }
 
     pub fn write(&self, file_name: &str, content: &str) -> Result<(), String> {
         self.check_opened();
         let path = &self.dir.join(file_name);
         if path.parent().is_none()
-            || path.parent().unwrap() != &self.dir
+            || path.parent().unwrap() != self.dir
             || path.file_name().is_none()
             || path.file_name().unwrap().to_str().unwrap() != file_name
         {
@@ -123,10 +120,10 @@ impl Archive {
         }
         let mut f = match File::create(path) {
             Ok(f) => f,
-            Err(e) => return Err(format!("Failed to create file. Error: {}", e.to_string())),
+            Err(e) => return Err(format!("Failed to create file. Error: {}", e)),
         };
         f.write_all(content.as_bytes())
-            .map_err(|e| format!("Failed to write to archive. Error: {}", e.to_string()))
+            .map_err(|e| format!("Failed to write to archive. Error: {}", e))
     }
 }
 
@@ -140,34 +137,19 @@ struct DescriptionBlock {
     message: String,
 }
 
-impl ToString for DescriptionBlock {
-    fn to_string(&self) -> String {
-        let mut buf = String::new();
-        buf.push_str("== ");
-        buf.push_str(self.title.as_str());
-        buf.push('\n');
-        buf.push('\n');
-        buf.push_str(self.message.as_str());
-
-        buf
+impl std::fmt::Display for DescriptionBlock {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "== {}\n\n{}", self.title, self.message)
     }
 }
 
-impl ToString for ArchiveDescription {
-    fn to_string(&self) -> String {
-        let mut buf = String::new();
-        buf.push_str("= ");
-        buf.push_str(self.title.as_str());
-        buf.push('\n');
-        buf.push('\n');
-
-        self.content.iter().for_each(|block| {
-            buf.push('\n');
-            buf.push_str(block.to_string().as_str());
-            buf.push('\n');
-        });
-
-        buf.trim_end().to_string()
+impl std::fmt::Display for ArchiveDescription {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "= {}\n\n", self.title)?;
+        for block in &self.content {
+            write!(f, "\n{}\n", block)?;
+        }
+        Ok(())
     }
 }
 
@@ -253,7 +235,7 @@ mod tests {
     }
 
     #[test]
-    fn formats_description() {
+        fn formats_description() {
         let descr = ArchiveDescription {
             title: "Test Archive".to_string(),
             content: vec![
@@ -279,7 +261,7 @@ mod tests {
                 + "== Hello World\n"
                 + "\n"
                 + "TEST 1\n"
-                + "test 2"
+                + "test 2\n"
         )
     }
 }

@@ -109,13 +109,10 @@ impl TryFrom<proto_Wallet> for Vec<ReservedPath> {
     fn try_from(value: proto_Wallet) -> Result<Self, Self::Error> {
         let mut result = Vec::with_capacity(value.hd_accounts.len());
         for r in value.hd_accounts.to_vec() {
-            match Uuid::from_slice(r.seed_id.as_slice()) {
-                Ok(id) => result.push(ReservedPath {
-                    seed_id: id,
-                    account_id: r.account_id,
-                }),
-                Err(_) => {}
-            }
+            if let Ok(id) = Uuid::from_slice(r.seed_id.as_slice()) { result.push(ReservedPath {
+                seed_id: id,
+                account_id: r.account_id,
+            }) }
         }
         Ok(result)
     }
@@ -186,15 +183,14 @@ impl TryFrom<Wallet> for Vec<u8> {
         for acc in &value.entries {
             //check if wallet has any seed-base entries that didn't reserve their entry_id
             if let PKType::SeedHd(seed) = &acc.key {
-                if let Ok(account_id) = seed.get_account_id() {
-                    let r = ReservedPath {
-                        seed_id: seed.seed_id.clone(),
-                        account_id,
-                    };
-                    if !reserved.contains(&r) {
-                        //reserve current entry
-                        reserved.push(r)
-                    }
+                let account_id = seed.get_account_id();
+                let r = ReservedPath {
+                    seed_id: seed.seed_id,
+                    account_id,
+                };
+                if !reserved.contains(&r) {
+                    //reserve current entry
+                    reserved.push(r)
                 }
             }
             result.entries.push(proto_WalletEntry::from(acc));
@@ -219,7 +215,7 @@ impl TryFrom<Wallet> for Vec<u8> {
 
         result
             .write_to_bytes()
-            .map_err(|e| ConversionError::from(e))
+            .map_err(ConversionError::from)
     }
 }
 
@@ -259,7 +255,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(act.label, None);
         assert_eq!(act.entries.len(), 0);
@@ -277,7 +273,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = proto_Wallet::parse_from_bytes(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 1);
         assert_eq!(
@@ -313,7 +309,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(act, wallet);
     }
@@ -342,7 +338,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
 
         let act = Wallet::try_from(b).unwrap();
         // reserves the account on save
@@ -376,7 +372,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(act, wallet);
     }
@@ -410,7 +406,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(act, wallet);
     }
@@ -445,7 +441,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = Wallet::try_from(b).unwrap();
         assert!(act.entries[0].receive_disabled);
         assert_eq!(act, wallet);
@@ -464,7 +460,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(
             act.reserved[0].seed_id.to_string(),
@@ -509,7 +505,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(act.reserved.len(), 2);
         assert_eq!(
@@ -570,7 +566,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(act.label, Some("Test entry".to_string()));
         assert_eq!(act, wallet);
@@ -590,7 +586,7 @@ mod tests {
         };
 
         let b: Vec<u8> = wallet.clone().try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = Wallet::try_from(b).unwrap();
         assert_eq!(act.created_at.timestamp_millis(), 1592624407736);
         assert_eq!(act.created_at.to_rfc3339(), "2020-06-20T03:40:07.736+00:00");

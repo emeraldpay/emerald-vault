@@ -10,10 +10,10 @@ use crate::structs::crypto::GlobalKey;
 
 ///
 /// Subdirectory of the Vault to keep Snapshots
-const DIR: &'static str = "snapshots";
+const DIR: &str = "snapshots";
 ///
 /// Extension of a snapshto file
-const EXTENSION: &'static str = "emrldvault";
+const EXTENSION: &str = "emrldvault";
 
 ///
 /// Manage Snapshot Extraction
@@ -79,7 +79,7 @@ impl SnapshotRestore {
         }
         let global_key = GlobalKey::try_from(global_key.unwrap().as_slice())?;
         global_key.verify_password(password.as_ref())
-            .map_err(|e| VaultError::from(e))
+            .map_err(VaultError::from)
     }
 
     ///
@@ -170,14 +170,14 @@ impl Snapshots {
                 Err(VaultError::FilesystemError("Snapshots dir is locked".to_string()))
             }
         }
-        let _ = fs::create_dir_all(&dir)?;
+        fs::create_dir_all(&dir)?;
         Ok(())
     }
 
     ///
     /// Get a snapshot filename for snapshot with specified `id`. The file may not exists, the function just operate filenames.
     fn get_filename_for(&self, id: Uuid) -> Result<PathBuf, VaultError> {
-        let _ = self.ensure_created()?;
+        self.ensure_created()?;
         let filename = format!("{}.{}", id, EXTENSION);
         Ok(self.vault_dir.join(DIR).join(filename))
     }
@@ -195,19 +195,17 @@ impl Snapshots {
             .compression_method(zip::CompressionMethod::Deflated);
 
         let files = fs::read_dir(&self.vault_dir)?;
-        for entry in files {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                // make sure we archive files, not directories which may be created by mistake / maliciously
-                if path.is_file() {
-                    if let Some(ext) = path.extension() {
-                        if VaultStorage::is_vault_ext(ext) {
-                            let file_name = path.file_name().unwrap().to_str().unwrap();
-                            zip.start_file(file_name, options)
-                                .map_err(|_| VaultError::FilesystemError("Cannot write snapshot".to_string()))?;
-                            let mut src = File::open(path).unwrap();
-                            let _ = std::io::copy(&mut src, &mut zip)?;
-                        }
+        for entry in files.flatten() {
+            let path = entry.path();
+            // make sure we archive files, not directories which may be created by mistake / maliciously
+            if path.is_file() {
+                if let Some(ext) = path.extension() {
+                    if VaultStorage::is_vault_ext(ext) {
+                        let file_name = path.file_name().unwrap().to_str().unwrap();
+                        zip.start_file(file_name, options)
+                            .map_err(|_| VaultError::FilesystemError("Cannot write snapshot".to_string()))?;
+                        let mut src = File::open(path).unwrap();
+                        let _ = std::io::copy(&mut src, &mut zip)?;
                     }
                 }
             }
@@ -302,8 +300,8 @@ mod tests {
 
         vault_1.seeds().add(seed.clone()).unwrap();
         vault_1.wallets().add(wallet.clone()).unwrap();
-        vault_1.add_ethereum_entry(wallet.id.clone())
-            .seed_hd(seed.id.clone(),
+        vault_1.add_ethereum_entry(wallet.id)
+            .seed_hd(seed.id,
                      StandardHDPath::from_str("m/44'/60'/0'/0/0").unwrap(), Blockchain::Ethereum,
                      Some("test".to_string()),
                      Some(EthereumAddress::from_str("0x77F43e8e5d6E0D7F647B71c49102B49448f4749D").unwrap()))

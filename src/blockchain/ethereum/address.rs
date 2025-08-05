@@ -89,7 +89,7 @@ impl FromStr for EthereumAddress {
             s
         };
 
-        EthereumAddress::try_from(hex::decode(&value)?.as_slice())
+        EthereumAddress::try_from(hex::decode(value)?.as_slice())
     }
 }
 

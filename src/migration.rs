@@ -56,7 +56,7 @@ mod test_commons {
                 fs::create_dir(target_path).unwrap();
             } else {
                 let mut f = File::create(target_path.clone())
-                    .expect(format!("Failed to create: {:?}", target_path).as_str());
+                    .unwrap_or_else(|_| panic!("Failed to create: {:?}", target_path));
                 let mut buf = Vec::new();
                 file.read_to_end(&mut buf).expect("File not read");
                 f.write_all(&buf).expect("Not written");
@@ -85,7 +85,7 @@ mod test_commons {
 
     fn as_ethereum_address(r: &AddressRef) -> EthereumAddress {
         match r {
-            AddressRef::EthereumAddress(e) => e.clone(),
+            AddressRef::EthereumAddress(e) => *e,
             _ => panic!("not ethereum"),
         }
     }

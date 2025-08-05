@@ -35,7 +35,7 @@ fn decrypt_aes128(data: &[u8], key: &[u8], iv: &[u8]) -> Vec<u8> {
 impl Encrypted {
     pub fn encrypt(msg: Vec<u8>, password: &[u8], global: Option<GlobalKey>) -> Result<Encrypted, CryptoError> {
         // for security reasons shouldn't allow empty passwords
-        if password.len() == 0 {
+        if password.is_empty() {
             return Err(CryptoError::InvalidKey);
         }
 
@@ -71,7 +71,7 @@ impl Encrypted {
             cipher: Cipher::Aes128Ctr(Aes128CtrCipher {
                 encrypted: encrypted.clone(),
                 iv: iv.to_vec(),
-                mac: MacType::sign_web3(&key.mac_key.to_vec(), encrypted)?,
+                mac: MacType::sign_web3(key.mac_key.as_ref(), encrypted)?,
             }),
             kdf: Kdf::Argon2(kdf),
             global_key: actual_password.1
@@ -114,7 +114,7 @@ impl Encrypted {
     /// An `Encrypted` instance using Ethereum-compatible encryption format
     pub fn from_encrypted_ethereum(msg: Vec<u8>, password: &[u8]) -> Result<Encrypted, CryptoError> {
         // for security reasons shouldn't allow empty passwords
-        if password.len() == 0 {
+        if password.is_empty() {
             return Err(CryptoError::InvalidKey);
         }
         let mut salt: [u8; 32] = [0; 32];
@@ -132,7 +132,7 @@ impl Encrypted {
             cipher: Cipher::Aes128Ctr(Aes128CtrCipher {
                 encrypted: encrypted.clone(),
                 iv: iv.to_vec(),
-                mac: MacType::sign_web3(&key.mac_key.to_vec(), encrypted)?,
+                mac: MacType::sign_web3(key.mac_key.as_ref(), encrypted)?,
             }),
             kdf: Kdf::Scrypt(kdf),
             //TODO
@@ -194,7 +194,7 @@ impl Cipher {
                 let data = &conf.encrypted;
                 let decrypted = decrypt_aes128(data.as_slice(), &key.message_key, iv.as_slice());
 
-                let verified = conf.mac.verify(&key.mac_key.to_vec(), &conf.encrypted);
+                let verified = conf.mac.verify(key.mac_key.as_ref(), &conf.encrypted);
                 if verified {
                     Ok(decrypted)
                 } else {
@@ -206,7 +206,7 @@ impl Cipher {
 }
 
 impl MacType {
-    fn verify(&self, key: &Vec<u8>, message: &Vec<u8>) -> bool {
+    fn verify(&self, key: &[u8], message: &[u8]) -> bool {
         match self {
             MacType::Web3(mac) => {
                 if key.len() != 16 {
@@ -214,7 +214,7 @@ impl MacType {
                 }
                 let mut msg: Vec<u8> = Vec::new();
                 msg.extend_from_slice(key);
-                msg.extend_from_slice(message.as_slice());
+                msg.extend_from_slice(message);
                 let hash = keccak256(msg.as_slice());
                 hash == mac.as_slice()
             }
@@ -223,7 +223,7 @@ impl MacType {
 }
 
 impl MacType {
-    fn sign_web3(key: &Vec<u8>, message: Vec<u8>) -> Result<MacType, CryptoError> {
+    fn sign_web3(key: &[u8], message: Vec<u8>) -> Result<MacType, CryptoError> {
         if key.len() != 16 {
             return Err(CryptoError::InvalidKey);
         }
@@ -572,7 +572,7 @@ mod tests {
                 .as_slice(),
         );
 
-        assert!(encrypted.len() > 0);
+        assert!(!encrypted.is_empty());
 
         let decrypted = decrypt_aes128(
             encrypted.as_slice(),
@@ -623,7 +623,7 @@ mod tests {
         let key1 = key.get_password("test".as_bytes(), &r1.nonce).unwrap();
         let key2 = key.get_password("test".as_bytes(), &r2.nonce).unwrap();
 
-        println!("{:?} {:?}", hex::encode(&key1), hex::encode(&key2));
+        println!("{:?} {:?}", hex::encode(key1), hex::encode(key2));
         assert_ne!(hex::encode(key1), hex::encode(key2));
     }
 

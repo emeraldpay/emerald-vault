@@ -80,10 +80,7 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
         match &value.pk {
             PrivateKeyType::EthereumPk(it) => {
                 let mut ethereum_pk3 = proto_EthereumPK3::default();
-                match it.address {
-                    Some(address) => ethereum_pk3.set_address(address.to_string()),
-                    None => {}
-                };
+                if let Some(address) = it.address { ethereum_pk3.set_address(address.to_string()) };
                 ethereum_pk3.set_value(proto_Encrypted::try_from(&it.key)?);
                 ethereum.set_pk(ethereum_pk3);
             }
@@ -92,7 +89,7 @@ impl TryFrom<PrivateKeyHolder> for Vec<u8> {
         result.set_created_at(value.created_at.timestamp_millis() as u64);
         result
             .write_to_bytes()
-            .map_err(|e| ConversionError::from(e))
+            .map_err(ConversionError::from)
     }
 }
 
@@ -114,7 +111,7 @@ mod tests {
         pk.created_at = Utc.timestamp_millis_opt(1592624592679).unwrap();
 
         let b: Vec<u8> = pk.try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = proto_PrivateKey::parse_from_bytes(b.as_slice()).unwrap();
         assert_eq!(act.get_file_type().value(), 2);
         assert_eq!(
@@ -132,7 +129,7 @@ mod tests {
         pk.created_at = Utc.timestamp_millis_opt(1592624592679).unwrap();
 
         let b: Vec<u8> = pk.try_into().unwrap();
-        assert!(b.len() > 0);
+        assert!(!b.is_empty());
         let act = PrivateKeyHolder::try_from(b).unwrap();
         assert_eq!(act.id.to_string(), "18ba0447-81f3-40d7-bab1-e74de07a1001");
         assert!(act.decrypt("test".as_bytes(), None).is_ok());

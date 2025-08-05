@@ -34,7 +34,7 @@ impl From<io::Error> for Error {
     }
 }
 
-impl<'a> From<&'a str> for Error {
+impl From<&str> for Error {
     fn from(err: &str) -> Self {
         Error::MnemonicError(err.to_string())
     }
@@ -55,8 +55,6 @@ impl error::Error for Error {
     }
 
     fn cause(&self) -> Option<&dyn error::Error> {
-        match *self {
-            _ => None,
-        }
+        None
     }
 }

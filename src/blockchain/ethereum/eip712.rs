@@ -203,6 +203,6 @@ mod tests {
 
         let verify = signature.verify(&msg, &exp_address);
         assert!(verify.is_ok());
-        assert_eq!(verify.unwrap(), true);
+        assert!(verify.unwrap());
     }
 }

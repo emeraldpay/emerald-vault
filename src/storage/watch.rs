@@ -180,7 +180,7 @@ impl Watch {
         if watch.launched {
             return;
         }
-        (*watch).launched = true;
+        watch.launched = true;
         let state = self.state.clone();
 
         // spawn a new thread that process this and all new incoming requests.
@@ -217,7 +217,7 @@ impl WatchLoop {
             if let Err(e) = connected.connect() {
                 warn!("Error connecting to LedgerKey instance: {:?}", e);
             } else {
-                current_devices.push(self.connected_details(&mut connected));
+                current_devices.push(self.connected_details(&connected));
             }
         }
 
@@ -227,7 +227,7 @@ impl WatchLoop {
         // update state (devices, version, etc) _only_ if anything changed
         if changed {
             self.devices = current_devices;
-            self.version = self.version + 1;
+            self.version += 1;
         }
 
         // check all the current requests regardless the change. some of them may come later, and the current state may be a fit for them
@@ -312,10 +312,10 @@ impl WatchLoop {
                 }
             }
 
-            self.seed_id.as_ref().map(|v| v.id.clone())
+            self.seed_id.as_ref().map(|v| v.id)
         } else if let Some(seed_id) = self.seed_id.as_ref() {
             // if no app is launched, we still can return the last known seed_id (as it doesn't really matter as we cannot use the device without the app, so it potentially fits any id)
-            return Some(seed_id.id.clone());
+            return Some(seed_id.id);
         } else {
             // no app, no last seen app - no seed id yet
             None
@@ -330,7 +330,7 @@ impl WatchLoop {
                 fps.iter().any(|fp| seed.is_same(fp))
             });
             if let Some(seed) = related_seed {
-                return Some(seed.id.clone());
+                return Some(seed.id);
             }
         }
         None
@@ -361,7 +361,7 @@ impl KnownId {
 
 impl WatchLoop {
 
-    fn is_available(blockchain: Option<Blockchain>, id: Option<Uuid>, devices: &Vec<ConnectedDevice>) -> bool {
+    fn is_available(blockchain: Option<Blockchain>, id: Option<Uuid>, devices: &[ConnectedDevice]) -> bool {
         devices.iter().any(|d| {
             let ok_blockchain = if let Some(blockchain) = blockchain {
                 d.blockchains.contains(&blockchain)

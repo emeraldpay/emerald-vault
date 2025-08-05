@@ -39,7 +39,7 @@ impl From<&XPub> for proto_Bip32Public {
         let mut result = proto_Bip32Public::default();
         result.set_level(xpub.value.depth as u32);
         result.set_parent_fingerprint(u32::from_be_bytes(
-            xpub.value.parent_fingerprint.as_bytes().clone(),
+            *xpub.value.parent_fingerprint.as_bytes(),
         ));
         result.set_child_number(xpub.value.child_number.into());
         result.set_chaincode(xpub.value.chain_code.as_bytes().to_vec());

@@ -77,21 +77,18 @@ impl Default for CoreCryptoJson {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Default)]
 pub enum CipherId {
     #[serde(rename = "aes-128-ctr")]
+    #[default]
     Aes128Ctr,
 }
 
-impl Default for CipherId {
-    fn default() -> Self {
-        CipherId::Aes128Ctr
-    }
-}
 
-impl ToString for CipherId {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for CipherId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            CipherId::Aes128Ctr => "aes-128-ctr".to_string(),
+            CipherId::Aes128Ctr => write!(f, "aes-128-ctr"),
         }
     }
 }
@@ -133,9 +130,11 @@ impl Default for KdfParamsJson {
 
 /// Pseudo-Random Functions (PRFs)
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Default)]
 pub enum PrfJson {
     /// HMAC-SHA-256 (specified in (RFC 4868)[https://tools.ietf.org/html/rfc4868])
     #[serde(rename = "hmac-sha256")]
+    #[default]
     HmacSha256,
 
     /// HMAC-SHA-512 (specified in (RFC 4868)[https://tools.ietf.org/html/rfc4868])
@@ -143,11 +142,6 @@ pub enum PrfJson {
     HmacSha512,
 }
 
-impl Default for PrfJson {
-    fn default() -> Self {
-        PrfJson::HmacSha256
-    }
-}
 
 impl FromStr for PrfJson {
     type Err = ConversionError;
@@ -342,7 +336,7 @@ impl EthereumJsonV3File {
                     return Err(());
                 }
                 EthereumJsonV3File {
-                    id: pk.id.clone(),
+                    id: pk.id,
                     version: 3,
                     address: pk3.address,
                     crypto: crypto.unwrap(),
@@ -657,14 +651,14 @@ mod tests {
         assert_eq!(Some("World!!!!".to_string()), parsed.description);
     }
 
-    const KDF_PARAMS_PBKDF2: &'static str = r#"{
+    const KDF_PARAMS_PBKDF2: &str = r#"{
         "c": 10240,
         "dklen": 32,
         "prf": "hmac-sha256",
         "salt": "095a4028fa2474bb2191f9fc1d876c79a9ff76ed029aa7150d37da785a00175b"
     }"#;
 
-    const PBKDF2_TEXT: &'static str = r#"{
+    const PBKDF2_TEXT: &str = r#"{
       "cipher": "aes-128-ctr",
       "cipherparams": {
         "iv": "58d54158c3e27131b0a0f2b91201aedc"
@@ -680,7 +674,7 @@ mod tests {
       "mac": "83c175d2ef1229ab10eb6726500a4303ab729e6e44dfaac274fe75c870b23a63"
     }"#;
 
-    const SCRYPT_TEXT: &'static str = r#"{
+    const SCRYPT_TEXT: &str = r#"{
       "ciphertext": "c3dfc95ca91dce73fe8fc4ddbaed33bad522e04a6aa1af62bba2a0bb90092fa1",
       "cipherparams": {
         "iv": "9df1649dd1c50f2153917e3b9e7164e9"

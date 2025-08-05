@@ -92,7 +92,7 @@ impl WalletEntry {
         if password.is_none() {
             return Err(VaultError::PasswordRequired);
         }
-        let key = self.key.get_ethereum_pk(&vault, password.clone(), vault.global_key().get_if_exists()?)?;
+        let key = self.key.get_ethereum_pk(vault, password.clone(), vault.global_key().get_if_exists()?)?;
         self.sign_tx_by_pk::<TX>(tx, key)
     }
 
@@ -101,7 +101,7 @@ impl WalletEntry {
         password: String,
         vault: &VaultStorage,
     ) -> Result<EthereumPrivateKey, VaultError> {
-        self.key.get_ethereum_pk(&vault, Some(password), vault.global_key().get_if_exists()?)
+        self.key.get_ethereum_pk(vault, Some(password), vault.global_key().get_if_exists()?)
     }
 
     pub fn export_ethereum_web3(
@@ -112,17 +112,17 @@ impl WalletEntry {
         let label = self.label.clone();
         let key = match &self.key {
             PKType::PrivateKeyRef(pk) => {
-                let raw_pk = vault.keys().get(pk.clone())?.decrypt(password.as_bytes(), vault.global_key().get_if_exists()?)?;
+                let raw_pk = vault.keys().get(*pk)?.decrypt(password.as_bytes(), vault.global_key().get_if_exists()?)?;
                 EthereumPrivateKey::try_from(raw_pk.as_slice())?
             }
             PKType::SeedHd(_) => {
-                self.key.get_ethereum_pk(&vault, Some(password.to_string()), vault.global_key().get_if_exists()?)?
+                self.key.get_ethereum_pk(vault, Some(password.to_string()), vault.global_key().get_if_exists()?)?
             }
         };
 
         // generate a new temp password for the exported PK
         // should never reuse the original password as it may be global or used by other wallets
-        let mut rnd = OsRng::default();
+        let mut rnd = OsRng;
         let password: String = std::iter::repeat(())
             .take(20)
             .map(|_| rnd.sample(Alphanumeric))
@@ -193,7 +193,7 @@ impl WalletEntry {
             if password.is_none() {
                 return Err(VaultError::PasswordRequired);
             }
-            let key = self.key.get_ethereum_pk(&vault, password.clone(), vault.global_key().get_if_exists()?)?;
+            let key = self.key.get_ethereum_pk(vault, password.clone(), vault.global_key().get_if_exists()?)?;
 
             key.sign::<EthereumBasicSignature>(&msg)?
         };

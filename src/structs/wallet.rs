@@ -93,10 +93,10 @@ impl HasUuid for Wallet {
 impl Wallet {
     pub fn get_entry(&self, id: usize) -> Result<WalletEntry, VaultError> {
         let found = self.entries.iter().find(|a| a.id == id);
-        if found.is_none() {
-            Err(VaultError::DataNotFound)
+        if let Some(entry) = found {
+            Ok(entry.clone())
         } else {
-            Ok(found.unwrap().clone())
+            Err(VaultError::DataNotFound)
         }
     }
 
@@ -153,12 +153,17 @@ lazy_static! {
 impl EntryId {
     pub fn from(wallet: &Wallet, entry: &WalletEntry) -> EntryId {
         EntryId {
-            wallet_id: wallet.id.clone(),
+            wallet_id: wallet.id,
             entry_id: entry.id,
         }
     }
 
-    pub fn from_str(value: &str) -> Result<EntryId, VaultError> {
+}
+
+impl FromStr for EntryId {
+    type Err = VaultError;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         let cap = ENTRY_ID_RE.captures(value);
         match cap {
             Some(cap) => Ok(EntryId {
@@ -170,18 +175,18 @@ impl EntryId {
     }
 }
 
-impl ToString for EntryId {
-    fn to_string(&self) -> String {
-        return format!("{}-{}", self.wallet_id, self.entry_id);
+impl std::fmt::Display for EntryId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}-{}", self.wallet_id, self.entry_id)
     }
 }
 
-impl ToString for AddressRole {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for AddressRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AddressRole::Default => "default".to_string(),
-            AddressRole::Change => "change".to_string(),
-            AddressRole::Receive => "receive".to_string()
+            AddressRole::Default => write!(f, "default"),
+            AddressRole::Change => write!(f, "change"),
+            AddressRole::Receive => write!(f, "receive")
         }
     }
 }
@@ -208,7 +213,7 @@ impl WalletEntry {
     /// get a seed backing this Entry
     pub fn get_seed(&self, vault: &VaultStorage) -> Result<Option<Seed>, VaultError> {
         match &self.key {
-            PKType::SeedHd(seed) => vault.seeds().get(seed.seed_id).map(|v| Some(v)),
+            PKType::SeedHd(seed) => vault.seeds().get(seed.seed_id).map(Some),
             PKType::PrivateKeyRef(_) => Ok(None),
         }
     }
@@ -236,7 +241,7 @@ impl WalletEntry {
 
     pub fn account_hd(&self) -> Option<AccountHDPath> {
         self.entry_hd()
-            .map(|hd| AccountHDPath::from(hd))
+            .map(AccountHDPath::from)
     }
 
     pub fn get_addresses<T>(&self, role: AddressRole, start: u32, limit: u32) -> Result<Vec<EntryAddress<T>>, VaultError>
@@ -247,7 +252,7 @@ impl WalletEntry {
         match &self.address {
             None => Ok(vec![]),
             Some(address) => match address {
-                AddressRef::EthereumAddress(value) => match T::from_ethereum_address(value.clone()) {
+                AddressRef::EthereumAddress(value) => match T::from_ethereum_address(*value) {
                     Some(address) => Ok(vec![EntryAddress { hd_path: None, role: AddressRole::Default, address }]),
                     None => Ok(vec![])
                 },
@@ -280,7 +285,7 @@ impl WalletEntry {
                         xpub.clone()
                     };
                     let addresses: Vec<EntryAddress<T>> = range(start, start + limit)
-                        .map(|n|
+                        .filter_map(|n|
                             xpub.get_address::<T>(n).ok().map(|a| EntryAddress {
                                 address: a,
                                 hd_path: hd_path_base.as_ref().map(|a|
@@ -292,10 +297,7 @@ impl WalletEntry {
                                         n,
                                     )),
                                 role: role.clone(),
-                            })
-                        )
-                        .filter(|a| a.is_some())
-                        .map(|a| a.unwrap())
+                            }))
                         .collect();
                     Ok(addresses)
                 },

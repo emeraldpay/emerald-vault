@@ -51,7 +51,6 @@ pub struct KeyFileV2 {
     /// UUID v4
     pub uuid: Uuid,
 
-    ///
     pub crypto: CryptoTypeV2,
 }
 
@@ -206,8 +205,8 @@ impl TryFrom<&CoreCryptoV2> for Encrypted {
     type Error = ConversionError;
 
     fn try_from(value: &CoreCryptoV2) -> Result<Self, Self::Error> {
-        let iv: [u8; CIPHER_IV_BYTES] = value.cipher_params.iv.clone().into();
-        let mac: [u8; KECCAK256_BYTES] = value.mac.clone().into();
+        let iv: [u8; CIPHER_IV_BYTES] = value.cipher_params.iv.into();
+        let mac: [u8; KECCAK256_BYTES] = value.mac.into();
         let cipher = Cipher::Aes128Ctr(Aes128CtrCipher {
             encrypted: hex::decode(value.cipher_text.clone())
                 .map_err(|_| ConversionError::InvalidJson)?,
@@ -246,28 +245,28 @@ impl From<&CoreCryptoV2> for Kdf {
     }
 }
 
-impl Into<KeyFileV2> for SerializableKeyFileCoreV2 {
-    fn into(self) -> KeyFileV2 {
+impl From<SerializableKeyFileCoreV2> for KeyFileV2 {
+    fn from(val: SerializableKeyFileCoreV2) -> Self {
         KeyFileV2 {
-            name: self.name,
-            description: self.description,
-            address: self.address,
-            visible: self.visible,
-            uuid: self.id,
-            crypto: CryptoTypeV2::Core(self.crypto),
+            name: val.name,
+            description: val.description,
+            address: val.address,
+            visible: val.visible,
+            uuid: val.id,
+            crypto: CryptoTypeV2::Core(val.crypto),
         }
     }
 }
 
-impl Into<KeyFileV2> for SerializableKeyFileHDV2 {
-    fn into(self) -> KeyFileV2 {
+impl From<SerializableKeyFileHDV2> for KeyFileV2 {
+    fn from(val: SerializableKeyFileHDV2) -> Self {
         KeyFileV2 {
-            name: self.name,
-            description: self.description,
-            address: self.address,
-            visible: self.visible,
-            uuid: self.id,
-            crypto: CryptoTypeV2::HdWallet(self.crypto),
+            name: val.name,
+            description: val.description,
+            address: val.address,
+            visible: val.visible,
+            uuid: val.id,
+            crypto: CryptoTypeV2::HdWallet(val.crypto),
         }
     }
 }
@@ -281,14 +280,14 @@ impl KeyFileV2 {
         let mut ver = 0;
 
         let kf = serde_json::from_str::<SerializableKeyFileCoreV2>(&buf)
-            .and_then(|core| {
+            .map(|core| {
                 ver = core.version;
-                Ok(core.into())
+                core.into()
             })
             .or_else(|_| {
-                serde_json::from_str::<SerializableKeyFileHDV2>(&buf).and_then(|hd| {
+                serde_json::from_str::<SerializableKeyFileHDV2>(&buf).map(|hd| {
                     ver = hd.version;
-                    Ok(hd.into())
+                    hd.into()
                 })
             })
             .map_err(|e| format!("Failed to deserialize JSON {:?} for {}", e, buf))?;

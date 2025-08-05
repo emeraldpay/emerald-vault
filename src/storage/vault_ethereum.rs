@@ -49,7 +49,7 @@ impl AddEthereumEntry {
         global: Option<GlobalKey>,
     ) -> AddEthereumEntry {
         AddEthereumEntry {
-            wallet_id: wallet_id.clone(),
+            wallet_id: *wallet_id,
             keys,
             seeds,
             wallets,
@@ -68,7 +68,7 @@ impl AddEthereumEntry {
             return Err(VaultError::GlobalKeyRequired)
         }
 
-        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
+        let mut wallet = self.wallets.get(self.wallet_id)?;
         let mut pk = PrivateKeyHolder::try_from(json)?;
         pk = pk.reencrypt(json_password.as_bytes(), global_password.as_bytes(), self.global.clone().unwrap())?;
         let pk_id = pk.generate_id();
@@ -77,7 +77,7 @@ impl AddEthereumEntry {
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
-            address: json.address.map(|a| AddressRef::EthereumAddress(a)),
+            address: json.address.map(AddressRef::EthereumAddress),
             key: PKType::PrivateKeyRef(pk_id),
             receive_disabled: false,
             label: json.name.clone(),
@@ -94,14 +94,13 @@ impl AddEthereumEntry {
         password: &str,
         blockchain: Blockchain,
     ) -> Result<usize, VaultError> {
-        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
+        let mut wallet = self.wallets.get(self.wallet_id)?;
         let pk = PrivateKeyHolder::create_ethereum_raw(pk, password, self.global.clone())
             .map_err(|_| VaultError::InvalidDataError("Invalid PrivateKey".to_string()))?;
         let pk_id = pk.get_id();
         let address = pk
             .get_ethereum_address()
-            .clone()
-            .map(|a| AddressRef::EthereumAddress(a));
+            .map(AddressRef::EthereumAddress);
         let id = wallet.next_entry_id();
         self.keys.add(pk)?;
         wallet.entries.push(WalletEntry {
@@ -173,21 +172,21 @@ impl AddEthereumEntry {
 
         let address = actual_address
             .or(expected_address)
-            .map(|a| AddressRef::EthereumAddress(a));
+            .map(AddressRef::EthereumAddress);
 
         // if we don't have an address, we shouldn't create an entry because it will be useless
         if address.is_none() {
             return Err(VaultError::PublicKeyUnavailable)
         }
 
-        let mut wallet = self.wallets.get(self.wallet_id.clone())?;
+        let mut wallet = self.wallets.get(self.wallet_id)?;
         let id = wallet.next_entry_id();
         wallet.entries.push(WalletEntry {
             id,
             blockchain,
             address,
             key: PKType::SeedHd(SeedRef {
-                seed_id: seed_id.clone(),
+                seed_id,
                 hd_path: StandardHDPath::try_from(hd_path.to_string().as_str()).map_err(|_| {
                     VaultError::ConversionError(ConversionError::InvalidFieldValue(
                         "hd_path".to_string(),

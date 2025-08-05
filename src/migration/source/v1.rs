@@ -72,7 +72,7 @@ impl V1Storage {
                 Ok(body) => {
                     match serde_json::from_slice::<SerializableKeyFileCoreV2>(body.as_slice()) {
                         Ok(parsed) => {
-                            match add_to_vault(blockchain.clone(), &vault, &parsed.into()) {
+                            match add_to_vault(*blockchain, vault, &parsed.into()) {
                                 Ok(id) => {
                                     created_wallets.push(id);
                                     migrated = true;
@@ -106,7 +106,7 @@ impl Migrate for V1Storage {
     {
         self.migration
             .info("Start migration from Vault V1".to_string());
-        let supported_blockchains = vec![
+        let supported_blockchains = [
             // V1 had only Morden and ETC Mainnet
             Blockchain::EthereumClassic,
         ];
@@ -128,17 +128,14 @@ impl Migrate for V1Storage {
                 let _ = &self
                     .migration
                     .info(format!("Moving to archive keys for {:?}", blockchain));
-                match self.blockchain_path(blockchain) {
-                    Some(path) => {
-                        let archived = archive.submit(path);
-                        if archived.is_err() {
-                            let _ = &self.migration.error(format!(
-                                "Failed to add to archive. Error: {}",
-                                archived.err().unwrap()
-                            ));
-                        }
+                if let Some(path) = self.blockchain_path(blockchain) {
+                    let archived = archive.submit(path);
+                    if archived.is_err() {
+                        let _ = &self.migration.error(format!(
+                            "Failed to add to archive. Error: {}",
+                            archived.err().unwrap()
+                        ));
                     }
-                    None => {}
                 };
                 moved += 1;
             }
@@ -152,11 +149,8 @@ impl Migrate for V1Storage {
             readme.push_str("\n== DESCRIPTION\n\n");
             readme.push_str("Necessary upgrade of the Vault storage from Version 1 to Version 3\n");
             readme.push_str("\n== LOG\n\n");
-            readme.push_str(&self.migration.logs_to_string().as_str());
-            match archive.write("README.txt", readme.as_str()) {
-                Err(e) => println!("ERROR Failed to write README. Error: {}", e),
-                _ => {}
-            };
+            readme.push_str(self.migration.logs_to_string().as_str());
+            if let Err(e) = archive.write("README.txt", readme.as_str()) { println!("ERROR Failed to write README. Error: {}", e) };
         }
 
         Ok(&self.migration)

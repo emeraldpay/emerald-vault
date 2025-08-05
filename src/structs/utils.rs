@@ -9,7 +9,7 @@ macro_rules! ord_by_date_id {
     ($name:ident) => {
         impl std::cmp::Ord for $name {
             fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-                let zero = &crate::structs::utils::ZERO_TS;
+                let zero = &$crate::structs::utils::ZERO_TS;
                 if self.created_at.eq(zero) && other.created_at.ne(zero) {
                     std::cmp::Ordering::Less
                 } else if self.created_at.ne(zero) && other.created_at.eq(zero) {

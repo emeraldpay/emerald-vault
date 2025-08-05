@@ -42,7 +42,7 @@ pub fn generate_key<P: HDPath>(path: &P, seed: &[u8]) -> Result<Bitcoin_Xpriv, V
 }
 
 pub fn generate_pubkey<P: HDPath>(path: &P, seed: &[u8]) -> Result<Bitcoin_Xpub, VaultError> {
-    let sec_key = generate_key(path, &seed)?;
+    let sec_key = generate_key(path, seed)?;
     Ok(Bitcoin_Xpub::from_priv(&DEFAULT_SECP256K1, &sec_key))
 }
 

@@ -15,7 +15,7 @@ pub struct VaultGlobalKey {
     pub(crate) vault: PathBuf,
 }
 
-pub(crate) const KEY_FILE: &'static str = "global.key";
+pub(crate) const KEY_FILE: &str = "global.key";
 
 impl VaultGlobalKey {
     fn get_path(&self) -> PathBuf {
@@ -51,7 +51,7 @@ impl VaultGlobalKey {
                 format!("Failed to write global key: {:?}", write_result.err().unwrap()))
             );
         }
-        return Ok(())
+        Ok(())
     }
 
     ///
@@ -104,7 +104,7 @@ impl VaultGlobalKey {
         }
 
         let key = self.get()?;
-        key.verify_password(password).map_err(|e| VaultError::from(e))
+        key.verify_password(password).map_err(VaultError::from)
     }
 }
 

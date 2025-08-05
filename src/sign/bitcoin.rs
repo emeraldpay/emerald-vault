@@ -74,35 +74,33 @@ impl WalletEntry {
     pub fn bitcoin_address(&self, change: u32, index: u32) -> Result<Address, VaultError> {
         match &self.address {
             None => Err(VaultError::PublicKeyUnavailable),
-            Some(address_ref) => match address_ref {
-                AddressRef::ExtendedPub(xpub) => {
-                    let network = Network::from(self.blockchain);
+            Some(AddressRef::ExtendedPub(xpub)) => {
+                let network = Network::from(self.blockchain);
 
-                    let change_child = ChildNumber::from_normal_idx(change)
-                        .map_err(|_| VaultError::InvalidDataError("change".to_string()))?;
-                    let change_pubkey = xpub
-                        .value
-                        .ckd_pub(&DEFAULT_SECP256K1, change_child)
-                        .map_err(|_| VaultError::InvalidDataError("xpub".to_string()))?;
+                let change_child = ChildNumber::from_normal_idx(change)
+                    .map_err(|_| VaultError::InvalidDataError("change".to_string()))?;
+                let change_pubkey = xpub
+                    .value
+                    .ckd_pub(&DEFAULT_SECP256K1, change_child)
+                    .map_err(|_| VaultError::InvalidDataError("xpub".to_string()))?;
 
-                    let index_child = ChildNumber::from_normal_idx(index)
-                        .map_err(|_| VaultError::InvalidDataError("index".to_string()))?;
-                    let pubkey = change_pubkey
-                        .ckd_pub(&DEFAULT_SECP256K1, index_child)
-                        .map_err(|_| VaultError::InvalidDataError("xpub".to_string()))?;
+                let index_child = ChildNumber::from_normal_idx(index)
+                    .map_err(|_| VaultError::InvalidDataError("index".to_string()))?;
+                let pubkey = change_pubkey
+                    .ckd_pub(&DEFAULT_SECP256K1, index_child)
+                    .map_err(|_| VaultError::InvalidDataError("xpub".to_string()))?;
 
-                    match xpub.address_type {
-                        AddressType::P2WPKH => {
-                            let compressed = CompressedPublicKey::try_from(bitcoin::PublicKey::from(pubkey.public_key))
-                                .map_err(|_| VaultError::PublicKeyUnavailable)?;
-                            Ok(Address::p2wpkh(&compressed, network.clone()))
-                        }
-                        //TODO support other types
-                        _ => Err(VaultError::InvalidDataError("address_type".to_string())),
+                match xpub.address_type {
+                    AddressType::P2WPKH => {
+                        let compressed = CompressedPublicKey::try_from(bitcoin::PublicKey::from(pubkey.public_key))
+                            .map_err(|_| VaultError::PublicKeyUnavailable)?;
+                        Ok(Address::p2wpkh(&compressed, network))
                     }
+                    //TODO support other types
+                    _ => Err(VaultError::InvalidDataError("address_type".to_string())),
                 }
-                _ => Err(VaultError::PublicKeyUnavailable),
-            },
+            }
+            Some(_) => Err(VaultError::PublicKeyUnavailable),
         }
     }
 }
@@ -201,7 +199,7 @@ impl InputReference {
         let signature = bitcoin::ecdsa::Signature { signature, sighash_type: EcdsaSighashType::All };
 
         tx.input[index] = TxIn {
-            witness: self.witness(&proposal, &signature)?,
+            witness: self.witness(proposal, &signature)?,
             ..tx.input[index].clone()
         };
 
@@ -250,10 +248,7 @@ impl BitcoinTransferProposal {
 
     fn is_ledger(&self) -> bool {
         self.seed.len() == 1 && self.seed.iter().all(|seed| {
-            match seed.source {
-                SeedSource::Ledger(_) => true,
-                _ => false
-            }
+            matches!(seed.source, SeedSource::Ledger(_))
         })
     }
 
@@ -385,7 +380,7 @@ mod tests {
                 1,
             ),
             script_source: InputScriptSource::HD(
-                seed_id.clone(),
+                seed_id,
                 StandardHDPath::try_from("m/84'/1'/0'/0/0").unwrap(),
             ),
             sequence: 0xffffffff,
@@ -405,12 +400,12 @@ mod tests {
         let proposal = BitcoinTransferProposal {
             network: NetworkKind::Test,
             seed: vec![Seed {
-                id: seed_id.clone(),
+                id: seed_id,
                 source: seed,
                 label: None,
                 created_at: Utc.timestamp_millis_opt(0).unwrap(),
             }],
-            keys: KeyMapping::single(seed_id.clone(), SeedSource::nokey()),
+            keys: KeyMapping::single(seed_id, SeedSource::nokey()),
             input: vec![from],
             output: vec![TxOut {
                 value: Amount::from_sat(value_1 - fee),
@@ -440,7 +435,7 @@ mod tests {
                 1,
             ),
             script_source: InputScriptSource::HD(
-                seed_id.clone(),
+                seed_id,
                 StandardHDPath::try_from("m/84'/1'/0'/0/0").unwrap(),
             ),
             sequence: 0xfffffffd,
@@ -460,12 +455,12 @@ mod tests {
         let proposal = BitcoinTransferProposal {
             network: NetworkKind::Test,
             seed: vec![Seed {
-                id: seed_id.clone(),
+                id: seed_id,
                 source: seed,
                 label: None,
                 created_at: Utc.timestamp_millis_opt(0).unwrap(),
             }],
-            keys: KeyMapping::single(seed_id.clone(), SeedSource::nokey()),
+            keys: KeyMapping::single(seed_id, SeedSource::nokey()),
             input: vec![from],
             output: vec![TxOut {
                 value: Amount::from_sat(value_1 - fee),
@@ -513,7 +508,7 @@ mod tests {
                 1,
             ),
             script_source: InputScriptSource::HD(
-                seed_id.clone(),
+                seed_id,
                 StandardHDPath::try_from("m/84'/0'/0'/0/0").unwrap(),
             ),
             sequence: 0xfffffffd,
@@ -527,7 +522,7 @@ mod tests {
                 0,
             ),
             script_source: InputScriptSource::HD(
-                seed_id.clone(),
+                seed_id,
                 StandardHDPath::try_from("m/84'/0'/0'/0/1").unwrap(),
             ),
             sequence: 0xfffffffd,
@@ -547,12 +542,12 @@ mod tests {
         let proposal = BitcoinTransferProposal {
             network: NetworkKind::Main,
             seed: vec![Seed {
-                id: seed_id.clone(),
+                id: seed_id,
                 source: seed,
                 label: None,
                 created_at: Utc.timestamp_millis_opt(0).unwrap(),
             }],
-            keys: KeyMapping::single(seed_id.clone(), SeedSource::nokey()),
+            keys: KeyMapping::single(seed_id, SeedSource::nokey()),
             input: vec![
                 from1, from2
             ],

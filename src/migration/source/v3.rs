@@ -61,14 +61,12 @@ impl V3Storage {
         }
         let files = files.unwrap();
         // simply check if any file in that dir looks like a part of a vault
-        for entry in files {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                if path.is_file() {
-                    if let Some(ext) = path.extension() {
-                        if ext == "key" || ext == "wallet" || ext == "seed" {
-                            return true
-                        }
+        for entry in files.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(ext) = path.extension() {
+                    if ext == "key" || ext == "wallet" || ext == "seed" {
+                        return true
                     }
                 }
             }
@@ -78,11 +76,11 @@ impl V3Storage {
 
     ///
     /// Check if the file belongs to a Vault so must be moved to a new place
-    fn should_move(path: &PathBuf) -> bool {
+    fn should_move(path: &Path) -> bool {
         // extract actual filename
         let file_name = path.file_name()
-            .or(Some(OsStr::new("-"))).unwrap()
-            .to_str().or(Some("-")).unwrap();
+            .unwrap_or(OsStr::new("-"))
+            .to_str().unwrap_or("-");
         if let Some(ext) = path.extension() {
             if ext == "key" || ext == "wallet" || ext == "seed" || ext == "bak" {
                return true
@@ -100,13 +98,11 @@ impl V3Storage {
         let files = fs::read_dir(parent)
             .map_err(|e| MigrationError::OtherError(format!("Failed to read the dir. {}", e)))?;
         let mut result = vec![];
-        for entry in files {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                let should_move = V3Storage::should_move(&path);
-                if should_move {
-                    result.push(path)
-                }
+        for entry in files.flatten() {
+            let path = entry.path();
+            let should_move = V3Storage::should_move(&path);
+            if should_move {
+                result.push(path)
             }
         }
         Ok(result)
@@ -115,7 +111,7 @@ impl V3Storage {
     ///
     /// Actual moving of the `files` to the `dir`.
     /// NOTE: in general it works if the source and target dir are in the same filesystem, because it uses a standard rename of files.
-    fn move_files(files: Vec<PathBuf>, dir: &PathBuf, migration: &mut MigrationResult) -> Result<(), MigrationError> {
+    fn move_files(files: Vec<PathBuf>, dir: &Path, migration: &mut MigrationResult) -> Result<(), MigrationError> {
         for f in files {
             let target = dir.join(f.file_name().unwrap());
             migration.info(
@@ -140,7 +136,7 @@ impl Migrate for V3Storage {
             return Err(MigrationError::OtherError("Invalid dir".to_string()))
         }
         if self.should_migrate() {
-            let _ = self.execute()?;
+            self.execute()?;
         }
         Ok(&self.migration)
     }

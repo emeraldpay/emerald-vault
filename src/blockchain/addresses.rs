@@ -38,12 +38,12 @@ impl AddressFromPub<BitcoinAddress> for BitcoinAddress {
         };
         let address = match address_type {
             AddressType::P2WPKH => {
-                let compressed = CompressedPublicKey::try_from(pubkey.clone())
+                let compressed = CompressedPublicKey::try_from(pubkey)
                     .map_err(|_| HWKeyError::CryptoError("Invalid public key".to_string())).unwrap();
                 BitcoinAddress::p2wpkh(&compressed, network)
             },
             AddressType::P2WPKHinP2SH => BitcoinAddress::p2sh(&segwit_script(&pubkey), network).map_err(|_| ())?,
-            AddressType::P2PKH => BitcoinAddress::p2pkh(&pubkey, network),
+            AddressType::P2PKH => BitcoinAddress::p2pkh(pubkey, network),
             _ => return Err(())
         };
         Ok(address)

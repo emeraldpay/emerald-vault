@@ -176,8 +176,7 @@ impl VaultStorage {
 
         let dir = fs::read_dir(&self.dir)?;
         let backups: Vec<PathBuf> = dir
-            .filter(|i| i.is_ok())
-            .map(|i| i.unwrap())
+            .flatten()
             .map(|i| i.path())
             .filter(|i| i.is_file())
             .filter(|i| match i.file_name() {
@@ -254,7 +253,7 @@ impl VaultStorage {
             .list()?
             .iter()
             .filter(|id| wallet_id != **id)
-            .map(|id| self.wallets.get(id.clone()))
+            .map(|id| self.wallets.get(*id))
             .filter_map(|r| r.ok())
             .collect();
 
@@ -268,18 +267,17 @@ impl VaultStorage {
         if let Ok(wallet) = self.wallets.get(wallet_id) {
             let pks: Vec<Uuid> = fn_wallet_entries(&wallet)
                 .iter()
-                .filter(|pk_id| !exclusive_only || !other_wallet_pks.contains(pk_id))
-                .map(|r| r.clone())
+                .filter(|pk_id| !exclusive_only || !other_wallet_pks.contains(pk_id)).copied()
                 .collect();
             let mut files = pks
                 .iter()
-                .map(|pk| self.keys.get_filename_for(pk.clone()))
+                .map(|pk| self.keys.get_filename_for(*pk))
                 .collect::<Vec<PathBuf>>();
 
             files.push(self.wallets.get_filename_for(wallet_id));
             return Ok(files);
         }
-        return Ok(vec![]);
+        Ok(vec![])
     }
 
     /// Removes a wallet with all related private keys exclusively used by that wallet. Seeds are
@@ -372,10 +370,8 @@ pub(crate) fn safe_update<P: AsRef<Path>, C: AsRef<[u8]>>(
         },
         None => false,
     };
-    if !archived {
-        if fs::remove_file(bak_file_name).is_err() {
-            error!("Failed to delete backup file")
-        }
+    if !archived && fs::remove_file(bak_file_name).is_err() {
+        error!("Failed to delete backup file")
     }
     Ok(())
 }
@@ -451,7 +447,7 @@ impl UpdateEntry {
 
     fn update<F>(&self, mut f: F) -> Result<bool, VaultError>
     where
-        F: FnMut(&mut WalletEntry) -> (),
+        F: FnMut(&mut WalletEntry),
     {
         let mut wallet = self.get_wallet()?;
         let pos = wallet.entries.iter().position(|e| e.id == self.entry_id);
@@ -522,7 +518,7 @@ impl SingleFileEntry for StandardVaultFiles {
     /// Filename for entry id
     fn get_filename_for(&self, id: Uuid) -> PathBuf {
         let fname = format!("{}.{}", id, self.suffix);
-        return self.dir.join(fname);
+        self.dir.join(fname)
     }
 }
 
@@ -556,9 +552,7 @@ pub trait VaultAccess<P>
         let mut all: Vec<P> = self
             .list()?
             .iter()
-            .map(|id| self.get(*id))
-            .filter(|it| it.is_ok())
-            .map(|it| it.unwrap())
+            .flat_map(|id| self.get(*id))
             .collect();
         all.sort();
         Ok(all)
@@ -574,17 +568,17 @@ impl<P> VaultAccess<P> for StandardVaultFiles
         let archive = Archive::create(&self.dir, ArchiveType::Update);
         let result = self.update_multiple(entry, &archive);
         archive.finalize();
-        return result
+        result
     }
 
     fn update_multiple(&self, entry: P, archive: &Archive) -> Result<bool, VaultError> {
         let id = entry.get_id();
-        let fname = self.get_filename_for(id.clone());
+        let fname = self.get_filename_for(id);
         if fname.exists() {
             let data: Vec<u8> = entry
                 .try_into()
                 .map_err(|_| ConversionError::InvalidProtobuf)?;
-            let result = safe_update(fname, data.as_slice(), Some(&archive)).map(|_| true);
+            let result = safe_update(fname, data.as_slice(), Some(archive)).map(|_| true);
             result
         } else {
             Err(VaultError::IncorrectIdError)
@@ -598,11 +592,8 @@ impl<P> VaultAccess<P> for StandardVaultFiles
                 let entry = entry?;
                 let path = entry.path();
                 if path.is_file() {
-                    match try_vault_file(&path, self.suffix.as_str()) {
-                        Ok(id) => {
-                            result.push(id);
-                        }
-                        Err(_) => {}
+                    if let Ok(id) = try_vault_file(&path, self.suffix.as_str()) {
+                        result.push(id);
                     }
                 }
             }
@@ -612,7 +603,7 @@ impl<P> VaultAccess<P> for StandardVaultFiles
     }
 
     fn get(&self, id: Uuid) -> Result<P, VaultError> {
-        let f = self.get_filename_for(id.clone());
+        let f = self.get_filename_for(id);
 
         let data = fs::read(f)?;
         let entry = P::try_from(data).map_err(|_| ConversionError::InvalidProtobuf)?;
@@ -625,7 +616,7 @@ impl<P> VaultAccess<P> for StandardVaultFiles
 
     fn add(&self, entry: P) -> Result<Uuid, VaultError> {
         let id = entry.get_id();
-        let f = self.get_filename_for(id.clone());
+        let f = self.get_filename_for(id);
         if f.exists() {
             return Err(VaultError::FilesystemError("Already exists".to_string()));
         }
@@ -639,7 +630,7 @@ impl<P> VaultAccess<P> for StandardVaultFiles
     }
 
     fn remove(&self, id: Uuid) -> Result<bool, VaultError> {
-        let f = self.get_filename_for(id.clone());
+        let f = self.get_filename_for(id);
         if !f.exists() {
             return Ok(false);
         }
@@ -745,7 +736,7 @@ mod tests {
 
         let seeds = vault.seeds.list_entries().unwrap();
         assert_eq!(
-            seeds.get(0).unwrap().id.to_string(),
+            seeds.first().unwrap().id.to_string(),
             "067e14c4-85de-421e-9957-48a1cdef42ae".to_string()
         );
         assert_eq!(
@@ -809,7 +800,7 @@ mod tests {
 
         let seeds = vault.wallets.list_entries().unwrap();
         assert_eq!(
-            seeds.get(0).unwrap().id.to_string(),
+            seeds.first().unwrap().id.to_string(),
             "067e14c4-85de-421e-9957-48a1cdef42ae".to_string()
         );
         assert_eq!(
@@ -834,11 +825,11 @@ mod tests {
         let wallet = Wallet::default();
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
-        let wallet = vault.wallets.get(wallet_id.clone()).unwrap();
+        let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(0, wallet.entries.len());
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -847,7 +838,7 @@ mod tests {
             )
             .unwrap();
         let id2 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -880,7 +871,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -903,11 +894,11 @@ mod tests {
         let wallet = Wallet::default();
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
-        let wallet = vault.wallets.get(wallet_id.clone()).unwrap();
+        let wallet = vault.wallets.get(wallet_id).unwrap();
         assert_eq!(0, wallet.entries.len());
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -916,7 +907,7 @@ mod tests {
             )
             .unwrap();
         let id2 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -931,7 +922,7 @@ mod tests {
         vault.wallets.update(wallet).expect("Not saved");
 
         let id3 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1316,7 +1307,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1348,7 +1339,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1358,7 +1349,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("a69e8bbb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118")
                     .unwrap(),
@@ -1393,7 +1384,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("69e8bbb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118a")
                     .unwrap(),
@@ -1403,7 +1394,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1440,7 +1431,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1450,7 +1441,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("9e8bbb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118a6")
                     .unwrap(),
@@ -1488,7 +1479,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1532,7 +1523,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1561,7 +1552,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1575,14 +1566,14 @@ mod tests {
             .set_receive_disabled(true);
         assert_eq!(Ok(true), result);
         let wallet = vault.wallets.get(wallet_id).unwrap();
-        assert_eq!(true, wallet.entries[0].receive_disabled);
+        assert!(wallet.entries[0].receive_disabled);
 
         let result = vault
             .update_entry(wallet_id, id1)
             .set_receive_disabled(false);
         assert_eq!(Ok(true), result);
         let wallet = vault.wallets.get(wallet_id).unwrap();
-        assert_eq!(false, wallet.entries[0].receive_disabled);
+        assert!(!wallet.entries[0].receive_disabled);
     }
 
     #[test]
@@ -1596,7 +1587,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1606,7 +1597,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("bb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118a69e8b")
                     .unwrap(),
@@ -1630,20 +1621,20 @@ mod tests {
 
         Path::new(tmp_dir.path());
         assert!(Path::new(tmp_dir.path())
-            .join(format!("{}.key", pk1.to_string()))
+            .join(format!("{}.key", pk1))
             .exists());
         assert!(Path::new(tmp_dir.path())
-            .join(format!("{}.key", pk2.to_string()))
+            .join(format!("{}.key", pk2))
             .exists());
 
         let removed = vault.remove_entry(wallet_id, id1);
         assert_eq!(Ok(true), removed);
 
         assert!(!Path::new(tmp_dir.path())
-            .join(format!("{}.key", pk1.to_string()))
+            .join(format!("{}.key", pk1))
             .exists());
         assert!(Path::new(tmp_dir.path())
-            .join(format!("{}.key", pk2.to_string()))
+            .join(format!("{}.key", pk2))
             .exists());
     }
 
@@ -1658,7 +1649,7 @@ mod tests {
         let wallet_id = vault.wallets.add(wallet).unwrap();
 
         let id1 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("fac192ceb5fd772906bea3e118a69e8bbb5cc24229e20d8766fd298291bba6bd")
                     .unwrap(),
@@ -1668,7 +1659,7 @@ mod tests {
             .unwrap();
         assert_eq!(0, id1);
         let id2 = vault
-            .add_ethereum_entry(wallet_id.clone())
+            .add_ethereum_entry(wallet_id)
             .raw_pk(
                 hex::decode("9e8bbb5cc24229e20d8766fd298291bba6bdfac192ceb5fd772906bea3e118a6")
                     .unwrap(),
@@ -1692,10 +1683,10 @@ mod tests {
 
         Path::new(tmp_dir.path());
         assert!(Path::new(tmp_dir.path())
-            .join(format!("{}.key", pk1.to_string()))
+            .join(format!("{}.key", pk1))
             .exists());
         assert!(Path::new(tmp_dir.path())
-            .join(format!("{}.key", pk2.to_string()))
+            .join(format!("{}.key", pk2))
             .exists());
 
         let mut copy = wallet.clone();
@@ -1707,10 +1698,10 @@ mod tests {
         assert_eq!(Ok(true), removed);
 
         assert!(Path::new(tmp_dir.path())
-            .join(format!("{}.key", pk1.to_string()))
+            .join(format!("{}.key", pk1))
             .exists());
         assert!(Path::new(tmp_dir.path())
-            .join(format!("{}.key", pk2.to_string()))
+            .join(format!("{}.key", pk2))
             .exists());
     }
 }
