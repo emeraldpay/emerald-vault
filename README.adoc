@@ -37,9 +37,9 @@ Can have multiple.
 * `.png` a custom image for the wallet or other entry.
 
 .Storage directory:
-* Windows: `%APPDATA%\.emerald\vault`
-* OSX: `~/Library/Emerald/vault`
-* Linux: `~/.emerald/vault`
+* Windows: `C:\Users\<UserName>\AppData\Roaming\cash.emerald.Wallet\vault`
+* OSX: `~/Library/Application Support/cash.emerald.Wallet/vault`
+* Linux: `~/.local/share/cash.emerald.Wallet/vault`
 
 == Development
 
@@ -72,15 +72,9 @@ protoc --rust_out=src/proto --proto_path=./proto wallet.proto
 cargo build
 ----
 
-== Contact
-
-image:https://badges.gitter.im/emeraldpay/community.svg?style=flat-square["Gitter",link="https://gitter.im/emeraldpay/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge"]
-
-Chat with us via https://gitter.im/emeraldpay/community[Gitter]
-
 == License
 
-Copyright 2024 EmeraldPay, Ltd
+Copyright 2025 EmeraldPay Ltd
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
 You may obtain a copy of the License at

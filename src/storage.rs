@@ -55,7 +55,7 @@ mod files;
 pub mod watch;
 
 use std::path::{Path, PathBuf};
-use home;
+use directories::ProjectDirs;
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
 #[derive(Debug, Clone)]
@@ -65,38 +65,13 @@ pub struct Storages {
     base_dir: PathBuf,
 }
 
-/// Default path (*nix)
-#[cfg(all(
-    unix,
-    not(target_os = "macos"),
-    not(target_os = "ios"),
-    not(target_os = "android")
-))]
+/// Default path using OS-specific application data directory
 pub fn default_path() -> PathBuf {
-    let mut config_dir = home::home_dir().expect("Expect path to home dir");
-    config_dir.push(".emerald");
-    config_dir.push("vault");
-    config_dir
-}
-
-/// Default path (Mac OS X)
-#[cfg(target_os = "macos")]
-pub fn default_path() -> PathBuf {
-    let mut config_dir = home::home_dir().expect("Expect path to home dir");
-    config_dir.push("Library");
-    config_dir.push("Emerald");
-    config_dir.push("vault");
-    config_dir
-}
-
-/// Default path (Windows OS)
-#[cfg(target_os = "windows")]
-pub fn default_path() -> PathBuf {
-    let app_data_var = env::var("APPDATA").expect("Expect 'APPDATA' environment variable");
-    let mut config_dir = PathBuf::from(app_data_var);
-    config_dir.push(".emerald");
-    config_dir.push("vault");
-    config_dir
+    let project_dirs = ProjectDirs::from("cash", "Emerald", "Wallet")
+        .expect("Failed to get project directories");
+    let mut vault_dir = project_dirs.data_local_dir().to_path_buf();
+    vault_dir.push("vault");
+    vault_dir
 }
 
 /// Build `chain` specific path for selected `folder`

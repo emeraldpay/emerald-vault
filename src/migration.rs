@@ -7,6 +7,7 @@ use crate::migration::{
 };
 use std::path::{Path, PathBuf};
 use crate::migration::source::v3::V3Storage;
+use crate::migration::source::v4::V4Storage;
 
 pub fn auto_migrate<P>(dir: P)
 where
@@ -29,6 +30,12 @@ where
     let migrated_v3 = migration_v3.migrate(path.clone());
     if migrated_v3.is_err() {
         error!("Failed to migrate from Vault V3 {:?}", migrated_v3.err())
+    }
+
+    let mut migration_v4 = V4Storage::create(path.clone());
+    let migrated_v4 = migration_v4.migrate(path.clone());
+    if migrated_v4.is_err() {
+        error!("Failed to migrate from Vault V4 {:?}", migrated_v4.err())
     }
 }
 
