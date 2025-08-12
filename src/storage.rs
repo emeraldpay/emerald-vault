@@ -1,6 +1,7 @@
 /*
 Copyright 2019 ETCDEV GmbH
 Copyright 2020 EmeraldPay, Inc
+Copyright 2025 EmeraldPay Ltd
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -54,7 +55,7 @@ pub mod icons;
 mod files;
 pub mod watch;
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use directories::ProjectDirs;
 
 /// Base dir for internal data, all chain-related should be store in subdirectories
@@ -72,19 +73,4 @@ pub fn default_path() -> PathBuf {
     let mut vault_dir = project_dirs.data_local_dir().to_path_buf();
     vault_dir.push("vault");
     vault_dir
-}
-
-/// Build `chain` specific path for selected `folder`
-///
-/// # Arguments:
-///
-/// * `base_path` - base folder for storage
-/// * `chain` - chain name
-/// * `folder` - destination folder
-///
-pub fn build_path(base_path: &Path, chain: &str, folder: &str) -> PathBuf {
-    let mut path = PathBuf::from(base_path);
-    path.push(chain);
-    path.push(folder);
-    path
 }
