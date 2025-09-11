@@ -9,22 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
 
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+        run: rustup toolchain add --profile=minimal stable
 
-      - name: Install system libs (Linux)
+      - name: Install system libs
         run: sudo apt-get update && sudo apt-get install libusb-1.0-0-dev libudev-dev
 
       - name: Publish to Crates
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --token ${{ secrets.CRATES_TOKEN }}
+        run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
         env:
           RUST_BACKTRACE: "1"
