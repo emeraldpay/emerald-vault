@@ -1,6 +1,6 @@
 [package]
 name = "emerald-vault"
-version = "0.36.0-dev"
+version = "0.36.0"
 authors = ["Igor Artamonov <splix@emerald.cash>", "Dmitry Ulanov <dulanov@gmail.com>", "Constantine Kryvomaz <kostiyantynk@gmail.com>", "Stewart Mackenzie <setori88@gmail.com>", "Wei Tang <hi@that.world>"]
 description = "Emerald Vault - Key Storage for Emerald Wallet"
 homepage = "https://emerald.cash"
@@ -63,8 +63,8 @@ hdpath = { version = "0.7", features = ["with-bitcoin"] }
 byte-array-struct = { version = "0.2.0", features = ["with-serde"] }
 bitcoin_hashes = "0.16"
 #emerald-hwkey = { path = "../emerald-hwkey" }
-emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
-#emerald-hwkey = "0.6"
+#emerald-hwkey = { git = "https://github.com/emeraldpay/emerald-hwkey", branch = "master" }
+emerald-hwkey = "0.7"
 num-bigint = "0.4"
 zip = { version = "2.4", default-features = false, features = ["deflate"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }

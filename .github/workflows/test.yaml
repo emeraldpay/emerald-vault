@@ -58,7 +58,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install libusb-1.0-0-dev libudev-dev
 
       - name: Test
-        run: cargo test --no-fail-fast --all-features
+        run: cargo test --no-fail-fast
         env:
           # See https://github.com/mozilla/grcov
           CARGO_INCREMENTAL: '0'
