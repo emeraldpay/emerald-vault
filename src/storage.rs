@@ -66,11 +66,25 @@ pub struct Storages {
     base_dir: PathBuf,
 }
 
+///
+/// Get vault path at given wallet directory.
+/// I.e., Wallet dir contains different data, and the Vault is one of them. Stored in "vault" subdir.
+pub fn path_at(wallet_dir: PathBuf) -> PathBuf {
+    let mut wallet_dir = wallet_dir;
+    wallet_dir.push("vault");
+    wallet_dir
+}
+
+///
+/// Default wallet directory in OS-specific application data directory
+pub fn default_wallet_dir() -> PathBuf {
+    ProjectDirs::from("cash", "Emerald", "Wallet")
+        .expect("Failed to get project directories")
+        .data_local_dir().to_path_buf()
+}
+
+///
 /// Default path using OS-specific application data directory
 pub fn default_path() -> PathBuf {
-    let project_dirs = ProjectDirs::from("cash", "Emerald", "Wallet")
-        .expect("Failed to get project directories");
-    let mut vault_dir = project_dirs.data_local_dir().to_path_buf();
-    vault_dir.push("vault");
-    vault_dir
+    path_at(default_wallet_dir())
 }
